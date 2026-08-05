@@ -3,14 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "PORT=3030 next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:migrate:local": "node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs migrate"
   },
   "dependencies": {
+    "@lorenzopant/tmdb": "^1.25.0",
     "@neondatabase/serverless": "^1.0.2",
     "drizzle-orm": "^0.44.2",
     "next": "^15.4.0",
