@@ -168,7 +168,7 @@ export default function Home() {
 
       <section className={styles.toolbar}>
         <div>
-          <h1>Current nominations</h1>
+          <h1>And the nominees are...</h1>
         </div>
         <div className={styles.toolbarActions}>
           <button className={styles.nominateButton} type="button" onClick={() => setIsNominationOpen((open) => !open)}>

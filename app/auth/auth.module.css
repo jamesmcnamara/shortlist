@@ -1,0 +1,116 @@
+.shell {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 32px 20px;
+}
+
+.card {
+  width: 100%;
+  max-width: 380px;
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px 8px 8px 2px;
+  background: var(--accent);
+  color: white;
+  font-size: 15px;
+}
+
+.title {
+  margin: 24px 0 4px;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+.subtitle {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+.hint {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.error {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fdecec;
+  color: #a02a2a;
+  font-size: 13px;
+}
+
+.submit {
+  margin-top: 4px;
+  padding: 11px 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.footer {
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.footer a {
+  color: var(--accent);
+  font-weight: 700;
+}

@@ -39,3 +39,24 @@
   color: var(--muted-soft);
   font-size: 17px;
 }
+
+.signOut {
+  margin-left: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.signOut:hover {
+  border-color: var(--accent-soft);
+  color: var(--accent);
+}
+
+.signOut:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}

@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
@@ -21,14 +21,22 @@
     "allowJs": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
   },
   "include": [
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "src",
     "app",
-    "drizzle.config.ts"
+    "lib",
+    "proxy.ts",
+    "drizzle.config.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

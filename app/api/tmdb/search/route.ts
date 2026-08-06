@@ -1,11 +1,15 @@
 import { TMDB } from "@lorenzopant/tmdb";
 import { NextResponse } from "next/server";
+import { requireUserId, unauthorized } from "@/lib/auth/require-user";
 
 const tmdb = new TMDB(process.env.TMDB_API_READ_ACCESS_TOKEN ?? process.env.TMDB_API_KEY ?? "", {
   language: "en-US"
 });
 
 export async function GET(request: Request) {
+  const userId = await requireUserId();
+  if (!userId) return unauthorized();
+
   const query = new URL(request.url).searchParams.get("query")?.trim();
 
   if (!query) {
