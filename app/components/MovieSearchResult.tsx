@@ -1,14 +1,15 @@
 import styles from "./MovieSearchResult.module.css";
 
-export type MovieSearchResultData = {
+export interface MovieSearchResultData {
   id: number;
   title: string;
   releaseDate: string;
   overview: string;
   posterUrl: string | null;
+  tmdbRating: number | null;
 };
 
-type MovieSearchResultProps = {
+interface MovieSearchResultProps {
   movie: MovieSearchResultData;
   onSelect?: (movie: MovieSearchResultData) => void;
 };

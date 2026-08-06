@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import type { SubmitEventHandler } from "react";
 import type { MovieSearchResultData } from "./MovieSearchResult";
 import { MovieSearchResults } from "./MovieSearchResults";
 import styles from "./NominationPanel.module.css";
@@ -10,7 +10,7 @@ type NominationPanelProps = {
   searchError: string;
   searchResults: MovieSearchResultData[];
   onClose: () => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmit: SubmitEventHandler<HTMLFormElement>;
   onSelect: (movie: MovieSearchResultData) => void;
   onTitleChange: (value: string) => void;
 };

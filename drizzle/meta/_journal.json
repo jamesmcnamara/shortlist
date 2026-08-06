@@ -29,6 +29,20 @@
       "when": 1785968805371,
       "tag": "0003_aberrant_patriot",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786034542636,
+      "tag": "0004_tricky_wraith",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786039203671,
+      "tag": "0005_optimal_the_liberteens",
+      "breakpoints": true
     }
   ]
 }

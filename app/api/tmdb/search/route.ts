@@ -29,7 +29,8 @@ export async function GET(request: Request) {
         title: movie.title,
         releaseDate: movie.release_date,
         overview: movie.overview,
-        posterUrl: movie.poster_path ? tmdb.images.poster(movie.poster_path, "w342") : null
+        posterUrl: movie.poster_path ? tmdb.images.poster(movie.poster_path, "w342") : null,
+        tmdbRating: movie.vote_average !== 0 ? movie.vote_average : null
       }))
     });
   } catch {

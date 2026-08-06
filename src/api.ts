@@ -26,6 +26,9 @@ export async function movieApi(request: Request): Promise<Response> {
         : Number(body.tmdbId);
       const posterUrl = typeof body?.posterUrl === "string" ? body.posterUrl : null;
       const description = typeof body?.description === "string" ? body.description : null;
+      const tmdbRating = body?.tmdbRating === undefined || body?.tmdbRating === null || body?.tmdbRating === ""
+        ? null
+        : Number(body.tmdbRating);
 
       if (
         !title ||
@@ -35,7 +38,7 @@ export async function movieApi(request: Request): Promise<Response> {
         return json({ error: "Enter a movie title and an optional valid year." }, 400);
       }
 
-      const [movie] = await db.insert(movies).values({ title, year, tmdbId, posterUrl, description }).returning();
+      const [movie] = await db.insert(movies).values({ title, year, tmdbId, posterUrl, description, tmdbRating }).returning();
       return json(movie, 201);
     }
 

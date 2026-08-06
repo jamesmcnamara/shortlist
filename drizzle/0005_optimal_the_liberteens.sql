@@ -1,0 +1,1 @@
+ALTER TABLE "movies" ALTER COLUMN "tmdb_rating" SET DATA TYPE real;

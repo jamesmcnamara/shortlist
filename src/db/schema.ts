@@ -1,4 +1,4 @@
-import { integer, pgSchema, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, real, pgSchema, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 const neonAuth = pgSchema("neon_auth");
 const authUsers = neonAuth.table("user", {
@@ -13,6 +13,7 @@ export const movies = pgTable("movies", {
   description: text(),
   year: integer(),
   runtime: integer(),
+  tmdbRating: real("tmdb_rating"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
 });
 

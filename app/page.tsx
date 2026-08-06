@@ -1,7 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { MovieSearchResults } from './components/MovieSearchResults';
+import { SubmitEventHandler, useEffect, useMemo, useState } from 'react';
 import type { MovieSearchResultData } from './components/MovieSearchResult';
 import { MovieCard, MovieDiscussion } from './components/MovieCard';
 import { NominationPanel } from './components/NominationPanel';
@@ -121,7 +120,7 @@ export default function Home() {
     setSearchResults([]);
   }
 
-  async function addMovie(event: FormEvent<HTMLFormElement>) {
+  const addMovie: SubmitEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault();
     if (nominatedThisMonth) return;
     setMessage('');
@@ -133,7 +132,8 @@ export default function Home() {
         year,
         tmdbId: selectedMovie?.id,
         posterUrl: selectedMovie?.posterUrl,
-        description: selectedMovie?.overview
+        description: selectedMovie?.overview,
+        tmdbRating: selectedMovie?.tmdbRating
       })
     });
     const data = await response.json();
