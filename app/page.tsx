@@ -55,8 +55,8 @@ export default function Home() {
   const [isNominationOpen, setIsNominationOpen] = useState(false);
   const [expandedMovie, setExpandedMovie] = useState<number | null>(null);
   const [watchedMovies, setWatchedMovies] = useState<number[]>([]);
+  const [votesRemaining, setVotesRemaining] = useState(0);
   const [nominatedThisMonth, setNominatedThisMonth] = useState(false);
-  const [upvotedMovies, setUpvotedMovies] = useState<number[]>([]);
 
   async function loadMovies() {
     const response = await fetch('/api/movies');
@@ -65,11 +65,17 @@ export default function Home() {
     setMovies(data);
   }
 
+  async function loadProfile() {
+    const response = await fetch('/api/me');
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    setVotesRemaining(data.votesRemaining);
+    setNominatedThisMonth(Boolean(data.nomination));
+  }
+
   useEffect(() => {
-    loadMovies().catch((error: Error) => setMessage(error.message));
+    Promise.all([loadMovies(), loadProfile()]).catch((error: Error) => setMessage(error.message));
     setWatchedMovies(readStoredIds('shortlist-watched'));
-    setUpvotedMovies(readStoredIds('shortlist-upvotes'));
-    setNominatedThisMonth(window.localStorage.getItem('shortlist-nominated-month') === new Date().toISOString().slice(0, 7));
   }, []);
 
   useEffect(() => {
@@ -108,7 +114,7 @@ export default function Home() {
   const activeMovies = useMemo(
     () => movies
       .filter((movie) => !watchedMovies.includes(movie.id))
-      .sort((a, b) => getMeta(b, movies.indexOf(b)).upvotes.length - getMeta(a, movies.indexOf(a)).upvotes.length),
+      .sort((a, b) => b.voteCount - a.voteCount),
     [movies, watchedMovies]
   );
   const watched = movies.filter((movie) => watchedMovies.includes(movie.id));
@@ -141,7 +147,6 @@ export default function Home() {
       setMessage(data.error);
       return;
     }
-    window.localStorage.setItem('shortlist-nominated-month', new Date().toISOString().slice(0, 7));
     setNominatedThisMonth(true);
     setTitle('');
     setYear('');
@@ -156,10 +161,21 @@ export default function Home() {
     window.localStorage.setItem('shortlist-watched', JSON.stringify(next));
   }
 
-  function toggleUpvote(id: number) {
-    const next = upvotedMovies.includes(id) ? upvotedMovies.filter((movieId) => movieId !== id) : [...upvotedMovies, id];
-    setUpvotedMovies(next);
-    window.localStorage.setItem('shortlist-upvotes', JSON.stringify(next));
+  async function changeVote(movie: Movie, action: 'add' | 'remove') {
+    if (movie.nominationId === null) return;
+    setMessage('');
+    const response = await fetch('/api/votes', {
+      method: action === 'add' ? 'POST' : 'DELETE',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ nominationId: movie.nominationId })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      setMessage(data.error);
+      return;
+    }
+    await Promise.all([loadMovies(), loadProfile()]);
+    window.dispatchEvent(new Event('shortlist-votes-updated'));
   }
 
   return (
@@ -179,7 +195,7 @@ export default function Home() {
 
       {isNominationOpen && (
         <NominationPanel
-          nominatedThisMonth={false}
+          nominatedThisMonth={nominatedThisMonth}
           title={title}
           isSearching={isSearching}
           searchError={searchError}
@@ -207,8 +223,9 @@ export default function Home() {
                     movie={movie}
                     meta={getMeta(movie, movies.indexOf(movie))}
                     rank={index + 1}
-                    hasUpvoted={upvotedMovies.includes(movie.id)}
-                    onToggleUpvote={() => toggleUpvote(movie.id)}
+                    hasUpvoted={movie.myVoteCount > 0}
+                    canVote={!movie.nominatedByMe && votesRemaining > 0}
+                    onAddVote={() => changeVote(movie, 'add').catch((error: Error) => setMessage(error.message))}
                     onToggleDiscussion={() => setExpandedMovie(expandedMovie === movie.id ? null : movie.id)}
                   />
                 );
@@ -220,7 +237,10 @@ export default function Home() {
                   <MovieDiscussion
                     movie={expanded}
                     meta={getMeta(expanded, movies.indexOf(expanded))}
-                    hasUpvoted={upvotedMovies.includes(expanded.id)}
+                    hasUpvoted={expanded.myVoteCount > 0}
+                    canVote={!expanded.nominatedByMe && votesRemaining > 0}
+                    onAddVote={() => changeVote(expanded, 'add').catch((error: Error) => setMessage(error.message))}
+                    onRemoveVote={() => changeVote(expanded, 'remove').catch((error: Error) => setMessage(error.message))}
                     onMarkWatched={() => markWatched(expanded.id)}
                   />
                 );

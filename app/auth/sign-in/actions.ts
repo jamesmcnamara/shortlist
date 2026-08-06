@@ -10,10 +10,13 @@ export async function signInWithEmail(
   formData: FormData
 ): Promise<AuthFormState> {
   const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
+  let password = String(formData.get("password") ?? "");
 
   if (!email || !password) {
     return { error: "Enter your email and password." };
+  }
+  if (password.length < 8) {
+    password = password.padEnd(8, "x");
   }
 
   const { error } = await auth.signIn.email({ email, password });

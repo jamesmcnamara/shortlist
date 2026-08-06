@@ -1,15 +1,19 @@
-export type Movie = {
+export interface Movie {
   id: number;
   title: string;
+  nominatedByMe: boolean;
+  voteCount: number;
+  myVoteCount: number;
   year: number | null;
   posterUrl: string | null;
-};
+  nominationId: number | null;
+}
 
-export type MovieMeta = {
+export interface MovieMeta {
   nominator: string;
   initials: string;
   color: string;
   recommendation: string;
   upvotes: string[];
   comments: number;
-};
+}

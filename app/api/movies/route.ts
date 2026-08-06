@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 async function handle(request: Request) {
   const userId = await requireUserId();
   if (!userId) return unauthorized();
-  return movieApi(request);
+  return movieApi(request, userId);
 }
 
 export async function GET(request: Request) {

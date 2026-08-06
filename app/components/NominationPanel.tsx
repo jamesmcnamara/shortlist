@@ -31,7 +31,7 @@ export function NominationPanel({
       <div className={styles.heading}>
         <div>
           <span className={styles.kicker}>Your monthly move</span>
-          <h2>Volunteer as Tribute</h2>
+          <h2>Choose your fighter</h2>
         </div>
         <button className={styles.close} type="button" onClick={onClose} aria-label="Close nomination panel">×</button>
       </div>
@@ -39,7 +39,7 @@ export function NominationPanel({
         <div className={styles.limitMessage}>
           <span>✓</span>
           <div>
-            <strong>Tribute delivered.</strong>
+            <strong>Challenge accepted.</strong>
             <p>You can nominate again when next month rolls around.</p>
           </div>
         </div>

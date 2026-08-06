@@ -1,12 +1,13 @@
 import styles from "./MovieCard.module.css";
 import type { Movie, MovieMeta } from "./shortlist-types";
 
-type MovieCardProps = {
+interface MovieCardProps {
   movie: Movie;
   meta: MovieMeta;
   rank: number;
   hasUpvoted: boolean;
-  onToggleUpvote: () => void;
+  canVote: boolean;
+  onAddVote: () => void;
   onToggleDiscussion: () => void;
 };
 
@@ -15,10 +16,11 @@ export function MovieCard({
   meta,
   rank,
   hasUpvoted,
-  onToggleUpvote,
+  canVote,
+  onAddVote,
   onToggleDiscussion
 }: MovieCardProps) {
-  const upvoteCount = meta.upvotes.length + (hasUpvoted ? 1 : 0);
+  const upvoteCount = movie.voteCount;
 
   return (
     <>
@@ -46,9 +48,9 @@ export function MovieCard({
           <button
             className={`${styles.stat} ${hasUpvoted ? styles.voted : ""}`}
             type="button"
-            onClick={onToggleUpvote}
-            aria-label={`${hasUpvoted ? "Remove upvote from" : "Upvote"} ${movie.title}`}
-            aria-pressed={hasUpvoted}
+            onClick={onAddVote}
+            disabled={!canVote}
+            aria-label={`Give a vote to ${movie.title}`}
           >
             <span aria-hidden="true">↑</span>{upvoteCount}
           </button>
@@ -66,8 +68,11 @@ export function MovieDiscussion({
   movie,
   meta,
   hasUpvoted,
+  canVote,
+  onAddVote,
+  onRemoveVote,
   onMarkWatched
-}: Pick<MovieCardProps, "movie" | "meta"> & { hasUpvoted: boolean; onMarkWatched: () => void }) {
+}: Pick<MovieCardProps, "movie" | "meta"> & { hasUpvoted: boolean; canVote: boolean; onAddVote: () => void; onRemoveVote: () => void; onMarkWatched: () => void }) {
   const voters = hasUpvoted && !meta.upvotes.includes("James") ? ["James", ...meta.upvotes] : meta.upvotes;
 
   return (
@@ -80,7 +85,11 @@ export function MovieDiscussion({
                 <strong>{meta.nominator}</strong>
               </div>
             </div>
-            <button className={styles.watched} type="button" onClick={onMarkWatched}>Mark watched <span>✓</span></button>
+            <div className={styles.voteActions}>
+              <button className={styles.votePrimary} type="button" onClick={onAddVote} disabled={!canVote}>Upvote <span>↑</span></button>
+              <button className={styles.voteSecondary} type="button" onClick={onRemoveVote} disabled={!hasUpvoted}>Remove vote</button>
+              <button className={styles.watched} type="button" onClick={onMarkWatched}>Seen it<span>✓</span></button>
+            </div>
           </div>
           <p className={styles.recommendation}>“{meta.recommendation}”</p>
           <div className={styles.voters}>

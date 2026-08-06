@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth/client";
 import styles from "./ShortlistHeader.module.css";
 
@@ -14,9 +14,22 @@ function initialsFor(name: string) {
 
 export function ShortlistHeader() {
   const { data: session } = authClient.useSession();
+  const [votesRemaining, setVotesRemaining] = useState<number | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const router = useRouter();
   const name = session?.user?.name || session?.user?.email || "";
+
+  useEffect(() => {
+    const loadProfile = () => {
+      if (!session?.user) return;
+      fetch("/api/me").then((response) => response.ok ? response.json() : null).then((data) => {
+        if (data) setVotesRemaining(data.votesRemaining);
+      }).catch(() => undefined);
+    };
+    loadProfile();
+    window.addEventListener("shortlist-votes-updated", loadProfile);
+    return () => window.removeEventListener("shortlist-votes-updated", loadProfile);
+  }, [session?.user]);
 
   async function handleSignOut() {
     setIsSigningOut(true);
@@ -32,11 +45,11 @@ export function ShortlistHeader() {
   return (
     <header className={styles.header}>
       <div className={styles.brand}>
-        <span className={styles.mark}>S</span>
         <span>Shortlist</span>
       </div>
       {name ? (
         <div className={styles.profile}>
+          {votesRemaining !== null && <span className={styles.voteBalance}>{votesRemaining} votes left</span>}
           <span className="avatar avatar-violet">{initialsFor(name)}</span>
           <span>{name}</span>
           <button

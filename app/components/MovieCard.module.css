@@ -200,6 +200,42 @@
   background: var(--success-wash);
 }
 
+.voteActions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.votePrimary,
+.voteSecondary {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.votePrimary {
+  background: var(--accent);
+  color: white;
+}
+
+.voteSecondary {
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+
+.votePrimary:disabled,
+.voteSecondary:disabled,
+.stat:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.votePrimary span {
+  margin-left: 4px;
+}
+
 .watched span {
   margin-left: 4px;
 }
