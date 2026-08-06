@@ -21,12 +21,21 @@ export async function movieApi(request: Request): Promise<Response> {
       const year = body?.year === undefined || body?.year === null || body?.year === ""
         ? null
         : Number(body.year);
+      const tmdbId = body?.tmdbId === undefined || body?.tmdbId === null || body?.tmdbId === ""
+        ? null
+        : Number(body.tmdbId);
+      const posterUrl = typeof body?.posterUrl === "string" ? body.posterUrl : null;
+      const description = typeof body?.description === "string" ? body.description : null;
 
-      if (!title || (year !== null && (!Number.isInteger(year) || year < 1888 || year > 2200))) {
+      if (
+        !title ||
+        (year !== null && (!Number.isInteger(year) || year < 1888 || year > 2200)) ||
+        (tmdbId !== null && !Number.isInteger(tmdbId))
+      ) {
         return json({ error: "Enter a movie title and an optional valid year." }, 400);
       }
 
-      const [movie] = await db.insert(movies).values({ title, year }).returning();
+      const [movie] = await db.insert(movies).values({ title, year, tmdbId, posterUrl, description }).returning();
       return json(movie, 201);
     }
 

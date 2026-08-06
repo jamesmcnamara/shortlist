@@ -1,0 +1,55 @@
+.result {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.result img,
+.placeholder {
+  width: 42px;
+  height: 62px;
+  flex: 0 0 42px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.placeholder {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: 9px;
+  text-align: center;
+}
+
+.copy {
+  min-width: 0;
+}
+
+.copy h3 {
+  margin: 1px 0 2px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.copy p {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.copy span {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
