@@ -30,7 +30,6 @@ export function NominationPanel({
     <section className={styles.panel}>
       <div className={styles.heading}>
         <div>
-          <span className={styles.kicker}>Your monthly move</span>
           <h2>Choose your fighter</h2>
         </div>
         <button className={styles.close} type="button" onClick={onClose} aria-label="Close nomination panel">×</button>

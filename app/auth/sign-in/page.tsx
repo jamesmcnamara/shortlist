@@ -12,12 +12,11 @@ export default function SignInPage() {
     <main className={styles.shell}>
       <div className={styles.card}>
         <div className={styles.brand}>
-          <span className={styles.mark}>S</span>
           <span>Shortlist</span>
         </div>
 
         <h1 className={styles.title}>Welcome back</h1>
-        <p className={styles.subtitle}>Sign in to see what the group is watching next.</p>
+        <p className={styles.subtitle}/>
 
         <form action={formAction} className={styles.form}>
           <div className={styles.field}>
@@ -40,12 +39,12 @@ export default function SignInPage() {
           {state?.error ? <p className={styles.error}>{state.error}</p> : null}
 
           <button className={styles.submit} type="submit" disabled={isPending}>
-            {isPending ? "Signing in…" : "Sign in"}
+            {isPending ? "Signing in…" : "Do you want to play a game?"}
           </button>
         </form>
 
         <p className={styles.footer}>
-          New here? <Link href="/auth/sign-up">Create an account</Link>
+          New here? <Link href="/auth/sign-up">Join the club</Link>
         </p>
       </div>
     </main>

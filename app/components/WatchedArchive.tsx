@@ -1,4 +1,4 @@
-import type { Movie } from "./shortlist-types";
+import type { Movie } from "@/src/db/schema";
 import styles from "./WatchedArchive.module.css";
 
 export function WatchedArchive({ movies }: { movies: Movie[] }) {

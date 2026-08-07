@@ -1,8 +1,11 @@
 import { integer, real, pgSchema, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 const neonAuth = pgSchema("neon_auth");
-const authUsers = neonAuth.table("user", {
-  id: uuid("id").notNull()
+export const authUsers = neonAuth.table("user", {
+  id: uuid("id").notNull(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+
 });
 
 export const movies = pgTable("movies", {
@@ -22,6 +25,7 @@ export const nominations = pgTable("nominations", {
   userId: uuid("user_id").notNull().references(() => authUsers.id),
   movieId: integer("movie_id").notNull().references(() => movies.id),
   comment: text("comment"),
+  month: integer().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -30,9 +34,11 @@ export const votes = pgTable("votes", {
   userId: uuid("user_id").notNull().references(() => authUsers.id),
   nominationId: integer("nomination_id").notNull().references(() => nominations.id),
   comment: text("comment"),
+  month: integer().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
 });
 
+// Nomination comment
 export const nomcoms = pgTable("nomcoms", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   userId: uuid("user_id").notNull().references(() => authUsers.id),
@@ -51,5 +57,11 @@ export const seen = pgTable("seen", {
 export type Movie = typeof movies.$inferSelect;
 export type Nomination = typeof nominations.$inferSelect;
 export type Vote = typeof votes.$inferSelect;
-export type Nomcom = typeof nomcoms.$inferSelect;
+export type NomCom = typeof nomcoms.$inferSelect;
 export type Seen = typeof seen.$inferSelect;
+
+export interface User  {
+  id: string;
+  name: string;
+  email: string;
+}

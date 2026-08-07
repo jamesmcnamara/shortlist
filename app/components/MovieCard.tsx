@@ -1,9 +1,11 @@
+import type { Movie, NomCom, Nomination, User, Vote } from "@/src/db/schema";
 import styles from "./MovieCard.module.css";
-import type { Movie, MovieMeta } from "./shortlist-types";
 
 interface MovieCardProps {
   movie: Movie;
-  meta: MovieMeta;
+  nomination: Nomination;
+  nominator: User;
+  votes: Vote[];
   rank: number;
   hasUpvoted: boolean;
   canVote: boolean;
@@ -13,14 +15,16 @@ interface MovieCardProps {
 
 export function MovieCard({
   movie,
-  meta,
+  votes,
+  nomination,
+  nominator,
   rank,
   hasUpvoted,
   canVote,
   onAddVote,
   onToggleDiscussion
 }: MovieCardProps) {
-  const upvoteCount = movie.voteCount;
+  const upvoteCount = votes.length;
 
   return (
     <>
@@ -44,7 +48,8 @@ export function MovieCard({
         </button>
 
         <div className={styles.meta}>
-          <span className={`avatar avatar-${meta.color}`} title={`Nominated by ${meta.nominator}`}>{meta.initials}</span>
+          {/* TODO: initials */}
+          <span className={`avatar avatar-${getColor(movie.title)}`} title={`Nominated by ${nominator.name}`}>{nominator.name.slice(0, 1)}</span>
           <button
             className={`${styles.stat} ${hasUpvoted ? styles.voted : ""}`}
             type="button"
@@ -54,8 +59,8 @@ export function MovieCard({
           >
             <span aria-hidden="true">↑</span>{upvoteCount}
           </button>
-          <button className={styles.stat} type="button" onClick={onToggleDiscussion} aria-expanded={false} aria-label={`${meta.comments} comments on ${movie.title}`}>
-            <span aria-hidden="true">☷</span>{meta.comments}
+          <button className={styles.stat} type="button" onClick={onToggleDiscussion} aria-expanded={false} aria-label={`Comments on ${movie.title}`}>
+            <span aria-hidden="true">☷</span>{nomination.comment}
           </button>
         </div>
       </article>
@@ -64,25 +69,40 @@ export function MovieCard({
   );
 }
 
+interface MovieDiscussionProps {
+  movie: Movie;
+  votes: Vote[];
+  nomination: Nomination;
+  nominator: User;
+  nomcoms: NomCom[];
+  hasUpvoted: boolean;
+  canVote: boolean;
+  onAddVote: () => void;
+  onRemoveVote: () => void;
+  onMarkWatched: () => void;
+}
+
 export function MovieDiscussion({
   movie,
-  meta,
+  votes,
+  nomination,
+  nominator,
+  nomcoms,
   hasUpvoted,
   canVote,
   onAddVote,
   onRemoveVote,
   onMarkWatched
-}: Pick<MovieCardProps, "movie" | "meta"> & { hasUpvoted: boolean; canVote: boolean; onAddVote: () => void; onRemoveVote: () => void; onMarkWatched: () => void }) {
-  const voters = hasUpvoted && !meta.upvotes.includes("James") ? ["James", ...meta.upvotes] : meta.upvotes;
-
+}: MovieDiscussionProps) {
   return (
     <section className={styles.expanded} aria-label={`Discussion about ${movie.title}`}>
           <div className={styles.expandedHeader}>
             <div className={styles.nominator}>
-              <span className={`avatar avatar-${meta.color}`}>{meta.initials}</span>
+              {/* TODO: initials */}
+              <span className={`avatar avatar-${getColor(movie.title)}`}>TK</span>
               <div>
                 <span className={styles.eyebrow}>Nominated by</span>
-                <strong>{meta.nominator}</strong>
+                <strong>{nominator.name}</strong>
               </div>
             </div>
             <div className={styles.voteActions}>
@@ -91,25 +111,59 @@ export function MovieDiscussion({
               <button className={styles.watched} type="button" onClick={onMarkWatched}>Seen it<span>✓</span></button>
             </div>
           </div>
-          <p className={styles.recommendation}>“{meta.recommendation}”</p>
-          <div className={styles.voters}>
-            <span className={styles.eyebrow}>Voted for this</span>
-            <div className={styles.voterList}>
-              {voters.map((name) => {
-                const voter = name === "James" ? "JM" : name === "Maya" ? "MK" : name === "Theo" ? "TH" : "RA";
-                const color = name === "James" ? "violet" : name === "Maya" ? "lilac" : name === "Theo" ? "mint" : "gold";
-                return <span key={name} className={`avatar avatar-${color}`} title={name}>{voter}</span>;
-              })}
-            </div>
-          </div>
-          <div className={styles.commentsFooter}>
-            <span className={styles.eyebrow}>Comments · {meta.comments}</span>
-            <div className={styles.commentList}>
-              <p><span className="avatar avatar-lilac">MK</span><span><strong>Maya</strong> “The soundtrack alone.”</span></p>
-              <p><span className="avatar avatar-mint">TH</span><span><strong>Theo</strong> “I’m in.”</span></p>
-            </div>
-            <button type="button" className={styles.commentLink}>Add a thought <span>→</span></button>
-          </div>
+          <p className={styles.recommendation}>“{nomination.comment}”</p>
+          <VoterList votes={votes} />
+          <NomComList nomcoms={nomcoms} />
     </section>
   );
+}
+
+interface VoterListProps {
+  votes: Vote[];
+}
+
+function VoterList({ votes }: VoterListProps) {
+  return (
+    <div className={styles.voters}>
+      <span className={styles.eyebrow}>Voted for this</span>
+      <div className={styles.voterList}>
+        {votes.map((vote) => {
+          const voter = vote.userId === "james" ? "JM" : vote.userId === "maya" ? "MK" : vote.userId === "theo" ? "TH" : "RA";
+          const color = vote.userId === "james" ? "violet" : vote.userId === "maya" ? "lilac" : vote.userId === "theo" ? "mint" : "gold";
+          return <span key={vote.id} className={`avatar avatar-${color}`} title={vote.userId}>{voter}</span>;
+        })}
+      </div>
+    </div>
+  );
+}
+
+interface NomComListProps {
+  nomcoms: NomCom[];
+}
+
+function NomComList({ nomcoms }: NomComListProps) {
+  return (
+    <div className={styles.nomcoms}>
+      <span className={styles.eyebrow}>Comments</span>
+      <div className={styles.nomcomList}>
+        {nomcoms.map((nomcom) => {
+          const commenter = nomcom.userId === "james" ? "JM" : nomcom.userId === "maya" ? "MK" : nomcom.userId === "theo" ? "TH" : "RA";
+          const color = nomcom.userId === "james" ? "violet" : nomcom.userId === "maya" ? "lilac" : nomcom.userId === "theo" ? "mint" : "gold";
+          return <p key={nomcom.id}><span className={`avatar avatar-${color}`}>{commenter}</span><span><strong>{nomcom.userId}</strong> “{nomcom.comment}”</span></p>;
+        })}
+      </div>
+    </div>
+  );
+}
+
+const getInitials = (name: string) => {
+  const parts = name.split(" ");
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0].slice(0, 1) + parts[1].slice(0, 1)).toUpperCase();
+}
+
+const getColor = (text: string) => {
+  const colors = ["violet", "lilac", "mint", "gold"];
+  const index = text.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+  return colors[index];
 }

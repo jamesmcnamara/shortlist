@@ -12,12 +12,10 @@ export default function SignUpPage() {
     <main className={styles.shell}>
       <div className={styles.card}>
         <div className={styles.brand}>
-          <span className={styles.mark}>S</span>
           <span>Shortlist</span>
         </div>
 
         <h1 className={styles.title}>Join the shortlist</h1>
-        <p className={styles.subtitle}>Make an account because you have to.</p>
 
         <form action={formAction} className={styles.form}>
           <div className={styles.field}>
@@ -48,7 +46,7 @@ export default function SignUpPage() {
           {state?.error ? <p className={styles.error}>{state.error}</p> : null}
 
           <button className={styles.submit} type="submit" disabled={isPending}>
-            {isPending ? "Creating account…" : "Create account"}
+            {isPending ? "Creating account…" : "LET ME IN!"}
           </button>
         </form>
 
