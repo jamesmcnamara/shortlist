@@ -2,9 +2,12 @@ import { TMDB } from "@lorenzopant/tmdb";
 import { NextResponse } from "next/server";
 import { requireUserId, unauthorized } from "@/lib/auth/require-user";
 
-const tmdb = new TMDB(process.env.TMDB_API_READ_ACCESS_TOKEN ?? process.env.TMDB_API_KEY ?? "", {
-  language: "en-US"
-});
+const tmdb = new TMDB(
+  process.env.TMDB_API_READ_ACCESS_TOKEN ?? process.env.TMDB_API_KEY ?? "",
+  {
+    language: "en-US",
+  },
+);
 
 export async function GET(request: Request) {
   const userId = await requireUserId();
@@ -17,7 +20,10 @@ export async function GET(request: Request) {
   }
 
   if (!process.env.TMDB_API_READ_ACCESS_TOKEN && !process.env.TMDB_API_KEY) {
-    return NextResponse.json({ error: "TMDB credentials are not configured." }, { status: 500 });
+    return NextResponse.json(
+      { error: "TMDB credentials are not configured." },
+      { status: 500 },
+    );
   }
 
   try {
@@ -29,11 +35,16 @@ export async function GET(request: Request) {
         title: movie.title,
         releaseDate: movie.release_date,
         overview: movie.overview,
-        posterUrl: movie.poster_path ? tmdb.images.poster(movie.poster_path, "w342") : null,
-        tmdbRating: movie.vote_average !== 0 ? movie.vote_average : null
-      }))
+        posterUrl: movie.poster_path
+          ? tmdb.images.poster(movie.poster_path, "w342")
+          : null,
+        tmdbRating: movie.vote_average !== 0 ? movie.vote_average : null,
+      })),
     });
   } catch {
-    return NextResponse.json({ error: "Unable to search TMDB right now." }, { status: 502 });
+    return NextResponse.json(
+      { error: "Unable to search TMDB right now." },
+      { status: 502 },
+    );
   }
 }

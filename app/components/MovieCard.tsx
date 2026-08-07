@@ -3,7 +3,6 @@ import styles from "./MovieCard.module.css";
 
 interface MovieCardProps {
   movie: Movie;
-  nomination: Nomination;
   nominator: User;
   votes: Vote[];
   rank: number;
@@ -16,7 +15,6 @@ interface MovieCardProps {
 export function MovieCard({
   movie,
   votes,
-  nomination,
   nominator,
   rank,
   hasUpvoted,
@@ -58,9 +56,6 @@ export function MovieCard({
             aria-label={`Give a vote to ${movie.title}`}
           >
             <span aria-hidden="true">↑</span>{upvoteCount}
-          </button>
-          <button className={styles.stat} type="button" onClick={onToggleDiscussion} aria-expanded={false} aria-label={`Comments on ${movie.title}`}>
-            <span aria-hidden="true">☷</span>{nomination.comment}
           </button>
         </div>
       </article>

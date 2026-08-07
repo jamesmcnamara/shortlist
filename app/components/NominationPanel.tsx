@@ -5,26 +5,36 @@ import styles from "./NominationPanel.module.css";
 
 type NominationPanelProps = {
   nominatedThisMonth: boolean;
-  title: string;
+  query: string;
   isSearching: boolean;
   searchError: string;
   searchResults: MovieSearchResultData[];
+  selectedMovie: MovieSearchResultData | null;
+  comment: string;
+  isSubmitting: boolean;
   onClose: () => void;
   onSubmit: SubmitEventHandler<HTMLFormElement>;
   onSelect: (movie: MovieSearchResultData) => void;
-  onTitleChange: (value: string) => void;
+  onClearSelection: () => void;
+  onQueryChange: (value: string) => void;
+  onCommentChange: (value: string) => void;
 };
 
 export function NominationPanel({
   nominatedThisMonth,
-  title,
+  query,
   isSearching,
   searchError,
   searchResults,
+  selectedMovie,
+  comment,
+  isSubmitting,
   onClose,
   onSubmit,
   onSelect,
-  onTitleChange
+  onClearSelection,
+  onQueryChange,
+  onCommentChange
 }: NominationPanelProps) {
   return (
     <section className={styles.panel}>
@@ -44,23 +54,64 @@ export function NominationPanel({
         </div>
       ) : (
         <form onSubmit={onSubmit}>
-          <label className={styles.label} htmlFor="movie-title">Name the movie</label>
-          <div className={styles.searchInput}>
-            <span>⌕</span>
-            <input
-              id="movie-title"
-              autoFocus
-              type="text"
-              placeholder="Search the movie universe..."
-              value={title}
-              onChange={(event) => onTitleChange(event.target.value)}
-              required
-            />
-          </div>
-          <MovieSearchResults results={searchResults} isLoading={isSearching} error={searchError} onSelect={onSelect} />
+          {selectedMovie ? (
+            <>
+              <div className={styles.selected}>
+                {selectedMovie.posterUrl ? (
+                  <img src={selectedMovie.posterUrl} alt={`Poster for ${selectedMovie.title}`} />
+                ) : (
+                  <div className={styles.selectedPlaceholder} aria-label="No poster available">No poster</div>
+                )}
+                <div className={styles.selectedCopy}>
+                  <h3>{selectedMovie.title}</h3>
+                  <p>
+                    {selectedMovie.releaseDate ? selectedMovie.releaseDate.slice(0, 4) : "Year unknown"}
+                    {selectedMovie.tmdbRating ? ` · ★ ${selectedMovie.tmdbRating.toFixed(1)}` : ""}
+                  </p>
+                  {selectedMovie.overview && <span>{selectedMovie.overview}</span>}
+                </div>
+                <button
+                  className={styles.close}
+                  type="button"
+                  onClick={onClearSelection}
+                  aria-label="Pick a different movie"
+                >×</button>
+              </div>
+
+              <label className={styles.label} htmlFor="nomination-comment">Why should we watch it?</label>
+              <textarea
+                id="nomination-comment"
+                className={styles.comment}
+                autoFocus
+                rows={4}
+                placeholder="Make your case..."
+                value={comment}
+                onChange={(event) => onCommentChange(event.target.value)}
+              />
+            </>
+          ) : (
+            <>
+              <label className={styles.label} htmlFor="movie-title">Name the movie</label>
+              <div className={styles.searchInput}>
+                <span>⌕</span>
+                <input
+                  id="movie-title"
+                  autoFocus
+                  type="text"
+                  placeholder="Search the movie universe..."
+                  value={query}
+                  onChange={(event) => onQueryChange(event.target.value)}
+                  required
+                />
+              </div>
+              <MovieSearchResults results={searchResults} isLoading={isSearching} error={searchError} onSelect={onSelect} />
+            </>
+          )}
           <div className={styles.footer}>
             <span>One nomination per person, per month.</span>
-            <button type="submit">Nominate movie <span>→</span></button>
+            <button type="submit" disabled={!selectedMovie || isSubmitting}>
+              {isSubmitting ? "Nominating..." : "Nominate movie"} <span>→</span>
+            </button>
           </div>
         </form>
       )}

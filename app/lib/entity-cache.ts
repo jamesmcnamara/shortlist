@@ -50,6 +50,12 @@ export class EntityCache {
   }
 
   ///////////////////////// Mutations
+  addNomination(movie: Movie, nomination: Nomination): EntityCache {
+    this.movies.set(movie.id, movie);
+    this.nominations.set(nomination.id, nomination);
+    return this.clone();
+  }
+
   addVote(vote: Vote): EntityCache {
     this.votes.set(vote.id, vote);
     return this.clone();
@@ -79,7 +85,8 @@ export class EntityCache {
   }
 
   hasUserNominatedThisMonth (userId: string | undefined, month: number) {
-    return some({ userId, month })(this.nominations);
+    return false
+    // return some({ userId, month })(this.nominations);
   }
 
   isNominatedBy (movieId: number, userId?: string) {

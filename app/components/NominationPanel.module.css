@@ -73,6 +73,81 @@
   color: var(--muted-soft);
 }
 
+.selected {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-muted);
+}
+
+.selected img,
+.selectedPlaceholder {
+  flex: none;
+  width: 68px;
+  height: 102px;
+  border-radius: 7px;
+  object-fit: cover;
+}
+
+.selectedPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: var(--border);
+  color: var(--muted);
+  font-size: 10px;
+  text-align: center;
+}
+
+.selectedCopy {
+  flex: 1;
+  min-width: 0;
+}
+
+.selectedCopy h3 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: -0.03em;
+}
+
+.selectedCopy p {
+  margin: 4px 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.selectedCopy span {
+  display: block;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.comment {
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: white;
+  font: inherit;
+  font-size: 14px;
+  outline: 0;
+  resize: vertical;
+}
+
+.comment::placeholder {
+  color: var(--muted-soft);
+}
+
+.footer button:disabled {
+  opacity: 0.45;
+}
+
 .footer {
   display: flex;
   align-items: center;

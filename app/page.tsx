@@ -15,8 +15,9 @@ import styles from './page.module.css';
 export default function Home() {
   const { data: session } = authClient.useSession();
   const [cache, setCache] = useState(() => new EntityCache());
-  const [title, setTitle] = useState('');
-  const [year, setYear] = useState('');
+  const [query, setQuery] = useState('');
+  const [comment, setComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [searchResults, setSearchResults] = useState<MovieSearchResultData[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -40,8 +41,7 @@ export default function Home() {
   const currentMonth = getMonth()
 
   useEffect(() => {
-    const query = title.trim();
-    if (!isNominationOpen || query.length < 2) {
+    if (!isNominationOpen || selectedMovie || query.length < 2) {
       setSearchResults([]);
       setSearchError('');
       setIsSearching(false);
@@ -70,7 +70,7 @@ export default function Home() {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [title, isNominationOpen]);
+  }, [query, isNominationOpen, selectedMovie]);
 
   const activeMovies = cache.nominees()
   const userHasNominatedThisMonth = cache.hasUserNominatedThisMonth(session?.user?.id, currentMonth);
@@ -78,50 +78,33 @@ export default function Home() {
 
   function chooseSearchResult(movie: MovieSearchResultData) {
     setSelectedMovie(movie);
-    setTitle(movie.title);
-    setYear(movie.releaseDate ? movie.releaseDate.slice(0, 4) : '');
+    setQuery('')
     setSearchResults([]);
   }
 
-  const addMovie: SubmitEventHandler<HTMLFormElement> = async (event) => {
+  const nominate: SubmitEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault();
-    if (userHasNominatedThisMonth) return;
+    if (userHasNominatedThisMonth || !selectedMovie || isSubmitting) return;
     setMessage('');
-    const response = await fetch('/api/movies', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        title,
-        year,
-        tmdbId: selectedMovie?.id,
-        posterUrl: selectedMovie?.posterUrl,
-        description: selectedMovie?.overview,
-        tmdbRating: selectedMovie?.tmdbRating
-      })
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      setMessage(data.error);
-      return;
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/nominate', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ tmdbId: selectedMovie.id, comment })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setMessage(data.error);
+        return;
+      }
+      setCache(cache.addNomination(data.movie, data.nomination));
+      setComment('');
+      setSelectedMovie(null);
+      setIsNominationOpen(false);
+    } finally {
+      setIsSubmitting(false);
     }
-    const nominationResponse = await fetch('/api/nominations', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ movieId: data.id })
-    });
-    const nomination = await nominationResponse.json();
-    if (!nominationResponse.ok) {
-      setMessage(nomination.error);
-      return;
-    }
-    const nextCache = cache.clone();
-    nextCache.movies.set(data.id, data);
-    nextCache.nominations.set(nomination.id, nomination);
-    setCache(nextCache);
-    setTitle('');
-    setYear('');
-    setSelectedMovie(null);
-    setIsNominationOpen(false);
   }
 
   function markWatched(id: number) {
@@ -170,14 +153,19 @@ export default function Home() {
       {isNominationOpen && (
         <NominationPanel
           nominatedThisMonth={userHasNominatedThisMonth}
-          title={title}
+          query={query}
           isSearching={isSearching}
           searchError={searchError}
           searchResults={searchResults}
+          selectedMovie={selectedMovie}
+          comment={comment}
+          isSubmitting={isSubmitting}
           onClose={() => setIsNominationOpen(false)}
-          onSubmit={addMovie}
+          onSubmit={nominate}
           onSelect={chooseSearchResult}
-          onTitleChange={(value) => { setTitle(value); setSelectedMovie(null); }}
+          onClearSelection={() => { setSelectedMovie(null); setQuery(''); setComment(''); }}
+          onQueryChange={(value) => { setQuery(value); setSelectedMovie(null); }}
+          onCommentChange={setComment}
         />
       )}
 
@@ -200,7 +188,6 @@ export default function Home() {
                     key={movie.id}
                     movie={movie}
                     votes={votes}
-                    nomination={nomination}
                     nominator={nominator}
                     rank={index + 1}
                     hasUpvoted={some({userId: session?.user?.id})(votes)}
