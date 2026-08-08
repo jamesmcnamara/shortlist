@@ -2,9 +2,7 @@ import type { Movie, NomCom, Nomination, User, Vote } from "@/src/db/schema";
 import styles from "./MovieCard.module.css";
 
 interface MovieCardProps {
-  movie: Movie;
-  nominator: User;
-  votes: Vote[];
+  nomination: Nomination;
   rank: number;
   hasUpvoted: boolean;
   canVote: boolean;
@@ -13,17 +11,14 @@ interface MovieCardProps {
 };
 
 export function MovieCard({
-  movie,
-  votes,
-  nominator,
+  nomination,
   rank,
   hasUpvoted,
   canVote,
   onAddVote,
   onToggleDiscussion
 }: MovieCardProps) {
-  const upvoteCount = votes.length;
-
+  const {movie, votes, nominator} = nomination
   return (
     <>
       <article className={styles.card}>
@@ -55,7 +50,7 @@ export function MovieCard({
             disabled={!canVote}
             aria-label={`Give a vote to ${movie.title}`}
           >
-            <span aria-hidden="true">↑</span>{upvoteCount}
+            <span aria-hidden="true">↑</span>{votes.length}
           </button>
         </div>
       </article>
@@ -65,30 +60,23 @@ export function MovieCard({
 }
 
 interface MovieDiscussionProps {
-  movie: Movie;
-  votes: Vote[];
   nomination: Nomination;
-  nominator: User;
-  nomcoms: NomCom[];
   hasUpvoted: boolean;
   canVote: boolean;
   onAddVote: () => void;
   onRemoveVote: () => void;
-  onMarkWatched: () => void;
+  onMarkWatched?: () => void;
 }
 
 export function MovieDiscussion({
-  movie,
-  votes,
   nomination,
-  nominator,
-  nomcoms,
   hasUpvoted,
   canVote,
   onAddVote,
   onRemoveVote,
   onMarkWatched
 }: MovieDiscussionProps) {
+  const {movie, votes, nominator, nomcoms} = nomination;
   return (
     <section className={styles.expanded} aria-label={`Discussion about ${movie.title}`}>
           <div className={styles.expandedHeader}>

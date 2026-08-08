@@ -12,7 +12,11 @@ function initialsFor(name: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export function ShortlistHeader({ votesRemaining }: { votesRemaining: number }) {
+interface ShortlistHeaderProps {
+  votesLeft: number;
+}
+
+export function ShortlistHeader({ votesLeft }: ShortlistHeaderProps) {
   const { data: session } = authClient.useSession();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const router = useRouter();
@@ -36,7 +40,7 @@ export function ShortlistHeader({ votesRemaining }: { votesRemaining: number }) 
       </div>
       {name ? (
         <div className={styles.profile}>
-          <span className={styles.voteBalance}>{votesRemaining} votes left</span>
+          <span className={styles.voteBalance}>{votesLeft} votes left</span>
           <span className="avatar avatar-violet">{initialsFor(name)}</span>
           <span>{name}</span>
           <button

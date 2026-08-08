@@ -1,4 +1,5 @@
 import { integer, real, pgSchema, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 const neonAuth = pgSchema("neon_auth");
 export const authUsers = neonAuth.table("user", {
@@ -54,13 +55,31 @@ export const seen = pgTable("seen", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
 });
 
+
+export const nominationsRelations = relations(nominations, ({ one, many }) => ({
+  movie: one(movies, { fields: [nominations.movieId], references: [movies.id] }),
+  votes: many(votes),
+  nomcoms: many(nomcoms),
+  nominator: one(authUsers, { fields: [nominations.userId], references: [authUsers.id] }),
+}));
+
+export const votesRelations = relations(votes, ({ one }) => ({
+  nomination: one(nominations, { fields: [votes.nominationId], references: [nominations.id] }),
+}));
+
+export const nomcomsRelations = relations(nomcoms, ({ one }) => ({
+  nomination: one(nominations, { fields: [nomcoms.nominationId], references: [nominations.id] }),
+}));
+
+
 export type Movie = typeof movies.$inferSelect;
-export type Nomination = typeof nominations.$inferSelect;
+export type RawNomination = typeof nominations.$inferSelect
+export type Nomination = RawNomination & { movie: Movie, votes: Vote[], nomcoms: NomCom[], nominator: User };
 export type Vote = typeof votes.$inferSelect;
 export type NomCom = typeof nomcoms.$inferSelect;
 export type Seen = typeof seen.$inferSelect;
 
-export interface User  {
+export interface User {
   id: string;
   name: string;
   email: string;

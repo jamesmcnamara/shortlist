@@ -1,20 +1,21 @@
 'use client';
 
 import { SubmitEventHandler, useEffect, useState } from 'react';
-import { some } from 'shades';
+import { some, filter } from 'shades';
 import { authClient } from '@/lib/auth/client';
 import { getMonth } from '@/app/lib/date-utils';
 import type { MovieSearchResultData } from './components/MovieSearchResult';
 import { MovieCard, MovieDiscussion } from './components/MovieCard';
 import { NominationPanel } from './components/NominationPanel';
 import { ShortlistHeader } from './components/ShortlistHeader';
-import type { Movie } from '@/src/db/schema';
-import { EntityCache } from './lib/entity-cache';
+import type { Nomination, User } from '@/src/db/schema';
 import styles from './page.module.css';
+import { VOTES_PER_MONTH } from './lib/constants';
 
 export default function Home() {
   const { data: session } = authClient.useSession();
-  const [cache, setCache] = useState(() => new EntityCache());
+  const [nominations, setNominations] = useState(() => new Map<number, Nomination>());
+  const [users, setUsers] = useState(() => new Map<string, User>());
   const [query, setQuery] = useState('');
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,14 +28,14 @@ export default function Home() {
   const [expandedMovie, setExpandedMovie] = useState<number | null>(null);
 
   useEffect(() => {
-    Promise.all(["movies", "nominations", "votes", "users"].map(async (entity) => {
+    Promise.all(["nominations", "users"].map(async (entity) => {
       const response = await fetch(`/api/${entity}`);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       return data;
-    })).then(([movies, nominations, votes, users]) => {
-      const nextCache = new EntityCache({ movies, nominations, votes, users, nomcoms: [] });
-      setCache(nextCache);
+    })).then(([nominations, users]) => {
+      setNominations(mapify(nominations));
+      setUsers(mapify(users));
     }).catch((error: Error) => setMessage(error.message));
   }, []);
 
@@ -72,9 +73,9 @@ export default function Home() {
     };
   }, [query, isNominationOpen, selectedMovie]);
 
-  const activeMovies = cache.nominees()
-  const userHasNominatedThisMonth = cache.hasUserNominatedThisMonth(session?.user?.id, currentMonth);
-  const votesRemaining = cache.votesRemaining(session?.user?.id, currentMonth);
+  const nominees = Array.from(nominations.values()).sort((a, b) => b.votes.length - a.votes.length); 
+  const userHasNominatedThisMonth = hasUserNominatedThisMonth(nominations, session?.user?.id, currentMonth);
+  const votesLeft = calculateVotesLeft(nominations, session?.user?.id, currentMonth);
 
   function chooseSearchResult(movie: MovieSearchResultData) {
     setSelectedMovie(movie);
@@ -88,7 +89,7 @@ export default function Home() {
     setMessage('');
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/nominate', {
+      const response = await fetch('/api/nominations', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ tmdbId: selectedMovie.id, comment })
@@ -98,7 +99,7 @@ export default function Home() {
         setMessage(data.error);
         return;
       }
-      setCache(cache.addNomination(data.movie, data.nomination));
+      setNominations((prev) => new Map(prev).set(data.id, data));
       setComment('');
       setSelectedMovie(null);
       setIsNominationOpen(false);
@@ -107,12 +108,7 @@ export default function Home() {
     }
   }
 
-  function markWatched(id: number) {
-  }
-
-  async function changeVote(movie: Movie, action: 'add' | 'remove') {
-    const nom = cache.nominationsByMovie.get(movie.id);
-    if (!nom) return;
+  async function changeVote(nom: Nomination, action: 'add' | 'remove') {
     setMessage('');
     const response = await fetch('/api/votes', {
       method: action === 'add' ? 'POST' : 'DELETE',
@@ -124,20 +120,13 @@ export default function Home() {
       setMessage(data.error);
       return;
     }
-    if (action === 'add') {
-      cache.addVote(await response.json());
-    } else {
-      cache.deleteVoteForUser(movie.id, session?.user?.id);
-      const vote = Array.from(cache.votes.values())
-        .filter((item) => item.userId === session?.user?.id && item.nominationId === nom.id)
-        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
-      if (vote) cache.votes.delete(vote.id);
-    }
+    const nomination = await response.json();
+    setNominations((prev) => new Map(prev).set(nomination.id, nomination));
   }
 
   return (
     <main className={styles.shell}>
-      <ShortlistHeader votesRemaining={cache.votesRemaining(session?.user?.id, currentMonth)} />
+      <ShortlistHeader votesLeft={votesLeft} />
 
       <section className={styles.toolbar}>
         <div>
@@ -171,51 +160,36 @@ export default function Home() {
 
       {message && <div className={styles.message} role="status">{message}</div>}
       <section className={styles.movieList} aria-label="Current movie nominations">
-        {activeMovies.length === 0 ? (
+        {nominees.length === 0 ? (
           <div className={styles.emptyState}><span>✦</span><h2>Nothing in the arena yet.</h2><p>Be the first to volunteer a movie for the group.</p></div>
-        ) : Array.from({ length: Math.ceil(activeMovies.length / 3) }, (_, rowIndex) => {
-          const rowMovies = activeMovies.slice(rowIndex * 3, rowIndex * 3 + 3);
+        ) : Array.from({ length: Math.ceil(nominees.length / 3) }, (_, rowIndex) => {
+          const rowMovies = nominees.slice(rowIndex * 3, rowIndex * 3 + 3);
           return (
             <div className={styles.movieRow} key={`row-${rowIndex}`}>
-              {rowMovies.map((movie, columnIndex) => {
+              {rowMovies.map((nom, columnIndex) => {
                 const index = rowIndex * 3 + columnIndex;
-                const votes = cache.votesForMovie(movie.id);
-                const nomination = cache.nominationsByMovie.get(movie.id);
-                const nominator = nomination ? cache.users.get(nomination.userId) : undefined;
-                if (!nomination || !nominator) return null;
                 return (
                   <MovieCard
-                    key={movie.id}
-                    movie={movie}
-                    votes={votes}
-                    nominator={nominator}
+                    key={nom.id}
                     rank={index + 1}
-                    hasUpvoted={some({userId: session?.user?.id})(votes)}
-                    canVote={!cache.isNominatedBy(movie.id, session?.user?.id) && votesRemaining > 0}
-                    onAddVote={() => changeVote(movie, 'add').catch((error: Error) => setMessage(error.message))}
-                    onToggleDiscussion={() => setExpandedMovie(expandedMovie === movie.id ? null : movie.id)}
+                    nomination={nom}
+                    hasUpvoted={some({userId: session?.user?.id})(nom.votes)}
+                    canVote={session?.user?.id !== nom.nominator.id && votesLeft > 0}
+                    onAddVote={() => changeVote(nom, 'add').catch((error: Error) => setMessage(error.message))}
+                    onToggleDiscussion={() => setExpandedMovie(expandedMovie === nom.id ? null : nom.id)}
                   />
                 );
               })}
               {rowMovies.some((movie) => movie.id === expandedMovie) && (() => {
                 const expanded = rowMovies.find((movie) => movie.id === expandedMovie);
                 if (!expanded) return null;
-                const votes = cache.votesForMovie(expanded.id);
-                const nomination = cache.nominationsByMovie.get(expanded.id);
-                const nominator = nomination ? cache.users.get(nomination.userId) : undefined;
-                if (!nomination || !nominator) return null;
                 return (
                   <MovieDiscussion
-                    movie={expanded}
-                    votes={votes}
-                    nomination={nomination}
-                    nominator={nominator}
-                    nomcoms={[]}
-                    hasUpvoted={some({userId: session?.user?.id})(votes)}
-                    canVote={!cache.isNominatedBy(expanded.id, session?.user?.id) && votesRemaining > 0}
+                    nomination={expanded}
+                    hasUpvoted={some({userId: session?.user?.id})(expanded.votes)}
+                    canVote={expanded.nominator.id !== session?.user?.id && votesLeft > 0}
                     onAddVote={() => changeVote(expanded, 'add').catch((error: Error) => setMessage(error.message))}
                     onRemoveVote={() => changeVote(expanded, 'remove').catch((error: Error) => setMessage(error.message))}
-                    onMarkWatched={() => markWatched(expanded.id)}
                   />
                 );
               })()}
@@ -226,3 +200,17 @@ export default function Home() {
     </main>
   );
 }
+
+const mapify = <T extends { id: S }, S extends string | number>(arr: T[]): Map<S, T> => 
+  new Map(arr.map((item) => [item.id, item]));
+
+const hasUserNominatedThisMonth = (nominations: Map<number, Nomination>, userId: string | undefined, month: number): boolean => 
+  false
+  // !userId || some({nominator: {id: userId}, month})(nominations);
+
+const calculateVotesLeft = (nominations: Map<number, Nomination>, userId: string | undefined, month: number): number => {
+  if (!userId) return 0;
+  const votes = [...nominations.values().flatMap(nomination => nomination.votes)]
+  const cast = filter({userId, month})(votes).length
+  return Math.max(0, VOTES_PER_MONTH - cast);
+};
