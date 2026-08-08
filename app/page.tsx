@@ -11,6 +11,7 @@ import { ShortlistHeader } from './components/ShortlistHeader';
 import type { Nomination, User } from '@/src/db/schema';
 import styles from './page.module.css';
 import { VOTES_PER_MONTH } from './lib/constants';
+import { api, ApiError } from './lib/api';
 
 export default function Home() {
   const { data: session } = authClient.useSession();
@@ -28,15 +29,12 @@ export default function Home() {
   const [expandedMovie, setExpandedMovie] = useState<number | null>(null);
 
   useEffect(() => {
-    Promise.all(["nominations", "users"].map(async (entity) => {
-      const response = await fetch(`/api/${entity}`);
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error);
-      return data;
-    })).then(([nominations, users]) => {
-      setNominations(mapify(nominations));
-      setUsers(mapify(users));
-    }).catch((error: Error) => setMessage(error.message));
+    Promise.all([api.nominations.list(), api.users.list()])
+      .then(([nominations, users]) => {
+        setNominations(mapify(nominations));
+        setUsers(mapify(users));
+      })
+      .catch((error: Error) => setMessage(error.message));
   }, []);
 
   const currentMonth = getMonth()
@@ -54,9 +52,7 @@ export default function Home() {
       setIsSearching(true);
       setSearchError('');
       try {
-        const response = await fetch(`/api/tmdb/search?query=${encodeURIComponent(query)}`, { signal: controller.signal });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error);
+        const data = await api.tmdb.search(query, controller.signal);
         setSearchResults(data.results);
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return;
@@ -89,20 +85,17 @@ export default function Home() {
     setMessage('');
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/nominations', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ tmdbId: selectedMovie.id, comment })
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setMessage(data.error);
-        return;
-      }
+      const data = await api.nominations.create({ tmdbId: selectedMovie.id, comment });
       setNominations((prev) => new Map(prev).set(data.id, data));
       setComment('');
       setSelectedMovie(null);
       setIsNominationOpen(false);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setMessage(error.message);
+        return;
+      }
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
@@ -110,18 +103,18 @@ export default function Home() {
 
   async function changeVote(nom: Nomination, action: 'add' | 'remove') {
     setMessage('');
-    const response = await fetch('/api/votes', {
-      method: action === 'add' ? 'POST' : 'DELETE',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ nominationId: nom.id })
-    });
-    if (!response.ok) {
-      const data = await response.json();
-      setMessage(data.error);
-      return;
+    try {
+      const nomination = await (action === 'add'
+        ? api.votes.create
+        : api.votes.delete)(nom.id);
+      setNominations((prev) => new Map(prev).set(nomination.id, nomination));
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setMessage(error.message);
+        return;
+      }
+      throw error;
     }
-    const nomination = await response.json();
-    setNominations((prev) => new Map(prev).set(nomination.id, nomination));
   }
 
   return (
