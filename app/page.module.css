@@ -11,7 +11,7 @@
 
 .sectionHeader {
   display: flex;
-  align-items: end;
+  align-items: start;
   justify-content: space-between;
   gap: 20px;
 }

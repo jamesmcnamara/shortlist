@@ -40,7 +40,8 @@ export function NominationPanel({
     <section className={styles.panel}>
       <div className={styles.heading}>
         <div>
-          <h2>Choose your fighter</h2>
+          <h2>Nominate a movie</h2>
+          <p className={styles.intro}>Add a movie for the club to vote on.</p>
         </div>
         <button className={styles.close} type="button" onClick={onClose} aria-label="Close nomination panel">×</button>
       </div>
@@ -91,14 +92,14 @@ export function NominationPanel({
             </>
           ) : (
             <>
-              <label className={styles.label} htmlFor="movie-title">Name the movie</label>
               <div className={styles.searchInput}>
                 <span>⌕</span>
                 <input
                   id="movie-title"
                   autoFocus
                   type="text"
-                  placeholder="Search the movie universe..."
+                  aria-label="Search for a movie"
+                  placeholder="Search movies..."
                   value={query}
                   onChange={(event) => onQueryChange(event.target.value)}
                   required

@@ -15,19 +15,15 @@
 }
 
 .heading h2 {
-  margin: 0 0 22px;
+  margin: 0;
   font-size: 24px;
   letter-spacing: -0.06em;
 }
 
-.kicker {
-  display: block;
-  margin-bottom: 8px;
-  color: var(--accent);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+.intro {
+  margin: 6px 0 22px;
+  color: var(--muted);
+  font-size: 14px;
 }
 
 .close {
@@ -42,7 +38,7 @@
   display: block;
   margin-bottom: 7px;
   color: var(--text-soft);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
 }
 

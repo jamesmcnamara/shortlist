@@ -140,11 +140,11 @@ export default function Home() {
             <p className={styles.listMeta}>
               {nominees.length} {nominees.length === 1 ? 'nominee' : 'nominees'}
               <span aria-hidden="true"> · </span>
-              {votesLeft} {votesLeft === 1 ? 'vote' : 'votes'} left
+              You have {votesLeft} {votesLeft === 1 ? 'vote' : 'votes'} left this month.
             </p>
           </div>
           <button className={styles.nominateButton} type="button" onClick={() => setIsNominationOpen((open) => !open)}>
-            {userHasNominatedThisMonth ? "Rescind your nom" : '+ Choose your fighter'}
+            {userHasNominatedThisMonth ? "Rescind your nom" : 'Choose your Fighter'}
           </button>
         </header>
 
