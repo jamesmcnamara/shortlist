@@ -11,10 +11,16 @@ export function WatchedArchive({ movies }: { movies: Movie[] }) {
           <span>Archive</span>
           <h2>Watched together</h2>
         </div>
-        <small>{movies.length} movie{movies.length === 1 ? "" : "s"}</small>
+        <small>
+          {movies.length} movie{movies.length === 1 ? "" : "s"}
+        </small>
       </div>
       <div className={styles.row}>
-        {movies.map((movie) => <span className={styles.pill} key={movie.id}>✓ {movie.title}</span>)}
+        {movies.map((movie) => (
+          <span className={styles.pill} key={movie.id}>
+            ✓ {movie.title}
+          </span>
+        ))}
       </div>
     </section>
   );

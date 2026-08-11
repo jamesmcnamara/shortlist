@@ -16,16 +16,27 @@ export default function SignInPage() {
         </div>
 
         <h1 className={styles.title}>Welcome back</h1>
-        <p className={styles.subtitle}/>
+        <p className={styles.subtitle} />
 
         <form action={formAction} className={styles.form}>
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="email">Email</label>
-            <input className={styles.input} id="email" name="email" type="email" autoComplete="email" required />
+            <label className={styles.label} htmlFor="email">
+              Email
+            </label>
+            <input
+              className={styles.input}
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+            />
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="password">Password</label>
+            <label className={styles.label} htmlFor="password">
+              Password
+            </label>
             <input
               className={styles.input}
               id="password"

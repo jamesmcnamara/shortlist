@@ -9,7 +9,7 @@ export interface VoteInput {
   nominationId: number;
 }
 
-export async function POST (request: Request) {
+export async function POST(request: Request) {
   const userId = await requireUserId();
   if (!userId) return unauthorized();
   try {
@@ -22,9 +22,7 @@ export async function POST (request: Request) {
     const nominationId = validation.nomination.id;
 
     // Vote
-    await db
-      .insert(votes)
-      .values({ userId, month: getMonth(), nominationId })
+    await db.insert(votes).values({ userId, month: getMonth(), nominationId });
 
     const nom = await getDb().query.nominations.findFirst({
       where: (n, { eq }) => eq(n.id, nominationId),
@@ -42,7 +40,6 @@ export async function POST (request: Request) {
       orderBy: (n, { desc }) => desc(n.createdAt),
     });
     return Response.json(nom, { status: 201 });
-
   } catch (error) {
     console.error(error);
     return Response.json(
@@ -50,15 +47,19 @@ export async function POST (request: Request) {
       { status: 500 },
     );
   }
-
 }
 
-export async function DELETE (request: Request) {
+export async function DELETE(request: Request) {
   const userId = await requireUserId();
   if (!userId) return unauthorized();
   try {
     const db = getDb();
-    const validation = await validate(await request.json(), db, userId, "remove");
+    const validation = await validate(
+      await request.json(),
+      db,
+      userId,
+      "remove",
+    );
     if (validation.type === "error") {
       return validation.error;
     }
@@ -84,7 +85,6 @@ export async function DELETE (request: Request) {
       );
     await db.delete(votes).where(eq(votes.id, vote.id));
     return new Response(null, { status: 204 });
-
   } catch (error) {
     console.error(error);
     return Response.json(
@@ -92,10 +92,9 @@ export async function DELETE (request: Request) {
       { status: 500 },
     );
   }
-
 }
 
-export async function GET () {
+export async function GET() {
   const userId = await requireUserId();
   if (!userId) return unauthorized();
 
@@ -109,7 +108,12 @@ export async function GET () {
   }
 }
 
-const validate = async (body: VoteInput, db: DB, userId: string, action: "add" | "remove"): Promise<NominationValidation> => {
+const validate = async (
+  body: VoteInput,
+  db: DB,
+  userId: string,
+  action: "add" | "remove",
+): Promise<NominationValidation> => {
   const nominationId = Number(body?.nominationId);
   if (!Number.isInteger(nominationId)) {
     return {
@@ -127,11 +131,10 @@ const validate = async (body: VoteInput, db: DB, userId: string, action: "add" |
     .where(eq(nominations.id, nominationId))
     .limit(1);
 
-
-
   if (!nomination)
     return {
-      type: "error", error: Response.json(
+      type: "error",
+      error: Response.json(
         { error: "That nomination no longer exists." },
         { status: 404 },
       ),
@@ -139,7 +142,8 @@ const validate = async (body: VoteInput, db: DB, userId: string, action: "add" |
 
   if (nomination.userId === userId) {
     return {
-      type: "error", error: Response.json(
+      type: "error",
+      error: Response.json(
         { error: "You cannot vote for your own nomination." },
         { status: 403 },
       ),
@@ -155,20 +159,20 @@ const validate = async (body: VoteInput, db: DB, userId: string, action: "add" |
 
     if (monthVotes.length >= VOTES_PER_MONTH) {
       return {
-        type: 'error', error: Response.json(
+        type: "error",
+        error: Response.json(
           {
             error: `You have used all ${VOTES_PER_MONTH} votes for this month.`,
           },
           { status: 409 },
-        )
+        ),
       };
     }
   }
 
-
   return { type: "success", nomination };
-}
+};
 
 type NominationValidation =
-  | { type: "error", error: Response }
-  | { type: "success", nomination: RawNomination }
+  | { type: "error"; error: Response }
+  | { type: "success"; nomination: RawNomination };

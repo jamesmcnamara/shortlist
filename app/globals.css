@@ -70,9 +70,27 @@ textarea:focus-visible,
   font-weight: 800;
 }
 
-.avatar-violet { background: #c5dfe8; color: #32667c; }
-.avatar-lilac { background: #d1e0ea; color: #46677a; }
-.avatar-mint { background: #c8e6dc; color: #2f6d5b; }
-.avatar-gold { background: #eee0b5; color: #76602a; }
-.avatar-violet-old { background: #d2d0ff; color: #4c489c; }
-.avatar-lilac-old { background: #ddd4ef; color: #665483; }
+.avatar-violet {
+  background: #c5dfe8;
+  color: #32667c;
+}
+.avatar-lilac {
+  background: #d1e0ea;
+  color: #46677a;
+}
+.avatar-mint {
+  background: #c8e6dc;
+  color: #2f6d5b;
+}
+.avatar-gold {
+  background: #eee0b5;
+  color: #76602a;
+}
+.avatar-violet-old {
+  background: #d2d0ff;
+  color: #4c489c;
+}
+.avatar-lilac-old {
+  background: #ddd4ef;
+  color: #665483;
+}

@@ -7,7 +7,7 @@ export type AuthFormState = { error: string } | null;
 
 export async function signUpWithEmail(
   _prevState: AuthFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<AuthFormState> {
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();

@@ -7,15 +7,17 @@ export interface MovieSearchResultData {
   overview: string;
   posterUrl: string | null;
   tmdbRating: number | null;
-};
+}
 
 interface MovieSearchResultProps {
   movie: MovieSearchResultData;
   onSelect?: (movie: MovieSearchResultData) => void;
-};
+}
 
 export function MovieSearchResult({ movie, onSelect }: MovieSearchResultProps) {
-  const year = movie.releaseDate ? movie.releaseDate.slice(0, 4) : "Year unknown";
+  const year = movie.releaseDate
+    ? movie.releaseDate.slice(0, 4)
+    : "Year unknown";
 
   return (
     <li

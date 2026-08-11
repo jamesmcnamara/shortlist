@@ -5,14 +5,13 @@ import { eq } from "drizzle-orm";
 
 export const runtime = "nodejs";
 
-export async function POST (request: Request) {
+export async function POST(request: Request) {
   const userId = await requireUserId();
   if (!userId) return unauthorized();
 
   const body = await request.json().catch(() => null);
   const nominationId = Number(body?.nominationId);
-  const comment =
-    typeof body?.comment === "string" ? body.comment.trim() : "";
+  const comment = typeof body?.comment === "string" ? body.comment.trim() : "";
 
   if (!Number.isInteger(nominationId)) {
     return Response.json(
@@ -22,10 +21,7 @@ export async function POST (request: Request) {
   }
 
   if (!comment) {
-    return Response.json(
-      { error: "A comment is required." },
-      { status: 400 },
-    );
+    return Response.json({ error: "A comment is required." }, { status: 400 });
   }
 
   try {

@@ -1,7 +1,7 @@
 import { getMonth } from "@/app/lib/date-utils";
 import { requireUserId, unauthorized } from "@/lib/auth/require-user";
 import { getDb } from "@/src/db/client";
-import { movies, nominations, } from "@/src/db/schema";
+import { movies, nominations } from "@/src/db/schema";
 import { TMDB } from "@lorenzopant/tmdb";
 import { and, eq } from "drizzle-orm";
 
@@ -14,8 +14,7 @@ const tmdb = new TMDB(
   },
 );
 
-
-export async function GET () {
+export async function GET() {
   const userId = await requireUserId();
   if (!userId) return unauthorized();
 
@@ -45,7 +44,7 @@ export async function GET () {
   }
 }
 
-export async function POST (request: Request) {
+export async function POST(request: Request) {
   const userId = await requireUserId();
   if (!userId) return unauthorized();
 
@@ -163,7 +162,7 @@ export async function POST (request: Request) {
   }
 }
 
-export async function DELETE (request: Request) {
+export async function DELETE(request: Request) {
   const userId = await requireUserId();
   if (!userId) return unauthorized();
 

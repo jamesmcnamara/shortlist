@@ -21,7 +21,9 @@
   background: #30354d;
   color: #d5d2ff;
   box-shadow: 0 8px 20px rgba(43, 43, 73, 0.12);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .posterButton:hover .poster,
@@ -129,17 +131,10 @@
   left: 0;
   max-height: 80vh;
   overflow-y: auto;
-  transform: translateY(100%);
-  transition: transform 0.3s ease;
-  pointer-events: none;
-}
-
-.discussionDrawerOpen {
-  transform: translateY(0);
-  pointer-events: auto;
 }
 
 .expanded {
+  position: relative;
   margin: 0;
   padding: 20px;
   border-top: 1px solid var(--border-strong);
@@ -408,8 +403,14 @@
 }
 
 @keyframes reveal {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 640px) {
@@ -466,10 +467,28 @@
   align-items: flex-end;
 }
 
+.discussionHeading {
+  min-width: 0;
+}
+
+.discussionTitleRow {
+  padding-right: 44px;
+}
+
 .discussionHeading h2 {
+  min-width: 0;
   margin: 5px 0 4px;
+  overflow: hidden;
   font-size: 24px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   letter-spacing: -0.07em;
+}
+
+.closeDiscussion {
+  position: absolute;
+  top: 20px;
+  right: 20px;
 }
 
 .discussionMeta {

@@ -19,20 +19,45 @@ export default function SignUpPage() {
 
         <form action={formAction} className={styles.form}>
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="name">Name</label>
-            <span className={styles.hint}>Or a character name. Or anything else you like. I'm not a cop.</span>
-            <input className={styles.input} id="name" name="name" type="text" autoComplete="name" required />
+            <label className={styles.label} htmlFor="name">
+              Name
+            </label>
+            <span className={styles.hint}>
+              Or a character name. Or anything else you like. I'm not a cop.
+            </span>
+            <input
+              className={styles.input}
+              id="name"
+              name="name"
+              type="text"
+              autoComplete="name"
+              required
+            />
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="email">Email</label>
+            <label className={styles.label} htmlFor="email">
+              Email
+            </label>
             <span className={styles.hint}>This one I do actually need</span>
-            <input className={styles.input} id="email" name="email" type="email" autoComplete="email" required />
+            <input
+              className={styles.input}
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+            />
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="password">Password</label>
-            <span className={styles.hint}>None of that "minimum 12 characters plus a special" here. Go for a classic. "password" or "1234". Who's gonna hack this shit?</span>
+            <label className={styles.label} htmlFor="password">
+              Password
+            </label>
+            <span className={styles.hint}>
+              None of that "minimum 12 characters plus a special" here. Go for a
+              classic. "password" or "1234". Who's gonna hack this shit?
+            </span>
             <input
               className={styles.input}
               id="password"

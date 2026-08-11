@@ -1,5 +1,6 @@
-import _ from 'lodash'
-import { useState, type SubmitEventHandler} from "react";
+import _ from "lodash";
+import { useState, type SubmitEventHandler } from "react";
+import { motion } from "motion/react";
 import type { NomCom, Nomination, Vote } from "@/src/db/schema";
 import styles from "./MovieCard.module.css";
 
@@ -11,7 +12,7 @@ interface MovieCardProps {
   isExpanded: boolean;
   onAddVote: () => void;
   onToggleDiscussion: () => void;
-};
+}
 
 export function MovieCard({
   nomination,
@@ -20,12 +21,14 @@ export function MovieCard({
   canVote,
   isExpanded,
   onAddVote,
-  onToggleDiscussion
+  onToggleDiscussion,
 }: MovieCardProps) {
-  const {movie, votes, nominator} = nomination
+  const { movie, votes, nominator } = nomination;
   return (
     <>
-      <article className={`${styles.card} ${isExpanded ? styles.activeCard : ""}`}>
+      <article
+        className={`${styles.card} ${isExpanded ? styles.activeCard : ""}`}
+      >
         <button
           className={styles.posterButton}
           type="button"
@@ -34,7 +37,11 @@ export function MovieCard({
           aria-label={`Expand details for ${movie.title}`}
         >
           <div className={styles.poster}>
-            {movie.posterUrl ? <img src={movie.posterUrl} alt="" /> : <span>{movie.title.slice(0, 1)}</span>}
+            {movie.posterUrl ? (
+              <img src={movie.posterUrl} alt="" />
+            ) : (
+              <span>{movie.title.slice(0, 1)}</span>
+            )}
             <span className={styles.rank}>{String(rank).padStart(2, "0")}</span>
             <span className={styles.posterShade} />
             <span className={styles.movieLabel}>
@@ -46,7 +53,12 @@ export function MovieCard({
 
         <div className={styles.meta}>
           {/* TODO: initials */}
-          <span className={`avatar avatar-${getColor(movie.title)}`} title={`Nominated by ${nominator.name}`}>{nominator.name.slice(0, 1)}</span>
+          <span
+            className={`avatar avatar-${getColor(movie.title)}`}
+            title={`Nominated by ${nominator.name}`}
+          >
+            {nominator.name.slice(0, 1)}
+          </span>
           <button
             className={`${styles.stat} ${hasUpvoted ? styles.voted : ""}`}
             type="button"
@@ -58,7 +70,6 @@ export function MovieCard({
           </button>
         </div>
       </article>
-
     </>
   );
 }
@@ -67,7 +78,6 @@ interface MovieDiscussionProps {
   nomination: Nomination;
   hasUpvoted: boolean;
   canVote: boolean;
-  isOpen: boolean;
   onAddVote: () => void;
   onRemoveVote: () => void;
   onAddComment: (comment: string) => Promise<boolean>;
@@ -79,38 +89,88 @@ export function MovieDiscussion({
   nomination,
   hasUpvoted,
   canVote,
-  isOpen,
   onAddVote,
   onRemoveVote,
   onAddComment,
   onMarkWatched,
-  onClose
+  onClose,
 }: MovieDiscussionProps) {
-  const {movie, votes, nominator, nomcoms} = nomination;
+  const { movie, votes, nominator, nomcoms } = nomination;
   return (
-    <div className={`${styles.discussionDrawer} ${isOpen ? styles.discussionDrawerOpen : ""}`}>
-      <section className={styles.expanded} aria-label={`Discussion about ${movie.title}`}>
-            <div className={styles.expandedHeader}>
-              <div className={styles.discussionHeading}>
-                <span className={styles.eyebrow}>Current favorite</span>
-                <h2>{movie.title}</h2>
-                <span className={styles.discussionMeta}>Nominated by {nominator.name}</span>
-              </div>
-              <div className={styles.voteActions}>
-                <button className={styles.votePrimary} type="button" onClick={onAddVote} disabled={!canVote} aria-label={`Vote for ${movie.title}`}>Vote for this</button>
-                <button className={styles.voteSecondary} type="button" onClick={onRemoveVote} disabled={!hasUpvoted} aria-label={`Remove your vote from ${movie.title}`}>Remove vote</button>
-                <button className={styles.watched} type="button" onClick={onMarkWatched} aria-label={`Mark ${movie.title} as seen`}>Seen it</button>
-                <button className={styles.closeDiscussion} type="button" onClick={onClose} aria-label="Close discussion">✕</button>
-              </div>
+    <motion.div
+      className={styles.discussionDrawer}
+      initial={{ y: "100%" }}
+      animate={{ y: 0 }}
+      exit={{ y: "100%" }}
+      transition={{ type: "spring", stiffness: 380, damping: 38 }}
+    >
+      <section
+        className={styles.expanded}
+        aria-label={`Discussion about ${movie.title}`}
+      >
+        <div className={styles.expandedHeader}>
+          <div className={styles.discussionHeading}>
+            <div className={styles.discussionTitleRow}>
+              <h2>{movie.title}</h2>
+              <button
+                className={styles.closeDiscussion}
+                type="button"
+                onClick={onClose}
+                aria-label="Close discussion"
+              >
+                ✕
+              </button>
             </div>
-            <div className={styles.nominationQuote}>
-              <span className={`avatar avatar-${getColor(nominator.name)}`}>{getInitials(nominator.name)}</span>
-              <div><strong>{nominator.name}</strong><p>“{nomination.comment}”</p></div>
-            </div>
-            <VoterList votes={votes} />
-            <NomComList nominationId={nomination.id} nomcoms={nomcoms} onAddComment={onAddComment} />
+            <span className={styles.discussionMeta}>
+              Nominated by {nominator.name}
+            </span>
+          </div>
+          <div className={styles.voteActions}>
+            <button
+              className={styles.votePrimary}
+              type="button"
+              onClick={onAddVote}
+              disabled={!canVote}
+              aria-label={`Vote for ${movie.title}`}
+            >
+              Vote for this
+            </button>
+            <button
+              className={styles.voteSecondary}
+              type="button"
+              onClick={onRemoveVote}
+              disabled={!hasUpvoted}
+              aria-label={`Remove your vote from ${movie.title}`}
+            >
+              Remove vote
+            </button>
+            <button
+              className={styles.watched}
+              type="button"
+              onClick={onMarkWatched}
+              aria-label={`Mark ${movie.title} as seen`}
+            >
+              Seen it
+            </button>
+          </div>
+        </div>
+        <div className={styles.nominationQuote}>
+          <span className={`avatar avatar-${getColor(nominator.name)}`}>
+            {getInitials(nominator.name)}
+          </span>
+          <div>
+            <strong>{nominator.name}</strong>
+            <p>{nomination.comment}</p>
+          </div>
+        </div>
+        <VoterList votes={votes} />
+        <NomComList
+          nominationId={nomination.id}
+          nomcoms={nomcoms}
+          onAddComment={onAddComment}
+        />
       </section>
-    </div>
+    </motion.div>
   );
 }
 
@@ -122,14 +182,21 @@ function VoterList({ votes }: VoterListProps) {
   const groups = _.groupBy(votes, (vote) => vote.voter.name);
   return (
     <div className={styles.voters}>
-      <span className={styles.voterCount}>{votes.length} {votes.length === 1 ? "vote" : "votes"} so far</span>
+      <span className={styles.voterCount}>
+        {votes.length} {votes.length === 1 ? "vote" : "votes"} so far
+      </span>
       <div className={styles.voterList}>
         {Object.entries(groups).map(([name, votes]) => {
           const count = votes.length;
           return (
-          <span key={name} className={`${styles.voter} avatar avatar-${getColor(name)}`} title={`${name}: ${count} ${count === 1 ? "vote" : "votes"}`}>
-            {getInitials(name)}{count > 1 && <small>{count}</small>}
-          </span>
+            <span
+              key={name}
+              className={`${styles.voter} avatar avatar-${getColor(name)}`}
+              title={`${name}: ${count} ${count === 1 ? "vote" : "votes"}`}
+            >
+              {getInitials(name)}
+              {count > 1 && <small>{count}</small>}
+            </span>
           );
         })}
       </div>
@@ -167,14 +234,26 @@ function NomComList({ nominationId, nomcoms, onAddComment }: NomComListProps) {
         {nomcoms.map((nomcom) => {
           return (
             <p key={nomcom.id}>
-              <span className={`avatar avatar-${getColor(nomcom.commenter.name)}`}>{getInitials(nomcom.commenter.name)}</span>
-              <span><strong>{nomcom.commenter.name}</strong> “{nomcom.comment}”</span>
+              <span
+                className={`avatar avatar-${getColor(nomcom.commenter.name)}`}
+              >
+                {getInitials(nomcom.commenter.name)}
+              </span>
+              <span>
+                <strong>{nomcom.commenter.name}</strong>
+                {nomcom.comment}
+              </span>
             </p>
           );
         })}
       </div>
       <form className={styles.commentForm} onSubmit={submit}>
-        <label className="srOnly" htmlFor={`nomination-comment-${nominationId}`}>Add a comment</label>
+        <label
+          className="srOnly"
+          htmlFor={`nomination-comment-${nominationId}`}
+        >
+          Add a comment
+        </label>
         <textarea
           id={`nomination-comment-${nominationId}`}
           value={comment}
@@ -195,10 +274,12 @@ const getInitials = (name: string) => {
   const parts = name.split(" ");
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0].slice(0, 1) + parts[1].slice(0, 1)).toUpperCase();
-}
+};
 
 const getColor = (text: string) => {
   const colors = ["violet", "lilac", "mint", "gold"];
-  const index = text.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+  const index =
+    text.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) %
+    colors.length;
   return colors[index];
-}
+};

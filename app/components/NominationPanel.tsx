@@ -34,16 +34,26 @@ export function NominationPanel({
   onSelect,
   onClearSelection,
   onQueryChange,
-  onCommentChange
+  onCommentChange,
 }: NominationPanelProps) {
   return (
     <section className={styles.panel}>
       <div className={styles.heading}>
         <div>
           <h2>Nominate a movie</h2>
-          <p className={styles.intro}>Add a movie for the club to vote on.</p>
+          <p className={styles.intro}>
+            Add a movie for the club to vote on. You get one nomination a month,
+            so spend it wisely.
+          </p>
         </div>
-        <button className={styles.close} type="button" onClick={onClose} aria-label="Close nomination panel">×</button>
+        <button
+          className={styles.close}
+          type="button"
+          onClick={onClose}
+          aria-label="Close nomination panel"
+        >
+          ×
+        </button>
       </div>
       {nominatedThisMonth ? (
         <div className={styles.limitMessage}>
@@ -59,27 +69,45 @@ export function NominationPanel({
             <>
               <div className={styles.selected}>
                 {selectedMovie.posterUrl ? (
-                  <img src={selectedMovie.posterUrl} alt={`Poster for ${selectedMovie.title}`} />
+                  <img
+                    src={selectedMovie.posterUrl}
+                    alt={`Poster for ${selectedMovie.title}`}
+                  />
                 ) : (
-                  <div className={styles.selectedPlaceholder} aria-label="No poster available">No poster</div>
+                  <div
+                    className={styles.selectedPlaceholder}
+                    aria-label="No poster available"
+                  >
+                    No poster
+                  </div>
                 )}
                 <div className={styles.selectedCopy}>
                   <h3>{selectedMovie.title}</h3>
                   <p>
-                    {selectedMovie.releaseDate ? selectedMovie.releaseDate.slice(0, 4) : "Year unknown"}
-                    {selectedMovie.tmdbRating ? ` · ★ ${selectedMovie.tmdbRating.toFixed(1)}` : ""}
+                    {selectedMovie.releaseDate
+                      ? selectedMovie.releaseDate.slice(0, 4)
+                      : "Year unknown"}
+                    {selectedMovie.tmdbRating
+                      ? ` · ★ ${selectedMovie.tmdbRating.toFixed(1)}`
+                      : ""}
                   </p>
-                  {selectedMovie.overview && <span>{selectedMovie.overview}</span>}
+                  {selectedMovie.overview && (
+                    <span>{selectedMovie.overview}</span>
+                  )}
                 </div>
                 <button
                   className={styles.close}
                   type="button"
                   onClick={onClearSelection}
                   aria-label="Pick a different movie"
-                >×</button>
+                >
+                  ×
+                </button>
               </div>
 
-              <label className={styles.label} htmlFor="nomination-comment">Why should we watch it?</label>
+              <label className={styles.label} htmlFor="nomination-comment">
+                Why should we watch it?
+              </label>
               <textarea
                 id="nomination-comment"
                 className={styles.comment}
@@ -105,7 +133,12 @@ export function NominationPanel({
                   required
                 />
               </div>
-              <MovieSearchResults results={searchResults} isLoading={isSearching} error={searchError} onSelect={onSelect} />
+              <MovieSearchResults
+                results={searchResults}
+                isLoading={isSearching}
+                error={searchError}
+                onSelect={onSelect}
+              />
             </>
           )}
           <div className={styles.footer}>

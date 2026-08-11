@@ -2,13 +2,16 @@ import type { Nomination, User } from "@/src/db/schema";
 import type { MovieSearchResultData } from "@/app/components/MovieSearchResult";
 
 class ApiError extends Error {
-  constructor(message: string, public status: number) {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
     super(message);
     this.name = "ApiError";
   }
 }
 
-async function request<T> (path: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
     headers: init?.body
@@ -29,16 +32,25 @@ export const api = {
   nominations: {
     list: (): Promise<Nomination[]> => request("/api/nominations"),
     create: (input: { tmdbId: number; comment: string }): Promise<Nomination> =>
-      request("/api/nominations", { method: "POST", body: JSON.stringify(input) }),
+      request("/api/nominations", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
   },
   users: {
     list: (): Promise<User[]> => request("/api/users"),
   },
   votes: {
     create: (nominationId: number): Promise<Nomination> =>
-      request("/api/votes", { method: "POST", body: JSON.stringify({ nominationId }) }),
+      request("/api/votes", {
+        method: "POST",
+        body: JSON.stringify({ nominationId }),
+      }),
     delete: (nominationId: number): Promise<Nomination> =>
-      request("/api/votes", { method: "DELETE", body: JSON.stringify({ nominationId }) }),
+      request("/api/votes", {
+        method: "DELETE",
+        body: JSON.stringify({ nominationId }),
+      }),
   },
   nomcoms: {
     create: (nominationId: number, comment: string): Promise<Nomination> =>
@@ -48,8 +60,13 @@ export const api = {
       }),
   },
   tmdb: {
-    search: (query: string, signal?: AbortSignal): Promise<{ results: MovieSearchResultData[] }> =>
-      request(`/api/tmdb/search?query=${encodeURIComponent(query)}`, { signal }),
+    search: (
+      query: string,
+      signal?: AbortSignal,
+    ): Promise<{ results: MovieSearchResultData[] }> =>
+      request(`/api/tmdb/search?query=${encodeURIComponent(query)}`, {
+        signal,
+      }),
   },
 };
 

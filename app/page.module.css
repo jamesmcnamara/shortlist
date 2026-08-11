@@ -52,13 +52,8 @@
 
 .movieList {
   display: grid;
-  gap: 34px;
-}
-
-.movieRow {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 34px 18px;
 }
 
 .emptyState {
@@ -120,7 +115,8 @@
     flex-direction: column;
   }
 
-  .movieRow {
+  .movieList {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
   }
 }

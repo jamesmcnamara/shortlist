@@ -7,7 +7,7 @@ export type AuthFormState = { error: string } | null;
 
 export async function signInWithEmail(
   _prevState: AuthFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<AuthFormState> {
   const email = String(formData.get("email") ?? "").trim();
   let password = String(formData.get("password") ?? "");
@@ -22,7 +22,9 @@ export async function signInWithEmail(
   const { error } = await auth.signIn.email({ email, password });
 
   if (error) {
-    return { error: error.message || "That email and password combo didn't work." };
+    return {
+      error: error.message || "That email and password combo didn't work.",
+    };
   }
 
   redirect("/");
