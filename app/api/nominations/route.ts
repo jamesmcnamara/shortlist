@@ -24,7 +24,9 @@ export async function GET () {
       await getDb().query.nominations.findMany({
         with: {
           movie: true,
-          votes: true,
+          votes: {
+            with: { voter: true },
+          },
           nomcoms: {
             with: { commenter: true },
             orderBy: (nomcoms, { asc }) => asc(nomcoms.createdAt),
@@ -140,7 +142,9 @@ export async function POST (request: Request) {
       where: (n, { eq }) => eq(n.id, nomination.id),
       with: {
         movie: true,
-        votes: true,
+        votes: {
+          with: { voter: true },
+        },
         nomcoms: {
           with: { commenter: true },
           orderBy: (nomcoms, { asc }) => asc(nomcoms.createdAt),

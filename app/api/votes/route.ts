@@ -30,7 +30,9 @@ export async function POST (request: Request) {
       where: (n, { eq }) => eq(n.id, nominationId),
       with: {
         movie: true,
-        votes: true,
+        votes: {
+          with: { voter: true },
+        },
         nomcoms: {
           with: { commenter: true },
           orderBy: (nomcoms, { asc }) => asc(nomcoms.createdAt),

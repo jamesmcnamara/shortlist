@@ -121,14 +121,50 @@
   color: var(--accent);
 }
 
+.discussionDrawer {
+  position: fixed;
+  z-index: 40;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  max-height: 80vh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  pointer-events: none;
+}
+
+.discussionDrawerOpen {
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
 .expanded {
-  grid-column: 1 / -1;
-  margin: 18px 0 8px;
+  margin: 0;
   padding: 20px;
   border-top: 1px solid var(--border-strong);
   border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.55);
-  animation: reveal 0.25s ease-out;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.closeDiscussion {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.closeDiscussion:hover,
+.closeDiscussion:focus-visible {
+  background: var(--accent-wash);
+  color: var(--accent);
 }
 
 .expandedHeader,
@@ -141,6 +177,7 @@
 .expandedHeader {
   justify-content: space-between;
   gap: 16px;
+  align-items: flex-start;
 }
 
 .nominator {
@@ -178,11 +215,36 @@
 
 .voterList {
   display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.voterList .avatar + .avatar {
-  margin-left: -5px;
+.voter {
+  position: relative;
+  flex: 0 0 25px;
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.voter small {
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  display: inline-grid;
+  place-items: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
   border: 2px solid var(--surface);
+  border-radius: 999px;
+  background: var(--accent);
+  color: white;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .watched,
@@ -195,23 +257,32 @@
 }
 
 .watched {
-  padding: 7px 10px;
-  border-radius: 7px;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   background: var(--success-wash);
 }
 
 .voteActions {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
+  flex: none;
 }
 
 .votePrimary,
 .voteSecondary {
-  padding: 7px 10px;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border: 0;
-  border-radius: 7px;
-  font-size: 11px;
+  border-radius: 50%;
+  font-size: 16px;
+  line-height: 1;
   font-weight: 800;
 }
 
@@ -230,14 +301,6 @@
 .stat:disabled {
   cursor: not-allowed;
   opacity: 0.45;
-}
-
-.votePrimary span {
-  margin-left: 4px;
-}
-
-.watched span {
-  margin-left: 4px;
 }
 
 .commentsFooter {
@@ -351,11 +414,218 @@
 
 @media (max-width: 640px) {
   .expanded {
-    margin-inline: -2px;
     padding: 16px;
   }
 
   .recommendation {
     font-size: 16px;
+  }
+}
+
+.activeCard .poster {
+  box-shadow: 0 10px 0 var(--accent-light);
+  transform: translateY(-6px);
+}
+
+.activeCard .posterButton:hover .poster,
+.activeCard .posterButton:focus-visible .poster {
+  box-shadow: 0 14px 0 var(--accent-light);
+  transform: translateY(-8px);
+}
+
+.stat {
+  padding: 4px 2px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.stat span {
+  display: none;
+}
+
+.stat:hover,
+.stat:focus-visible,
+.voted {
+  background: transparent;
+  color: var(--accent);
+}
+
+.expanded {
+  margin: 0;
+  padding: 20px;
+  border-top: 1px solid var(--border);
+  border-bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.expandedHeader {
+  align-items: flex-end;
+}
+
+.discussionHeading h2 {
+  margin: 5px 0 4px;
+  font-size: 24px;
+  letter-spacing: -0.07em;
+}
+
+.discussionMeta {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.voteActions {
+  gap: 7px;
+}
+
+.votePrimary,
+.voteSecondary,
+.watched {
+  width: auto;
+  height: auto;
+  min-height: 32px;
+  padding: 8px 11px;
+  border-radius: 999px;
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.votePrimary {
+  background: var(--accent-soft);
+  color: #1e5e6a;
+}
+
+.voteSecondary {
+  background: transparent;
+  color: var(--muted);
+}
+
+.watched {
+  background: transparent;
+  color: var(--success);
+}
+
+.votePrimary:disabled,
+.voteSecondary:disabled,
+.watched:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.nominationQuote,
+.nomcomList p {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.nominationQuote {
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+
+.nominationQuote strong,
+.nomcomList strong {
+  display: block;
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.nominationQuote p {
+  margin: 4px 0 0;
+  color: var(--text-soft);
+  font-size: 17px;
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+}
+
+.voters {
+  justify-content: space-between;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.voterCount {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.nomcoms {
+  margin-top: 16px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.nomcoms > .eyebrow {
+  margin-bottom: 10px;
+  color: #9a7c4a;
+}
+
+.nomcomList {
+  gap: 0;
+  margin: 0 0 16px;
+}
+
+.nomcomList p {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.nomcomList p:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.commentForm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.commentForm textarea {
+  min-height: 44px;
+  padding: 12px 13px;
+  border-radius: 10px;
+  font-size: 12px;
+  resize: none;
+}
+
+.commentForm button {
+  flex: none;
+  border-radius: 999px;
+  padding: 10px 13px;
+  background: var(--text);
+}
+
+@media (max-width: 640px) {
+  .expandedHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .voteActions {
+    width: 100%;
+  }
+
+  .votePrimary {
+    flex: 1;
+  }
+
+  .commentForm {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .commentForm button {
+    align-self: flex-end;
   }
 }

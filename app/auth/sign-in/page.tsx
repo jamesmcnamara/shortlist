@@ -39,7 +39,7 @@ export default function SignInPage() {
           {state?.error ? <p className={styles.error}>{state.error}</p> : null}
 
           <button className={styles.submit} type="submit" disabled={isPending}>
-            {isPending ? "Signing in…" : "Do you want to play a game?"}
+            {isPending ? "Signing in…" : "Come and play with us..."}
           </button>
         </form>
 

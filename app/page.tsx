@@ -27,6 +27,19 @@ export default function Home() {
   const [selectedMovie, setSelectedMovie] = useState<MovieSearchResultData | null>(null);
   const [isNominationOpen, setIsNominationOpen] = useState(false);
   const [expandedMovie, setExpandedMovie] = useState<number | null>(null);
+  const [renderedDiscussionId, setRenderedDiscussionId] = useState<number | null>(null);
+
+  const closeDiscussion = () => setExpandedMovie(null);
+
+  useEffect(() => {
+    if (expandedMovie !== null) {
+      setRenderedDiscussionId(expandedMovie);
+      return;
+    }
+    if (renderedDiscussionId === null) return;
+    const timeout = window.setTimeout(() => setRenderedDiscussionId(null), 300);
+    return () => window.clearTimeout(timeout);
+  }, [expandedMovie, renderedDiscussionId]);
 
   useEffect(() => {
     Promise.all([api.nominations.list(), api.users.list()])
@@ -184,30 +197,33 @@ export default function Home() {
                       nomination={nom}
                       hasUpvoted={some({userId: session?.user?.id})(nom.votes)}
                       canVote={session?.user?.id !== nom.nominator.id && votesLeft > 0}
+                      isExpanded={expandedMovie === nom.id}
                       onAddVote={() => changeVote(nom, 'add').catch((error: Error) => setMessage(error.message))}
                       onToggleDiscussion={() => setExpandedMovie(expandedMovie === nom.id ? null : nom.id)}
                     />
                   );
                 })}
-                {rowMovies.some((movie) => movie.id === expandedMovie) && (() => {
-                  const expanded = rowMovies.find((movie) => movie.id === expandedMovie);
-                  if (!expanded) return null;
-                  return (
-                    <MovieDiscussion
-                      nomination={expanded}
-                      hasUpvoted={some({userId: session?.user?.id})(expanded.votes)}
-                      canVote={expanded.nominator.id !== session?.user?.id && votesLeft > 0}
-                      onAddVote={() => changeVote(expanded, 'add').catch((error: Error) => setMessage(error.message))}
-                      onRemoveVote={() => changeVote(expanded, 'remove').catch((error: Error) => setMessage(error.message))}
-                      onAddComment={(comment) => addNominationComment(expanded.id, comment)}
-                    />
-                  );
-                })()}
               </div>
             );
           })}
         </div>
       </section>
+      {renderedDiscussionId !== null && (() => {
+        const discussed = nominations.get(renderedDiscussionId);
+        if (!discussed) return null;
+        return (
+          <MovieDiscussion
+            nomination={discussed}
+            hasUpvoted={some({userId: session?.user?.id})(discussed.votes)}
+            canVote={discussed.nominator.id !== session?.user?.id && votesLeft > 0}
+            isOpen={expandedMovie === renderedDiscussionId}
+            onAddVote={() => changeVote(discussed, 'add').catch((error: Error) => setMessage(error.message))}
+            onRemoveVote={() => changeVote(discussed, 'remove').catch((error: Error) => setMessage(error.message))}
+            onAddComment={(comment) => addNominationComment(discussed.id, comment)}
+            onClose={closeDiscussion}
+          />
+        );
+      })()}
     </main>
   );
 }

@@ -1,6 +1,6 @@
 :root {
   color-scheme: light;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Helvetica, Arial, sans-serif;
   color: #26262d;
   background: #f6f1e9;
   --text: #26262d;
@@ -11,10 +11,10 @@
   --border-strong: #d4d4df;
   --surface: #ffffff;
   --surface-muted: #eee9e1;
-  --accent: #5b57c9;
-  --accent-light: #bdbbff;
-  --accent-soft: #c9c7f4;
-  --accent-wash: #f0efff;
+  --accent: #3f7893;
+  --accent-light: #8fbaca;
+  --accent-soft: #bcd7e1;
+  --accent-wash: #e3f0f4;
   --success: #32846d;
   --success-wash: #e9f4ef;
   --shadow: 0 12px 28px rgba(43, 43, 73, 0.08);
@@ -70,7 +70,9 @@ textarea:focus-visible,
   font-weight: 800;
 }
 
-.avatar-violet { background: #d2d0ff; color: #4c489c; }
-.avatar-lilac { background: #ddd4ef; color: #665483; }
+.avatar-violet { background: #c5dfe8; color: #32667c; }
+.avatar-lilac { background: #d1e0ea; color: #46677a; }
 .avatar-mint { background: #c8e6dc; color: #2f6d5b; }
 .avatar-gold { background: #eee0b5; color: #76602a; }
+.avatar-violet-old { background: #d2d0ff; color: #4c489c; }
+.avatar-lilac-old { background: #ddd4ef; color: #665483; }

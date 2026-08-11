@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+export async function POST (request: Request) {
   const userId = await requireUserId();
   if (!userId) return unauthorized();
 
@@ -49,7 +49,9 @@ export async function POST(request: Request) {
       where: (nominations, { eq }) => eq(nominations.id, nominationId),
       with: {
         movie: true,
-        votes: true,
+        votes: {
+          with: { voter: true },
+        },
         nomcoms: {
           with: { commenter: true },
           orderBy: (nomcoms, { asc }) => asc(nomcoms.createdAt),
