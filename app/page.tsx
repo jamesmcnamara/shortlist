@@ -180,31 +180,33 @@ export default function Home() {
           </button>
         </header>
 
-        {isNominationOpen && (
-          <NominationPanel
-            nominatedThisMonth={userHasNominatedThisMonth}
-            query={query}
-            isSearching={isSearching}
-            searchError={searchError}
-            searchResults={searchResults}
-            selectedMovie={selectedMovie}
-            comment={comment}
-            isSubmitting={isSubmitting}
-            onClose={() => setIsNominationOpen(false)}
-            onSubmit={nominate}
-            onSelect={chooseSearchResult}
-            onClearSelection={() => {
-              setSelectedMovie(null);
-              setQuery("");
-              setComment("");
-            }}
-            onQueryChange={(value) => {
-              setQuery(value);
-              setSelectedMovie(null);
-            }}
-            onCommentChange={setComment}
-          />
-        )}
+        <AnimatePresence initial={false}>
+          {isNominationOpen && (
+            <NominationPanel
+              nominatedThisMonth={userHasNominatedThisMonth}
+              query={query}
+              isSearching={isSearching}
+              searchError={searchError}
+              searchResults={searchResults}
+              selectedMovie={selectedMovie}
+              comment={comment}
+              isSubmitting={isSubmitting}
+              onClose={() => setIsNominationOpen(false)}
+              onSubmit={nominate}
+              onSelect={chooseSearchResult}
+              onClearSelection={() => {
+                setSelectedMovie(null);
+                setQuery("");
+                setComment("");
+              }}
+              onQueryChange={(value) => {
+                setQuery(value);
+                setSelectedMovie(null);
+              }}
+              onCommentChange={setComment}
+            />
+          )}
+        </AnimatePresence>
 
         {message && (
           <div className={styles.message} role="status">

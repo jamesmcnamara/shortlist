@@ -1,4 +1,5 @@
 import type { SubmitEventHandler } from "react";
+import { motion } from "motion/react";
 import type { MovieSearchResultData } from "./MovieSearchResult";
 import { MovieSearchResults } from "./MovieSearchResults";
 import styles from "./NominationPanel.module.css";
@@ -37,7 +38,13 @@ export function NominationPanel({
   onCommentChange,
 }: NominationPanelProps) {
   return (
-    <section className={styles.panel}>
+    <motion.section
+      className={styles.panel}
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+    >
       <div className={styles.heading}>
         <div>
           <h2>Nominate a movie</h2>
@@ -149,6 +156,6 @@ export function NominationPanel({
           </div>
         </form>
       )}
-    </section>
+    </motion.section>
   );
 }

@@ -127,6 +127,18 @@ export async function POST(request: Request) {
       .onConflictDoUpdate({ target: movies.tmdbId, set: values })
       .returning();
 
+    const existingNomination = await db
+      .select({ id: nominations.id })
+      .from(nominations)
+      .where(eq(nominations.movieId, movie.id))
+      .limit(1);
+    if (existingNomination.length > 0) {
+      return Response.json(
+        { error: "That movie has already been nominated." },
+        { status: 409 },
+      );
+    }
+
     const [nomination] = await db
       .insert(nominations)
       .values({
