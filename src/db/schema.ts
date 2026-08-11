@@ -69,6 +69,7 @@ export const votesRelations = relations(votes, ({ one }) => ({
 
 export const nomcomsRelations = relations(nomcoms, ({ one }) => ({
   nomination: one(nominations, { fields: [nomcoms.nominationId], references: [nominations.id] }),
+  commenter: one(authUsers, { fields: [nomcoms.userId], references: [authUsers.id] }),
 }));
 
 
@@ -76,7 +77,7 @@ export type Movie = typeof movies.$inferSelect;
 export type RawNomination = typeof nominations.$inferSelect
 export type Nomination = RawNomination & { movie: Movie, votes: Vote[], nomcoms: NomCom[], nominator: User };
 export type Vote = typeof votes.$inferSelect;
-export type NomCom = typeof nomcoms.$inferSelect;
+export type NomCom = typeof nomcoms.$inferSelect & { commenter: User };
 export type Seen = typeof seen.$inferSelect;
 
 export interface User {

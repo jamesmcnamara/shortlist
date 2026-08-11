@@ -22,7 +22,15 @@ export async function GET () {
   try {
     return Response.json(
       await getDb().query.nominations.findMany({
-        with: { movie: true, votes: true, nomcoms: true, nominator: true },
+        with: {
+          movie: true,
+          votes: true,
+          nomcoms: {
+            with: { commenter: true },
+            orderBy: (nomcoms, { asc }) => asc(nomcoms.createdAt),
+          },
+          nominator: true,
+        },
         orderBy: (n, { desc }) => desc(n.createdAt),
       }),
     );
@@ -130,7 +138,15 @@ export async function POST (request: Request) {
 
     const full = await db.query.nominations.findFirst({
       where: (n, { eq }) => eq(n.id, nomination.id),
-      with: { movie: true, votes: true, nomcoms: true, nominator: true },
+      with: {
+        movie: true,
+        votes: true,
+        nomcoms: {
+          with: { commenter: true },
+          orderBy: (nomcoms, { asc }) => asc(nomcoms.createdAt),
+        },
+        nominator: true,
+      },
     });
 
     return Response.json(full, { status: 201 });

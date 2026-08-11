@@ -40,6 +40,13 @@ export const api = {
     delete: (nominationId: number): Promise<Nomination> =>
       request("/api/votes", { method: "DELETE", body: JSON.stringify({ nominationId }) }),
   },
+  nomcoms: {
+    create: (nominationId: number, comment: string): Promise<Nomination> =>
+      request("/api/nomcoms", {
+        method: "POST",
+        body: JSON.stringify({ nominationId, comment }),
+      }),
+  },
   tmdb: {
     search: (query: string, signal?: AbortSignal): Promise<{ results: MovieSearchResultData[] }> =>
       request(`/api/tmdb/search?query=${encodeURIComponent(query)}`, { signal }),

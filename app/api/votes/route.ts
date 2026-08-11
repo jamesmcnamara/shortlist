@@ -28,7 +28,15 @@ export async function POST (request: Request) {
 
     const nom = await getDb().query.nominations.findFirst({
       where: (n, { eq }) => eq(n.id, nominationId),
-      with: { movie: true, votes: true, nomcoms: true, nominator: true },
+      with: {
+        movie: true,
+        votes: true,
+        nomcoms: {
+          with: { commenter: true },
+          orderBy: (nomcoms, { asc }) => asc(nomcoms.createdAt),
+        },
+        nominator: true,
+      },
       orderBy: (n, { desc }) => desc(n.createdAt),
     });
     return Response.json(nom, { status: 201 });

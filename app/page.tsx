@@ -117,6 +117,18 @@ export default function Home() {
     }
   }
 
+  async function addNominationComment(nominationId: number, comment: string): Promise<boolean> {
+    setMessage('');
+    try {
+      const nomination = await api.nomcoms.create(nominationId, comment);
+      setNominations((prev) => new Map(prev).set(nomination.id, nomination));
+      return true;
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to add your comment.");
+      return false;
+    }
+  }
+
   return (
     <main className={styles.shell}>
       <ShortlistHeader votesLeft={votesLeft} />
@@ -183,6 +195,7 @@ export default function Home() {
                     canVote={expanded.nominator.id !== session?.user?.id && votesLeft > 0}
                     onAddVote={() => changeVote(expanded, 'add').catch((error: Error) => setMessage(error.message))}
                     onRemoveVote={() => changeVote(expanded, 'remove').catch((error: Error) => setMessage(error.message))}
+                    onAddComment={(comment) => addNominationComment(expanded.id, comment)}
                   />
                 );
               })()}

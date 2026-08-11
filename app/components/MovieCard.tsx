@@ -1,4 +1,5 @@
-import type { Movie, NomCom, Nomination, User, Vote } from "@/src/db/schema";
+import { useState, type SubmitEventHandler} from "react";
+import type { NomCom, Nomination, Vote } from "@/src/db/schema";
 import styles from "./MovieCard.module.css";
 
 interface MovieCardProps {
@@ -65,6 +66,7 @@ interface MovieDiscussionProps {
   canVote: boolean;
   onAddVote: () => void;
   onRemoveVote: () => void;
+  onAddComment: (comment: string) => Promise<boolean>;
   onMarkWatched?: () => void;
 }
 
@@ -74,6 +76,7 @@ export function MovieDiscussion({
   canVote,
   onAddVote,
   onRemoveVote,
+  onAddComment,
   onMarkWatched
 }: MovieDiscussionProps) {
   const {movie, votes, nominator, nomcoms} = nomination;
@@ -96,7 +99,7 @@ export function MovieDiscussion({
           </div>
           <p className={styles.recommendation}>“{nomination.comment}”</p>
           <VoterList votes={votes} />
-          <NomComList nomcoms={nomcoms} />
+          <NomComList nominationId={nomination.id} nomcoms={nomcoms} onAddComment={onAddComment} />
     </section>
   );
 }
@@ -121,20 +124,55 @@ function VoterList({ votes }: VoterListProps) {
 }
 
 interface NomComListProps {
+  nominationId: number;
   nomcoms: NomCom[];
+  onAddComment: (comment: string) => Promise<boolean>;
 }
 
-function NomComList({ nomcoms }: NomComListProps) {
+function NomComList({ nominationId, nomcoms, onAddComment }: NomComListProps) {
+  const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const submit: SubmitEventHandler<HTMLFormElement> = async (event) => {
+    event.preventDefault();
+    const value = comment.trim();
+    if (!value || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      if (await onAddComment(value)) setComment("");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className={styles.nomcoms}>
       <span className={styles.eyebrow}>Comments</span>
       <div className={styles.nomcomList}>
         {nomcoms.map((nomcom) => {
-          const commenter = nomcom.userId === "james" ? "JM" : nomcom.userId === "maya" ? "MK" : nomcom.userId === "theo" ? "TH" : "RA";
-          const color = nomcom.userId === "james" ? "violet" : nomcom.userId === "maya" ? "lilac" : nomcom.userId === "theo" ? "mint" : "gold";
-          return <p key={nomcom.id}><span className={`avatar avatar-${color}`}>{commenter}</span><span><strong>{nomcom.userId}</strong> “{nomcom.comment}”</span></p>;
+          return (
+            <p key={nomcom.id}>
+              <span className={`avatar avatar-${getColor(nomcom.commenter.name)}`}>{getInitials(nomcom.commenter.name)}</span>
+              <span><strong>{nomcom.commenter.name}</strong> “{nomcom.comment}”</span>
+            </p>
+          );
         })}
       </div>
+      <form className={styles.commentForm} onSubmit={submit}>
+        <label className="srOnly" htmlFor={`nomination-comment-${nominationId}`}>Add a comment</label>
+        <textarea
+          id={`nomination-comment-${nominationId}`}
+          value={comment}
+          onChange={(event) => setComment(event.target.value)}
+          placeholder="Add to the discussion..."
+          rows={2}
+          required
+        />
+        <button type="submit" disabled={!comment.trim() || isSubmitting}>
+          {isSubmitting ? "Posting..." : "Post comment"}
+        </button>
+      </form>
     </div>
   );
 }
