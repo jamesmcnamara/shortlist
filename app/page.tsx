@@ -131,77 +131,82 @@ export default function Home() {
 
   return (
     <main className={styles.shell}>
-      <ShortlistHeader votesLeft={votesLeft} />
+      <ShortlistHeader />
 
-      <section className={styles.toolbar}>
-        <div>
-          <h1>And the nominees are...</h1>
-        </div>
-        <div className={styles.toolbarActions}>
+      <section className={styles.nominations} aria-labelledby="nominations-title">
+        <header className={styles.sectionHeader}>
+          <div className={styles.sectionIntro}>
+            <h1 id="nominations-title">And the nominees are...</h1>
+            <p className={styles.listMeta}>
+              {nominees.length} {nominees.length === 1 ? 'nominee' : 'nominees'}
+              <span aria-hidden="true"> · </span>
+              {votesLeft} {votesLeft === 1 ? 'vote' : 'votes'} left
+            </p>
+          </div>
           <button className={styles.nominateButton} type="button" onClick={() => setIsNominationOpen((open) => !open)}>
             {userHasNominatedThisMonth ? "Rescind your nom" : '+ Choose your fighter'}
           </button>
+        </header>
+
+        {isNominationOpen && (
+          <NominationPanel
+            nominatedThisMonth={userHasNominatedThisMonth}
+            query={query}
+            isSearching={isSearching}
+            searchError={searchError}
+            searchResults={searchResults}
+            selectedMovie={selectedMovie}
+            comment={comment}
+            isSubmitting={isSubmitting}
+            onClose={() => setIsNominationOpen(false)}
+            onSubmit={nominate}
+            onSelect={chooseSearchResult}
+            onClearSelection={() => { setSelectedMovie(null); setQuery(''); setComment(''); }}
+            onQueryChange={(value) => { setQuery(value); setSelectedMovie(null); }}
+            onCommentChange={setComment}
+          />
+        )}
+
+        {message && <div className={styles.message} role="status">{message}</div>}
+        <div className={styles.movieList}>
+          {nominees.length === 0 ? (
+            <div className={styles.emptyState}><span>✦</span><h2>Nothing in the arena yet.</h2><p>Be the first to volunteer a movie for the group.</p></div>
+          ) : Array.from({ length: Math.ceil(nominees.length / 3) }, (_, rowIndex) => {
+            const rowMovies = nominees.slice(rowIndex * 3, rowIndex * 3 + 3);
+            return (
+              <div className={styles.movieRow} key={`row-${rowIndex}`}>
+                {rowMovies.map((nom, columnIndex) => {
+                  const index = rowIndex * 3 + columnIndex;
+                  return (
+                    <MovieCard
+                      key={nom.id}
+                      rank={index + 1}
+                      nomination={nom}
+                      hasUpvoted={some({userId: session?.user?.id})(nom.votes)}
+                      canVote={session?.user?.id !== nom.nominator.id && votesLeft > 0}
+                      onAddVote={() => changeVote(nom, 'add').catch((error: Error) => setMessage(error.message))}
+                      onToggleDiscussion={() => setExpandedMovie(expandedMovie === nom.id ? null : nom.id)}
+                    />
+                  );
+                })}
+                {rowMovies.some((movie) => movie.id === expandedMovie) && (() => {
+                  const expanded = rowMovies.find((movie) => movie.id === expandedMovie);
+                  if (!expanded) return null;
+                  return (
+                    <MovieDiscussion
+                      nomination={expanded}
+                      hasUpvoted={some({userId: session?.user?.id})(expanded.votes)}
+                      canVote={expanded.nominator.id !== session?.user?.id && votesLeft > 0}
+                      onAddVote={() => changeVote(expanded, 'add').catch((error: Error) => setMessage(error.message))}
+                      onRemoveVote={() => changeVote(expanded, 'remove').catch((error: Error) => setMessage(error.message))}
+                      onAddComment={(comment) => addNominationComment(expanded.id, comment)}
+                    />
+                  );
+                })()}
+              </div>
+            );
+          })}
         </div>
-      </section>
-
-      {isNominationOpen && (
-        <NominationPanel
-          nominatedThisMonth={userHasNominatedThisMonth}
-          query={query}
-          isSearching={isSearching}
-          searchError={searchError}
-          searchResults={searchResults}
-          selectedMovie={selectedMovie}
-          comment={comment}
-          isSubmitting={isSubmitting}
-          onClose={() => setIsNominationOpen(false)}
-          onSubmit={nominate}
-          onSelect={chooseSearchResult}
-          onClearSelection={() => { setSelectedMovie(null); setQuery(''); setComment(''); }}
-          onQueryChange={(value) => { setQuery(value); setSelectedMovie(null); }}
-          onCommentChange={setComment}
-        />
-      )}
-
-      {message && <div className={styles.message} role="status">{message}</div>}
-      <section className={styles.movieList} aria-label="Current movie nominations">
-        {nominees.length === 0 ? (
-          <div className={styles.emptyState}><span>✦</span><h2>Nothing in the arena yet.</h2><p>Be the first to volunteer a movie for the group.</p></div>
-        ) : Array.from({ length: Math.ceil(nominees.length / 3) }, (_, rowIndex) => {
-          const rowMovies = nominees.slice(rowIndex * 3, rowIndex * 3 + 3);
-          return (
-            <div className={styles.movieRow} key={`row-${rowIndex}`}>
-              {rowMovies.map((nom, columnIndex) => {
-                const index = rowIndex * 3 + columnIndex;
-                return (
-                  <MovieCard
-                    key={nom.id}
-                    rank={index + 1}
-                    nomination={nom}
-                    hasUpvoted={some({userId: session?.user?.id})(nom.votes)}
-                    canVote={session?.user?.id !== nom.nominator.id && votesLeft > 0}
-                    onAddVote={() => changeVote(nom, 'add').catch((error: Error) => setMessage(error.message))}
-                    onToggleDiscussion={() => setExpandedMovie(expandedMovie === nom.id ? null : nom.id)}
-                  />
-                );
-              })}
-              {rowMovies.some((movie) => movie.id === expandedMovie) && (() => {
-                const expanded = rowMovies.find((movie) => movie.id === expandedMovie);
-                if (!expanded) return null;
-                return (
-                  <MovieDiscussion
-                    nomination={expanded}
-                    hasUpvoted={some({userId: session?.user?.id})(expanded.votes)}
-                    canVote={expanded.nominator.id !== session?.user?.id && votesLeft > 0}
-                    onAddVote={() => changeVote(expanded, 'add').catch((error: Error) => setMessage(error.message))}
-                    onRemoveVote={() => changeVote(expanded, 'remove').catch((error: Error) => setMessage(error.message))}
-                    onAddComment={(comment) => addNominationComment(expanded.id, comment)}
-                  />
-                );
-              })()}
-            </div>
-          );
-        })}
       </section>
     </main>
   );

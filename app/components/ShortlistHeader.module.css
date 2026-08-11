@@ -2,7 +2,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 48px;
+  gap: 16px;
+  padding-bottom: 28px;
 }
 
 .brand {
@@ -29,29 +30,27 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   color: var(--muted);
   font-size: 13px;
   font-weight: 700;
 }
 
-.voteBalance {
-  padding: 6px 10px;
-  border: 1px solid var(--accent-soft);
-  border-radius: 999px;
-  background: var(--accent-wash);
-  color: var(--accent);
-  font-size: 11px;
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
 }
 
-.chevron {
-  margin-left: 2px;
-  color: var(--muted-soft);
-  font-size: 17px;
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .signOut {
-  margin-left: 6px;
-  padding: 6px 12px;
+  padding: 6px 10px;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
   background: var(--surface);
@@ -68,4 +67,19 @@
 .signOut:disabled {
   opacity: 0.6;
   cursor: progress;
+}
+
+@media (max-width: 640px) {
+  .header {
+    align-items: flex-start;
+    padding-bottom: 24px;
+  }
+
+  .profile {
+    gap: 6px;
+  }
+
+  .name {
+    display: none;
+  }
 }
