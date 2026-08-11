@@ -464,7 +464,9 @@
 }
 
 .expandedHeader {
-  align-items: flex-end;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
 }
 
 .discussionHeading {
@@ -497,7 +499,47 @@
   font-weight: 700;
 }
 
+.ratings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 26px;
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.rating img {
+  width: 14px;
+  height: 14px;
+}
+
+.rating:hover,
+.rating:focus-visible {
+  border-color: var(--accent-light);
+  box-shadow: 0 3px 8px rgba(43, 43, 73, 0.1);
+  transform: translateY(-1px);
+}
+
 .voteActions {
+  align-self: flex-end;
   gap: 7px;
 }
 
@@ -628,11 +670,11 @@
 @media (max-width: 640px) {
   .expandedHeader {
     align-items: flex-start;
-    flex-direction: column;
   }
 
   .voteActions {
     width: 100%;
+    align-self: auto;
   }
 
   .votePrimary {

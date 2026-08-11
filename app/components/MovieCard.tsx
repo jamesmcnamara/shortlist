@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { useState, type SubmitEventHandler } from "react";
 import { motion } from "motion/react";
-import type { NomCom, Nomination, Vote } from "@/src/db/schema";
+import type { NomCom, Nomination, Vote, Movie } from "@/src/db/schema";
 import styles from "./MovieCard.module.css";
 
 interface MovieCardProps {
@@ -52,12 +52,11 @@ export function MovieCard({
         </button>
 
         <div className={styles.meta}>
-          {/* TODO: initials */}
           <span
             className={`avatar avatar-${getColor(movie.title)}`}
             title={`Nominated by ${nominator.name}`}
           >
-            {nominator.name.slice(0, 1)}
+            {getInitials(nominator.name)}
           </span>
           <button
             className={`${styles.stat} ${hasUpvoted ? styles.voted : ""}`}
@@ -125,6 +124,7 @@ export function MovieDiscussion({
               Nominated by {nominator.name}
             </span>
           </div>
+          <MovieRatings movie={movie} />
           <div className={styles.voteActions}>
             <button
               className={styles.votePrimary}
@@ -171,6 +171,92 @@ export function MovieDiscussion({
         />
       </section>
     </motion.div>
+  );
+}
+
+interface MovieRatingsProps {
+  movie: Movie;
+}
+
+interface Rating {
+  name: string;
+  rating: number;
+  url: string;
+  logo: string;
+  value: string;
+}
+
+function MovieRatings({
+  movie: {
+    imdbRating,
+    letterboxdRating,
+    rottenTomatoesRating,
+    rottenTomatoesAudienceRating,
+    imdbUrl,
+    letterboxdUrl,
+    rottenTomatoesUrl,
+    rottenTomatoesAudienceUrl,
+  },
+}: MovieRatingsProps) {
+  const ratings = [
+    {
+      name: "IMDb",
+      rating: imdbRating,
+      url: imdbUrl,
+      logo: "/ratings/imdb.svg",
+      value: imdbRating === null ? null : `${imdbRating.toFixed(1)}/10`,
+    },
+    {
+      name: "Letterboxd",
+      rating: letterboxdRating,
+      url: letterboxdUrl,
+      logo: "/ratings/letterboxd.svg",
+      value:
+        letterboxdRating === null ? null : `${letterboxdRating.toFixed(1)}/5`,
+    },
+    {
+      name: "Rotten Tomatoes",
+      rating: rottenTomatoesRating,
+      url: rottenTomatoesUrl,
+      logo: "/ratings/rottentomatoes.svg",
+      value:
+        rottenTomatoesRating === null
+          ? null
+          : `${Math.round(rottenTomatoesRating)}%`,
+    },
+    {
+      name: "Rotten Tomatoes audience",
+      rating: rottenTomatoesAudienceRating,
+      url: rottenTomatoesAudienceUrl,
+      logo: "/ratings/rottentomatoes-popcorn.svg",
+      value:
+        rottenTomatoesAudienceRating === null
+          ? null
+          : `${Math.round(rottenTomatoesAudienceRating)}%`,
+    },
+  ].filter(
+    (rating): rating is Rating =>
+      rating.rating !== null && rating.url !== null && rating.value !== null,
+  );
+
+  if (ratings.length === 0) return null;
+
+  return (
+    <div className={styles.ratings} aria-label="Movie ratings">
+      {ratings.map((rating) => (
+        <a
+          key={rating.name}
+          className={styles.rating}
+          href={rating.url}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`${rating.name}: ${rating.value}. View on ${rating.name}`}
+        >
+          <img src={rating.logo} alt="" />
+          <span>{rating.value}</span>
+        </a>
+      ))}
+    </div>
   );
 }
 

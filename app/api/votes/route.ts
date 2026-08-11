@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { VOTES_PER_MONTH } from "@/app/lib/constants";
-import { requireUserId, unauthorized } from "@/lib/auth/require-user";
+import { requireUserId, unauthorized, withUser } from "@/lib/auth/require-user";
 import { getMonth } from "@/app/lib/date-utils";
 import { getDb, type DB } from "@/src/db/client";
 import { nominations, votes, type RawNomination } from "@/src/db/schema";
@@ -9,104 +9,71 @@ export interface VoteInput {
   nominationId: number;
 }
 
-export async function POST(request: Request) {
-  const userId = await requireUserId();
-  if (!userId) return unauthorized();
-  try {
-    const db = getDb();
-    const validation = await validate(await request.json(), db, userId, "add");
-    if (validation.type === "error") {
-      return validation.error;
-    }
+export const POST = withUser({ error: "Unable to create your vote" })(async (
+  request: Request,
+  userId: string,
+) => {
+  const db = getDb();
+  const validation = await validate(await request.json(), db, userId, "add");
+  if (validation.type === "error") {
+    return validation.error;
+  }
 
-    const nominationId = validation.nomination.id;
+  const nominationId = validation.nomination.id;
 
-    // Vote
-    await db.insert(votes).values({ userId, month: getMonth(), nominationId });
+  // Vote
+  await db.insert(votes).values({ userId, month: getMonth(), nominationId });
 
-    const nom = await getDb().query.nominations.findFirst({
-      where: (n, { eq }) => eq(n.id, nominationId),
-      with: {
-        movie: true,
-        votes: {
-          with: { voter: true },
-        },
-        nomcoms: {
-          with: { commenter: true },
-          orderBy: (nomcoms, { asc }) => asc(nomcoms.createdAt),
-        },
-        nominator: true,
+  const nom = await getDb().query.nominations.findFirst({
+    where: (n, { eq }) => eq(n.id, nominationId),
+    with: {
+      movie: true,
+      votes: {
+        with: { voter: true },
       },
-      orderBy: (n, { desc }) => desc(n.createdAt),
-    });
-    return Response.json(nom, { status: 201 });
-  } catch (error) {
-    console.error(error);
-    return Response.json(
-      { error: "Unable to update your vote." },
-      { status: 500 },
-    );
+      nomcoms: {
+        with: { commenter: true },
+        orderBy: (nomcoms, { asc }) => asc(nomcoms.createdAt),
+      },
+      nominator: true,
+    },
+    orderBy: (n, { desc }) => desc(n.createdAt),
+  });
+  return Response.json(nom, { status: 201 });
+});
+
+export const DELETE = withUser({ error: "Unable to delete your vote." })(async (
+  request: Request,
+  userId: string,
+) => {
+  const db = getDb();
+  const validation = await validate(await request.json(), db, userId, "remove");
+  if (validation.type === "error") {
+    return validation.error;
   }
-}
 
-export async function DELETE(request: Request) {
-  const userId = await requireUserId();
-  if (!userId) return unauthorized();
-  try {
-    const db = getDb();
-    const validation = await validate(
-      await request.json(),
-      db,
-      userId,
-      "remove",
-    );
-    if (validation.type === "error") {
-      return validation.error;
-    }
+  const nominationId = validation.nomination.id;
 
-    const nominationId = validation.nomination.id;
-
-    const [vote] = await db
-      .select()
-      .from(votes)
-      .where(
-        and(
-          eq(votes.userId, userId),
-          eq(votes.nominationId, nominationId),
-          eq(votes.month, getMonth()),
-        ),
-      )
-      .orderBy(votes.createdAt)
-      .limit(1);
-    if (!vote)
-      return Response.json(
-        { error: "You have not voted for this movie." },
-        { status: 409 },
-      );
-    await db.delete(votes).where(eq(votes.id, vote.id));
-    return new Response(null, { status: 204 });
-  } catch (error) {
-    console.error(error);
+  const [vote] = await db
+    .select()
+    .from(votes)
+    .where(
+      and(
+        eq(votes.userId, userId),
+        eq(votes.nominationId, nominationId),
+        eq(votes.month, getMonth()),
+      ),
+    )
+    .orderBy(votes.createdAt)
+    .limit(1);
+  if (!vote)
     return Response.json(
-      { error: "Unable to update your vote." },
-      { status: 500 },
+      { error: "You have not voted for this movie." },
+      { status: 409 },
     );
-  }
-}
-
-export async function GET() {
-  const userId = await requireUserId();
-  if (!userId) return unauthorized();
-
-  try {
-    return Response.json(
-      await getDb().select().from(votes).orderBy(desc(votes.createdAt)),
-    );
-  } catch (error) {
-    console.error(error);
-    return Response.json({ error: "Unable to load votes." }, { status: 500 });
-  }
-}
+  await db.delete(votes).where(eq(votes.id, vote.id));
+  return new Response(null, { status: 204 });
+});
 
 const validate = async (
   body: VoteInput,

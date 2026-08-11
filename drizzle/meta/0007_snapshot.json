@@ -1,6 +1,6 @@
 {
-  "id": "9592c686-a9bf-4e33-94a9-36a141add68c",
-  "prevId": "a780f597-370e-4c8a-88c6-6fabc4168efa",
+  "id": "1720d193-ae21-46cc-becd-adc66773a8f0",
+  "prevId": "b5012d41-6cfb-4ec9-af79-52c528815501",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -63,7 +63,55 @@
         },
         "tmdb_rating": {
           "name": "tmdb_rating",
-          "type": "integer",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "imdb_rating": {
+          "name": "imdb_rating",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "imdb_url": {
+          "name": "imdb_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "letterboxd_rating": {
+          "name": "letterboxd_rating",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "letterboxd_url": {
+          "name": "letterboxd_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rotten_tomatoes_rating": {
+          "name": "rotten_tomatoes_rating",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rotten_tomatoes_url": {
+          "name": "rotten_tomatoes_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rotten_tomatoes_audience_rating": {
+          "name": "rotten_tomatoes_audience_rating",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rotten_tomatoes_audience_url": {
+          "name": "rotten_tomatoes_audience_url",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -202,6 +250,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "month": {
+          "name": "month",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -346,6 +400,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "month": {
+          "name": "month",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",

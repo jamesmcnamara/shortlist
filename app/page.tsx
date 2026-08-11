@@ -214,26 +214,20 @@ export default function Home() {
           </div>
         )}
         <div className={styles.movieList}>
-          {nominees.length === 0 ? (
-            <div className={styles.emptyState}>
-              <span>✦</span>
-              <h2>Nothing in the arena yet.</h2>
-              <p>Be the first to volunteer a movie for the group.</p>
-            </div>
-          ) : (
-            nominees.map((nom, index) => (
-              <MovieCard
-                key={nom.id}
-                rank={index + 1}
-                nomination={nom}
-                hasUpvoted={some({ userId: session?.user?.id })(nom.votes)}
-                canVote={session?.user?.id !== nom.nominator.id && votesLeft > 0}
-                isExpanded={focused === nom}
-                onAddVote={() => changeVote(nom, "add")}
-                onToggleDiscussion={() => setFocusedId(focused === nom ? null : nom.id)}
-              />
-            ))
-          )}
+          {nominees.map((nom, index) => (
+            <MovieCard
+              key={nom.id}
+              rank={index + 1}
+              nomination={nom}
+              hasUpvoted={some({ userId: session?.user?.id })(nom.votes)}
+              canVote={session?.user?.id !== nom.nominator.id && votesLeft > 0}
+              isExpanded={focused === nom}
+              onAddVote={() => changeVote(nom, "add")}
+              onToggleDiscussion={() =>
+                setFocusedId(focused === nom ? null : nom.id)
+              }
+            />
+          ))}
         </div>
       </section>
       <AnimatePresence>
@@ -242,10 +236,14 @@ export default function Home() {
             key={focused.id}
             nomination={focused}
             hasUpvoted={some({ userId: session?.user?.id })(focused.votes)}
-            canVote={focused.nominator.id !== session?.user?.id && votesLeft > 0}
+            canVote={
+              focused.nominator.id !== session?.user?.id && votesLeft > 0
+            }
             onAddVote={() => changeVote(focused, "add")}
             onRemoveVote={() => changeVote(focused, "remove")}
-            onAddComment={(comment) => addNominationComment(focused.id, comment)}
+            onAddComment={(comment) =>
+              addNominationComment(focused.id, comment)
+            }
             onClose={closeDiscussion}
           />
         )}

@@ -82,9 +82,7 @@
         "movies_tmdb_id_unique": {
           "name": "movies_tmdb_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "tmdb_id"
-          ]
+          "columns": ["tmdb_id"]
         }
       },
       "policies": {},
@@ -145,12 +143,8 @@
           "tableFrom": "nomcoms",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -158,12 +152,8 @@
           "name": "nomcoms_nomination_id_nominations_id_fk",
           "tableFrom": "nomcoms",
           "tableTo": "nominations",
-          "columnsFrom": [
-            "nomination_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["nomination_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -234,12 +224,8 @@
           "tableFrom": "nominations",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -247,12 +233,8 @@
           "name": "nominations_movie_id_movies_id_fk",
           "tableFrom": "nominations",
           "tableTo": "movies",
-          "columnsFrom": [
-            "movie_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["movie_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -311,12 +293,8 @@
           "tableFrom": "seen",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -324,12 +302,8 @@
           "name": "seen_movie_id_movies_id_fk",
           "tableFrom": "seen",
           "tableTo": "movies",
-          "columnsFrom": [
-            "movie_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["movie_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -400,12 +374,8 @@
           "tableFrom": "votes",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -413,12 +383,8 @@
           "name": "votes_nomination_id_nominations_id_fk",
           "tableFrom": "votes",
           "tableTo": "nominations",
-          "columnsFrom": [
-            "nomination_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["nomination_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
