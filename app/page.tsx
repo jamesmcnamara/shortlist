@@ -16,21 +16,18 @@ import { api, ApiError } from "./lib/api";
 
 export default function Home() {
   const { data: session } = authClient.useSession();
-  const [nominations, setNominations] = useState(
-    () => new Map<number, Nomination>(),
-  );
+  const [nominations, setNominations] = useState(new Map<number, Nomination>());
   const [query, setQuery] = useState("");
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
-  const [searchResults, setSearchResults] = useState<MovieSearchResultData[]>(
-    [],
-  );
+  const [searchResults, setSearchResults] = useState<MovieSearchResultData[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [selectedMovie, setSelectedMovie] =
     useState<MovieSearchResultData | null>(null);
   const [isNominationOpen, setIsNominationOpen] = useState(false);
+  const [isRescinding, setIsRescinding] = useState(false);
   const [focusedId, setFocusedId] = useState<number | null>(null);
 
   const closeDiscussion = () => setFocusedId(null);
@@ -83,6 +80,11 @@ export default function Home() {
     (a, b) => b.votes.length - a.votes.length,
   );
   const userHasNominatedThisMonth = hasUserNominatedThisMonth(
+    nominations,
+    session?.user?.id,
+    currentMonth,
+  );
+  const currentNomination = getCurrentNomination(
     nominations,
     session?.user?.id,
     currentMonth,
@@ -157,6 +159,27 @@ export default function Home() {
     }
   }
 
+  async function rescindNomination(nominationId: number) {
+    setMessage("");
+    setIsRescinding(true);
+    try {
+      await api.nominations.delete(nominationId);
+      setNominations((prev) => {
+        const next = new Map(prev);
+        next.delete(nominationId);
+        return next;
+      });
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to rescind your nomination.",
+      );
+    } finally {
+      setIsRescinding(false);
+    }
+  }
+
   return (
     <main className={styles.shell}>
       <ShortlistHeader votesLeft={votesLeft} />
@@ -184,6 +207,8 @@ export default function Home() {
           {isNominationOpen && (
             <NominationPanel
               nominatedThisMonth={userHasNominatedThisMonth}
+              currentNomination={currentNomination}
+              isRescinding={isRescinding}
               query={query}
               isSearching={isSearching}
               searchError={searchError}
@@ -204,6 +229,9 @@ export default function Home() {
                 setSelectedMovie(null);
               }}
               onCommentChange={setComment}
+              onRescind={() =>
+                currentNomination && rescindNomination(currentNomination.id)
+              }
             />
           )}
         </AnimatePresence>
@@ -259,8 +287,22 @@ const hasUserNominatedThisMonth = (
   nominations: Map<number, Nomination>,
   userId: string | undefined,
   month: number,
-): boolean => false;
-// !userId || some({nominator: {id: userId}, month})(nominations);
+): boolean => 
+  !userId || some({nominator: {id: userId}, month})(nominations);
+
+const getCurrentNomination = (
+  nominations: Map<number, Nomination>,
+  userId: string | undefined,
+  month: number,
+): Nomination | null => {
+  if (!userId) return null;
+  return (
+    Array.from(nominations.values()).find(
+      (nomination) =>
+        nomination.nominator.id === userId && nomination.month === month,
+    ) ?? null
+  );
+};
 
 const calculateVotesLeft = (
   nominations: Map<number, Nomination>,

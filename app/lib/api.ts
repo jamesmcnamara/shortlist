@@ -36,6 +36,10 @@ export const api = {
         method: "POST",
         body: JSON.stringify(input),
       }),
+    delete: (nominationId: number): Promise<void> =>
+      request(`/api/nominations?id=${nominationId}`, {
+        method: "DELETE",
+      }),
   },
   users: {
     list: (): Promise<User[]> => request("/api/users"),

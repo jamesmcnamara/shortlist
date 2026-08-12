@@ -1,11 +1,14 @@
 import type { SubmitEventHandler } from "react";
 import { motion } from "motion/react";
+import type { Nomination } from "@/src/db/schema";
 import type { MovieSearchResultData } from "./MovieSearchResult";
 import { MovieSearchResults } from "./MovieSearchResults";
 import styles from "./NominationPanel.module.css";
 
 type NominationPanelProps = {
   nominatedThisMonth: boolean;
+  currentNomination: Nomination | null;
+  isRescinding: boolean;
   query: string;
   isSearching: boolean;
   searchError: string;
@@ -19,10 +22,13 @@ type NominationPanelProps = {
   onClearSelection: () => void;
   onQueryChange: (value: string) => void;
   onCommentChange: (value: string) => void;
+  onRescind: () => void;
 };
 
 export function NominationPanel({
   nominatedThisMonth,
+  currentNomination,
+  isRescinding,
   query,
   isSearching,
   searchError,
@@ -36,6 +42,7 @@ export function NominationPanel({
   onClearSelection,
   onQueryChange,
   onCommentChange,
+  onRescind,
 }: NominationPanelProps) {
   return (
     <motion.section
@@ -62,13 +69,45 @@ export function NominationPanel({
           ×
         </button>
       </div>
-      {nominatedThisMonth ? (
+      {nominatedThisMonth && !currentNomination ? (
         <div className={styles.limitMessage}>
           <span>✓</span>
           <div>
             <strong>Challenge accepted.</strong>
             <p>You can nominate again when next month rolls around.</p>
           </div>
+        </div>
+      ) : currentNomination ? (
+        <div className={styles.currentNomination}>
+          <div className={styles.selected}>
+            {currentNomination.movie.posterUrl ? (
+              <img
+                src={currentNomination.movie.posterUrl}
+                alt={`Poster for ${currentNomination.movie.title}`}
+              />
+            ) : (
+              <div
+                className={styles.selectedPlaceholder}
+                aria-label="No poster available"
+              >
+                No poster
+              </div>
+            )}
+            <div className={styles.selectedCopy}>
+              <h3>{currentNomination.movie.title}</h3>
+              {currentNomination.comment && (
+                <span>{currentNomination.comment}</span>
+              )}
+            </div>
+          </div>
+          <button
+            className={styles.rescind}
+            type="button"
+            onClick={onRescind}
+            disabled={isRescinding}
+          >
+            {isRescinding ? "Rescinding..." : "Rescind nomination"}
+          </button>
         </div>
       ) : (
         <form onSubmit={onSubmit}>

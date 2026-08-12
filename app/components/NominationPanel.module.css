@@ -168,6 +168,37 @@
   color: var(--accent-light);
 }
 
+.currentNomination {
+  border: 1px solid var(--border);
+  border-radius: 0.625rem;
+  background: var(--surface-muted);
+  overflow: hidden;
+}
+
+.currentNomination .selected {
+  margin-bottom: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.rescind {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  padding: 0.875rem;
+  background: var(--danger, #c0392b);
+  color: white;
+  font-size: 0.9344rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.rescind:disabled {
+  opacity: 0.45;
+}
+
 .limitMessage {
   display: flex;
   align-items: center;
