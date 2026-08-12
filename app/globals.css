@@ -17,7 +17,7 @@
   --accent-wash: #e3f0f4;
   --success: #32846d;
   --success-wash: #e9f4ef;
-  --shadow: 0 12px 28px rgba(43, 43, 73, 0.08);
+  --shadow: 0 0.75rem 1.75rem rgba(43, 43, 73, 0.08);
 }
 
 * {
@@ -43,16 +43,16 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 [role="button"]:focus-visible {
-  outline: 3px solid var(--accent-soft);
-  outline-offset: 2px;
+  outline: 0.1875rem solid var(--accent-soft);
+  outline-offset: 0.125rem;
 }
 
 .srOnly {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  width: 0.0625rem;
+  height: 0.0625rem;
   padding: 0;
-  margin: -1px;
+  margin: -0.0625rem;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
@@ -62,11 +62,11 @@ textarea:focus-visible,
 .avatar {
   display: inline-grid;
   place-items: center;
-  width: 25px;
-  height: 25px;
-  flex: 0 0 25px;
+  width: 1.5625rem;
+  height: 1.5625rem;
+  flex: 0 0 1.5625rem;
   border-radius: 50%;
-  font-size: 9px;
+  font-size: 0.6469rem;
   font-weight: 800;
 }
 

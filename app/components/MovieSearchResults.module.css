@@ -1,37 +1,37 @@
 .results {
-  margin-top: 10px;
+  margin-top: 0.625rem;
 }
 
 .heading {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 8px;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .heading h2 {
   margin: 0;
   color: var(--text);
-  font-size: 13px;
+  font-size: 0.9344rem;
 }
 
 .heading span,
 .status {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 0.7906rem;
 }
 
 .list {
   display: grid;
-  gap: 7px;
+  gap: 0.4375rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .status {
-  margin: 12px 0;
+  margin: 0.75rem 0;
 }
 
 .error {

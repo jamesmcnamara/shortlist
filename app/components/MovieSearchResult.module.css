@@ -1,30 +1,30 @@
 .result {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 9px;
+  gap: 0.625rem;
+  padding: 0.5625rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 0.5rem;
   background: var(--surface);
   cursor: pointer;
 }
 
 .result img,
 .placeholder {
-  width: 42px;
-  height: 62px;
-  flex: 0 0 42px;
-  border-radius: 4px;
+  width: 2.625rem;
+  height: 3.875rem;
+  flex: 0 0 2.625rem;
+  border-radius: 0.25rem;
   object-fit: cover;
 }
 
 .placeholder {
   display: grid;
   place-items: center;
-  padding: 4px;
+  padding: 0.25rem;
   background: var(--surface-muted);
   color: var(--muted);
-  font-size: 9px;
+  font-size: 0.6469rem;
   text-align: center;
 }
 
@@ -33,22 +33,22 @@
 }
 
 .copy h3 {
-  margin: 1px 0 2px;
+  margin: 0.0625rem 0 0.125rem;
   color: var(--text);
-  font-size: 13px;
+  font-size: 0.9344rem;
 }
 
 .copy p {
-  margin: 0 0 4px;
+  margin: 0 0 0.25rem;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 0.7906rem;
 }
 
 .copy span {
   display: -webkit-box;
   overflow: hidden;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 0.7906rem;
   line-height: 1.35;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
