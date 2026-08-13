@@ -1,11 +1,11 @@
 "use client";
 
-import { SubmitEventHandler, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence } from "motion/react";
-import { some, filter } from "shades";
+import { some, find, filter } from "shades";
 import { authClient } from "@/lib/auth/client";
-import { getMonth } from "@/app/lib/date-utils";
-import type { MovieSearchResultData } from "./components/MovieSearchResult";
+import { getMonth } from "@/app/lib/utils";
+import type { MovieSearchResult } from "./components/MovieSearchResult";
 import { MovieCard, MovieDiscussion } from "./components/MovieCard";
 import { NominationPanel } from "./components/NominationPanel";
 import { ShortlistHeader } from "./components/ShortlistHeader";
@@ -17,17 +17,9 @@ import { api, ApiError } from "./lib/api";
 export default function Home() {
   const { data: session } = authClient.useSession();
   const [nominations, setNominations] = useState(new Map<number, Nomination>());
-  const [query, setQuery] = useState("");
-  const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
-  const [searchResults, setSearchResults] = useState<MovieSearchResultData[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchError, setSearchError] = useState("");
-  const [selectedMovie, setSelectedMovie] =
-    useState<MovieSearchResultData | null>(null);
   const [isNominationOpen, setIsNominationOpen] = useState(false);
-  const [isRescinding, setIsRescinding] = useState(false);
   const [focusedId, setFocusedId] = useState<number | null>(null);
 
   const closeDiscussion = () => setFocusedId(null);
@@ -43,77 +35,32 @@ export default function Home() {
 
   const currentMonth = getMonth();
 
-  useEffect(() => {
-    if (!isNominationOpen || selectedMovie || query.length < 2) {
-      setSearchResults([]);
-      setSearchError("");
-      setIsSearching(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    const timeout = window.setTimeout(async () => {
-      setIsSearching(true);
-      setSearchError("");
-      try {
-        const data = await api.tmdb.search(query, controller.signal);
-        setSearchResults(data.results);
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError")
-          return;
-        setSearchError(
-          error instanceof Error ? error.message : "Search failed.",
-        );
-        setSearchResults([]);
-      } finally {
-        if (!controller.signal.aborted) setIsSearching(false);
-      }
-    }, 350);
-
-    return () => {
-      window.clearTimeout(timeout);
-      controller.abort();
-    };
-  }, [query, isNominationOpen, selectedMovie]);
-
   const nominees = Array.from(nominations.values()).sort(
     (a, b) => b.votes.length - a.votes.length,
   );
-  const userHasNominatedThisMonth = hasUserNominatedThisMonth(
-    nominations,
-    session?.user?.id,
-    currentMonth,
-  );
+
   const currentNomination = getCurrentNomination(
     nominations,
     session?.user?.id,
     currentMonth,
   );
+
   const votesLeft = calculateVotesLeft(
     nominations,
     session?.user?.id,
     currentMonth,
   );
 
-  function chooseSearchResult(movie: MovieSearchResultData) {
-    setSelectedMovie(movie);
-    setQuery("");
-    setSearchResults([]);
-  }
-
-  const nominate: SubmitEventHandler<HTMLFormElement> = async (event) => {
-    event.preventDefault();
-    if (userHasNominatedThisMonth || !selectedMovie || isSubmitting) return;
+  const nominate = async (candidate: MovieSearchResult, comment: string) => {
+    if (currentNomination || isSubmitting) return;
     setMessage("");
     setIsSubmitting(true);
     try {
       const data = await api.nominations.create({
-        tmdbId: selectedMovie.id,
+        tmdbId: candidate.id,
         comment,
       });
       setNominations((prev) => new Map(prev).set(data.id, data));
-      setComment("");
-      setSelectedMovie(null);
       setIsNominationOpen(false);
     } catch (error) {
       if (error instanceof ApiError) {
@@ -161,7 +108,7 @@ export default function Home() {
 
   async function rescindNomination(nominationId: number) {
     setMessage("");
-    setIsRescinding(true);
+    setIsSubmitting(true);
     try {
       await api.nominations.delete(nominationId);
       setNominations((prev) => {
@@ -176,7 +123,7 @@ export default function Home() {
           : "Unable to rescind your nomination.",
       );
     } finally {
-      setIsRescinding(false);
+      setIsSubmitting(false);
     }
   }
 
@@ -197,38 +144,19 @@ export default function Home() {
             type="button"
             onClick={() => setIsNominationOpen((open) => !open)}
           >
-            {userHasNominatedThisMonth
-              ? "Rescind your nom"
-              : "Choose your Fighter"}
+            {currentNomination
+              ? "Replace your nomination"
+              : "Choose your fighter"}
           </button>
         </header>
 
         <AnimatePresence initial={false}>
           {isNominationOpen && (
             <NominationPanel
-              nominatedThisMonth={userHasNominatedThisMonth}
               currentNomination={currentNomination}
-              isRescinding={isRescinding}
-              query={query}
-              isSearching={isSearching}
-              searchError={searchError}
-              searchResults={searchResults}
-              selectedMovie={selectedMovie}
-              comment={comment}
               isSubmitting={isSubmitting}
               onClose={() => setIsNominationOpen(false)}
               onSubmit={nominate}
-              onSelect={chooseSearchResult}
-              onClearSelection={() => {
-                setSelectedMovie(null);
-                setQuery("");
-                setComment("");
-              }}
-              onQueryChange={(value) => {
-                setQuery(value);
-                setSelectedMovie(null);
-              }}
-              onCommentChange={setComment}
               onRescind={() =>
                 currentNomination && rescindNomination(currentNomination.id)
               }
@@ -283,13 +211,6 @@ export default function Home() {
 const mapify = <T extends { id: number }>(arr: T[]): Map<number, T> =>
   new Map(arr.map((item) => [item.id, item]));
 
-const hasUserNominatedThisMonth = (
-  nominations: Map<number, Nomination>,
-  userId: string | undefined,
-  month: number,
-): boolean => 
-  !userId || some({nominator: {id: userId}, month})(nominations);
-
 const getCurrentNomination = (
   nominations: Map<number, Nomination>,
   userId: string | undefined,
@@ -297,9 +218,8 @@ const getCurrentNomination = (
 ): Nomination | null => {
   if (!userId) return null;
   return (
-    Array.from(nominations.values()).find(
-      (nomination) =>
-        nomination.nominator.id === userId && nomination.month === month,
+    find({ nominator: { id: userId }, month })(
+      Array.from(nominations.values()),
     ) ?? null
   );
 };

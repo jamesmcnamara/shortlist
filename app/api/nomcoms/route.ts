@@ -2,6 +2,7 @@ import { withUser } from "@/lib/auth/require-user";
 import { getDb } from "@/src/db/client";
 import { nominations, nomcoms } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
+import { getFullNominationForId } from "../nominations/route";
 
 export const runtime = "nodejs";
 
@@ -39,21 +40,7 @@ export const POST = withUser({ error: "Unable to add your comment." })(async (
   }
 
   await db.insert(nomcoms).values({ userId, nominationId, comment });
-
-  const updatedNomination = await db.query.nominations.findFirst({
-    where: (nominations, { eq }) => eq(nominations.id, nominationId),
-    with: {
-      movie: true,
-      votes: {
-        with: { voter: true },
-      },
-      nomcoms: {
-        with: { commenter: true },
-        orderBy: (nomcoms, { asc }) => asc(nomcoms.createdAt),
-      },
-      nominator: true,
-    },
+  return Response.json(await getFullNominationForId(nominationId), {
+    status: 201,
   });
-
-  return Response.json(updatedNomination, { status: 201 });
 });

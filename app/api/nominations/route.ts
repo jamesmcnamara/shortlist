@@ -1,5 +1,5 @@
 import { find } from "shades";
-import { getMonth } from "@/app/lib/date-utils";
+import { getMonth } from "@/app/lib/utils";
 import { withUser } from "@/lib/auth/require-user";
 import { getDb } from "@/src/db/client";
 import { movies, nominations } from "@/src/db/schema";
@@ -159,22 +159,9 @@ export const POST = withUser({ error: "Unable to create nomination." })(async (
     })
     .returning();
 
-  const full = await db.query.nominations.findFirst({
-    where: (n, { eq }) => eq(n.id, nomination.id),
-    with: {
-      movie: true,
-      votes: {
-        with: { voter: true },
-      },
-      nomcoms: {
-        with: { commenter: true },
-        orderBy: (nomcoms, { asc }) => asc(nomcoms.createdAt),
-      },
-      nominator: true,
-    },
+  return Response.json(await getFullNominationForId(nomination.id), {
+    status: 201,
   });
-
-  return Response.json(full, { status: 201 });
 });
 
 export const DELETE = withUser({ error: "Unable to delete the nomination." })(
@@ -286,4 +273,21 @@ function getRatingUrl(
 
 function getProviderUrl(baseUrl: string, path: string | null): string | null {
   return path?.startsWith("/") ? `${baseUrl}${path}` : null;
+}
+
+export function getFullNominationForId(nominationId: number) {
+  return getDb().query.nominations.findFirst({
+    where: (n, { eq }) => eq(n.id, nominationId),
+    with: {
+      movie: true,
+      votes: {
+        with: { voter: true },
+      },
+      nomcoms: {
+        with: { commenter: true },
+        orderBy: (nomcoms, { asc }) => asc(nomcoms.createdAt),
+      },
+      nominator: true,
+    },
+  });
 }

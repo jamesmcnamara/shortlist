@@ -1,7 +1,8 @@
+import { get } from "shades";
 import type { Nomination, User } from "@/src/db/schema";
-import type { MovieSearchResultData } from "@/app/components/MovieSearchResult";
+import type { MovieSearchResult } from "@/app/components/MovieSearchResult";
 
-class ApiError extends Error {
+export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
@@ -67,11 +68,9 @@ export const api = {
     search: (
       query: string,
       signal?: AbortSignal,
-    ): Promise<{ results: MovieSearchResultData[] }> =>
-      request(`/api/tmdb/search?query=${encodeURIComponent(query)}`, {
+    ): Promise<MovieSearchResult[]> =>
+      request<{results: MovieSearchResult[]}>(`/api/tmdb/search?query=${encodeURIComponent(query)}`, {
         signal,
-      }),
+      }).then(get("results")),
   },
 };
-
-export { ApiError };

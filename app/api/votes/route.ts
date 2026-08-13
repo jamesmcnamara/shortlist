@@ -1,9 +1,10 @@
-import { and, desc, eq } from "drizzle-orm";
 import { VOTES_PER_MONTH } from "@/app/lib/constants";
-import { requireUserId, unauthorized, withUser } from "@/lib/auth/require-user";
-import { getMonth } from "@/app/lib/date-utils";
+import { getMonth } from "@/app/lib/utils";
+import { withUser } from "@/lib/auth/require-user";
 import { getDb, type DB } from "@/src/db/client";
 import { nominations, votes, type RawNomination } from "@/src/db/schema";
+import { and, eq } from "drizzle-orm";
+import { getFullNominationForId } from "../nominations/route";
 
 export interface VoteInput {
   nominationId: number;
@@ -24,22 +25,9 @@ export const POST = withUser({ error: "Unable to create your vote" })(async (
   // Vote
   await db.insert(votes).values({ userId, month: getMonth(), nominationId });
 
-  const nom = await getDb().query.nominations.findFirst({
-    where: (n, { eq }) => eq(n.id, nominationId),
-    with: {
-      movie: true,
-      votes: {
-        with: { voter: true },
-      },
-      nomcoms: {
-        with: { commenter: true },
-        orderBy: (nomcoms, { asc }) => asc(nomcoms.createdAt),
-      },
-      nominator: true,
-    },
-    orderBy: (n, { desc }) => desc(n.createdAt),
+  return Response.json(await getFullNominationForId(nominationId), {
+    status: 201,
   });
-  return Response.json(nom, { status: 201 });
 });
 
 export const DELETE = withUser({ error: "Unable to delete your vote." })(async (
@@ -72,7 +60,10 @@ export const DELETE = withUser({ error: "Unable to delete your vote." })(async (
       { status: 409 },
     );
   await db.delete(votes).where(eq(votes.id, vote.id));
-  return new Response(null, { status: 204 });
+
+  return Response.json(await getFullNominationForId(nominationId), {
+    status: 200,
+  });
 });
 
 const validate = async (

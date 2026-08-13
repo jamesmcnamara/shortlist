@@ -71,7 +71,9 @@ export default function SignUpPage() {
           {state?.error ? <p className={styles.error}>{state.error}</p> : null}
 
           <button className={styles.submit} type="submit" disabled={isPending}>
-            {isPending ? "The loser is getting in…" : "Get in loser, we're going nominating"}
+            {isPending
+              ? "The loser is getting in…"
+              : "Get in loser, we're going nominating"}
           </button>
         </form>
 
