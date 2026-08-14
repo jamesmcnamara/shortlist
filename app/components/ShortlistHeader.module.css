@@ -93,3 +93,43 @@
     display: none;
   }
 }
+
+.roomName {
+  color: var(--muted);
+  font-size: 0.9344rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roomSwitcher {
+  max-width: 12rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 62.4375rem;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 0.8625rem;
+  font-weight: 700;
+  letter-spacing: normal;
+}
+
+.roomSwitcher:hover {
+  border-color: var(--accent-soft);
+  color: var(--accent);
+}
+
+.newRoom {
+  color: var(--muted);
+  font-size: 0.7906rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.newRoom:hover {
+  color: var(--accent);
+}

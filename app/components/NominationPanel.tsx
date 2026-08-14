@@ -3,9 +3,8 @@ import { withTargetValue } from "@/app/lib/utils";
 import type { Nomination } from "@/src/db/schema";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { get } from "shades";
 import { useDebouncedCallback } from "use-debounce";
-import type { MovieSearchResult } from "./MovieSearchResult";
+import type { MovieSearchResultData } from "./MovieSearchResult";
 import { MovieSearchResults } from "./MovieSearchResults";
 import styles from "./NominationPanel.module.css";
 
@@ -13,7 +12,7 @@ type NominationPanelProps = {
   currentNomination: Nomination | null;
   isSubmitting: boolean;
   onClose: () => void;
-  onSubmit: (movie: MovieSearchResult, comment: string) => void;
+  onSubmit: (movie: MovieSearchResultData, comment: string) => void;
   onRescind: () => void;
 };
 
@@ -25,10 +24,14 @@ export function NominationPanel({
   onRescind,
 }: NominationPanelProps) {
   const [query, setQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<MovieSearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<MovieSearchResultData[]>(
+    [],
+  );
   const [error, setError] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [candidate, setCandidate] = useState<MovieSearchResult | null>(null);
+  const [candidate, setCandidate] = useState<MovieSearchResultData | null>(
+    null,
+  );
   const [comment, setComment] = useState("");
 
   const searcher = useDebouncedCallback(
@@ -52,7 +55,7 @@ export function NominationPanel({
     { trailing: true },
   );
 
-  function onSelect(movie: MovieSearchResult) {
+  function onSelect(movie: MovieSearchResultData) {
     setCandidate(movie);
     setQuery("");
     setSearchResults([]);
@@ -175,40 +178,38 @@ const DropNomination = ({
   isSubmitting,
   onRescind,
 }: DropNominationProps) => (
-    <div className={styles.currentNomination}>
-      <div className={styles.selected}>
-        {currentNomination.movie.posterUrl ? (
-          <img
-            src={currentNomination.movie.posterUrl}
-            alt={`Poster for ${currentNomination.movie.title}`}
-          />
-        ) : (
-          <div
-            className={styles.selectedPlaceholder}
-            aria-label="No poster available"
-          >
-            No poster
-          </div>
-        )}
-        <div className={styles.selectedCopy}>
-          <h3>{currentNomination.movie.title}</h3>
-          {currentNomination.comment && (
-            <span>{currentNomination.comment}</span>
-          )}
+  <div className={styles.currentNomination}>
+    <div className={styles.selected}>
+      {currentNomination.movie.details.posterUrl ? (
+        <img
+          src={currentNomination.movie.details.posterUrl}
+          alt={`Poster for ${currentNomination.movie.details.title}`}
+        />
+      ) : (
+        <div
+          className={styles.selectedPlaceholder}
+          aria-label="No poster available"
+        >
+          No poster
         </div>
+      )}
+      <div className={styles.selectedCopy}>
+        <h3>{currentNomination.movie.details.title}</h3>
+        {currentNomination.comment && <span>{currentNomination.comment}</span>}
       </div>
-      <button
-        className={styles.rescind}
-        type="button"
-        onClick={onRescind}
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? "Dropping..." : "Drop nomination"}
-      </button>
     </div>
+    <button
+      className={styles.rescind}
+      type="button"
+      onClick={onRescind}
+      disabled={isSubmitting}
+    >
+      {isSubmitting ? "Dropping..." : "Drop nomination"}
+    </button>
+  </div>
 );
 interface CandidateFormProps {
-  candidate: MovieSearchResult;
+  candidate: MovieSearchResultData;
   comment: string;
   reset(): void;
   onCommentChange(comment: string): void;
@@ -271,11 +272,11 @@ const CandidateForm = ({
 
 interface SearchProps {
   query: string;
-  searchResults: MovieSearchResult[];
+  searchResults: MovieSearchResultData[];
   error: string;
   isSearching: boolean;
   onQueryChange(query: string): void;
-  onSelect(movie: MovieSearchResult): void;
+  onSelect(movie: MovieSearchResultData): void;
 }
 
 const Search = ({

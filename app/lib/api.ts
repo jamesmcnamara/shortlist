@@ -1,6 +1,8 @@
 import { get } from "shades";
-import type { Nomination, User } from "@/src/db/schema";
-import type { MovieSearchResult } from "@/app/components/MovieSearchResult";
+import type { Nomination, RoomRole, Seen, User } from "@/src/db/schema";
+import type { SafeRoom } from "@/lib/auth/require-room";
+import type { MovieSearchResultData } from "@/app/components/MovieSearchResult";
+import type { PresetName, RoomConfig } from "@/app/lib/rooms";
 
 export class ApiError extends Error {
   constructor(
@@ -29,48 +31,124 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
+export interface RoomSummary {
+  id: string;
+  slug: string;
+  name: string;
+  cycleLength: string;
+  nominationsPerCycle: number | null;
+  votesPerCycle: number;
+  role: RoomRole;
+}
+
+export interface RoomMemberSummary extends User {
+  role: RoomRole;
+  joinedAt: string;
+}
+
+export interface RoomDetail {
+  room: SafeRoom;
+  inviteCode?: string;
+  membership: { userId: string; role: RoomRole };
+  currentCycle: number;
+  members: RoomMemberSummary[];
+}
+
+/**
+ * Room-scoped calls are reached through `api.room(slug)`, so the slug is bound
+ * once rather than threaded through every call site.
+ */
 export const api = {
-  nominations: {
-    list: (): Promise<Nomination[]> => request("/api/nominations"),
-    create: (input: { tmdbId: number; comment: string }): Promise<Nomination> =>
-      request("/api/nominations", {
-        method: "POST",
-        body: JSON.stringify(input),
-      }),
-    delete: (nominationId: number): Promise<void> =>
-      request(`/api/nominations?id=${nominationId}`, {
-        method: "DELETE",
-      }),
+  rooms: {
+    list: (): Promise<RoomSummary[]> => request("/api/rooms"),
+    create: (input: {
+      name: string;
+      preset: PresetName;
+      slug?: string;
+      config?: Partial<RoomConfig>;
+    }): Promise<SafeRoom> =>
+      request("/api/rooms", { method: "POST", body: JSON.stringify(input) }),
   },
-  users: {
-    list: (): Promise<User[]> => request("/api/users"),
-  },
-  votes: {
-    create: (nominationId: number): Promise<Nomination> =>
-      request("/api/votes", {
-        method: "POST",
-        body: JSON.stringify({ nominationId }),
-      }),
-    delete: (nominationId: number): Promise<Nomination> =>
-      request("/api/votes", {
-        method: "DELETE",
-        body: JSON.stringify({ nominationId }),
-      }),
-  },
-  nomcoms: {
-    create: (nominationId: number, comment: string): Promise<Nomination> =>
-      request("/api/nomcoms", {
-        method: "POST",
-        body: JSON.stringify({ nominationId, comment }),
-      }),
+  join: (code: string): Promise<{ slug: string; name: string }> =>
+    request(`/api/join/${encodeURIComponent(code)}`, { method: "POST" }),
+  room: (slug: string) => {
+    const base = `/api/rooms/${encodeURIComponent(slug)}`;
+    return {
+      get: (): Promise<RoomDetail> => request(base),
+      update: (
+        input: Partial<RoomConfig> & { name?: string },
+      ): Promise<SafeRoom> =>
+        request(base, { method: "PATCH", body: JSON.stringify(input) }),
+      delete: (): Promise<void> => request(base, { method: "DELETE" }),
+      rotateInvite: (): Promise<{ inviteCode: string }> =>
+        request(`${base}/invite/rotate`, { method: "POST" }),
+      members: {
+        remove: (userId: string): Promise<void> =>
+          request(`${base}/members/${encodeURIComponent(userId)}`, {
+            method: "DELETE",
+          }),
+        setRole: (userId: string, role: RoomRole): Promise<void> =>
+          request(`${base}/members/${encodeURIComponent(userId)}`, {
+            method: "PATCH",
+            body: JSON.stringify({ role }),
+          }),
+      },
+      nominations: {
+        list: (): Promise<Nomination[]> => request(`${base}/nominations`),
+        create: (input: {
+          tmdbId: number;
+          comment: string;
+        }): Promise<Nomination> =>
+          request(`${base}/nominations`, {
+            method: "POST",
+            body: JSON.stringify(input),
+          }),
+        delete: (nominationId: number): Promise<void> =>
+          request(`${base}/nominations?id=${nominationId}`, {
+            method: "DELETE",
+          }),
+      },
+      votes: {
+        create: (nominationId: number): Promise<Nomination> =>
+          request(`${base}/votes`, {
+            method: "POST",
+            body: JSON.stringify({ nominationId }),
+          }),
+        delete: (nominationId: number): Promise<Nomination> =>
+          request(`${base}/votes`, {
+            method: "DELETE",
+            body: JSON.stringify({ nominationId }),
+          }),
+      },
+      nomcoms: {
+        create: (nominationId: number, comment: string): Promise<Nomination> =>
+          request(`${base}/nomcoms`, {
+            method: "POST",
+            body: JSON.stringify({ nominationId, comment }),
+          }),
+      },
+      seen: {
+        list: (): Promise<Seen[]> => request(`${base}/seen`),
+        create: (movieId: number): Promise<Seen> =>
+          request(`${base}/seen`, {
+            method: "POST",
+            body: JSON.stringify({ movieId }),
+          }),
+        delete: (movieId: number): Promise<void> =>
+          request(`${base}/seen?movieId=${movieId}`, { method: "DELETE" }),
+      },
+    };
   },
   tmdb: {
     search: (
       query: string,
       signal?: AbortSignal,
-    ): Promise<MovieSearchResult[]> =>
-      request<{results: MovieSearchResult[]}>(`/api/tmdb/search?query=${encodeURIComponent(query)}`, {
-        signal,
-      }).then(get("results")),
+    ): Promise<MovieSearchResultData[]> =>
+      request<{ results: MovieSearchResultData[] }>(
+        `/api/tmdb/search?query=${encodeURIComponent(query)}`,
+        { signal },
+      ).then(get("results")),
   },
 };
+
+export type RoomApi = ReturnType<typeof api.room>;

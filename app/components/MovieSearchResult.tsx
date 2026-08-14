@@ -1,6 +1,6 @@
 import styles from "./MovieSearchResult.module.css";
 
-export interface MovieSearchResult {
+export interface MovieSearchResultData {
   id: number;
   title: string;
   releaseDate: string;
@@ -10,8 +10,8 @@ export interface MovieSearchResult {
 }
 
 interface MovieSearchResultProps {
-  movie: MovieSearchResult;
-  onSelect?: (movie: MovieSearchResult) => void;
+  movie: MovieSearchResultData;
+  onSelect?: (movie: MovieSearchResultData) => void;
 }
 
 export function MovieSearchResult({ movie, onSelect }: MovieSearchResultProps) {

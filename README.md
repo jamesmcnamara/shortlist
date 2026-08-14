@@ -1,6 +1,32 @@
 # Movie Shortlist
 
-A tiny Next.js + Vercel + Neon starter. The `/api/movies` route reads and writes Neon Postgres through Drizzle ORM.
+A tiny Next.js + Vercel + Neon app for deciding what to watch, built on Drizzle ORM.
+
+## Rooms
+
+All content lives in a **room**, and every nomination, vote, comment and watched
+marking is scoped to one. Members only ever see the rooms they belong to; rooms
+are joined through a shareable invite link.
+
+A room is not a fixed "type" — it is a set of knobs that an admin can change at
+`/r/<slug>/settings`:
+
+| Knob                  | Meaning                                                               |
+| --------------------- | --------------------------------------------------------------------- |
+| Nominations per cycle | How many movies each person may add. Unlimited when unset.            |
+| Votes per cycle       | How many votes each person gets. Several may be stacked on one movie. |
+| Reset                 | Whether the cycle turns over monthly, weekly, or never.               |
+| Self-voting           | Whether people may vote for their own picks.                          |
+| Duplicates            | Whether the same movie may be added twice.                            |
+
+Two presets are offered when creating a room, and both are just starting values
+for the knobs above:
+
+- **Movie club** — one nomination each per month, then everyone votes.
+- **Watch list** — add as many movies as you like, with votes deciding what rises.
+
+"Reset: never" collapses the cycle to a single always-open period, which is what
+gives a watch list its running, non-resetting behaviour.
 
 ## Local development
 
@@ -8,9 +34,18 @@ A tiny Next.js + Vercel + Neon starter. The `/api/movies` route reads and writes
 2. Install dependencies: `npm install`
 3. Apply the schema: `npm run db:migrate`
 4. Start the app: `npm run dev`
-5. Open <http://localhost:3000>.
+5. Open <http://localhost:3030>.
 
-Useful checks are `npm run typecheck` and `npm run build`. To create a new Drizzle migration after changing `src/db/schema.ts`, run `npm run db:generate`.
+Useful checks are `npm test`, `npm run typecheck` and `npm run build`. To create a
+new Drizzle migration after changing `src/db/schema.ts`, run `npm run db:generate`.
+
+## Tests
+
+`npm test` runs Vitest. The API tests execute the real route handlers against an
+in-process Postgres ([PGlite](https://pglite.dev)), so cross-room isolation is
+proven against actual SQL rather than a mock: `app/api/isolation.test.ts` asserts
+per route that a member of one room cannot read or mutate another's content, so a
+missing `roomId` predicate fails the suite.
 
 ## GitHub and Vercel
 

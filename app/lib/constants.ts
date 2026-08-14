@@ -1,1 +1,0 @@
-export const VOTES_PER_MONTH = 5;

@@ -57,6 +57,13 @@
       "when": 1786487232900,
       "tag": "0007_illegal_cyclops",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786681617024,
+      "tag": "0008_previous_zeigeist",
+      "breakpoints": true
     }
   ]
 }

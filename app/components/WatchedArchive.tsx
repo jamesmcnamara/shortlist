@@ -18,7 +18,7 @@ export function WatchedArchive({ movies }: { movies: Movie[] }) {
       <div className={styles.row}>
         {movies.map((movie) => (
           <span className={styles.pill} key={movie.id}>
-            ✓ {movie.title}
+            ✓ {movie.details.title}
           </span>
         ))}
       </div>
