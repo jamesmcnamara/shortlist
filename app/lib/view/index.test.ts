@@ -46,10 +46,24 @@ const nomination = ({
     createdAt: new Date(createdAt),
     movie: {
       id: movieId,
-      title,
-      runtime,
-      imdbRating,
-      year,
+      tmdbId: movieId,
+      details: { title, runtime, year },
+      ratings: {
+        services:
+          imdbRating === null
+            ? []
+            : [
+                {
+                  source: "imdb",
+                  value: imdbRating,
+                  url: null,
+                  score: null,
+                  votes: null,
+                },
+              ],
+        raw: {},
+      },
+      createdAt: new Date(createdAt),
     },
     votes: votes.map((voterId, index) => ({
       id: index,

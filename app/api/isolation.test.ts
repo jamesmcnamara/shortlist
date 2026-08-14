@@ -93,8 +93,16 @@ beforeEach(async () => {
   const insertedMovies = await db
     .insert(movies)
     .values([
-      { tmdbId: 1, title: "Public Movie" },
-      { tmdbId: 2, title: "Private Movie" },
+      {
+        tmdbId: 1,
+        details: { title: "Public Movie" },
+        ratings: { services: [], raw: {} },
+      },
+      {
+        tmdbId: 2,
+        details: { title: "Private Movie" },
+        ratings: { services: [], raw: {} },
+      },
     ])
     .returning();
 
@@ -144,7 +152,7 @@ describe("room membership", () => {
 
     expect(response.status).toBe(200);
     expect(body).toHaveLength(1);
-    expect(body[0].movie.title).toBe("Public Movie");
+    expect(body[0].movie.details.title).toBe("Public Movie");
   });
 
   it("hides a room the caller does not belong to", async () => {

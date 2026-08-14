@@ -50,20 +50,8 @@ export async function createTestDb() {
     create table movies (
       id integer primary key generated always as identity,
       tmdb_id integer unique,
-      title text not null,
-      poster_url text,
-      description text,
-      year integer,
-      runtime integer,
-      tmdb_rating real,
-      imdb_rating real,
-      imdb_url text,
-      letterboxd_rating real,
-      letterboxd_url text,
-      rotten_tomatoes_rating real,
-      rotten_tomatoes_url text,
-      rotten_tomatoes_audience_rating real,
-      rotten_tomatoes_audience_url text,
+      details jsonb not null,
+      ratings jsonb not null,
       created_at timestamptz not null default now()
     );
 

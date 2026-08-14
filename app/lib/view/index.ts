@@ -33,6 +33,9 @@ const byNumberDesc = (a: number |  undefined, b: number | undefined) =>
 
 const time = (date: Date | string) => new Date(date).getTime();
 
+const imdbRating = ({ ratings }: Nomination["movie"]) =>
+  ratings.services.find(({ source }) => source === "imdb")?.value ?? undefined;
+
 export const SORTS: SortOption[] = [
   {
     id: "votes",
@@ -56,11 +59,11 @@ export const SORTS: SortOption[] = [
     compare: (a, b) =>
       (a.movie.details.runtime ?? Infinity) - (b.movie.details.runtime ?? Infinity),
   },
-  // {
-  //   id: "rating",
-  //   label: "Highest rated",
-  //   compare: (a, b) => byNumberDesc(a.movie.ratings.imdbRating, b.movie.ratings.imdbRating),
-  // },
+  {
+    id: "rating",
+    label: "Highest rated",
+    compare: (a, b) => byNumberDesc(imdbRating(a.movie), imdbRating(b.movie)),
+  },
   {
     id: "year",
     label: "Newest release",

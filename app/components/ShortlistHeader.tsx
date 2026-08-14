@@ -76,32 +76,36 @@ export function ShortlistHeader({
       </div>
       {name ? (
         <div className={styles.profile}>
-          {typeof nominationsLeft === "number" && (
+          <div className={styles.balances}>
+            {typeof nominationsLeft === "number" && (
+              <span className={styles.voteBalance}>
+                {nominationsLeft}{" "}
+                {nominationsLeft === 1 ? "nomination" : "nominations"} left
+              </span>
+            )}
             <span className={styles.voteBalance}>
-              {nominationsLeft}{" "}
-              {nominationsLeft === 1 ? "nomination" : "nominations"} left
+              {votesLeft} {votesLeft === 1 ? "vote" : "votes"} left
             </span>
-          )}
-          <span className={styles.voteBalance}>
-            {votesLeft} {votesLeft === 1 ? "vote" : "votes"} left
-          </span>
-          <div className={styles.identity}>
-            <span className="avatar avatar-violet">{initialsFor(name)}</span>
-            <span className={styles.name}>{name}</span>
           </div>
-          {isAdmin && (
-            <Link className={styles.signOut} href={`/r/${room.slug}/settings`}>
-              Settings
-            </Link>
-          )}
-          <button
-            className={styles.signOut}
-            type="button"
-            disabled={isSigningOut}
-            onClick={handleSignOut}
-          >
-            {isSigningOut ? "Signing out…" : "Sign out"}
-          </button>
+          <div className={styles.accountActions}>
+            <div className={styles.identity}>
+              <span className="avatar avatar-violet">{initialsFor(name)}</span>
+              <span className={styles.name}>{name}</span>
+            </div>
+            {isAdmin && (
+              <Link className={styles.signOut} href={`/r/${room.slug}/settings`}>
+                Settings
+              </Link>
+            )}
+            <button
+              className={styles.signOut}
+              type="button"
+              disabled={isSigningOut}
+              onClick={handleSignOut}
+            >
+              {isSigningOut ? "Signing out…" : "Sign out"}
+            </button>
+          </div>
         </div>
       ) : null}
     </header>

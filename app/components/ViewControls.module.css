@@ -64,14 +64,37 @@
 }
 
 @media (max-width: 40rem) {
+  .controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.625rem;
+  }
+
+  .sort {
+    justify-content: space-between;
+  }
+
+  .select {
+    min-height: 2.75rem;
+  }
+
   .filters {
-    /* Let the row scroll rather than pushing the list down the page. */
+    width: 100%;
+    min-width: 0;
     flex-wrap: nowrap;
     overflow-x: auto;
+    padding: 0.125rem 0 0.375rem;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-inline: contain;
     scrollbar-width: none;
   }
 
   .filters::-webkit-scrollbar {
     display: none;
+  }
+
+  .filter {
+    min-height: 2.75rem;
+    padding-inline: 0.875rem;
   }
 }

@@ -68,7 +68,11 @@ async function setup(options: RoomOptions = {}) {
 
   const [movie] = await db
     .insert(movies)
-    .values({ tmdbId: 1, title: "A Movie" })
+    .values({
+      tmdbId: 1,
+      details: { title: "A Movie" },
+      ratings: { services: [], raw: {} },
+    })
     .returning();
 
   const [nomination] = await db
