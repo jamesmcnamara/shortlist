@@ -10,6 +10,13 @@ import {
 } from "@/src/db/schema";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import { eq } from "drizzle-orm";
+import * as roomsRoute from "./rooms/route";
+import * as roomRoute from "./rooms/[slug]/route";
+import * as nominationsRoute from "./rooms/[slug]/nominations/route";
+import * as votesRoute from "./rooms/[slug]/votes/route";
+import * as rotateInviteRoute from "./rooms/[slug]/invite/rotate/route";
+import * as membersRoute from "./rooms/[slug]/members/[userId]/route";
+import { setMovieProviderForTesting } from "../lib/movie-metadata";
 
 const currentUserId = vi.hoisted(() => ({ value: "" }));
 vi.mock("@/lib/auth/server", () => ({
@@ -84,6 +91,22 @@ async function setup(options: RoomOptions = {}) {
 }
 
 beforeEach(async () => {
+  setMovieProviderForTesting({
+    hasCredentials: () => true,
+    search: vi.fn().mockResolvedValue([]),
+    // Echo the requested id so distinct tmdbIds map to distinct movie rows;
+    // otherwise every nomination collides with movie 1 from setup() and the
+    // duplicate-nomination guard masks whatever this test is actually
+    // exercising (e.g. the nomination cap).
+    fetchMovieValues: vi.fn().mockImplementation((tmdbId: number) =>
+      Promise.resolve({
+        tmdbId,
+        details: { title: `Movie ${tmdbId}` },
+        ratings: { services: [], raw: {} },
+      }),
+    ),
+  });
+
   const created = await createTestDb();
   db = created.db as unknown as DB;
   setDbForTesting(() => db);
@@ -96,7 +119,7 @@ beforeEach(async () => {
 
 describe("vote budget", () => {
   it("allows votes up to the room's cap", async () => {
-    const { POST } = await import("./rooms/[slug]/votes/route");
+    const { POST } = votesRoute;
     const { nomination } = await setup({ votesPerCycle: 2 });
     asUser(BOB);
 
@@ -109,7 +132,7 @@ describe("vote budget", () => {
   });
 
   it("counts stacked votes on one nomination against the budget", async () => {
-    const { POST } = await import("./rooms/[slug]/votes/route");
+    const { POST } = votesRoute;
     const { nomination } = await setup({ votesPerCycle: 2 });
     asUser(BOB);
 
@@ -122,7 +145,7 @@ describe("vote budget", () => {
   });
 
   it("keeps each person's budget separate", async () => {
-    const { POST } = await import("./rooms/[slug]/votes/route");
+    const { POST } = votesRoute;
     const { nomination } = await setup({
       votesPerCycle: 1,
       allowSelfVote: true,
@@ -140,7 +163,7 @@ describe("vote budget", () => {
   });
 
   it("frees a vote when one is removed", async () => {
-    const routes = await import("./rooms/[slug]/votes/route");
+    const routes = votesRoute;
     const { nomination } = await setup({ votesPerCycle: 1 });
     asUser(BOB);
 
@@ -165,7 +188,7 @@ describe("vote budget", () => {
   });
 
   it("removes only one of several stacked votes at a time", async () => {
-    const routes = await import("./rooms/[slug]/votes/route");
+    const routes = votesRoute;
     const { nomination } = await setup({ votesPerCycle: 3 });
     asUser(BOB);
 
@@ -186,7 +209,7 @@ describe("vote budget", () => {
 
 describe("concurrent requests", () => {
   it("does not let parallel votes exceed the budget", async () => {
-    const { POST } = await import("./rooms/[slug]/votes/route");
+    const { POST } = votesRoute;
     const { nomination } = await setup({ votesPerCycle: 2 });
     asUser(BOB);
 
@@ -207,7 +230,7 @@ describe("concurrent requests", () => {
 
 describe("self-voting", () => {
   it("is rejected when the room disallows it", async () => {
-    const { POST } = await import("./rooms/[slug]/votes/route");
+    const { POST } = votesRoute;
     const { nomination } = await setup({ allowSelfVote: false });
     asUser(ALICE);
 
@@ -217,7 +240,7 @@ describe("self-voting", () => {
   });
 
   it("is allowed when the room permits it", async () => {
-    const { POST } = await import("./rooms/[slug]/votes/route");
+    const { POST } = votesRoute;
     const { nomination } = await setup({ allowSelfVote: true });
     asUser(ALICE);
 
@@ -228,7 +251,7 @@ describe("self-voting", () => {
 
 describe("nomination cap", () => {
   it("blocks a second nomination in a one-per-cycle room", async () => {
-    const { POST } = await import("./rooms/[slug]/nominations/route");
+    const { POST } = nominationsRoute;
     await setup({ nominationsPerCycle: 1 });
     asUser(ALICE);
 
@@ -237,7 +260,7 @@ describe("nomination cap", () => {
   });
 
   it("does not apply another member's usage to the caller", async () => {
-    const { POST } = await import("./rooms/[slug]/nominations/route");
+    const { POST } = nominationsRoute;
     await setup({ nominationsPerCycle: 1 });
     // Bob has not nominated, so the cap must not stop him. Without TMDB
     // credentials the call fails later, at the metadata fetch, not at the cap.
@@ -248,7 +271,7 @@ describe("nomination cap", () => {
   });
 
   it("does not check a cap at all when nominations are unlimited", async () => {
-    const { POST } = await import("./rooms/[slug]/nominations/route");
+    const { POST } = nominationsRoute;
     await setup({ nominationsPerCycle: null });
     asUser(ALICE);
 
@@ -259,7 +282,7 @@ describe("nomination cap", () => {
 
 describe("room settings", () => {
   it("refuses a cycle length change once nominations exist", async () => {
-    const { PATCH } = await import("./rooms/[slug]/route");
+    const { PATCH } = roomRoute;
     await setup();
     asUser(ALICE);
 
@@ -268,7 +291,7 @@ describe("room settings", () => {
   });
 
   it("allows a cycle length change in an empty room", async () => {
-    const { PATCH } = await import("./rooms/[slug]/route");
+    const { PATCH } = roomRoute;
     const [room] = await db
       .insert(rooms)
       .values({
@@ -289,7 +312,7 @@ describe("room settings", () => {
   });
 
   it("rejects an invalid vote cap", async () => {
-    const { PATCH } = await import("./rooms/[slug]/route");
+    const { PATCH } = roomRoute;
     await setup();
     asUser(ALICE);
 
@@ -299,7 +322,7 @@ describe("room settings", () => {
   });
 
   it("accepts unlimited nominations as an explicit null", async () => {
-    const { PATCH } = await import("./rooms/[slug]/route");
+    const { PATCH } = roomRoute;
     const { room } = await setup({ nominationsPerCycle: 1 });
     asUser(ALICE);
 
@@ -314,7 +337,7 @@ describe("room settings", () => {
   });
 
   it("invalidates the old invite code when rotated", async () => {
-    const { POST } = await import("./rooms/[slug]/invite/rotate/route");
+    const { POST } = rotateInviteRoute;
     const { room } = await setup();
     asUser(ALICE);
 
@@ -333,7 +356,7 @@ describe("room settings", () => {
 
 describe("room creation", () => {
   it("applies the watchlist preset", async () => {
-    const { POST } = await import("./rooms/route");
+    const { POST } = roomsRoute;
     asUser(ALICE);
 
     const room = await (
@@ -346,7 +369,7 @@ describe("room creation", () => {
   });
 
   it("applies the club preset", async () => {
-    const { POST } = await import("./rooms/route");
+    const { POST } = roomsRoute;
     asUser(ALICE);
 
     const room = await (
@@ -358,7 +381,7 @@ describe("room creation", () => {
   });
 
   it("makes the creator an admin", async () => {
-    const { POST } = await import("./rooms/route");
+    const { POST } = roomsRoute;
     asUser(ALICE);
 
     await POST(post({ name: "Movie Club", preset: "club" }));
@@ -369,7 +392,7 @@ describe("room creation", () => {
   });
 
   it("refuses a duplicate slug", async () => {
-    const { POST } = await import("./rooms/route");
+    const { POST } = roomsRoute;
     asUser(ALICE);
 
     await POST(post({ name: "Movie Club", preset: "club" }));
@@ -381,7 +404,7 @@ describe("room creation", () => {
 
 describe("member management", () => {
   it("will not leave a room without an admin", async () => {
-    const { DELETE } = await import("./rooms/[slug]/members/[userId]/route");
+    const { DELETE } = membersRoute;
     const { room } = await setup();
     asUser(ALICE);
 
@@ -400,7 +423,7 @@ describe("member management", () => {
   });
 
   it("leaves a removed member's nominations in place", async () => {
-    const { DELETE } = await import("./rooms/[slug]/members/[userId]/route");
+    const { DELETE } = membersRoute;
     const { room, movie } = await setup();
     await db
       .insert(nominations)
@@ -419,7 +442,7 @@ describe("member management", () => {
   });
 
   it("refuses self-removal, which is what keeps an admin in the room", async () => {
-    const { DELETE } = await import("./rooms/[slug]/members/[userId]/route");
+    const { DELETE } = membersRoute;
     await setup();
     asUser(ALICE);
 
@@ -431,7 +454,7 @@ describe("member management", () => {
   });
 
   it("refuses self-demotion", async () => {
-    const { PATCH } = await import("./rooms/[slug]/members/[userId]/route");
+    const { PATCH } = membersRoute;
     await setup();
     asUser(ALICE);
 

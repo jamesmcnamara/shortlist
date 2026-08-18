@@ -11,6 +11,18 @@ import {
   votes,
 } from "@/src/db/schema";
 import { authUsers } from "@/src/db/neon-auth-schema";
+import { loadRoom } from "@/app/lib/load-room";
+// One namespace import per route module, aliased `<name>Route`, so every
+// handler keeps its real export name (GET/POST/PATCH/DELETE) without
+// colliding across the many routes a single test file exercises.
+import * as roomsRoute from "./rooms/route";
+import * as roomRoute from "./rooms/[slug]/route";
+import * as nominationsRoute from "./rooms/[slug]/nominations/route";
+import * as votesRoute from "./rooms/[slug]/votes/route";
+import * as nomcomsRoute from "./rooms/[slug]/nomcoms/route";
+import * as seenRoute from "./rooms/[slug]/seen/route";
+import * as rotateInviteRoute from "./rooms/[slug]/invite/rotate/route";
+import * as joinRoute from "./join/[code]/route";
 
 // Auth is the one thing stubbed; everything below it runs for real.
 const currentUserId = vi.hoisted(() => ({ value: "" }));
@@ -144,7 +156,7 @@ beforeEach(async () => {
 
 describe("room membership", () => {
   it("returns only the caller's own room contents", async () => {
-    const { GET } = await import("./rooms/[slug]/nominations/route");
+    const { GET } = nominationsRoute;
     asUser(BOB);
 
     const response = await GET(new Request("http://test"), route("club"));
@@ -156,7 +168,7 @@ describe("room membership", () => {
   });
 
   it("hides a room the caller does not belong to", async () => {
-    const { GET } = await import("./rooms/[slug]/nominations/route");
+    const { GET } = nominationsRoute;
     asUser(BOB);
 
     const response = await GET(new Request("http://test"), route("secret"));
@@ -166,7 +178,7 @@ describe("room membership", () => {
   });
 
   it("rejects anonymous callers", async () => {
-    const { GET } = await import("./rooms/[slug]/nominations/route");
+    const { GET } = nominationsRoute;
     asUser("");
 
     const response = await GET(new Request("http://test"), route("club"));
@@ -174,7 +186,7 @@ describe("room membership", () => {
   });
 
   it("lists only rooms the caller belongs to", async () => {
-    const { GET } = await import("./rooms/route");
+    const { GET } = roomsRoute;
     asUser(BOB);
 
     const body = await (await GET(new Request("http://test"))).json();
@@ -184,7 +196,7 @@ describe("room membership", () => {
 
 describe("cross-room writes", () => {
   it("cannot vote on another room's nomination through its own room", async () => {
-    const { POST } = await import("./rooms/[slug]/votes/route");
+    const { POST } = votesRoute;
     asUser(BOB);
 
     const response = await POST(
@@ -198,7 +210,7 @@ describe("cross-room writes", () => {
   });
 
   it("cannot comment on another room's nomination", async () => {
-    const { POST } = await import("./rooms/[slug]/nomcoms/route");
+    const { POST } = nomcomsRoute;
     asUser(BOB);
 
     const response = await POST(
@@ -211,7 +223,7 @@ describe("cross-room writes", () => {
   });
 
   it("cannot delete another room's nomination", async () => {
-    const { DELETE } = await import("./rooms/[slug]/nominations/route");
+    const { DELETE } = nominationsRoute;
     asUser(BOB);
 
     const response = await DELETE(
@@ -226,7 +238,7 @@ describe("cross-room writes", () => {
   });
 
   it("cannot delete someone else's nomination in its own room", async () => {
-    const { DELETE } = await import("./rooms/[slug]/nominations/route");
+    const { DELETE } = nominationsRoute;
     asUser(BOB);
 
     const response = await DELETE(
@@ -240,7 +252,7 @@ describe("cross-room writes", () => {
   });
 
   it("does not leak another room's watched movies", async () => {
-    const { GET } = await import("./rooms/[slug]/seen/route");
+    const { GET } = seenRoute;
     asUser(BOB);
 
     const body = await (
@@ -250,7 +262,7 @@ describe("cross-room writes", () => {
   });
 
   it("scopes a watched marking to the acting room", async () => {
-    const { POST } = await import("./rooms/[slug]/seen/route");
+    const { POST } = seenRoute;
     asUser(BOB);
 
     await POST(post({ movieId: fixture.movieInB }), route("club"));
@@ -266,7 +278,7 @@ describe("cross-room writes", () => {
 
 describe("admin-only routes", () => {
   it("refuses a config change from a non-admin member", async () => {
-    const { PATCH } = await import("./rooms/[slug]/route");
+    const { PATCH } = roomRoute;
     asUser(BOB);
 
     const response = await PATCH(post({ votesPerCycle: 99 }), route("club"));
@@ -277,7 +289,7 @@ describe("admin-only routes", () => {
   });
 
   it("allows an admin to change config", async () => {
-    const { PATCH } = await import("./rooms/[slug]/route");
+    const { PATCH } = roomRoute;
     asUser(ALICE);
 
     const response = await PATCH(post({ votesPerCycle: 4 }), route("club"));
@@ -285,7 +297,7 @@ describe("admin-only routes", () => {
   });
 
   it("refuses a non-member entirely", async () => {
-    const { PATCH } = await import("./rooms/[slug]/route");
+    const { PATCH } = roomRoute;
     asUser(MALLORY);
 
     const response = await PATCH(post({ votesPerCycle: 99 }), route("club"));
@@ -293,8 +305,7 @@ describe("admin-only routes", () => {
   });
 
   it("withholds the invite code from non-admins", async () => {
-    const { GET } = await import("./rooms/[slug]/route");
-
+    const { GET } = roomRoute;
     asUser(BOB);
     const asMember = await (
       await GET(new Request("http://test"), route("club"))
@@ -312,7 +323,6 @@ describe("admin-only routes", () => {
   });
 
   it("keeps the invite code out of the server-rendered room payload", async () => {
-    const { loadRoom } = await import("@/app/lib/load-room");
     asUser(BOB);
 
     const result = await loadRoom("club");
@@ -323,7 +333,7 @@ describe("admin-only routes", () => {
   });
 
   it("does not leak the invite code through a config update", async () => {
-    const { PATCH } = await import("./rooms/[slug]/route");
+    const { PATCH } = roomRoute;
     asUser(ALICE);
 
     const body = await (
@@ -334,8 +344,31 @@ describe("admin-only routes", () => {
 });
 
 describe("invites", () => {
+  it("invalidates the previous code when an admin rotates the invite", async () => {
+    const { POST: rotate } = rotateInviteRoute;
+    const { POST: join } = joinRoute;
+    asUser(ALICE);
+
+    const rotated = await rotate(
+      new Request("http://test", { method: "POST" }),
+      route("club"),
+    );
+    expect(rotated.status).toBe(200);
+    const { inviteCode } = await rotated.json();
+    expect(inviteCode).not.toBe("invite-a");
+
+    asUser(MALLORY);
+    expect(
+      (
+        await join(new Request("http://test", { method: "POST" }), {
+          params: Promise.resolve({ code: "invite-a" }),
+        })
+      ).status,
+    ).toBe(404);
+  });
+
   it("adds the caller to the room behind the code", async () => {
-    const { POST } = await import("./join/[code]/route");
+    const { POST } = joinRoute;
     asUser(BOB);
 
     const response = await POST(
@@ -350,7 +383,7 @@ describe("invites", () => {
   });
 
   it("treats re-joining as a no-op", async () => {
-    const { POST } = await import("./join/[code]/route");
+    const { POST } = joinRoute;
     asUser(BOB);
     const request = () =>
       POST(new Request("http://test", { method: "POST" }), {
@@ -365,7 +398,7 @@ describe("invites", () => {
   });
 
   it("rejects an unknown code", async () => {
-    const { POST } = await import("./join/[code]/route");
+    const { POST } = joinRoute;
     asUser(BOB);
 
     const response = await POST(

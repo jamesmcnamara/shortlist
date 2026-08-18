@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { cycleFor } from "@/app/lib/cycles";
 import { getNomination, listNominations } from "@/app/lib/queries";
-import { fetchMovieValues, hasTmdbCredentials } from "@/app/lib/movie-metadata";
+import { getMovieProvider } from "@/app/lib/movie-metadata";
 import { withRoomMember, type RoomContext } from "@/lib/auth/require-room";
 import { getDb } from "@/src/db/client";
 import { movies, nominations } from "@/src/db/schema";
@@ -54,7 +54,8 @@ export const POST = withRoomMember({ error: "Unable to create nomination." })(
       }
     }
 
-    if (!hasTmdbCredentials()) {
+    const provider = getMovieProvider();
+    if (!provider.hasCredentials()) {
       return Response.json(
         { error: "TMDB credentials are not configured." },
         { status: 500 },
@@ -63,7 +64,7 @@ export const POST = withRoomMember({ error: "Unable to create nomination." })(
 
     let values;
     try {
-      values = await fetchMovieValues(tmdbId);
+      values = await provider.fetchMovieValues(tmdbId);
     } catch (error) {
       console.error(error);
       return Response.json(
