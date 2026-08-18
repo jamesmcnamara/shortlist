@@ -2,11 +2,19 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { useSearchParams } from "next/navigation";
+import { getSafeRedirect } from "@/lib/auth/redirect";
 import styles from "../auth.module.css";
 import { signUpWithEmail } from "./actions";
 
 export default function SignUpPage() {
   const [state, formAction, isPending] = useActionState(signUpWithEmail, null);
+  const searchParams = useSearchParams();
+  const next = getSafeRedirect(searchParams.get("next"));
+  const signInHref =
+    next === "/"
+      ? "/auth/sign-in"
+      : `/auth/sign-in?next=${encodeURIComponent(next)}`;
 
   return (
     <main className={styles.shell}>
@@ -18,6 +26,7 @@ export default function SignUpPage() {
         <h1 className={styles.title}>Join the shortlist</h1>
 
         <form action={formAction} className={styles.form}>
+          <input type="hidden" name="next" value={next} />
           <div className={styles.field}>
             <label className={styles.label} htmlFor="name">
               Name
@@ -78,7 +87,7 @@ export default function SignUpPage() {
         </form>
 
         <p className={styles.footer}>
-          Already have one? <Link href="/auth/sign-in">Sign in</Link>
+          Already have one? <Link href={signInHref}>Sign in</Link>
         </p>
       </div>
     </main>

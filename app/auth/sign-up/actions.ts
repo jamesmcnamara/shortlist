@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth/server";
+import { getSafeRedirect } from "@/lib/auth/redirect";
 
 export type AuthFormState = { error: string } | null;
 
@@ -12,6 +13,7 @@ export async function signUpWithEmail(
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   let password = String(formData.get("password") ?? "");
+  const next = getSafeRedirect(String(formData.get("next") ?? ""));
 
   if (!name || !email || !password) {
     return { error: "Name, email, and password are all required." };
@@ -27,5 +29,5 @@ export async function signUpWithEmail(
     return { error: error.message || "Could not create that account." };
   }
 
-  redirect("/");
+  redirect(next);
 }

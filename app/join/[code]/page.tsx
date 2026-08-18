@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { use } from "react";
-import { api } from "@/app/lib/api";
+import { ApiError, api } from "@/app/lib/api";
 import styles from "@/app/auth/auth.module.css";
 
-export default function JoinPage({
-  params,
-}: {
+interface JoinPageProps {
   params: Promise<{ code: string }>;
-}) {
+}
+
+export default function JoinPage({ params }: JoinPageProps) {
   const { code } = use(params);
   const router = useRouter();
   const [error, setError] = useState("");
@@ -19,7 +19,16 @@ export default function JoinPage({
     api
       .join(code)
       .then(({ slug }) => router.replace(`/r/${slug}`))
-      .catch((error: Error) => setError(error.message));
+      .catch((error: Error) => {
+        if (error instanceof ApiError && error.status === 401) {
+          router.replace(
+            `/auth/sign-up?next=${encodeURIComponent(`/join/${code}`)}`,
+          );
+          return;
+        }
+
+        setError(error.message);
+      });
   }, [code, router]);
 
   return (

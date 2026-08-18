@@ -2,11 +2,15 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { useSearchParams } from "next/navigation";
+import { getSafeRedirect } from "@/lib/auth/redirect";
 import styles from "../auth.module.css";
 import { signInWithEmail } from "./actions";
 
 export default function SignInPage() {
   const [state, formAction, isPending] = useActionState(signInWithEmail, null);
+  const searchParams = useSearchParams();
+  const next = getSafeRedirect(searchParams.get("next"));
 
   return (
     <main className={styles.shell}>
@@ -19,6 +23,7 @@ export default function SignInPage() {
         <p className={styles.subtitle} />
 
         <form action={formAction} className={styles.form}>
+          <input type="hidden" name="next" value={next} />
           <div className={styles.field}>
             <label className={styles.label} htmlFor="email">
               Email
