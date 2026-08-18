@@ -1,47 +1,28 @@
 .controls {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+  display: grid;
+  gap: 0.625rem;
   padding-bottom: 1.25rem;
 }
 
-.sort {
+.actions {
   display: flex;
   align-items: center;
-  gap: 0.4375rem;
-}
-
-.sortLabel {
-  color: var(--muted);
-  font-size: 0.7906rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.select {
-  padding: 0.375rem 0.625rem;
-  border: 1px solid var(--border-strong);
-  border-radius: 62.4375rem;
-  background: var(--surface);
-  color: var(--text-soft);
-  font-size: 0.8625rem;
-  font-weight: 700;
-}
-
-.select:hover {
-  border-color: var(--accent-soft);
-  color: var(--accent);
-}
-
-.filters {
-  display: flex;
   flex-wrap: wrap;
-  gap: 0.375rem;
+  gap: 0.5rem;
 }
 
-.filter {
+.nominateButton {
+  flex: none;
+  border: 0;
+  border-radius: 62.4375rem;
+  padding: 0.6875rem 0.875rem;
+  background: var(--text);
+  color: white;
+  font-size: 0.7906rem;
+  font-weight: 800;
+}
+
+.toggle {
   padding: 0.375rem 0.625rem;
   border: 1px solid var(--border-strong);
   border-radius: 62.4375rem;
@@ -52,33 +33,62 @@
   white-space: nowrap;
 }
 
-.filter:hover {
+.toggle:hover {
   border-color: var(--accent-soft);
   color: var(--accent);
 }
 
-.filterActive {
+.toggleActive {
+  border-color: var(--accent-soft);
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.option {
+  padding: 0.375rem 0.625rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 62.4375rem;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 0.8625rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.option:hover {
+  border-color: var(--accent-soft);
+  color: var(--accent);
+}
+
+.optionActive {
   border-color: var(--accent-soft);
   background: var(--accent-wash);
   color: var(--accent);
 }
 
 @media (max-width: 40rem) {
-  .controls {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.625rem;
+  .actions {
+    width: 100%;
+    flex-wrap: nowrap;
   }
 
-  .sort {
-    justify-content: space-between;
-  }
-
-  .select {
+  .nominateButton {
     min-height: 2.75rem;
+    white-space: nowrap;
   }
 
-  .filters {
+  .toggle {
+    min-height: 2.75rem;
+    padding-inline: 0.5rem;
+  }
+
+  .options {
     width: 100%;
     min-width: 0;
     flex-wrap: nowrap;
@@ -89,11 +99,11 @@
     scrollbar-width: none;
   }
 
-  .filters::-webkit-scrollbar {
+  .options::-webkit-scrollbar {
     display: none;
   }
 
-  .filter {
+  .option {
     min-height: 2.75rem;
     padding-inline: 0.875rem;
   }

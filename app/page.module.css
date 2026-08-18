@@ -10,17 +10,6 @@
 }
 
 .sectionHeader {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 1.25rem;
-}
-
-.sectionIntro {
-  min-width: 0;
-}
-
-.sectionHeader h1 {
   margin: 0;
   font-size: 2.2281rem;
   letter-spacing: -0.07em;
@@ -31,17 +20,6 @@
   color: var(--muted);
   font-size: 0.7906rem;
   font-weight: 700;
-}
-
-.nominateButton {
-  flex: none;
-  border: 0;
-  border-radius: 62.4375rem;
-  padding: 0.6875rem 0.875rem;
-  background: var(--text);
-  color: white;
-  font-size: 0.7906rem;
-  font-weight: 800;
 }
 
 .message {
@@ -97,17 +75,6 @@
 
   .nominations {
     gap: 1.25rem;
-  }
-
-  .sectionHeader {
-    align-items: start;
-    flex-direction: column;
-    gap: 0.875rem;
-  }
-
-  .nominateButton {
-    width: 100%;
-    min-height: 2.75rem;
   }
 
   .footer {

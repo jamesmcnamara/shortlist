@@ -2,37 +2,36 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { authClient } from "@/lib/auth/client";
-import { withTargetValue } from "@/app/lib/utils";
 import { useRoom } from "@/app/r/[slug]/RoomContext";
 import styles from "./ShortlistHeader.module.css";
 
-/** Sentinel value for the switcher's "create a room" entry. */
-const NEW_ROOM = "__new__";
-
-function initialsFor(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
 type ShortlistHeaderProps = {
   votesLeft: number;
-  /** null when the room does not cap nominations. */
-  nominationsLeft?: number | null;
 };
 
 export function ShortlistHeader({
   votesLeft,
-  nominationsLeft,
 }: ShortlistHeaderProps) {
   const { data: session } = authClient.useSession();
   const { room, rooms, isAdmin } = useRoom();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const name = session?.user?.name || session?.user?.email || "";
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [isMenuOpen]);
 
   async function handleSignOut() {
     setIsSigningOut(true);
@@ -47,67 +46,91 @@ export function ShortlistHeader({
 
   return (
     <header className={styles.header}>
-      <div className={styles.brand}>
-        <span>Shortlist</span>
-        {rooms.length > 1 ? (
-          <select
-            className={styles.roomSwitcher}
-            aria-label="Switch room"
-            value={room.slug}
-            onChange={withTargetValue((slug) =>
-              router.push(slug === NEW_ROOM ? "/rooms/new" : `/r/${slug}`),
-            )}
-          >
-            {rooms.map((option) => (
-              <option key={option.id} value={option.slug}>
-                {option.name}
-              </option>
-            ))}
-            <option value={NEW_ROOM}>+ New room…</option>
-          </select>
-        ) : (
-          <>
-            <span className={styles.roomName}>{room.name}</span>
-            <Link className={styles.newRoom} href="/rooms/new">
-              + New room
-            </Link>
-          </>
-        )}
+      <span className={styles.roomName}>{room.name}</span>
+      <div className={styles.balances}>
+        <span className={styles.voteBalance}>
+          {votesLeft} {votesLeft === 1 ? "vote" : "votes"} left
+        </span>
       </div>
       {name ? (
-        <div className={styles.profile}>
-          <div className={styles.balances}>
-            {typeof nominationsLeft === "number" && (
-              <span className={styles.voteBalance}>
-                {nominationsLeft}{" "}
-                {nominationsLeft === 1 ? "nomination" : "nominations"} left
-              </span>
-            )}
-            <span className={styles.voteBalance}>
-              {votesLeft} {votesLeft === 1 ? "vote" : "votes"} left
-            </span>
-          </div>
-          <div className={styles.accountActions}>
-            <div className={styles.identity}>
-              <span className="avatar avatar-violet">{initialsFor(name)}</span>
-              <span className={styles.name}>{name}</span>
-            </div>
-            {isAdmin && (
-              <Link className={styles.signOut} href={`/r/${room.slug}/settings`}>
-                Settings
+        <div className={styles.menu} ref={menuRef}>
+          <button
+            className={styles.menuButton}
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={isMenuOpen}
+            aria-label="Menu"
+            onClick={() => setIsMenuOpen((open) => !open)}
+          >
+            <FilmReelIcon />
+          </button>
+          {isMenuOpen && (
+            <div className={styles.menuPanel} role="menu">
+              {rooms.length > 1 &&
+                rooms
+                  .filter((option) => option.slug !== room.slug)
+                  .map((option) => (
+                    <Link
+                      key={option.id}
+                      className={styles.menuItem}
+                      href={`/r/${option.slug}`}
+                      role="menuitem"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Switch to {option.name}
+                    </Link>
+                  ))}
+              <Link
+                className={styles.menuItem}
+                href="/rooms/new"
+                role="menuitem"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                New room
               </Link>
-            )}
-            <button
-              className={styles.signOut}
-              type="button"
-              disabled={isSigningOut}
-              onClick={handleSignOut}
-            >
-              {isSigningOut ? "Signing out…" : "Sign out"}
-            </button>
-          </div>
+              {isAdmin && (
+                <Link
+                  className={styles.menuItem}
+                  href={`/r/${room.slug}/settings`}
+                  role="menuitem"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Settings
+                </Link>
+              )}
+              <button
+                className={styles.menuItem}
+                type="button"
+                role="menuitem"
+                disabled={isSigningOut}
+                onClick={handleSignOut}
+              >
+                {isSigningOut ? "Signing out…" : "Sign out"}
+              </button>
+            </div>
+          )}
         </div>
       ) : null}
     </header>
+  );
+}
+
+function FilmReelIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9.5" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="12" cy="12" r="2" fill="currentColor" />
+      <circle cx="12" cy="6.5" r="1.75" fill="currentColor" />
+      <circle cx="17" cy="9.5" r="1.75" fill="currentColor" />
+      <circle cx="15.25" cy="15.75" r="1.75" fill="currentColor" />
+      <circle cx="8.75" cy="15.75" r="1.75" fill="currentColor" />
+      <circle cx="7" cy="9.5" r="1.75" fill="currentColor" />
+    </svg>
   );
 }

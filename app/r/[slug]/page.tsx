@@ -89,11 +89,6 @@ export default function RoomPage() {
   const replaceableNomination =
     nominationsPerCycle === 1 ? (myNominationsThisCycle[0] ?? null) : null;
 
-  const nominationsLeft =
-    nominationsPerCycle === null
-      ? null
-      : Math.max(0, nominationsPerCycle - myNominationsThisCycle.length);
-
   const votesLeft = useMemo(() => {
     if (!userId) return 0;
     const cast = filter({ userId, cycle: currentCycle })(
@@ -208,30 +203,25 @@ export default function RoomPage() {
     <main className={styles.shell}>
       <ShortlistHeader
         votesLeft={votesLeft}
-        nominationsLeft={nominationsLeft}
       />
 
       <section
         className={styles.nominations}
         aria-labelledby="nominations-title"
       >
-        <header className={styles.sectionHeader}>
-          <div className={styles.sectionIntro}>
-            <h1 id="nominations-title">{headline(nominationsPerCycle)}</h1>
-          </div>
-          <button
-            className={styles.nominateButton}
-            type="button"
-            onClick={() => setIsNominationOpen((open) => !open)}
-          >
-            {nominateLabel(nominationsPerCycle, Boolean(replaceableNomination))}
-          </button>
-        </header>
+        <h1 id="nominations-title" className={styles.sectionHeader}>
+          {headline(nominationsPerCycle)}
+        </h1>
 
         <ViewControls
           state={viewState}
           onChange={setViewState}
           context={viewContext}
+          nominateLabel={nominateLabel(
+            nominationsPerCycle,
+            Boolean(replaceableNomination),
+          )}
+          onNominate={() => setIsNominationOpen((open) => !open)}
         />
 
         <AnimatePresence initial={false}>
