@@ -1,17 +1,9 @@
-"use client";
-
 import Link from "next/link";
-import { useActionState } from "react";
-import { useSearchParams } from "next/navigation";
-import { getSafeRedirect } from "@/lib/auth/redirect";
+import { Suspense } from "react";
 import styles from "../auth.module.css";
-import { signInWithEmail } from "./actions";
+import { SignInForm } from "./SignInForm";
 
 export default function SignInPage() {
-  const [state, formAction, isPending] = useActionState(signInWithEmail, null);
-  const searchParams = useSearchParams();
-  const next = getSafeRedirect(searchParams.get("next"));
-
   return (
     <main className={styles.shell}>
       <div className={styles.card}>
@@ -22,42 +14,9 @@ export default function SignInPage() {
         <h1 className={styles.title}>Welcome back</h1>
         <p className={styles.subtitle} />
 
-        <form action={formAction} className={styles.form}>
-          <input type="hidden" name="next" value={next} />
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="email">
-              Email
-            </label>
-            <input
-              className={styles.input}
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-            />
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="password">
-              Password
-            </label>
-            <input
-              className={styles.input}
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-            />
-          </div>
-
-          {state?.error ? <p className={styles.error}>{state.error}</p> : null}
-
-          <button className={styles.submit} type="submit" disabled={isPending}>
-            {isPending ? "Signing in…" : "Come and play with us..."}
-          </button>
-        </form>
+        <Suspense fallback={<div className={styles.form} />}>
+          <SignInForm />
+        </Suspense>
 
         <p className={styles.footer}>
           New here? <Link href="/auth/sign-up">Join the club</Link>

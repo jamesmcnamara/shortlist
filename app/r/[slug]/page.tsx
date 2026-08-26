@@ -13,11 +13,19 @@ import { authClient } from "@/lib/auth/client";
 import type { Nomination } from "@/src/db/schema";
 import { AnimatePresence } from "motion/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { filter, some } from "shades";
 import { useRoom } from "./RoomContext";
 
 export default function RoomPage() {
+  return (
+    <Suspense fallback={null}>
+      <RoomPageContent />
+    </Suspense>
+  );
+}
+
+function RoomPageContent() {
   const { room, client, currentCycle, nominationsPerCycle, votesPerCycle, isAdmin } =
     useRoom();
   const { data: session } = authClient.useSession();
