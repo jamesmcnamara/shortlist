@@ -147,7 +147,7 @@ export const POST = withRoomMember({ error: "Unable to create nomination." })(
 
 export const DELETE = withRoomMember({
   error: "Unable to delete the nomination.",
-})(async (request: Request, { room, userId }: RoomContext) => {
+})(async (request: Request, { room, userId, role }: RoomContext) => {
   const id = Number(new URL(request.url).searchParams.get("id"));
   if (!Number.isInteger(id)) {
     return Response.json(
@@ -156,13 +156,18 @@ export const DELETE = withRoomMember({
     );
   }
 
+  // Admins can remove any nomination in a watchlist-style room; everyone else
+  // can only rescind their own.
+  const ownershipCondition =
+    role === "admin" ? undefined : eq(nominations.userId, userId);
+
   const deleted = await getDb()
     .delete(nominations)
     .where(
       and(
         eq(nominations.id, id),
         eq(nominations.roomId, room.id),
-        eq(nominations.userId, userId),
+        ownershipCondition,
       ),
     )
     .returning({ id: nominations.id });

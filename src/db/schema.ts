@@ -12,7 +12,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { authUsers } from "./neon-auth-schema";
-import type {MovieDetails as _MovieDetails} from "@lorenzopant/tmdb"
+import type { MovieDetails as _MovieDetails } from "@lorenzopant/tmdb";
 
 /**
  * A room is the generic container for a group's content. "Movie club" and
@@ -34,6 +34,7 @@ export const rooms = pgTable("rooms", {
   allowDuplicateNominations: boolean("allow_duplicate_nominations")
     .notNull()
     .default(false),
+  description: text(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -64,20 +65,6 @@ export const movies = pgTable("movies", {
   tmdbId: integer("tmdb_id").unique(),
   details: jsonb("details").notNull(),
   ratings: jsonb("ratings").notNull(),
-  // title: text().notNull(),
-  // posterUrl: text("poster_url"),
-  // description: text(),
-  // year: integer(),
-  // runtime: integer(),
-  // tmdbRating: real("tmdb_rating"),
-  // imdbRating: real("imdb_rating"),
-  // imdbUrl: text("imdb_url"),
-  // letterboxdRating: real("letterboxd_rating"),
-  // letterboxdUrl: text("letterboxd_url"),
-  // rottenTomatoesRating: real("rotten_tomatoes_rating"),
-  // rottenTomatoesUrl: text("rotten_tomatoes_url"),
-  // rottenTomatoesAudienceRating: real("rotten_tomatoes_audience_rating"),
-  // rottenTomatoesAudienceUrl: text("rotten_tomatoes_audience_url"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -164,27 +151,25 @@ export const nomcoms = pgTable(
   (table) => [index("nomcoms_nomination_idx").on(table.nominationId)],
 );
 
-/** "This room watched this movie" — a room-level fact, not a per-user one. */
+/**
+ * "This person watched this movie" — a user-level fact that follows them into
+ * every room, rather than something each room records separately.
+ */
 export const seen = pgTable(
   "seen",
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    roomId: uuid("room_id")
-      .notNull()
-      .references(() => rooms.id, { onDelete: "cascade" }),
     movieId: integer("movie_id")
       .notNull()
       .references(() => movies.id),
-    markedBy: uuid("marked_by")
+    userId: uuid("user_id")
       .notNull()
       .references(() => authUsers.id),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
-  (table) => [
-    uniqueIndex("seen_room_movie_idx").on(table.roomId, table.movieId),
-  ],
+  (table) => [uniqueIndex("seen_user_movie_idx").on(table.userId, table.movieId)],
 );
 
 export const roomsRelations = relations(rooms, ({ many, one }) => ({
@@ -238,7 +223,7 @@ export const nomcomsRelations = relations(nomcoms, ({ one }) => ({
 }));
 
 export const seenRelations = relations(seen, ({ one }) => ({
-  room: one(rooms, { fields: [seen.roomId], references: [rooms.id] }),
+  by: one(authUsers, { fields: [seen.userId], references: [authUsers.id] }),
   movie: one(movies, { fields: [seen.movieId], references: [movies.id] }),
 }));
 
@@ -251,7 +236,10 @@ export type Room = Omit<typeof rooms.$inferSelect, "cycleLength"> & {
 export type RoomMember = Omit<typeof roomMembers.$inferSelect, "role"> & {
   role: RoomRole;
 };
-export type Movie = Exclude<typeof movies.$inferSelect, "details" | "ratings"> & {
+export type Movie = Exclude<
+  typeof movies.$inferSelect,
+  "details" | "ratings"
+> & {
   details: MovieDetails;
   ratings: MovieRatings;
 };
@@ -261,6 +249,8 @@ export type Nomination = RawNomination & {
   votes: Vote[];
   nomcoms: NomCom[];
   nominator: User;
+  /** Members of this nomination's room who have marked the movie seen. */
+  seenBy: User[];
 };
 export type Vote = typeof votes.$inferSelect & { voter: User };
 export type NomCom = typeof nomcoms.$inferSelect & { commenter: User };
@@ -294,14 +284,15 @@ export interface MDBResponse {
 }
 
 export interface MDBRating {
-  source: RatingSource ;
+  source: RatingSource;
   value: number | null;
   url: string | null;
   score: number | null;
   votes: number | null;
 }
 
-export type RatingSource = "imdb" | "letterboxd" | "tomatoes" | "popcorn" | "metacritic" | "rogerebert";
+export type RatingSource =
+  "imdb" | "letterboxd" | "tomatoes" | "popcorn" | "metacritic" | "rogerebert";
 
 export interface MovieRatings {
   services: MDBRating[];

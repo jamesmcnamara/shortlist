@@ -1,32 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { AnimatePresence } from "motion/react";
-import { some, filter } from "shades";
-import { authClient } from "@/lib/auth/client";
-import type { MovieSearchResultData } from "@/app/components/MovieSearchResult";
 import { MovieCard, MovieDiscussion } from "@/app/components/MovieCard";
+import type { MovieSearchResultData } from "@/app/components/MovieSearchResult";
 import { NominationPanel } from "@/app/components/NominationPanel";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import { ViewControls } from "@/app/components/ViewControls";
-import { applyView, parseViewState, toSearchParams } from "@/app/lib/view";
-import type { Nomination } from "@/src/db/schema";
-import styles from "@/app/page.module.css";
 import { ApiError } from "@/app/lib/api";
+import { getRoomType } from "@/app/lib/rooms";
+import { applyView, parseViewState, toSearchParams } from "@/app/lib/view";
+import styles from "@/app/page.module.css";
+import { authClient } from "@/lib/auth/client";
+import type { Nomination } from "@/src/db/schema";
+import { AnimatePresence } from "motion/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { filter, some } from "shades";
 import { useRoom } from "./RoomContext";
 
 export default function RoomPage() {
-  const { room, client, currentCycle, nominationsPerCycle, votesPerCycle } =
+  const { room, client, currentCycle, nominationsPerCycle, votesPerCycle, isAdmin } =
     useRoom();
   const { data: session } = authClient.useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [nominations, setNominations] = useState(new Map<number, Nomination>());
-  const [watchedMovieIds, setWatchedMovieIds] = useState<ReadonlySet<number>>(
-    new Set(),
-  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [isNominationOpen, setIsNominationOpen] = useState(false);
@@ -38,12 +36,9 @@ export default function RoomPage() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([client.nominations.list(), client.seen.list()])
-      .then(([list, watched]) => {
-        if (cancelled) return;
-        setNominations(mapify(list));
-        setWatchedMovieIds(new Set(watched.map((entry) => entry.movieId)));
-      })
+    client.nominations
+      .list()
+      .then((list) => !cancelled && setNominations(mapify(list)))
       .catch((error: Error) => !cancelled && setMessage(error.message));
     return () => {
       cancelled = true;
@@ -53,8 +48,8 @@ export default function RoomPage() {
   const all = useMemo(() => Array.from(nominations.values()), [nominations]);
 
   const viewContext = useMemo(
-    () => ({ room, currentCycle, userId, watchedMovieIds }),
-    [room, currentCycle, userId, watchedMovieIds],
+    () => ({ room, currentCycle, userId }),
+    [room, currentCycle, userId],
   );
 
   const viewState = useMemo(
@@ -177,16 +172,29 @@ export default function RoomPage() {
     }
   }
 
-  /** Watching is a room-level fact, so this toggles for everyone. */
+  /**
+   * Seen is personal, so this toggles only the current user — but the update
+   * lands on every nomination of that movie, since they all report the same
+   * room-scoped viewer list.
+   */
   async function toggleWatched(movieId: number) {
-    const watched = watchedMovieIds.has(movieId);
+    if (!userId) return;
+    const nomination = Array.from(nominations.values()).find(
+      (candidate) => candidate.movieId === movieId,
+    );
+    const hasSeen = Boolean(
+      nomination?.seenBy.some((user) => user.id === userId),
+    );
     setMessage("");
     try {
-      await (watched ? client.seen.delete : client.seen.create)(movieId);
-      setWatchedMovieIds((prev) => {
-        const next = new Set(prev);
-        if (watched) next.delete(movieId);
-        else next.add(movieId);
+      const { seenBy } = await (
+        hasSeen ? client.seen.delete : client.seen.create
+      )(movieId);
+      setNominations((prev) => {
+        const next = new Map(prev);
+        for (const [id, candidate] of prev) {
+          if (candidate.movieId === movieId) next.set(id, { ...candidate, seenBy });
+        }
         return next;
       });
     } catch (error) {
@@ -199,11 +207,11 @@ export default function RoomPage() {
   const canVoteOn = (nomination: Nomination) =>
     votesLeft > 0 && (room.allowSelfVote || nomination.userId !== userId);
 
+  const canDeleteNominations = isAdmin && getRoomType(room) === "watchlist";
+
   return (
     <main className={styles.shell}>
-      <ShortlistHeader
-        votesLeft={votesLeft}
-      />
+      <ShortlistHeader votesLeft={votesLeft} />
 
       <section
         className={styles.nominations}
@@ -229,6 +237,7 @@ export default function RoomPage() {
             <NominationPanel
               currentNomination={replaceableNomination}
               isSubmitting={isSubmitting}
+              roomType={getRoomType(room)}
               onClose={() => setIsNominationOpen(false)}
               onSubmit={nominate}
               onRescind={() =>
@@ -250,6 +259,7 @@ export default function RoomPage() {
               key={nom.id}
               rank={index + 1}
               nomination={nom}
+              hasSeen={some({ id: userId })(nom.seenBy)}
               hasUpvoted={some({ userId })(nom.votes)}
               canVote={canVoteOn(nom)}
               isExpanded={focused === nom}
@@ -274,6 +284,7 @@ export default function RoomPage() {
             key={focused.id}
             nomination={focused}
             hasUpvoted={some({ userId })(focused.votes)}
+            hasSeen={some({ id: userId })(focused.seenBy)}
             canVote={canVoteOn(focused)}
             onAddVote={() => changeVote(focused, "add")}
             onRemoveVote={() => changeVote(focused, "remove")}
@@ -281,6 +292,11 @@ export default function RoomPage() {
               addNominationComment(focused.id, comment)
             }
             onMarkWatched={() => toggleWatched(focused.movieId)}
+            onDelete={
+              canDeleteNominations
+                ? () => rescindNomination(focused.id)
+                : undefined
+            }
             onClose={closeDiscussion}
           />
         )}

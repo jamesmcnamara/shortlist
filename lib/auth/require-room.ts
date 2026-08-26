@@ -1,14 +1,15 @@
-import { and, eq } from 'drizzle-orm';
-import { getDb } from '@/src/db/client';
-import { roomMembers, rooms, type Room, type RoomRole } from '@/src/db/schema';
-import { requireUserId, unauthorized } from './require-user';
+import { and, eq } from "drizzle-orm";
+import { getDb } from "@/src/db/client";
+import { roomMembers, rooms, type Room, type RoomRole } from "@/src/db/schema";
+import { requireUserId, unauthorized } from "./require-user";
+import { PresetName } from "@/app/lib/rooms";
 
 /**
  * The invite code is a capability, so it is never part of the room object that
  * gets handed to members or serialized into a page. Admin routes read it
  * explicitly via `findInviteCode`.
  */
-export type SafeRoom = Omit<Room, 'inviteCode'>;
+export type SafeRoom = Omit<Room, "inviteCode">;
 
 const ROOM_COLUMNS = {
   id: rooms.id,
@@ -20,7 +21,7 @@ const ROOM_COLUMNS = {
   cycleLength: rooms.cycleLength,
   allowSelfVote: rooms.allowSelfVote,
   allowDuplicateNominations: rooms.allowDuplicateNominations,
-  createdAt: rooms.createdAt
+  createdAt: rooms.createdAt,
 };
 
 export interface RoomContext {
@@ -35,7 +36,7 @@ type RouteContext = { params: Promise<Record<string, string>> };
 
 type RoomHandler = (
   request: Request,
-  context: RoomContext
+  context: RoomContext,
 ) => Promise<Response>;
 
 interface WithRoomConfig {
@@ -43,9 +44,9 @@ interface WithRoomConfig {
 }
 
 export const notFound = () =>
-  Response.json({ error: 'That room does not exist.' }, { status: 404 });
+  Response.json({ error: "That room does not exist." }, { status: 404 });
 
-export const forbidden = (message = 'You are not a member of this room.') =>
+export const forbidden = (message = "You are not a member of this room.") =>
   Response.json({ error: message }, { status: 403 });
 
 export async function findRoomBySlug(slug: string): Promise<SafeRoom | null> {
@@ -69,7 +70,7 @@ export async function findInviteCode(roomId: string): Promise<string | null> {
 
 export async function findMembership(
   roomId: string,
-  userId: string
+  userId: string,
 ): Promise<RoomRole | null> {
   const [membership] = await getDb()
     .select({ role: roomMembers.role })
@@ -93,7 +94,7 @@ export function withRoomMember(config?: WithRoomConfig) {
 export function withRoomAdmin(config?: WithRoomConfig) {
   return (handler: RoomHandler) =>
     withResolvedRoom(config, handler, (role) =>
-      role === 'admin' ? null : forbidden('Only room admins can do that.')
+      role === "admin" ? null : forbidden("Only room admins can do that."),
     );
 }
 
@@ -101,7 +102,7 @@ const withResolvedRoom =
   (
     config: WithRoomConfig | undefined,
     handler: RoomHandler,
-    check: (role: RoomRole) => Response | null
+    check: (role: RoomRole) => Response | null,
   ) =>
   async (request: Request, routeContext: RouteContext): Promise<Response> => {
     const userId = await requireUserId();
@@ -124,8 +125,8 @@ const withResolvedRoom =
     } catch (error) {
       console.error(error);
       return Response.json(
-        { error: config?.error ?? 'An unexpected error occurred.' },
-        { status: 500 }
+        { error: config?.error ?? "An unexpected error occurred." },
+        { status: 500 },
       );
     }
   };

@@ -8,7 +8,6 @@ export interface ViewContext {
   room: Pick<Room, "cycleLength">;
   currentCycle: number;
   userId?: string;
-  watchedMovieIds: ReadonlySet<number>;
 }
 
 export interface SortOption {
@@ -74,9 +73,14 @@ export const SORTS: SortOption[] = [
 export const FILTERS: FilterOption[] = [
   {
     id: "unwatched",
-    label: "Not yet watched",
-    predicate: (nomination, { watchedMovieIds }) =>
-      !watchedMovieIds.has(nomination.movieId),
+    label: "I have not seen",
+    predicate: (nomination, { userId }) =>
+      !nomination.seenBy.some((user) => user.id === userId),
+  },
+  {
+    id: "unwatched-by-anyone",
+    label: "Nobody has seen",
+    predicate: (nomination) => nomination.seenBy.length === 0,
   },
   {
     id: "mine",

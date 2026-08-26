@@ -48,6 +48,7 @@ interface Fixture {
   roomB: { id: string; slug: string };
   nominationInA: number;
   nominationInB: number;
+  movieInA: number;
   movieInB: number;
 }
 
@@ -138,11 +139,11 @@ beforeEach(async () => {
     })
     .returning();
 
-  await db.insert(seen).values({
-    roomId: roomB.id,
-    movieId: insertedMovies[1].id,
-    markedBy: MALLORY,
-  });
+  await db.insert(seen).values([
+    { movieId: insertedMovies[1].id, userId: MALLORY },
+    // Mallory is not in room A, so this must never surface on its nomination.
+    { movieId: insertedMovies[0].id, userId: MALLORY },
+  ]);
 
   fixture = {
     db: db as unknown as DB,
@@ -150,6 +151,7 @@ beforeEach(async () => {
     roomB,
     nominationInA: nomA.id,
     nominationInB: nomB.id,
+    movieInA: insertedMovies[0].id,
     movieInB: insertedMovies[1].id,
   };
 });
@@ -251,28 +253,47 @@ describe("cross-room writes", () => {
     expect(response.status).toBe(404);
   });
 
-  it("does not leak another room's watched movies", async () => {
-    const { GET } = seenRoute;
+  it("does not report a non-member's viewing on a shared movie", async () => {
+    const { GET } = nominationsRoute;
     asUser(BOB);
 
     const body = await (
       await GET(new Request("http://test"), route("club"))
     ).json();
-    expect(body).toHaveLength(0);
+    // Mallory has seen this movie, but is not in room A.
+    expect(body[0].seenBy).toEqual([]);
   });
 
-  it("scopes a watched marking to the acting room", async () => {
+  it("shows a room member's own viewing on the nomination", async () => {
+    const { POST } = seenRoute;
+    const { GET } = nominationsRoute;
+    asUser(BOB);
+
+    const marked = await POST(
+      post({ movieId: fixture.movieInA }),
+      route("club"),
+    );
+    expect(marked.status).toBe(201);
+
+    const body = await (
+      await GET(new Request("http://test"), route("club"))
+    ).json();
+    expect(body[0].seenBy.map((user: { id: string }) => user.id)).toEqual([BOB]);
+  });
+
+  it("refuses to mark a movie that is not on the acting room's list", async () => {
     const { POST } = seenRoute;
     asUser(BOB);
 
-    await POST(post({ movieId: fixture.movieInB }), route("club"));
-
-    const rows = await fixture.db.select().from(seen);
-    // Room B's own marking is untouched, and the new one belongs to room A.
-    expect(rows).toHaveLength(2);
-    expect(rows.filter((row) => row.roomId === fixture.roomA.id)).toHaveLength(
-      1,
+    const response = await POST(
+      post({ movieId: fixture.movieInB }),
+      route("club"),
     );
+
+    expect(response.status).toBe(404);
+    // Room B's own marking is untouched, and nothing was recorded for Bob.
+    const rows = await fixture.db.select().from(seen);
+    expect(rows.filter((row) => row.userId === BOB)).toHaveLength(0);
   });
 });
 

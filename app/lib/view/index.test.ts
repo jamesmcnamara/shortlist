@@ -22,6 +22,7 @@ interface NominationOverrides {
   imdbRating?: number | null;
   year?: number | null;
   movieId?: number;
+  seenBy?: string[];
 }
 
 const nomination = ({
@@ -35,6 +36,7 @@ const nomination = ({
   imdbRating = 7,
   year = 2000,
   movieId = id,
+  seenBy = [],
 }: NominationOverrides): Nomination =>
   ({
     id,
@@ -77,13 +79,13 @@ const nomination = ({
     })),
     nomcoms: [],
     nominator: user(userId),
+    seenBy: seenBy.map(user),
   }) as unknown as Nomination;
 
 const context = (overrides: Partial<ViewContext> = {}): ViewContext => ({
   room: { cycleLength: "month" },
   currentCycle: 0,
   userId: "alice",
-  watchedMovieIds: new Set<number>(),
   ...overrides,
 });
 
@@ -195,11 +197,31 @@ describe("applyView filtering", () => {
     ).toEqual([2]);
   });
 
-  it("filters out movies the room already watched", () => {
-    const watched = context({ watchedMovieIds: new Set([2]) });
+  it("filters out movies the viewer has already seen", () => {
+    const seen = [
+      nomination({ id: 1 }),
+      nomination({ id: 2, seenBy: ["alice"] }),
+      nomination({ id: 3, seenBy: ["bob"] }),
+    ];
     expect(
-      ids(applyView(list, { sort: "recent", filters: ["unwatched"] }, watched)),
+      ids(applyView(seen, { sort: "recent", filters: ["unwatched"] }, context())),
     ).toEqual([3, 1]);
+  });
+
+  it("filters to movies nobody in the room has seen", () => {
+    const seen = [
+      nomination({ id: 1 }),
+      nomination({ id: 2, seenBy: ["bob"] }),
+    ];
+    expect(
+      ids(
+        applyView(
+          seen,
+          { sort: "recent", filters: ["unwatched-by-anyone"] },
+          context(),
+        ),
+      ),
+    ).toEqual([1]);
   });
 
   it("filters to the current cycle", () => {

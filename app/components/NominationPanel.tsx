@@ -7,10 +7,12 @@ import { useDebouncedCallback } from "use-debounce";
 import type { MovieSearchResultData } from "./MovieSearchResult";
 import { MovieSearchResults } from "./MovieSearchResults";
 import styles from "./NominationPanel.module.css";
+import { PresetName } from "../lib/rooms";
 
 type NominationPanelProps = {
   currentNomination: Nomination | null;
   isSubmitting: boolean;
+  roomType: PresetName;
   onClose: () => void;
   onSubmit: (movie: MovieSearchResultData, comment: string) => void;
   onRescind: () => void;
@@ -19,6 +21,7 @@ type NominationPanelProps = {
 export function NominationPanel({
   currentNomination,
   isSubmitting,
+  roomType,
   onClose,
   onSubmit,
   onRescind,
@@ -88,7 +91,11 @@ export function NominationPanel({
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
     >
-      <Header onClose={onClose} isDropping={!!currentNomination} />
+      <Header
+        roomType={roomType}
+        onClose={onClose}
+        isDropping={!!currentNomination}
+      />
 
       {currentNomination ? (
         <DropNomination
@@ -126,7 +133,7 @@ export function NominationPanel({
           <div className={styles.footer}>
             <span>One nomination per person, per month.</span>
             <button type="submit" disabled={!candidate || isSubmitting}>
-              {isSubmitting ? "Nominating..." : "Nominate movie"} <span>→</span>
+              {getSubmitButtonText(isSubmitting, roomType)} <span>→</span>
             </button>
           </div>
         </form>
@@ -135,17 +142,38 @@ export function NominationPanel({
   );
 }
 
+function getSubmitButtonText(isSubmitting: boolean, roomType: PresetName) {
+  if (isSubmitting) {
+    if (roomType === "watchlist") {
+      return "Adding...";
+    }
+    return "Nominating...";
+  } else {
+    if (roomType === "watchlist") {
+      return "Add movie";
+    }
+    return "Nominate movie";
+  }
+}
+
 interface HeaderProps {
+  roomType: PresetName;
   isDropping?: boolean;
   onClose: () => void;
 }
 
-const Header = ({ isDropping = false, onClose }: HeaderProps) => (
+const Header = ({ roomType, isDropping = false, onClose }: HeaderProps) => (
   <div className={styles.heading}>
     <div>
-      <h2>{isDropping ? DROP_NOM_HEADER : DEFAULT_NOM_HEADER}</h2>
+      <h2>
+        {isDropping
+          ? HEADER_TEXT[roomType].drop.header
+          : HEADER_TEXT[roomType].default.header}
+      </h2>
       <p className={styles.intro}>
-        {isDropping ? DROP_NOM_BODY : DEFAULT_NOM_BODY}
+        {isDropping
+          ? HEADER_TEXT[roomType].drop.body
+          : HEADER_TEXT[roomType].default.body}
       </p>
     </div>
     <button
@@ -159,13 +187,28 @@ const Header = ({ isDropping = false, onClose }: HeaderProps) => (
   </div>
 );
 
-const DEFAULT_NOM_HEADER = "Nominate a movie";
-const DEFAULT_NOM_BODY =
-  "Add a movie for the club to vote on. You get one nomination a month, so spend it wisely.";
-
-const DROP_NOM_HEADER = "Replace your nomination?";
-const DROP_NOM_BODY =
-  "Oh geez. People really aren't vibing with your pick, huh? Girl, I've been there. I once pitched Dogma at a Christian sleep away camp. But guess what? Unlike life, this app has do-overs. You can drop your nomination and pick a shiny new one. Just try not to shit the bed this time.";
+const HEADER_TEXT = {
+  club: {
+    default: {
+      header: "Nominate a movie",
+      body: "Add a movie for the club to vote on. You get one nomination a month, so spend it wisely.",
+    },
+    drop: {
+      header: "Replace your nomination?",
+      body: "Oh geez. People really aren't vibing with your pick, huh? Girl, I've been there. I once pitched Dogma at a Christian sleep away camp. But guess what? Unlike life, this app has do-overs. You can drop your nomination and pick a shiny new one. Just try not to shit the bed this time.",
+    },
+  },
+  watchlist: {
+    default: {
+      header: "Add a movie",
+      body: "You can add as many movies as you like, so go nuts.",
+    },
+    drop: {
+      header: "How did you get here?",
+      body: "This should never have been displayed. Fuck I'm a bad programmer. Please tell James to fix this.",
+    },
+  },
+};
 
 interface DropNominationProps {
   currentNomination: Nomination;

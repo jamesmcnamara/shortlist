@@ -1,3 +1,4 @@
+import { SafeRoom } from "@/lib/auth/require-room";
 import type { CycleLength } from "@/src/db/schema";
 
 export interface RoomConfig {
@@ -33,12 +34,12 @@ export const PRESETS: Record<PresetName, RoomConfig> = {
 
 export const PRESET_LABELS: Record<PresetName, string> = {
   club: "Movie club",
-  watchlist: "Watch list",
+  watchlist: "Shared watch list",
 };
 
 export const PRESET_DESCRIPTIONS: Record<PresetName, string> = {
-  club: "One nomination each per month, then everyone votes.",
-  watchlist: "Add as many movies as you like; votes decide what rises.",
+  club: "Fixed nominations per month, then everyone votes.",
+  watchlist: "Add as many movies as you like with your homies.",
 };
 
 export const isPresetName = (value: unknown): value is PresetName =>
@@ -125,3 +126,10 @@ export function parseConfigUpdate(
 
   return { ok: true, values };
 }
+
+export const getRoomType = (room: SafeRoom): PresetName => {
+  if (!room.nominationsPerCycle) {
+    return "watchlist";
+  }
+  return "club";
+};

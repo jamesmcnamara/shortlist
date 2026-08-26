@@ -1,5 +1,5 @@
 import { get } from "shades";
-import type { Nomination, RoomRole, Seen, User } from "@/src/db/schema";
+import type { Nomination, RoomRole, User } from "@/src/db/schema";
 import type { SafeRoom } from "@/lib/auth/require-room";
 import type { MovieSearchResultData } from "@/app/components/MovieSearchResult";
 import type { PresetName, RoomConfig } from "@/app/lib/rooms";
@@ -44,6 +44,12 @@ export interface RoomSummary {
 export interface RoomMemberSummary extends User {
   role: RoomRole;
   joinedAt: string;
+}
+
+/** What a seen toggle reports back: the room's viewers for that movie. */
+export interface SeenUpdate {
+  movieId: number;
+  seenBy: User[];
 }
 
 export interface RoomDetail {
@@ -128,13 +134,12 @@ export const api = {
           }),
       },
       seen: {
-        list: (): Promise<Seen[]> => request(`${base}/seen`),
-        create: (movieId: number): Promise<Seen> =>
+        create: (movieId: number): Promise<SeenUpdate> =>
           request(`${base}/seen`, {
             method: "POST",
             body: JSON.stringify({ movieId }),
           }),
-        delete: (movieId: number): Promise<void> =>
+        delete: (movieId: number): Promise<SeenUpdate> =>
           request(`${base}/seen?movieId=${movieId}`, { method: "DELETE" }),
       },
     };

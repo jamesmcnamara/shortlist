@@ -23,7 +23,7 @@ const nomination: Nomination = {
       title: "A Movie",
       overview: "A description",
       release_date: "2025-01-01",
-      posterUrl: undefined,
+      posterUrl: "https://example.com/poster.jpg",
       year: 2025,
     } as MovieDetails,
     ratings: { raw: {}, services: [] },
@@ -31,6 +31,7 @@ const nomination: Nomination = {
   votes: [],
   nomcoms: [],
   nominator: { id: "user", name: "Alice", email: "alice@example.com" },
+  seenBy: [],
 };
 
 describe("high-churn component smoke tests", () => {
@@ -42,6 +43,7 @@ describe("high-churn component smoke tests", () => {
       <MovieCard
         nomination={nomination}
         rank={1}
+        hasSeen
         hasUpvoted={false}
         canVote
         isExpanded={false}
@@ -51,7 +53,12 @@ describe("high-churn component smoke tests", () => {
     );
 
     expect(screen.getByText("A Movie")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Give a vote to A Movie" }));
+    expect(screen.getByAltText("").parentElement?.className).toContain(
+      "watchedPoster",
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Give a vote to A Movie" }),
+    );
     expect(onAddVote).toHaveBeenCalledOnce();
   });
 
@@ -62,14 +69,19 @@ describe("high-churn component smoke tests", () => {
       <NominationPanel
         currentNomination={null}
         isSubmitting={false}
+        roomType="club"
         onClose={onClose}
         onSubmit={vi.fn()}
         onRescind={vi.fn()}
       />,
     );
 
-    expect(screen.getByRole("heading", { name: "Nominate a movie" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Close nomination panel" }));
+    expect(
+      screen.getByRole("heading", { name: "Nominate a movie" }),
+    ).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Close nomination panel" }),
+    );
     expect(onClose).toHaveBeenCalledOnce();
   });
 });
