@@ -1,6 +1,3 @@
-export const getMonth = (date: Date = new Date()) =>
-  date.getMonth() + 12 * (date.getFullYear() - 1);
-
 export const preventDefault = (f: () => void) => (event: Event) => {
   event.preventDefault();
   f();

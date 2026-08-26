@@ -1,13 +1,6 @@
-import { TMDB } from "@lorenzopant/tmdb";
 import { NextResponse } from "next/server";
 import { requireUserId, unauthorized } from "@/lib/auth/require-user";
-
-const tmdb = new TMDB(
-  process.env.TMDB_API_READ_ACCESS_TOKEN ?? process.env.TMDB_API_KEY ?? "",
-  {
-    language: "en-US",
-  },
-);
+import { getMovieProvider } from "@/app/lib/movie-metadata";
 
 export async function GET(request: Request) {
   const userId = await requireUserId();
@@ -19,7 +12,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ results: [] });
   }
 
-  if (!process.env.TMDB_API_READ_ACCESS_TOKEN && !process.env.TMDB_API_KEY) {
+  const provider = getMovieProvider();
+  if (!provider.hasCredentials()) {
     return NextResponse.json(
       { error: "TMDB credentials are not configured." },
       { status: 500 },
@@ -27,20 +21,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const response = await tmdb.search.movies({ query, include_adult: false });
-
-    return NextResponse.json({
-      results: response.results.slice(0, 5).map((movie) => ({
-        id: movie.id,
-        title: movie.title,
-        releaseDate: movie.release_date,
-        overview: movie.overview,
-        posterUrl: movie.poster_path
-          ? tmdb.images.poster(movie.poster_path, "w342")
-          : null,
-        tmdbRating: movie.vote_average !== 0 ? movie.vote_average : null,
-      })),
-    });
+    return NextResponse.json({ results: await provider.search(query) });
   } catch {
     return NextResponse.json(
       { error: "Unable to search TMDB right now." },

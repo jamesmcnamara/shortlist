@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth/server";
+import { getSafeRedirect } from "@/lib/auth/redirect";
 
 export type AuthFormState = { error: string } | null;
 
@@ -11,6 +12,7 @@ export async function signInWithEmail(
 ): Promise<AuthFormState> {
   const email = String(formData.get("email") ?? "").trim();
   let password = String(formData.get("password") ?? "");
+  const next = getSafeRedirect(String(formData.get("next") ?? ""));
 
   if (!email || !password) {
     return { error: "Enter your email and password." };
@@ -27,5 +29,5 @@ export async function signInWithEmail(
     };
   }
 
-  redirect("/");
+  redirect(next);
 }

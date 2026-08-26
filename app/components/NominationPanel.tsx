@@ -3,32 +3,38 @@ import { withTargetValue } from "@/app/lib/utils";
 import type { Nomination } from "@/src/db/schema";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { get } from "shades";
 import { useDebouncedCallback } from "use-debounce";
-import type { MovieSearchResult } from "./MovieSearchResult";
+import type { MovieSearchResultData } from "./MovieSearchResult";
 import { MovieSearchResults } from "./MovieSearchResults";
 import styles from "./NominationPanel.module.css";
+import { PresetName } from "../lib/rooms";
 
 type NominationPanelProps = {
   currentNomination: Nomination | null;
   isSubmitting: boolean;
+  roomType: PresetName;
   onClose: () => void;
-  onSubmit: (movie: MovieSearchResult, comment: string) => void;
+  onSubmit: (movie: MovieSearchResultData, comment: string) => void;
   onRescind: () => void;
 };
 
 export function NominationPanel({
   currentNomination,
   isSubmitting,
+  roomType,
   onClose,
   onSubmit,
   onRescind,
 }: NominationPanelProps) {
   const [query, setQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<MovieSearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<MovieSearchResultData[]>(
+    [],
+  );
   const [error, setError] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [candidate, setCandidate] = useState<MovieSearchResult | null>(null);
+  const [candidate, setCandidate] = useState<MovieSearchResultData | null>(
+    null,
+  );
   const [comment, setComment] = useState("");
 
   const searcher = useDebouncedCallback(
@@ -52,7 +58,7 @@ export function NominationPanel({
     { trailing: true },
   );
 
-  function onSelect(movie: MovieSearchResult) {
+  function onSelect(movie: MovieSearchResultData) {
     setCandidate(movie);
     setQuery("");
     setSearchResults([]);
@@ -85,7 +91,11 @@ export function NominationPanel({
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
     >
-      <Header onClose={onClose} isDropping={!!currentNomination} />
+      <Header
+        roomType={roomType}
+        onClose={onClose}
+        isDropping={!!currentNomination}
+      />
 
       {currentNomination ? (
         <DropNomination
@@ -123,7 +133,7 @@ export function NominationPanel({
           <div className={styles.footer}>
             <span>One nomination per person, per month.</span>
             <button type="submit" disabled={!candidate || isSubmitting}>
-              {isSubmitting ? "Nominating..." : "Nominate movie"} <span>→</span>
+              {getSubmitButtonText(isSubmitting, roomType)} <span>→</span>
             </button>
           </div>
         </form>
@@ -132,17 +142,38 @@ export function NominationPanel({
   );
 }
 
+function getSubmitButtonText(isSubmitting: boolean, roomType: PresetName) {
+  if (isSubmitting) {
+    if (roomType === "watchlist") {
+      return "Adding...";
+    }
+    return "Nominating...";
+  } else {
+    if (roomType === "watchlist") {
+      return "Add movie";
+    }
+    return "Nominate movie";
+  }
+}
+
 interface HeaderProps {
+  roomType: PresetName;
   isDropping?: boolean;
   onClose: () => void;
 }
 
-const Header = ({ isDropping = false, onClose }: HeaderProps) => (
+const Header = ({ roomType, isDropping = false, onClose }: HeaderProps) => (
   <div className={styles.heading}>
     <div>
-      <h2>{isDropping ? DROP_NOM_HEADER : DEFAULT_NOM_HEADER}</h2>
+      <h2>
+        {isDropping
+          ? HEADER_TEXT[roomType].drop.header
+          : HEADER_TEXT[roomType].default.header}
+      </h2>
       <p className={styles.intro}>
-        {isDropping ? DROP_NOM_BODY : DEFAULT_NOM_BODY}
+        {isDropping
+          ? HEADER_TEXT[roomType].drop.body
+          : HEADER_TEXT[roomType].default.body}
       </p>
     </div>
     <button
@@ -156,13 +187,28 @@ const Header = ({ isDropping = false, onClose }: HeaderProps) => (
   </div>
 );
 
-const DEFAULT_NOM_HEADER = "Nominate a movie";
-const DEFAULT_NOM_BODY =
-  "Add a movie for the club to vote on. You get one nomination a month, so spend it wisely.";
-
-const DROP_NOM_HEADER = "Replace your nomination?";
-const DROP_NOM_BODY =
-  "Oh geez. People really aren't vibing with your pick, huh? Girl, I've been there. I once pitched Dogma at a Christian sleep away camp. But guess what? Unlike life, this app has do-overs. You can drop your nomination and pick a shiny new one. Just try not to shit the bed this time.";
+const HEADER_TEXT = {
+  club: {
+    default: {
+      header: "Nominate a movie",
+      body: "Add a movie for the club to vote on. You get one nomination a month, so spend it wisely.",
+    },
+    drop: {
+      header: "Replace your nomination?",
+      body: "Oh geez. People really aren't vibing with your pick, huh? Girl, I've been there. I once pitched Dogma at a Christian sleep away camp. But guess what? Unlike life, this app has do-overs. You can drop your nomination and pick a shiny new one. Just try not to shit the bed this time.",
+    },
+  },
+  watchlist: {
+    default: {
+      header: "Add a movie",
+      body: "You can add as many movies as you like, so go nuts.",
+    },
+    drop: {
+      header: "How did you get here?",
+      body: "This should never have been displayed. Fuck I'm a bad programmer. Please tell James to fix this.",
+    },
+  },
+};
 
 interface DropNominationProps {
   currentNomination: Nomination;
@@ -175,40 +221,38 @@ const DropNomination = ({
   isSubmitting,
   onRescind,
 }: DropNominationProps) => (
-    <div className={styles.currentNomination}>
-      <div className={styles.selected}>
-        {currentNomination.movie.posterUrl ? (
-          <img
-            src={currentNomination.movie.posterUrl}
-            alt={`Poster for ${currentNomination.movie.title}`}
-          />
-        ) : (
-          <div
-            className={styles.selectedPlaceholder}
-            aria-label="No poster available"
-          >
-            No poster
-          </div>
-        )}
-        <div className={styles.selectedCopy}>
-          <h3>{currentNomination.movie.title}</h3>
-          {currentNomination.comment && (
-            <span>{currentNomination.comment}</span>
-          )}
+  <div className={styles.currentNomination}>
+    <div className={styles.selected}>
+      {currentNomination.movie.details.posterUrl ? (
+        <img
+          src={currentNomination.movie.details.posterUrl}
+          alt={`Poster for ${currentNomination.movie.details.title}`}
+        />
+      ) : (
+        <div
+          className={styles.selectedPlaceholder}
+          aria-label="No poster available"
+        >
+          No poster
         </div>
+      )}
+      <div className={styles.selectedCopy}>
+        <h3>{currentNomination.movie.details.title}</h3>
+        {currentNomination.comment && <span>{currentNomination.comment}</span>}
       </div>
-      <button
-        className={styles.rescind}
-        type="button"
-        onClick={onRescind}
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? "Dropping..." : "Drop nomination"}
-      </button>
     </div>
+    <button
+      className={styles.rescind}
+      type="button"
+      onClick={onRescind}
+      disabled={isSubmitting}
+    >
+      {isSubmitting ? "Dropping..." : "Drop nomination"}
+    </button>
+  </div>
 );
 interface CandidateFormProps {
-  candidate: MovieSearchResult;
+  candidate: MovieSearchResultData;
   comment: string;
   reset(): void;
   onCommentChange(comment: string): void;
@@ -271,11 +315,11 @@ const CandidateForm = ({
 
 interface SearchProps {
   query: string;
-  searchResults: MovieSearchResult[];
+  searchResults: MovieSearchResultData[];
   error: string;
   isSearching: boolean;
   onQueryChange(query: string): void;
-  onSelect(movie: MovieSearchResult): void;
+  onSelect(movie: MovieSearchResultData): void;
 }
 
 const Search = ({

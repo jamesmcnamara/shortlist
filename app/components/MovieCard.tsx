@@ -1,12 +1,14 @@
 import _ from "lodash";
+import {find} from 'shades'
 import { useState, type SubmitEventHandler } from "react";
 import { motion } from "motion/react";
-import type { NomCom, Nomination, Vote, Movie } from "@/src/db/schema";
+import type { NomCom, Nomination, Vote, Movie, RatingSource, MovieRatings, MDBRating, User } from "@/src/db/schema";
 import styles from "./MovieCard.module.css";
 
 interface MovieCardProps {
   nomination: Nomination;
   rank: number;
+  hasSeen: boolean;
   hasUpvoted: boolean;
   canVote: boolean;
   isExpanded: boolean;
@@ -17,13 +19,14 @@ interface MovieCardProps {
 export function MovieCard({
   nomination,
   rank,
+  hasSeen,
   hasUpvoted,
   canVote,
   isExpanded,
   onAddVote,
   onToggleDiscussion,
 }: MovieCardProps) {
-  const { movie, votes, nominator } = nomination;
+  const { movie: {details}, votes, nominator, seenBy } = nomination;
   return (
     <>
       <article
@@ -34,26 +37,26 @@ export function MovieCard({
           type="button"
           onClick={onToggleDiscussion}
           aria-expanded={false}
-          aria-label={`Expand details for ${movie.title}`}
+          aria-label={`Expand details for ${details.title}`}
         >
-          <div className={styles.poster}>
-            {movie.posterUrl ? (
-              <img src={movie.posterUrl} alt="" />
+          <div className={`${styles.poster} ${hasSeen ? styles.watchedPoster : ""}`}>
+            {details.posterUrl ? (
+              <img src={details.posterUrl} alt="" />
             ) : (
-              <span>{movie.title.slice(0, 1)}</span>
+              <span>{details.title.slice(0, 1)}</span>
             )}
             <span className={styles.rank}>{String(rank).padStart(2, "0")}</span>
             <span className={styles.posterShade} />
             <span className={styles.movieLabel}>
-              <strong>{movie.title}</strong>
-              <small>{movie.year ?? "Year unknown"}</small>
+              <strong>{details.title}</strong>
+              <small>{details.year ?? "Year unknown"}</small>
             </span>
           </div>
         </button>
 
         <div className={styles.meta}>
           <span
-            className={`avatar avatar-${getColor(movie.title)}`}
+            className={`avatar avatar-${getColor(details.title)}`}
             title={`Nominated by ${nominator.name}`}
           >
             {getInitials(nominator.name)}
@@ -63,10 +66,18 @@ export function MovieCard({
             type="button"
             onClick={onAddVote}
             disabled={!canVote}
-            aria-label={`Give a vote to ${movie.title}`}
+            aria-label={`Give a vote to ${details.title}`}
           >
             {votes.length} {votes.length === 1 ? "vote" : "votes"}
           </button>
+          {seenBy.length > 0 && (
+            <span
+              className={styles.seenCount}
+              title={`Seen by ${seenBy.map((user) => user.name).join(", ")}`}
+            >
+              👁 {seenBy.length}
+            </span>
+          )}
         </div>
       </article>
     </>
@@ -76,25 +87,29 @@ export function MovieCard({
 interface MovieDiscussionProps {
   nomination: Nomination;
   hasUpvoted: boolean;
+  hasSeen: boolean;
   canVote: boolean;
   onAddVote: () => void;
   onRemoveVote: () => void;
   onAddComment: (comment: string) => Promise<boolean>;
   onMarkWatched?: () => void;
+  onDelete?: () => void;
   onClose: () => void;
 }
 
 export function MovieDiscussion({
   nomination,
   hasUpvoted,
+  hasSeen,
   canVote,
   onAddVote,
   onRemoveVote,
   onAddComment,
   onMarkWatched,
+  onDelete,
   onClose,
 }: MovieDiscussionProps) {
-  const { movie, votes, nominator, nomcoms } = nomination;
+  const { movie: {details, ratings}, votes, nominator, nomcoms, seenBy } = nomination;
   return (
     <motion.div
       className={styles.discussionDrawer}
@@ -105,12 +120,12 @@ export function MovieDiscussion({
     >
       <section
         className={styles.expanded}
-        aria-label={`Discussion about ${movie.title}`}
+        aria-label={`Discussion about ${details.title}`}
       >
         <div className={styles.expandedHeader}>
           <div className={styles.discussionHeading}>
             <div className={styles.discussionTitleRow}>
-              <h2>{movie.title}</h2>
+              <h2>{details.title}</h2>
               <button
                 className={styles.closeDiscussion}
                 type="button"
@@ -124,14 +139,14 @@ export function MovieDiscussion({
               Nominated by {nominator.name}
             </span>
           </div>
-          <MovieRatings movie={movie} />
+          <MovieRatings services={ratings.services} />
           <div className={styles.voteActions}>
             <button
               className={styles.votePrimary}
               type="button"
               onClick={onAddVote}
               disabled={!canVote}
-              aria-label={`Vote for ${movie.title}`}
+              aria-label={`Vote for ${details.title}`}
             >
               Vote for this
             </button>
@@ -140,18 +155,33 @@ export function MovieDiscussion({
               type="button"
               onClick={onRemoveVote}
               disabled={!hasUpvoted}
-              aria-label={`Remove your vote from ${movie.title}`}
+              aria-label={`Remove your vote from ${details.title}`}
             >
               Remove vote
             </button>
             <button
-              className={styles.watched}
+              className={`${styles.watched} ${hasSeen ? styles.voted : ""}`}
               type="button"
               onClick={onMarkWatched}
-              aria-label={`Mark ${movie.title} as seen`}
+              aria-pressed={hasSeen}
+              aria-label={
+                hasSeen
+                  ? `Unmark ${details.title} as seen`
+                  : `Mark ${details.title} as seen`
+              }
             >
-              Seen it
+              {hasSeen ? "Seen it ✓" : "Seen it"}
             </button>
+            {onDelete && (
+              <button
+                className={styles.deleteMovie}
+                type="button"
+                onClick={onDelete}
+                aria-label={`Delete ${details.title} from the watchlist`}
+              >
+                Delete
+              </button>
+            )}
           </div>
         </div>
         <div className={styles.nominationQuote}>
@@ -164,6 +194,7 @@ export function MovieDiscussion({
           </div>
         </div>
         <VoterList votes={votes} />
+        <SeenByList seenBy={seenBy} />
         <NomComList
           nominationId={nomination.id}
           nomcoms={nomcoms}
@@ -174,11 +205,7 @@ export function MovieDiscussion({
   );
 }
 
-interface MovieRatingsProps {
-  movie: Movie;
-}
-
-interface Rating {
+interface RatingProps {
   name: string;
   rating: number;
   url: string;
@@ -186,56 +213,49 @@ interface Rating {
   value: string;
 }
 
-function MovieRatings({
-  movie: {
-    imdbRating,
-    letterboxdRating,
-    rottenTomatoesRating,
-    rottenTomatoesAudienceRating,
-    imdbUrl,
-    letterboxdUrl,
-    rottenTomatoesUrl,
-    rottenTomatoesAudienceUrl,
-  },
-}: MovieRatingsProps) {
+function MovieRatings({services}: { services: MDBRating[]}) {
+  const imdb = find({source: "imdb"})(services);
+  const letterboxd = find({source: "letterboxd"})(services);
+  const tomatoes = find({source: "tomatoes"})(services);
+  const popcorn = find({source: "popcorn"})(services);
   const ratings = [
     {
       name: "IMDb",
-      rating: imdbRating,
-      url: imdbUrl,
+      rating: imdb?.value,
+      url: imdb?.url,
       logo: "/ratings/imdb.svg",
-      value: imdbRating === null ? null : `${imdbRating.toFixed(1)}/10`,
+      value: !!imdb?.value  ? `${imdb.value.toFixed(1)}/10` : null,
     },
     {
       name: "Letterboxd",
-      rating: letterboxdRating,
-      url: letterboxdUrl,
+      rating: letterboxd?.value,
+      url: letterboxd?.url,
       logo: "/ratings/letterboxd.svg",
       value:
-        letterboxdRating === null ? null : `${letterboxdRating.toFixed(1)}/5`,
+        !!letterboxd?.value ? `${letterboxd.value.toFixed(1)}/5` : null,
     },
     {
       name: "Rotten Tomatoes",
-      rating: rottenTomatoesRating,
-      url: rottenTomatoesUrl,
+      rating: tomatoes?.value,
+      url: tomatoes?.url,
       logo: "/ratings/rottentomatoes.svg",
       value:
-        rottenTomatoesRating === null
-          ? null
-          : `${Math.round(rottenTomatoesRating)}%`,
+        !!tomatoes?.value
+          ? `${Math.round(tomatoes.value)}%`
+          : null,
     },
     {
       name: "Rotten Tomatoes audience",
-      rating: rottenTomatoesAudienceRating,
-      url: rottenTomatoesAudienceUrl,
+      rating: popcorn?.value,
+      url: popcorn?.url,
       logo: "/ratings/rottentomatoes-popcorn.svg",
       value:
-        rottenTomatoesAudienceRating === null
-          ? null
-          : `${Math.round(rottenTomatoesAudienceRating)}%`,
+        !!popcorn?.value
+          ? `${Math.round(popcorn.value)}%`
+          : null,
     },
   ].filter(
-    (rating): rating is Rating =>
+    (rating): rating is RatingProps =>
       rating.rating !== null && rating.url !== null && rating.value !== null,
   );
 
@@ -285,6 +305,29 @@ function VoterList({ votes }: VoterListProps) {
             </span>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/** Room members who have marked this movie seen; empty is the common case. */
+function SeenByList({ seenBy }: { seenBy: User[] }) {
+  if (seenBy.length === 0) return null;
+  return (
+    <div className={styles.voters}>
+      <span className={styles.voterCount}>
+        Seen by {seenBy.length} {seenBy.length === 1 ? "person" : "people"}
+      </span>
+      <div className={styles.voterList}>
+        {seenBy.map((user) => (
+          <span
+            key={user.id}
+            className={`${styles.voter} avatar avatar-${getColor(user.name)}`}
+            title={user.name}
+          >
+            {getInitials(user.name)}
+          </span>
+        ))}
       </div>
     </div>
   );
