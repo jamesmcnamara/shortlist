@@ -26,6 +26,8 @@ export const rooms = pgTable("rooms", {
     .notNull()
     .references(() => authUsers.id),
   inviteCode: text("invite_code").notNull().unique(),
+  // A separate link that grants the "admin" role on join instead of "member".
+  adminInviteCode: text("admin_invite_code").notNull().unique(),
   // null means unlimited
   nominationsPerCycle: integer("nominations_per_cycle"),
   votesPerCycle: integer("votes_per_cycle").notNull().default(5),
@@ -169,7 +171,9 @@ export const seen = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [uniqueIndex("seen_user_movie_idx").on(table.userId, table.movieId)],
+  (table) => [
+    uniqueIndex("seen_user_movie_idx").on(table.userId, table.movieId),
+  ],
 );
 
 export const roomsRelations = relations(rooms, ({ many, one }) => ({

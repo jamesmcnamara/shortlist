@@ -3,6 +3,7 @@ import { cycleFor } from "@/app/lib/cycles";
 import { parseConfigUpdate } from "@/app/lib/rooms";
 import {
   findInviteCode,
+  findAdminInviteCode,
   withRoomAdmin,
   withRoomMember,
   type RoomContext,
@@ -34,6 +35,8 @@ export const GET = withRoomMember({ error: "Unable to load the room." })(async (
     // The invite code is a capability, so it is fetched only once the caller
     // is known to be an admin rather than filtered out of a wider payload.
     inviteCode: role === "admin" ? await findInviteCode(room.id) : undefined,
+    adminInviteCode:
+      role === "admin" ? await findAdminInviteCode(room.id) : undefined,
     membership: { userId, role },
     currentCycle: cycleFor(room),
     members,
@@ -84,7 +87,11 @@ export const PATCH = withRoomAdmin({ error: "Unable to update the room." })(
       .where(eq(rooms.id, room.id))
       .returning();
 
-    const { inviteCode: _withheld, ...safe } = updated;
+    const {
+      inviteCode: _withheldMember,
+      adminInviteCode: _withheldAdmin,
+      ...safe
+    } = updated;
     return Response.json(safe);
   },
 );

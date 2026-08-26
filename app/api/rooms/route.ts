@@ -95,6 +95,7 @@ export const POST = withUser({ error: "Unable to create the room." })(async (
       name,
       createdBy: userId,
       inviteCode: generateInviteCode(),
+      adminInviteCode: generateInviteCode(),
       ...PRESETS[preset],
       ...overrides.values,
     })
@@ -106,6 +107,10 @@ export const POST = withUser({ error: "Unable to create the room." })(async (
 
   // The creator is an admin and can read the code from the settings page; it
   // is withheld here so no response carries it incidentally.
-  const { inviteCode: _withheld, ...safe } = room;
+  const {
+    inviteCode: _withheldMember,
+    adminInviteCode: _withheldAdmin,
+    ...safe
+  } = room;
   return Response.json(safe, { status: 201 });
 });

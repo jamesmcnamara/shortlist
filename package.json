@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:migrate:local": "node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs migrate"
+    "db:migrate:local": "node --env-file=.env.local ./scripts/migrate.mjs"
   },
   "dependencies": {
     "@lorenzopant/tmdb": "^1.25.0",

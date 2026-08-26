@@ -7,6 +7,14 @@ transformation required to get an existing database there. It is intentionally
 Generate the real DDL with `npm run db:generate` and reconcile it against the
 data steps below; the ordering here is what matters.
 
+> **Warning:** the generated DDL now lives in the migration folder as
+> `0008_previous_zeigeist.sql`, so `db:migrate` *will* attempt it. It only
+> succeeds against an empty `movies` table — `ALTER TABLE "movies" ADD COLUMN
+> "details" jsonb NOT NULL` fails on any existing row. Worse, the neon-http
+> driver runs each statement outside a transaction, so a failure leaves the
+> schema half-applied. Against a database with data, perform the steps below by
+> hand instead.
+
 ## 1. New tables
 
 Create `rooms` and `room_members` as defined in the schema.

@@ -58,6 +58,7 @@ async function setup(options: RoomOptions = {}) {
       name: "Room",
       createdBy: ALICE,
       inviteCode: "code",
+      adminInviteCode: "code-admin",
       cycleLength: "never",
       votesPerCycle: options.votesPerCycle ?? 2,
       nominationsPerCycle:
@@ -299,6 +300,7 @@ describe("room settings", () => {
         name: "Room",
         createdBy: ALICE,
         inviteCode: "code",
+        adminInviteCode: "code-admin",
         cycleLength: "never",
       })
       .returning();

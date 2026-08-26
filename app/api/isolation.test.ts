@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { and, eq } from "drizzle-orm";
 import { createTestDb } from "@/src/db/test-db";
 import { setDbForTesting, type DB } from "@/src/db/client";
 import {
@@ -78,6 +79,7 @@ beforeEach(async () => {
       name: "Club",
       createdBy: ALICE,
       inviteCode: "invite-a",
+      adminInviteCode: "invite-a-admin",
       nominationsPerCycle: 1,
       votesPerCycle: 2,
       cycleLength: "never",
@@ -91,6 +93,7 @@ beforeEach(async () => {
       name: "Secret",
       createdBy: MALLORY,
       inviteCode: "invite-b",
+      adminInviteCode: "invite-b-admin",
       nominationsPerCycle: null,
       votesPerCycle: 5,
       cycleLength: "never",
@@ -278,7 +281,9 @@ describe("cross-room writes", () => {
     const body = await (
       await GET(new Request("http://test"), route("club"))
     ).json();
-    expect(body[0].seenBy.map((user: { id: string }) => user.id)).toEqual([BOB]);
+    expect(body[0].seenBy.map((user: { id: string }) => user.id)).toEqual([
+      BOB,
+    ]);
   });
 
   it("refuses to mark a movie that is not on the acting room's list", async () => {
@@ -427,5 +432,73 @@ describe("invites", () => {
       { params: Promise.resolve({ code: "nope" }) },
     );
     expect(response.status).toBe(404);
+  });
+
+  it("adds the caller to the room as an admin via the admin invite code", async () => {
+    const { POST } = joinRoute;
+    asUser(BOB);
+
+    const response = await POST(
+      new Request("http://test", { method: "POST" }),
+      { params: Promise.resolve({ code: "invite-b-admin" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ slug: "secret" });
+
+    const [membership] = await fixture.db
+      .select()
+      .from(roomMembers)
+      .where(
+        and(
+          eq(roomMembers.userId, BOB),
+          eq(
+            roomMembers.roomId,
+            (
+              await fixture.db
+                .select({ id: rooms.id })
+                .from(rooms)
+                .where(eq(rooms.slug, "secret"))
+            )[0].id,
+          ),
+        ),
+      );
+    expect(membership.role).toBe("admin");
+  });
+
+  it("rotates the admin invite independently of the member invite", async () => {
+    const { POST: rotate } = rotateInviteRoute;
+    const { POST: join } = joinRoute;
+    asUser(ALICE);
+
+    const rotated = await rotate(
+      new Request("http://test", {
+        method: "POST",
+        body: JSON.stringify({ kind: "admin" }),
+      }),
+      route("club"),
+    );
+    expect(rotated.status).toBe(200);
+    const { adminInviteCode } = await rotated.json();
+    expect(adminInviteCode).not.toBe("invite-a-admin");
+
+    // The member invite still works — only the admin code was rotated.
+    asUser(MALLORY);
+    expect(
+      (
+        await join(new Request("http://test", { method: "POST" }), {
+          params: Promise.resolve({ code: "invite-a" }),
+        })
+      ).status,
+    ).toBe(200);
+
+    asUser(BOB);
+    expect(
+      (
+        await join(new Request("http://test", { method: "POST" }), {
+          params: Promise.resolve({ code: "invite-a-admin" }),
+        })
+      ).status,
+    ).toBe(404);
   });
 });

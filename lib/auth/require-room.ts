@@ -9,7 +9,7 @@ import { PresetName } from "@/app/lib/rooms";
  * gets handed to members or serialized into a page. Admin routes read it
  * explicitly via `findInviteCode`.
  */
-export type SafeRoom = Omit<Room, "inviteCode">;
+export type SafeRoom = Omit<Room, "inviteCode" | "adminInviteCode">;
 
 const ROOM_COLUMNS = {
   id: rooms.id,
@@ -66,6 +66,18 @@ export async function findInviteCode(roomId: string): Promise<string | null> {
     .where(eq(rooms.id, roomId))
     .limit(1);
   return row?.inviteCode ?? null;
+}
+
+/** As `findInviteCode`, but for the link that grants the admin role. */
+export async function findAdminInviteCode(
+  roomId: string,
+): Promise<string | null> {
+  const [row] = await getDb()
+    .select({ adminInviteCode: rooms.adminInviteCode })
+    .from(rooms)
+    .where(eq(rooms.id, roomId))
+    .limit(1);
+  return row?.adminInviteCode ?? null;
 }
 
 export async function findMembership(

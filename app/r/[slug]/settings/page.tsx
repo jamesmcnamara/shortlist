@@ -36,6 +36,7 @@ export default function RoomSettingsPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [inviteKind, setInviteKind] = useState<"member" | "admin">("member");
 
   useEffect(() => {
     client
@@ -90,8 +91,8 @@ export default function RoomSettingsPage() {
   async function rotateInvite() {
     setError("");
     try {
-      const { inviteCode } = await client.rotateInvite();
-      setDetail((prev) => (prev ? { ...prev, inviteCode } : prev));
+      const updated = await client.rotateInvite(inviteKind);
+      setDetail((prev) => (prev ? { ...prev, ...updated } : prev));
       setMessage("The old link no longer works.");
     } catch (error) {
       setError(
@@ -148,6 +149,12 @@ export default function RoomSettingsPage() {
   const inviteUrl = detail?.inviteCode
     ? `${typeof window === "undefined" ? "" : window.location.origin}/join/${detail.inviteCode}`
     : "";
+
+  const adminInviteUrl = detail?.adminInviteCode
+    ? `${typeof window === "undefined" ? "" : window.location.origin}/join/${detail.adminInviteCode}`
+    : "";
+
+  const activeInviteUrl = inviteKind === "admin" ? adminInviteUrl : inviteUrl;
 
   return (
     <main className={styles.shell}>
@@ -290,12 +297,44 @@ export default function RoomSettingsPage() {
           Anyone with this link can join. Rotating it locks out anyone who has
           not used it yet.
         </p>
+        <div
+          className={styles.radioGroup}
+          role="radiogroup"
+          aria-label="Invite link type"
+        >
+          <label className={styles.checkbox}>
+            <input
+              type="radio"
+              name="inviteKind"
+              value="member"
+              checked={inviteKind === "member"}
+              onChange={() => setInviteKind("member")}
+            />
+            <span>Member invite</span>
+          </label>
+          <label className={styles.checkbox}>
+            <input
+              type="radio"
+              name="inviteKind"
+              value="admin"
+              checked={inviteKind === "admin"}
+              onChange={() => setInviteKind("admin")}
+            />
+            <span>Admin invite</span>
+          </label>
+        </div>
+        {inviteKind === "admin" && (
+          <p className={styles.hint}>
+            Anyone who opens this link joins as an admin, with full access to
+            settings and members.
+          </p>
+        )}
         <div className={styles.inlineRow}>
-          <input className={styles.input} readOnly value={inviteUrl} />
+          <input className={styles.input} readOnly value={activeInviteUrl} />
           <button
             type="button"
             className={styles.ghostButton}
-            onClick={() => navigator.clipboard?.writeText(inviteUrl)}
+            onClick={() => navigator.clipboard?.writeText(activeInviteUrl)}
           >
             Copy
           </button>

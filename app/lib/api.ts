@@ -55,6 +55,7 @@ export interface SeenUpdate {
 export interface RoomDetail {
   room: SafeRoom;
   inviteCode?: string;
+  adminInviteCode?: string;
   membership: { userId: string; role: RoomRole };
   currentCycle: number;
   members: RoomMemberSummary[];
@@ -86,8 +87,16 @@ export const api = {
       ): Promise<SafeRoom> =>
         request(base, { method: "PATCH", body: JSON.stringify(input) }),
       delete: (): Promise<void> => request(base, { method: "DELETE" }),
-      rotateInvite: (): Promise<{ inviteCode: string }> =>
-        request(`${base}/invite/rotate`, { method: "POST" }),
+      rotateInvite: (
+        kind: "member" | "admin" = "member",
+      ): Promise<{
+        inviteCode?: string;
+        adminInviteCode?: string;
+      }> =>
+        request(`${base}/invite/rotate`, {
+          method: "POST",
+          body: JSON.stringify({ kind }),
+        }),
       members: {
         remove: (userId: string): Promise<void> =>
           request(`${base}/members/${encodeURIComponent(userId)}`, {

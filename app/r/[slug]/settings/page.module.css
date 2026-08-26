@@ -119,6 +119,14 @@
   cursor: pointer;
 }
 
+.radioGroup {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+
 .ghostButton {
   padding: 0.4375rem 0.75rem;
   border: 1px solid var(--border-strong);

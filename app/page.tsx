@@ -17,6 +17,7 @@ export default async function Home() {
 
   const rooms = await listRoomsForUser(userId);
   if (rooms.length === 0) redirect("/rooms/new");
+  if (rooms.length === 1) redirect(`/r/${rooms[0].slug}`);
 
   return (
     <main className={styles.shell}>
