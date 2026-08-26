@@ -1,0 +1,70 @@
+.shell {
+  display: grid;
+  place-items: start center;
+  min-height: 100vh;
+  padding: 3rem 1.25rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 28rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5812rem;
+  letter-spacing: -0.03em;
+}
+
+.newRoom {
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.625rem;
+  background: var(--accent);
+  color: white;
+  font-size: 0.9344rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.roomCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
+.roomCard:hover {
+  border-color: var(--accent-soft);
+}
+
+.roomName {
+  font-size: 1.0781rem;
+  font-weight: 700;
+}
+
+.roomType {
+  color: var(--muted);
+  font-size: 0.8625rem;
+}
