@@ -145,6 +145,46 @@ export const POST = withRoomMember({ error: "Unable to create nomination." })(
   },
 );
 
+export const PATCH = withRoomMember({
+  error: "Unable to update the nomination.",
+})(async (request: Request, { room, userId }: RoomContext) => {
+  const body = await request.json().catch(() => null);
+  const id = Number(body?.id);
+  const comment = typeof body?.comment === "string" ? body.comment.trim() : null;
+
+  if (!Number.isInteger(id)) {
+    return Response.json(
+      { error: "A nomination id is required." },
+      { status: 400 },
+    );
+  }
+
+  if (comment === null) {
+    return Response.json({ error: "A comment is required." }, { status: 400 });
+  }
+
+  const updated = await getDb()
+    .update(nominations)
+    .set({ comment: comment || null })
+    .where(
+      and(
+        eq(nominations.id, id),
+        eq(nominations.roomId, room.id),
+        eq(nominations.userId, userId),
+      ),
+    )
+    .returning({ id: nominations.id });
+
+  if (updated.length === 0) {
+    return Response.json(
+      { error: "That nomination no longer exists." },
+      { status: 404 },
+    );
+  }
+
+  return Response.json(await getNomination(room.id, id), { status: 200 });
+});
+
 export const DELETE = withRoomMember({
   error: "Unable to delete the nomination.",
 })(async (request: Request, { room, userId, role }: RoomContext) => {

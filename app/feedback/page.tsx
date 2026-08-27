@@ -129,10 +129,6 @@ export default function FeedbackPage() {
             </button>
           </form>
         )}
-
-        <Link className={styles.back} href="/">
-          Back to Shortlist
-        </Link>
       </div>
     </main>
   );

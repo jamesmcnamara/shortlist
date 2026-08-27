@@ -89,9 +89,12 @@ interface MovieDiscussionProps {
   hasUpvoted: boolean;
   hasSeen: boolean;
   canVote: boolean;
+  currentUserId: string | null;
   onAddVote: () => void;
   onRemoveVote: () => void;
   onAddComment: (comment: string) => Promise<boolean>;
+  onUpdateNominationComment: (comment: string) => Promise<boolean>;
+  onUpdateComment: (commentId: number, comment: string) => Promise<boolean>;
   onMarkWatched?: () => void;
   onDelete?: () => void;
   onClose: () => void;
@@ -102,9 +105,12 @@ export function MovieDiscussion({
   hasUpvoted,
   hasSeen,
   canVote,
+  currentUserId,
   onAddVote,
   onRemoveVote,
   onAddComment,
+  onUpdateNominationComment,
+  onUpdateComment,
   onMarkWatched,
   onDelete,
   onClose,
@@ -188,9 +194,17 @@ export function MovieDiscussion({
           <span className={`avatar avatar-${getColor(nominator.name)}`}>
             {getInitials(nominator.name)}
           </span>
-          <div>
+          <div className={styles.commentContent}>
             <strong>{nominator.name}</strong>
-            <p>{nomination.comment}</p>
+            <EditableComment
+              value={nomination.comment ?? ""}
+              canEdit={nomination.userId === currentUserId}
+              allowBlank
+              emptyText="No pitch yet."
+              editLabel={`Edit ${details.title} nomination comment`}
+              inputLabel={`Nomination comment for ${details.title}`}
+              onSave={onUpdateNominationComment}
+            />
           </div>
         </div>
         <VoterList votes={votes} />
@@ -198,7 +212,9 @@ export function MovieDiscussion({
         <NomComList
           nominationId={nomination.id}
           nomcoms={nomcoms}
+          currentUserId={currentUserId}
           onAddComment={onAddComment}
+          onUpdateComment={onUpdateComment}
         />
       </section>
     </motion.div>
@@ -336,10 +352,18 @@ function SeenByList({ seenBy }: { seenBy: User[] }) {
 interface NomComListProps {
   nominationId: number;
   nomcoms: NomCom[];
+  currentUserId: string | null;
   onAddComment: (comment: string) => Promise<boolean>;
+  onUpdateComment: (commentId: number, comment: string) => Promise<boolean>;
 }
 
-function NomComList({ nominationId, nomcoms, onAddComment }: NomComListProps) {
+function NomComList({
+  nominationId,
+  nomcoms,
+  currentUserId,
+  onAddComment,
+  onUpdateComment,
+}: NomComListProps) {
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -362,17 +386,25 @@ function NomComList({ nominationId, nomcoms, onAddComment }: NomComListProps) {
       <div className={styles.nomcomList}>
         {nomcoms.map((nomcom) => {
           return (
-            <p key={nomcom.id}>
+            <div className={styles.nomcomItem} key={nomcom.id}>
               <span
                 className={`avatar avatar-${getColor(nomcom.commenter.name)}`}
               >
                 {getInitials(nomcom.commenter.name)}
               </span>
-              <span>
+              <div className={styles.commentContent}>
                 <strong>{nomcom.commenter.name}</strong>
-                {nomcom.comment}
-              </span>
-            </p>
+                <EditableComment
+                  value={nomcom.comment ?? ""}
+                  canEdit={nomcom.userId === currentUserId}
+                  allowBlank={false}
+                  emptyText=""
+                  editLabel={`Edit ${nomcom.commenter.name}'s comment`}
+                  inputLabel={`Comment from ${nomcom.commenter.name}`}
+                  onSave={(comment) => onUpdateComment(nomcom.id, comment)}
+                />
+              </div>
+            </div>
           );
         })}
       </div>
@@ -396,6 +428,96 @@ function NomComList({ nominationId, nomcoms, onAddComment }: NomComListProps) {
         </button>
       </form>
     </div>
+  );
+}
+
+interface EditableCommentProps {
+  value: string;
+  canEdit: boolean;
+  allowBlank: boolean;
+  emptyText: string;
+  editLabel: string;
+  inputLabel: string;
+  onSave: (comment: string) => Promise<boolean>;
+}
+
+function EditableComment({
+  value,
+  canEdit,
+  allowBlank,
+  emptyText,
+  editLabel,
+  inputLabel,
+  onSave,
+}: EditableCommentProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const beginEdit = () => {
+    setDraft(value);
+    setIsEditing(true);
+  };
+
+  const submit: SubmitEventHandler<HTMLFormElement> = async (event) => {
+    event.preventDefault();
+    const next = draft.trim();
+    if ((!allowBlank && !next) || isSaving) return;
+
+    setIsSaving(true);
+    try {
+      if (await onSave(next)) setIsEditing(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <form className={styles.editCommentForm} onSubmit={submit}>
+        <textarea
+          aria-label={inputLabel}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          rows={2}
+          autoFocus
+        />
+        <span className={styles.editActions}>
+          <button
+            type="button"
+            onClick={() => setIsEditing(false)}
+            disabled={isSaving}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={(!allowBlank && !draft.trim()) || isSaving}
+          >
+            {isSaving ? "Saving..." : "Save"}
+          </button>
+        </span>
+      </form>
+    );
+  }
+
+  return (
+    <span className={styles.commentBody}>
+      <span className={value ? styles.commentText : styles.emptyComment}>
+        {value || emptyText}
+      </span>
+      {canEdit && (
+        <button
+          className={styles.editComment}
+          type="button"
+          onClick={beginEdit}
+          aria-label={editLabel}
+          title="Edit comment"
+        >
+          ✎
+        </button>
+      )}
+    </span>
   );
 }
 

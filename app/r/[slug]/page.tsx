@@ -158,6 +158,45 @@ function RoomPageContent() {
     }
   }
 
+  async function updateNominationComment(
+    nominationId: number,
+    comment: string,
+  ): Promise<boolean> {
+    setMessage("");
+    try {
+      const nomination = await client.nominations.updateComment(
+        nominationId,
+        comment,
+      );
+      setNominations((prev) => new Map(prev).set(nomination.id, nomination));
+      return true;
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to update your nomination.",
+      );
+      return false;
+    }
+  }
+
+  async function updateNomcom(
+    nomcomId: number,
+    comment: string,
+  ): Promise<boolean> {
+    setMessage("");
+    try {
+      const nomination = await client.nomcoms.update(nomcomId, comment);
+      setNominations((prev) => new Map(prev).set(nomination.id, nomination));
+      return true;
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Unable to update your comment.",
+      );
+      return false;
+    }
+  }
+
   async function rescindNomination(nominationId: number) {
     setMessage("");
     setIsSubmitting(true);
@@ -294,11 +333,16 @@ function RoomPageContent() {
             hasUpvoted={some({ userId })(focused.votes)}
             hasSeen={some({ id: userId })(focused.seenBy)}
             canVote={canVoteOn(focused)}
+            currentUserId={userId ?? null}
             onAddVote={() => changeVote(focused, "add")}
             onRemoveVote={() => changeVote(focused, "remove")}
             onAddComment={(comment) =>
               addNominationComment(focused.id, comment)
             }
+            onUpdateNominationComment={(comment) =>
+              updateNominationComment(focused.id, comment)
+            }
+            onUpdateComment={updateNomcom}
             onMarkWatched={() => toggleWatched(focused.movieId)}
             onDelete={
               canDeleteNominations

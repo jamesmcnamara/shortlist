@@ -256,6 +256,134 @@ describe("cross-room writes", () => {
     expect(response.status).toBe(404);
   });
 
+  it("lets a nominator update and clear their own nomination comment", async () => {
+    const { PATCH } = nominationsRoute;
+    asUser(ALICE);
+
+    const updated = await PATCH(
+      post({ id: fixture.nominationInA, comment: "  Please watch this.  " }),
+      route("club"),
+    );
+    expect(updated.status).toBe(200);
+    expect((await updated.json()).comment).toBe("Please watch this.");
+
+    const cleared = await PATCH(
+      post({ id: fixture.nominationInA, comment: "   " }),
+      route("club"),
+    );
+    expect(cleared.status).toBe(200);
+
+    const [row] = await fixture.db
+      .select()
+      .from(nominations)
+      .where(eq(nominations.id, fixture.nominationInA));
+    expect(row.comment).toBeNull();
+  });
+
+  it("cannot update someone else's nomination in its own room", async () => {
+    const { PATCH } = nominationsRoute;
+    asUser(BOB);
+
+    const response = await PATCH(
+      post({ id: fixture.nominationInA, comment: "mine now" }),
+      route("club"),
+    );
+
+    expect(response.status).toBe(404);
+    const [row] = await fixture.db
+      .select()
+      .from(nominations)
+      .where(eq(nominations.id, fixture.nominationInA));
+    expect(row.comment).toBeNull();
+  });
+
+  it("cannot update another room's nomination through its own room", async () => {
+    const { PATCH } = nominationsRoute;
+    asUser(BOB);
+
+    const response = await PATCH(
+      post({ id: fixture.nominationInB, comment: "hello" }),
+      route("club"),
+    );
+
+    expect(response.status).toBe(404);
+  });
+
+  it("lets a commenter update their own discussion comment", async () => {
+    const { PATCH } = nomcomsRoute;
+    const [comment] = await fixture.db
+      .insert(nomcoms)
+      .values({
+        roomId: fixture.roomA.id,
+        userId: BOB,
+        nominationId: fixture.nominationInA,
+        comment: "old take",
+      })
+      .returning();
+    asUser(BOB);
+
+    const response = await PATCH(
+      post({ id: comment.id, comment: "  new take  " }),
+      route("club"),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.nomcoms[0].comment).toBe("new take");
+  });
+
+  it("keeps discussion comments required when editing", async () => {
+    const { PATCH } = nomcomsRoute;
+    const [comment] = await fixture.db
+      .insert(nomcoms)
+      .values({
+        roomId: fixture.roomA.id,
+        userId: BOB,
+        nominationId: fixture.nominationInA,
+        comment: "old take",
+      })
+      .returning();
+    asUser(BOB);
+
+    const response = await PATCH(
+      post({ id: comment.id, comment: " " }),
+      route("club"),
+    );
+
+    expect(response.status).toBe(400);
+    const [row] = await fixture.db
+      .select()
+      .from(nomcoms)
+      .where(eq(nomcoms.id, comment.id));
+    expect(row.comment).toBe("old take");
+  });
+
+  it("cannot update another room's discussion comment", async () => {
+    const { PATCH } = nomcomsRoute;
+    const [comment] = await fixture.db
+      .insert(nomcoms)
+      .values({
+        roomId: fixture.roomB.id,
+        userId: MALLORY,
+        nominationId: fixture.nominationInB,
+        comment: "secret take",
+      })
+      .returning();
+    asUser(BOB);
+
+    const response = await PATCH(
+      post({ id: comment.id, comment: "not secret anymore" }),
+      route("club"),
+    );
+
+    expect(response.status).toBe(404);
+    const [row] = await fixture.db
+      .select()
+      .from(nomcoms)
+      .where(eq(nomcoms.id, comment.id));
+    expect(row.comment).toBe("secret take");
+  });
+
   it("does not report a non-member's viewing on a shared movie", async () => {
     const { GET } = nominationsRoute;
     asUser(BOB);

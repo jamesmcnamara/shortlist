@@ -134,6 +134,14 @@ export const api = {
             method: "POST",
             body: JSON.stringify(input),
           }),
+        updateComment: (
+          nominationId: number,
+          comment: string,
+        ): Promise<Nomination> =>
+          request(`${base}/nominations`, {
+            method: "PATCH",
+            body: JSON.stringify({ id: nominationId, comment }),
+          }),
         delete: (nominationId: number): Promise<void> =>
           request(`${base}/nominations?id=${nominationId}`, {
             method: "DELETE",
@@ -156,6 +164,11 @@ export const api = {
           request(`${base}/nomcoms`, {
             method: "POST",
             body: JSON.stringify({ nominationId, comment }),
+          }),
+        update: (id: number, comment: string): Promise<Nomination> =>
+          request(`${base}/nomcoms`, {
+            method: "PATCH",
+            body: JSON.stringify({ id, comment }),
           }),
       },
       seen: {

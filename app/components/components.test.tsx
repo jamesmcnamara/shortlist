@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { MovieCard } from "@/app/components/MovieCard";
+import { MovieCard, MovieDiscussion } from "@/app/components/MovieCard";
 import { NominationPanel } from "@/app/components/NominationPanel";
 import type { MovieDetails, Nomination } from "@/src/db/schema";
 
@@ -83,5 +83,43 @@ describe("high-churn component smoke tests", () => {
       screen.getByRole("button", { name: "Close nomination panel" }),
     );
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("lets the current user edit their nomination comment", async () => {
+    const onUpdateNominationComment = vi.fn().mockResolvedValue(true);
+
+    render(
+      <MovieDiscussion
+        nomination={nomination}
+        hasSeen={false}
+        hasUpvoted={false}
+        canVote
+        currentUserId="user"
+        onAddVote={vi.fn()}
+        onRemoveVote={vi.fn()}
+        onAddComment={vi.fn()}
+        onUpdateNominationComment={onUpdateNominationComment}
+        onUpdateComment={vi.fn()}
+        onMarkWatched={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Edit A Movie nomination comment",
+      }),
+    );
+    fireEvent.change(
+      screen.getByRole("textbox", {
+        name: "Nomination comment for A Movie",
+      }),
+      { target: { value: "A sharper pitch" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(onUpdateNominationComment).toHaveBeenCalledWith("A sharper pitch"),
+    );
   });
 });
