@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { authClient } from "@/lib/auth/client";
 import { useRoom } from "@/app/r/[slug]/RoomContext";
 import styles from "./ShortlistHeader.module.css";
+import { getRoomType } from "../lib/rooms";
 
 type ShortlistHeaderProps = {
   votesLeft: number;
@@ -42,14 +43,18 @@ export function ShortlistHeader({ votesLeft }: ShortlistHeaderProps) {
     }
   }
 
+  const isMovieClub = getRoomType(room) === "club";
+
   return (
     <header className={styles.header}>
       <span className={styles.roomName}>{room.name}</span>
-      <div className={styles.balances}>
-        <span id="tour-votes" className={styles.voteBalance}>
-          {votesLeft} {votesLeft === 1 ? "vote" : "votes"} left
-        </span>
-      </div>
+      {isMovieClub && (
+        <div className={styles.balances}>
+          <span id="tour-votes" className={styles.voteBalance}>
+            {votesLeft} {votesLeft === 1 ? "vote" : "votes"} left
+          </span>
+        </div>
+      )}
       {name ? (
         <div className={styles.menu} ref={menuRef}>
           <button

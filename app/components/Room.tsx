@@ -9,13 +9,13 @@ import { ViewControls } from "@/app/components/ViewControls";
 import { getRoomType } from "@/app/lib/rooms";
 import { useAPIActions } from "@/app/lib/useAPIActions";
 import { applyView, ViewContext, ViewState } from "@/app/lib/view";
-import styles from "@/app/page.module.css";
 import { SafeRoom } from "@/lib/auth/require-room";
 import type { Nomination } from "@/src/db/schema";
 import { AnimatePresence } from "motion/react";
 import { useMemo, useState } from "react";
 import { filter, find, some } from "shades";
 import { useRoom } from "../r/[slug]/RoomContext";
+import styles from "./Room.module.css";
 
 export interface RoomAPI {
   rescind: (nominationId: number) => Promise<void>;
@@ -166,6 +166,13 @@ export function Room({
             {message}
           </div>
         )}
+        {visible.length === 0 && (
+          <p className={styles.message} role="status">
+            {nominees.length === 0
+              ? "Nothing here yet. Add the first movie."
+              : "No movies match these filters."}
+          </p>
+        )}
         <div id="tour-nominations" className={styles.movieList}>
           {visible.map((nom, index) => (
             <MovieCard
@@ -182,13 +189,6 @@ export function Room({
               }
             />
           ))}
-          {visible.length === 0 && (
-            <p className={styles.message} role="status">
-              {nominees.length === 0
-                ? "Nothing here yet. Add the first movie."
-                : "No movies match these filters."}
-            </p>
-          )}
         </div>
       </section>
       <AnimatePresence>

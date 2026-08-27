@@ -71,7 +71,7 @@ export function MovieCard({
             disabled={!canVote}
             aria-label={`Give a vote to ${details.title}`}
           >
-            {votes.length} {votes.length === 1 ? "vote" : "votes"}
+            {votes.length} <span>↑</span>
           </button>
           {seenBy.length > 0 && (
             <span
