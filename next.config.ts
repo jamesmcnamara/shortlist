@@ -12,5 +12,7 @@ export default function nextConfig(phase: string): NextConfig {
     globPublicPatterns: ["icons/**/*"],
   });
 
-  return withSerwist({});
+  return withSerwist({
+    turbopack: {},
+  });
 }

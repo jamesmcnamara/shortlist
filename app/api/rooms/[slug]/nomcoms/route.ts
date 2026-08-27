@@ -44,48 +44,44 @@ export const POST = withRoomMember({ error: "Unable to add your comment." })(
   },
 );
 
-export const PATCH = withRoomMember({ error: "Unable to update your comment." })(
-  async (request: Request, { room, userId }: RoomContext) => {
-    const body = await request.json().catch(() => null);
-    const id = Number(body?.id);
-    const comment =
-      typeof body?.comment === "string" ? body.comment.trim() : "";
+export const PATCH = withRoomMember({
+  error: "Unable to update your comment.",
+})(async (request: Request, { room, userId }: RoomContext) => {
+  const body = await request.json().catch(() => null);
+  const id = Number(body?.id);
+  const comment = typeof body?.comment === "string" ? body.comment.trim() : "";
 
-    if (!Number.isInteger(id)) {
-      return Response.json(
-        { error: "A comment id is required." },
-        { status: 400 },
-      );
-    }
+  if (!Number.isInteger(id)) {
+    return Response.json(
+      { error: "A comment id is required." },
+      { status: 400 },
+    );
+  }
 
-    if (!comment) {
-      return Response.json(
-        { error: "A comment is required." },
-        { status: 400 },
-      );
-    }
+  if (!comment) {
+    return Response.json({ error: "A comment is required." }, { status: 400 });
+  }
 
-    const [updated] = await getDb()
-      .update(nomcoms)
-      .set({ comment })
-      .where(
-        and(
-          eq(nomcoms.id, id),
-          eq(nomcoms.roomId, room.id),
-          eq(nomcoms.userId, userId),
-        ),
-      )
-      .returning({ nominationId: nomcoms.nominationId });
+  const [updated] = await getDb()
+    .update(nomcoms)
+    .set({ comment })
+    .where(
+      and(
+        eq(nomcoms.id, id),
+        eq(nomcoms.roomId, room.id),
+        eq(nomcoms.userId, userId),
+      ),
+    )
+    .returning({ nominationId: nomcoms.nominationId });
 
-    if (!updated) {
-      return Response.json(
-        { error: "That comment no longer exists." },
-        { status: 404 },
-      );
-    }
+  if (!updated) {
+    return Response.json(
+      { error: "That comment no longer exists." },
+      { status: 404 },
+    );
+  }
 
-    return Response.json(await getNomination(room.id, updated.nominationId), {
-      status: 200,
-    });
-  },
-);
+  return Response.json(await getNomination(room.id, updated.nominationId), {
+    status: 200,
+  });
+});

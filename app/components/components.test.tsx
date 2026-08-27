@@ -2,7 +2,8 @@
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { MovieCard, MovieDiscussion } from "@/app/components/MovieCard";
+import { MovieCard } from "@/app/components/MovieCard";
+import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
 import { NominationPanel } from "@/app/components/NominationPanel";
 import type { MovieDetails, Nomination } from "@/src/db/schema";
 
