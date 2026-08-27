@@ -11,9 +11,7 @@ type ShortlistHeaderProps = {
   votesLeft: number;
 };
 
-export function ShortlistHeader({
-  votesLeft,
-}: ShortlistHeaderProps) {
+export function ShortlistHeader({ votesLeft }: ShortlistHeaderProps) {
   const { data: session } = authClient.useSession();
   const { room, rooms, isAdmin } = useRoom();
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -98,6 +96,14 @@ export function ShortlistHeader({
                   Settings
                 </Link>
               )}
+              <Link
+                className={styles.menuItem}
+                href="/feedback"
+                role="menuitem"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Feedback
+              </Link>
               <button
                 className={styles.menuItem}
                 type="button"

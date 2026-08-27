@@ -176,6 +176,29 @@ export const seen = pgTable(
   ],
 );
 
+export type FeedbackCategory =
+  "bug" | "feature" | "design" | "copy" | "other";
+
+export const feedback = pgTable("feedback", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => authUsers.id),
+  category: text(),
+  message: text().notNull(),
+  resolved: boolean().notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const feedbackRelations = relations(feedback, ({ one }) => ({
+  user: one(authUsers, {
+    fields: [feedback.userId],
+    references: [authUsers.id],
+  }),
+}));
+
 export const roomsRelations = relations(rooms, ({ many, one }) => ({
   members: many(roomMembers),
   nominations: many(nominations),
@@ -259,6 +282,9 @@ export type Nomination = RawNomination & {
 export type Vote = typeof votes.$inferSelect & { voter: User };
 export type NomCom = typeof nomcoms.$inferSelect & { commenter: User };
 export type Seen = typeof seen.$inferSelect;
+export type Feedback = Omit<typeof feedback.$inferSelect, "category"> & {
+  category: FeedbackCategory | null;
+};
 
 export interface User {
   id: string;

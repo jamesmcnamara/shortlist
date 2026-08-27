@@ -1,5 +1,11 @@
 import { get } from "shades";
-import type { Nomination, RoomRole, User } from "@/src/db/schema";
+import type {
+  Feedback,
+  FeedbackCategory,
+  Nomination,
+  RoomRole,
+  User,
+} from "@/src/db/schema";
 import type { SafeRoom } from "@/lib/auth/require-room";
 import type { MovieSearchResultData } from "@/app/components/MovieSearchResult";
 import type { PresetName, RoomConfig } from "@/app/lib/rooms";
@@ -78,6 +84,16 @@ export const api = {
   },
   join: (code: string): Promise<{ slug: string; name: string }> =>
     request(`/api/join/${encodeURIComponent(code)}`, { method: "POST" }),
+  feedback: {
+    create: (input: {
+      message: string;
+      category?: FeedbackCategory;
+    }): Promise<Feedback> =>
+      request("/api/feedback", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
+  },
   room: (slug: string) => {
     const base = `/api/rooms/${encodeURIComponent(slug)}`;
     return {
