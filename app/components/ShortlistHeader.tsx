@@ -46,7 +46,7 @@ export function ShortlistHeader({ votesLeft }: ShortlistHeaderProps) {
     <header className={styles.header}>
       <span className={styles.roomName}>{room.name}</span>
       <div className={styles.balances}>
-        <span className={styles.voteBalance}>
+        <span id="tour-votes" className={styles.voteBalance}>
           {votesLeft} {votesLeft === 1 ? "vote" : "votes"} left
         </span>
       </div>
@@ -54,6 +54,7 @@ export function ShortlistHeader({ votesLeft }: ShortlistHeaderProps) {
         <div className={styles.menu} ref={menuRef}>
           <button
             className={styles.menuButton}
+            id="tour-menu"
             type="button"
             aria-haspopup="menu"
             aria-expanded={isMenuOpen}

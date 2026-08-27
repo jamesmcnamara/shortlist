@@ -55,6 +55,7 @@ export function ViewControls({
       <div className={styles.actions}>
         <button
           className={styles.nominateButton}
+          id="tour-nominate"
           type="button"
           onClick={onNominate}
         >

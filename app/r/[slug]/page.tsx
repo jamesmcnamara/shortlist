@@ -3,6 +3,7 @@
 import { MovieCard, MovieDiscussion } from "@/app/components/MovieCard";
 import type { MovieSearchResultData } from "@/app/components/MovieSearchResult";
 import { NominationPanel } from "@/app/components/NominationPanel";
+import { useFirstRoomTour } from "@/app/components/onboarding/useFirstRoomTour";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import { ViewControls } from "@/app/components/ViewControls";
 import { ApiError } from "@/app/lib/api";
@@ -26,8 +27,14 @@ export default function RoomPage() {
 }
 
 function RoomPageContent() {
-  const { room, client, currentCycle, nominationsPerCycle, votesPerCycle, isAdmin } =
-    useRoom();
+  const {
+    room,
+    client,
+    currentCycle,
+    nominationsPerCycle,
+    votesPerCycle,
+    isAdmin,
+  } = useRoom();
   const { data: session } = authClient.useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -37,6 +44,7 @@ function RoomPageContent() {
   const [message, setMessage] = useState("");
   const [isNominationOpen, setIsNominationOpen] = useState(false);
   const [focusedId, setFocusedId] = useState<number | null>(null);
+  const [nominationsLoaded, setNominationsLoaded] = useState(false);
 
   const userId = session?.user?.id;
   const closeDiscussion = () => setFocusedId(null);
@@ -46,12 +54,21 @@ function RoomPageContent() {
     let cancelled = false;
     client.nominations
       .list()
-      .then((list) => !cancelled && setNominations(mapify(list)))
+      .then((list) => {
+        if (cancelled) return;
+        setNominations(mapify(list));
+        setNominationsLoaded(true);
+      })
       .catch((error: Error) => !cancelled && setMessage(error.message));
     return () => {
       cancelled = true;
     };
   }, [client]);
+
+  useFirstRoomTour({
+    roomType: getRoomType(room),
+    isReady: nominationsLoaded,
+  });
 
   const all = useMemo(() => Array.from(nominations.values()), [nominations]);
 
@@ -191,7 +208,9 @@ function RoomPageContent() {
       return true;
     } catch (error) {
       setMessage(
-        error instanceof Error ? error.message : "Unable to update your comment.",
+        error instanceof Error
+          ? error.message
+          : "Unable to update your comment.",
       );
       return false;
     }
@@ -240,7 +259,8 @@ function RoomPageContent() {
       setNominations((prev) => {
         const next = new Map(prev);
         for (const [id, candidate] of prev) {
-          if (candidate.movieId === movieId) next.set(id, { ...candidate, seenBy });
+          if (candidate.movieId === movieId)
+            next.set(id, { ...candidate, seenBy });
         }
         return next;
       });
@@ -300,7 +320,7 @@ function RoomPageContent() {
             {message}
           </div>
         )}
-        <div className={styles.movieList}>
+        <div id="tour-nominations" className={styles.movieList}>
           {nominees.map((nom, index) => (
             <MovieCard
               key={nom.id}
