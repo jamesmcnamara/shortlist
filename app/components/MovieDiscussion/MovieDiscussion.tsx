@@ -75,6 +75,9 @@ export function MovieDiscussion({
             <span className={styles.discussionMeta}>
               Nominated by {nominator.name}
             </span>
+            {details.overview && (
+              <p className={styles.recommendation}>{details.overview}</p>
+            )}
           </div>
           <MovieRatings services={ratings.services} />
           {!nomination.completed && (

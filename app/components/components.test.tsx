@@ -107,6 +107,7 @@ describe("high-churn component smoke tests", () => {
       />,
     );
 
+    expect(screen.getByText("A description")).toBeTruthy();
     fireEvent.click(
       screen.getByRole("button", {
         name: "Edit A Movie nomination comment",
