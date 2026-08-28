@@ -31,6 +31,7 @@ export interface RoomAPI {
   updateNomRec: (nominationId: number, comment: string) => Promise<void>;
   toggleWatched: (movieId: number) => Promise<void>;
   updateNomCom: (nomcomId: number, comment: string) => Promise<void>;
+  toggleCompleted: (nominationId: number) => Promise<void>;
 }
 
 interface RoomProps {
@@ -54,6 +55,7 @@ export function Room({
     useRoom();
   const [isNominationOpen, setIsNominationOpen] = useState(false);
   const [focusedId, setFocusedId] = useState<number | null>(null);
+  const [isWatchedOpen, setIsWatchedOpen] = useState(false);
 
   const closeDiscussion = () => setFocusedId(null);
   const focused = focusedId
@@ -63,7 +65,9 @@ export function Room({
   const myNominationsThisCycle = useMemo(
     () =>
       userId
-        ? filter({ userId, cycle: currentCycle })(nominees as Nomination[])
+        ? filter({ userId, cycle: currentCycle, completed: false })(
+            nominees as Nomination[],
+          )
         : [],
     [nominees, userId, currentCycle],
   );
@@ -105,17 +109,41 @@ export function Room({
       api: api.changeVote,
       action: "update your vote",
     },
+    toggleCompleted: {
+      api: api.toggleCompleted,
+      action: "update the completed status",
+    },
   });
 
   const visible = useMemo(
-    () => applyView(nominees, viewState, viewContext),
+    () =>
+      applyView(
+        nominees.filter((nom) => !nom.completed),
+        viewState,
+        viewContext,
+      ),
     [nominees, viewState, viewContext],
+  );
+
+  const watched = useMemo(
+    () => nominees.filter((nom) => nom.completed),
+    [nominees],
+  );
+
+  const existing = useMemo(
+    () =>
+      new Set(
+        nominees.map((nom) => nom.movie.tmdbId).filter(Boolean) as number[],
+      ),
+    [nominees],
   );
 
   const votesLeft = useMemo(() => {
     if (!userId) return 0;
     const cast = filter({ userId, cycle: currentCycle })(
-      nominees.flatMap((nomination) => nomination.votes),
+      filter({ completed: false })(nominees).flatMap(
+        (nomination) => nomination.votes,
+      ),
     ).length;
     return Math.max(0, votesPerCycle - cast);
   }, [nominees, userId, currentCycle, votesPerCycle]);
@@ -152,6 +180,7 @@ export function Room({
           {isNominationOpen && (
             <NominationPanel
               currentNomination={replaceableNomination}
+              existing={existing}
               isSubmitting={isSubmitting}
               roomType={getRoomType(room)}
               onClose={() => setIsNominationOpen(false)}
@@ -191,6 +220,42 @@ export function Room({
           ))}
         </div>
       </section>
+
+      {watched.length > 0 && (
+        <section className={styles.nominations} aria-labelledby="watched-title">
+          <button
+            type="button"
+            className={styles.watchedToggle}
+            id="watched-title"
+            aria-expanded={isWatchedOpen}
+            onClick={() => setIsWatchedOpen((open) => !open)}
+          >
+            {isWatchedOpen ? "▾" : "▸"} Watched
+          </button>
+
+          {isWatchedOpen && (
+            <div className={styles.movieList}>
+              {watched.map((nom, index) => (
+                <MovieCard
+                  key={nom.id}
+                  rank={index + 1}
+                  nomination={nom}
+                  hasSeen={some({ id: userId })(nom.seenBy)}
+                  hasUpvoted={some({ userId })(nom.votes)}
+                  canVote={canVoteOn(nom)}
+                  isExpanded={focused === nom}
+                  isCompleted
+                  onAddVote={() => actions.changeVote(nom, "add")}
+                  onToggleDiscussion={() =>
+                    setFocusedId(focused === nom ? null : nom.id)
+                  }
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
       <AnimatePresence>
         {focused && (
           <MovieDiscussion
@@ -212,6 +277,9 @@ export function Room({
               canDeleteNominations
                 ? () => actions.rescind(focused.id)
                 : undefined
+            }
+            onToggleCompleted={
+              isAdmin ? () => actions.toggleCompleted(focused.id) : undefined
             }
             onClose={closeDiscussion}
           />

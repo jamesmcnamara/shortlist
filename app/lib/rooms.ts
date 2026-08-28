@@ -6,7 +6,6 @@ export interface RoomConfig {
   votesPerCycle: number;
   cycleLength: CycleLength;
   allowSelfVote: boolean;
-  allowDuplicateNominations: boolean;
 }
 
 export type PresetName = "club" | "watchlist";
@@ -21,14 +20,12 @@ export const PRESETS: Record<PresetName, RoomConfig> = {
     votesPerCycle: 5,
     cycleLength: "month",
     allowSelfVote: false,
-    allowDuplicateNominations: false,
   },
   watchlist: {
     nominationsPerCycle: null,
     votesPerCycle: 5,
     cycleLength: "never",
     allowSelfVote: true,
-    allowDuplicateNominations: false,
   },
 };
 
@@ -115,7 +112,7 @@ export function parseConfigUpdate(
     values.cycleLength = length;
   }
 
-  for (const flag of ["allowSelfVote", "allowDuplicateNominations"] as const) {
+  for (const flag of ["allowSelfVote"] as const) {
     if (flag in input) {
       if (typeof input[flag] !== "boolean") {
         return { ok: false, error: `${flag} must be true or false.` };

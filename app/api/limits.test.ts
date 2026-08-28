@@ -279,6 +279,19 @@ describe("nomination cap", () => {
     const response = await POST(post({ tmdbId: 999 }), route());
     expect(response.status).not.toBe(409);
   });
+
+  it("frees a slot once the existing nomination is marked completed", async () => {
+    const { POST } = nominationsRoute;
+    const { nomination } = await setup({ nominationsPerCycle: 1 });
+    await db
+      .update(nominations)
+      .set({ completed: true })
+      .where(eq(nominations.id, nomination.id));
+    asUser(ALICE);
+
+    const response = await POST(post({ tmdbId: 999 }), route());
+    expect(response.status).not.toBe(409);
+  });
 });
 
 describe("room settings", () => {

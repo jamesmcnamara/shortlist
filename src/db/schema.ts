@@ -33,9 +33,6 @@ export const rooms = pgTable("rooms", {
   votesPerCycle: integer("votes_per_cycle").notNull().default(5),
   cycleLength: text("cycle_length").notNull().default("month"),
   allowSelfVote: boolean("allow_self_vote").notNull().default(false),
-  allowDuplicateNominations: boolean("allow_duplicate_nominations")
-    .notNull()
-    .default(false),
   description: text(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
@@ -87,16 +84,14 @@ export const nominations = pgTable(
       .references(() => movies.id),
     comment: text("comment"),
     cycle: integer().notNull(),
+    completed: boolean("completed").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
   (table) => [
     index("nominations_room_cycle_idx").on(table.roomId, table.cycle),
-    // Duplicate suppression is per-room config, which a partial index cannot
-    // express (index predicates cannot contain subqueries), so the rule is
-    // enforced in the API. This index serves that lookup.
-    index("nominations_room_movie_idx").on(table.roomId, table.movieId),
+    uniqueIndex("nominations_room_movie_idx").on(table.roomId, table.movieId),
   ],
 );
 
@@ -176,8 +171,7 @@ export const seen = pgTable(
   ],
 );
 
-export type FeedbackCategory =
-  "bug" | "feature" | "design" | "copy" | "other";
+export type FeedbackCategory = "bug" | "feature" | "design" | "copy" | "other";
 
 export const feedback = pgTable("feedback", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),

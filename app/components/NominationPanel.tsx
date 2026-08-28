@@ -13,6 +13,7 @@ type NominationPanelProps = {
   currentNomination: Nomination | null;
   isSubmitting: boolean;
   roomType: PresetName;
+  existing: Set<number>;
   onClose: () => void;
   onSubmit: (movie: MovieSearchResultData, comment: string) => void;
   onRescind: () => void;
@@ -22,6 +23,7 @@ export function NominationPanel({
   currentNomination,
   isSubmitting,
   roomType,
+  existing,
   onClose,
   onSubmit,
   onRescind,
@@ -59,6 +61,10 @@ export function NominationPanel({
   );
 
   function onSelect(movie: MovieSearchResultData) {
+    if (existing.has(movie.id)) {
+      setError("This movie has already been nominated.");
+      return;
+    }
     setCandidate(movie);
     setQuery("");
     setSearchResults([]);

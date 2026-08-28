@@ -20,7 +20,7 @@ const ROOM_COLUMNS = {
   votesPerCycle: rooms.votesPerCycle,
   cycleLength: rooms.cycleLength,
   allowSelfVote: rooms.allowSelfVote,
-  allowDuplicateNominations: rooms.allowDuplicateNominations,
+  description: rooms.description,
   createdAt: rooms.createdAt,
 };
 

@@ -84,33 +84,25 @@ function RoomPageContent() {
       });
     },
     changeVote: async (nomination, action) => {
-      const nominationData = await (
+      const data = await (
         action === "add" ? client.votes.create : client.votes.delete
       )(nomination.id);
-      setNominations((prev) =>
-        new Map(prev).set(nominationData.id, nominationData),
-      );
+      setNominations((prev) => new Map(prev).set(data.id, data));
     },
     addNomCom: async (nominationId, comment) => {
-      const nominationData = await client.nomcoms.create(nominationId, comment);
-      setNominations((prev) =>
-        new Map(prev).set(nominationData.id, nominationData),
-      );
+      const data = await client.nomcoms.create(nominationId, comment);
+      setNominations((prev) => new Map(prev).set(data.id, data));
     },
     updateNomRec: async (nominationId, comment) => {
-      const nominationData = await client.nominations.updateComment(
+      const data = await client.nominations.updateComment(
         nominationId,
         comment,
       );
-      setNominations((prev) =>
-        new Map(prev).set(nominationData.id, nominationData),
-      );
+      setNominations((prev) => new Map(prev).set(data.id, data));
     },
     updateNomCom: async (nomcomId, comment) => {
-      const nominationData = await client.nomcoms.update(nomcomId, comment);
-      setNominations((prev) =>
-        new Map(prev).set(nominationData.id, nominationData),
-      );
+      const data = await client.nomcoms.update(nomcomId, comment);
+      setNominations((prev) => new Map(prev).set(data.id, data));
     },
     toggleWatched: async (movieId) => {
       if (!userId) return;
@@ -131,6 +123,14 @@ function RoomPageContent() {
         }
         return next;
       });
+    },
+    toggleCompleted: async (nominationId) => {
+      const nomination = nominations.get(nominationId);
+      const data = await client.nominations.setCompleted(
+        nominationId,
+        !nomination?.completed,
+      );
+      setNominations((prev) => new Map(prev).set(data.id, data));
     },
   };
 

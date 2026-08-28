@@ -1,10 +1,10 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { cycleFor } from "@/app/lib/cycles";
 import { getNomination, listNominations } from "@/app/lib/queries";
 import { getMovieProvider } from "@/app/lib/movie-metadata";
 import { withRoomMember, type RoomContext } from "@/lib/auth/require-room";
-import { getDb } from "@/src/db/client";
-import { movies, nominations } from "@/src/db/schema";
+import { getDb, type DB } from "@/src/db/client";
+import { movies, nominations, type Room } from "@/src/db/schema";
 
 export const runtime = "nodejs";
 
@@ -12,6 +12,27 @@ export const GET = withRoomMember({ error: "Unable to load nominations" })(
   async (_request: Request, { room }: RoomContext) =>
     Response.json(await listNominations(room.id)),
 );
+
+/**
+ * Only nominations still awaiting a verdict count against a room's per-cycle
+ * cap; once one is marked completed and moves to Watched, the nominator gets
+ * their slot back.
+ */
+const activeNominationCount = (
+  db: DB,
+  roomId: string,
+  userId: string,
+  cycle: number,
+) =>
+  db.$count(
+    nominations,
+    and(
+      eq(nominations.roomId, roomId),
+      eq(nominations.userId, userId),
+      eq(nominations.cycle, cycle),
+      eq(nominations.completed, false),
+    ),
+  );
 
 export const POST = withRoomMember({ error: "Unable to create nomination." })(
   async (request: Request, { room, userId }: RoomContext) => {
@@ -35,18 +56,8 @@ export const POST = withRoomMember({ error: "Unable to create nomination." })(
     // list. There is no separate code path for it. Checked before any external
     // call, so hitting your own limit never depends on TMDB being reachable.
     if (room.nominationsPerCycle !== null) {
-      const existing = await db
-        .select({ id: nominations.id })
-        .from(nominations)
-        .where(
-          and(
-            eq(nominations.roomId, room.id),
-            eq(nominations.userId, userId),
-            eq(nominations.cycle, cycle),
-          ),
-        );
-
-      if (existing.length >= room.nominationsPerCycle) {
+      const active = await activeNominationCount(db, room.id, userId, cycle);
+      if (active >= room.nominationsPerCycle) {
         return Response.json(
           { error: nominationLimitMessage(room.nominationsPerCycle) },
           { status: 409 },
@@ -79,67 +90,12 @@ export const POST = withRoomMember({ error: "Unable to create nomination." })(
       .onConflictDoUpdate({ target: movies.tmdbId, set: values })
       .returning();
 
-    // The cap was checked above for a fast, specific error, but that check and
-    // this insert are separate round trips with a TMDB fetch between them.
-    // Re-asserting both conditions inside the INSERT narrows that window to a
-    // single statement, which is what makes a double-click safe. See the note
-    // in the votes route: this bounds the race rather than eliminating it.
-    const capCondition =
-      room.nominationsPerCycle === null
-        ? sql`true`
-        : sql`(
-            select count(*)
-            from ${nominations}
-            where ${nominations.roomId} = ${room.id}
-              and ${nominations.userId} = ${userId}
-              and ${nominations.cycle} = ${cycle}
-          ) < ${room.nominationsPerCycle}`;
+    const [inserted] = await db
+      .insert(nominations)
+      .values({ roomId: room.id, userId, movieId: movie.id, comment, cycle })
+      .returning({ id: nominations.id });
 
-    const duplicateCondition = room.allowDuplicateNominations
-      ? sql`true`
-      : sql`not exists (
-          select 1
-          from ${nominations}
-          where ${nominations.roomId} = ${room.id}
-            and ${nominations.movieId} = ${movie.id}
-        )`;
-
-    const inserted = await db.execute(sql`
-      insert into ${nominations} (room_id, user_id, movie_id, comment, cycle)
-      select ${room.id}, ${userId}, ${movie.id}, ${comment}, ${cycle}
-      where ${capCondition} and ${duplicateCondition}
-      returning id
-    `);
-
-    const rows = (inserted as unknown as { rows: { id: number }[] }).rows ?? [];
-    if (rows.length === 0) {
-      // One of the two guards rejected it. Work out which so the message is
-      // specific; this only runs on the failure path.
-      const duplicate = room.allowDuplicateNominations
-        ? []
-        : await db
-            .select({ id: nominations.id })
-            .from(nominations)
-            .where(
-              and(
-                eq(nominations.roomId, room.id),
-                eq(nominations.movieId, movie.id),
-              ),
-            )
-            .limit(1);
-
-      return Response.json(
-        {
-          error:
-            duplicate.length > 0
-              ? "That movie has already been nominated."
-              : nominationLimitMessage(room.nominationsPerCycle ?? 0),
-        },
-        { status: 409 },
-      );
-    }
-
-    return Response.json(await getNomination(room.id, rows[0].id), {
+    return Response.json(await getNomination(room.id, inserted.id), {
       status: 201,
     });
   },
@@ -147,10 +103,13 @@ export const POST = withRoomMember({ error: "Unable to create nomination." })(
 
 export const PATCH = withRoomMember({
   error: "Unable to update the nomination.",
-})(async (request: Request, { room, userId }: RoomContext) => {
+})(async (request: Request, { room, userId, role }: RoomContext) => {
   const body = await request.json().catch(() => null);
   const id = Number(body?.id);
-  const comment = typeof body?.comment === "string" ? body.comment.trim() : null;
+  const comment: string | null =
+    typeof body?.comment === "string" ? body.comment.trim() : null;
+  const completed: boolean | null =
+    typeof body?.completed === "boolean" ? body.completed : null;
 
   if (!Number.isInteger(id)) {
     return Response.json(
@@ -159,18 +118,35 @@ export const PATCH = withRoomMember({
     );
   }
 
-  if (comment === null) {
+  if (comment === null && completed === null) {
     return Response.json({ error: "A comment is required." }, { status: 400 });
   }
 
+  // Marking a nomination completed moves it into the room's Watched section
+  // for everyone, so only an admin may flip that flag. A comment edit is
+  // still scoped to the nominator, as before.
+  if (completed !== null && role !== "admin") {
+    return Response.json(
+      { error: "Only an admin can mark a movie completed." },
+      { status: 403 },
+    );
+  }
+
+  const values: Partial<typeof nominations.$inferInsert> = {};
+  if (comment !== null) values.comment = comment || null;
+  if (completed !== null) values.completed = completed;
+
+  const ownershipCondition =
+    completed !== null ? undefined : eq(nominations.userId, userId);
+
   const updated = await getDb()
     .update(nominations)
-    .set({ comment: comment || null })
+    .set(values)
     .where(
       and(
         eq(nominations.id, id),
         eq(nominations.roomId, room.id),
-        eq(nominations.userId, userId),
+        ownershipCondition,
       ),
     )
     .returning({ id: nominations.id });

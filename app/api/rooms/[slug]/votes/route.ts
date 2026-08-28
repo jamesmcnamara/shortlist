@@ -1,15 +1,42 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { cycleFor } from "@/app/lib/cycles";
 import { getNomination, nominationExistsInRoom } from "@/app/lib/queries";
 import { withRoomMember, type RoomContext } from "@/lib/auth/require-room";
-import { getDb } from "@/src/db/client";
-import { votes } from "@/src/db/schema";
+import { getDb, type DB } from "@/src/db/client";
+import { nominations, votes } from "@/src/db/schema";
 
 export const runtime = "nodejs";
 
 export interface VoteInput {
   nominationId: number;
 }
+
+/**
+ * Only votes cast on nominations still awaiting a verdict count against a
+ * room's per-cycle budget; once a nomination is marked completed and moves
+ * to Watched, votes on it are released back to the voter.
+ */
+const activeVoteCount = (
+  db: DB,
+  roomId: string,
+  userId: string,
+  cycle: number,
+) =>
+  db.$count(
+    votes,
+    and(
+      eq(votes.roomId, roomId),
+      eq(votes.userId, userId),
+      eq(votes.cycle, cycle),
+      inArray(
+        votes.nominationId,
+        db
+          .select({ id: nominations.id })
+          .from(nominations)
+          .where(eq(nominations.completed, false)),
+      ),
+    ),
+  );
 
 export const POST = withRoomMember({ error: "Unable to create your vote" })(
   async (request: Request, { room, userId }: RoomContext) => {
@@ -41,27 +68,20 @@ export const POST = withRoomMember({ error: "Unable to create your vote" })(
     const cycle = cycleFor(room);
 
     // Votes may be stacked on a single nomination, so the budget counts votes
-    // cast, not distinct nominations voted for. Counting inside the INSERT
-    // narrows the check-then-insert window to a single statement, which is
-    // what makes a double-click safe. It does not fully close it: under READ
-    // COMMITTED two genuinely concurrent statements can take snapshots before
-    // either commits and both pass. Closing that needs a row lock in a
-    // transaction, which this HTTP driver cannot hold across statements.
-    const inserted = await db.execute(sql`
-      insert into ${votes} (room_id, user_id, nomination_id, cycle)
-      select ${room.id}, ${userId}, ${nominationId}, ${cycle}
-      where (
-        select count(*)
-        from ${votes}
-        where ${votes.roomId} = ${room.id}
-          and ${votes.userId} = ${userId}
-          and ${votes.cycle} = ${cycle}
-      ) < ${room.votesPerCycle}
-      returning id
-    `);
+    // cast, not distinct nominations voted for. The neon-http driver has no
+    // transaction support to hold a lock across statements, so the row is
+    // inserted first and the budget is re-asserted immediately after;
+    // exceeding it deletes the row it just inserted. This narrows the race
+    // window to the gap between the insert and the delete rather than
+    // eliminating it — under READ COMMITTED two genuinely concurrent
+    // requests could still both pass before either commits.
+    const [inserted] = await db
+      .insert(votes)
+      .values({ roomId: room.id, userId, nominationId, cycle })
+      .returning({ id: votes.id });
 
-    const rows = (inserted as unknown as { rows: { id: number }[] }).rows ?? [];
-    if (rows.length === 0) {
+    if ((await activeVoteCount(db, room.id, userId, cycle)) > room.votesPerCycle) {
+      await db.delete(votes).where(eq(votes.id, inserted.id));
       return Response.json(
         {
           error: `You have used all ${room.votesPerCycle} of your votes for this cycle.`,

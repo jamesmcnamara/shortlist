@@ -14,6 +14,7 @@ const nomination: Nomination = {
   movieId: 1,
   comment: "A recommendation",
   cycle: 0,
+  completed: false,
   createdAt: new Date(),
   movie: {
     id: 1,

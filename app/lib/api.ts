@@ -142,6 +142,14 @@ export const api = {
             method: "PATCH",
             body: JSON.stringify({ id: nominationId, comment }),
           }),
+        setCompleted: (
+          nominationId: number,
+          completed: boolean,
+        ): Promise<Nomination> =>
+          request(`${base}/nominations`, {
+            method: "PATCH",
+            body: JSON.stringify({ id: nominationId, completed }),
+          }),
         delete: (nominationId: number): Promise<void> =>
           request(`${base}/nominations?id=${nominationId}`, {
             method: "DELETE",

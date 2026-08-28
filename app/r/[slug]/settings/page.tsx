@@ -29,9 +29,6 @@ export default function RoomSettingsPage() {
   const [votesPerCycle, setVotesPerCycle] = useState(room.votesPerCycle);
   const [cycleLength, setCycleLength] = useState<CycleLength>(room.cycleLength);
   const [allowSelfVote, setAllowSelfVote] = useState(room.allowSelfVote);
-  const [allowDuplicates, setAllowDuplicates] = useState(
-    room.allowDuplicateNominations,
-  );
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -62,7 +59,6 @@ export default function RoomSettingsPage() {
     setVotesPerCycle(values.votesPerCycle);
     setCycleLength(values.cycleLength);
     setAllowSelfVote(values.allowSelfVote);
-    setAllowDuplicates(values.allowDuplicateNominations);
   };
 
   async function save(event: React.FormEvent) {
@@ -77,7 +73,6 @@ export default function RoomSettingsPage() {
         votesPerCycle,
         cycleLength,
         allowSelfVote,
-        allowDuplicateNominations: allowDuplicates,
       });
       setMessage("Saved.");
       router.refresh();
@@ -275,15 +270,6 @@ export default function RoomSettingsPage() {
             onChange={(event) => setAllowSelfVote(event.target.checked)}
           />
           <span>People can vote for their own picks</span>
-        </label>
-
-        <label className={styles.checkbox}>
-          <input
-            type="checkbox"
-            checked={allowDuplicates}
-            onChange={(event) => setAllowDuplicates(event.target.checked)}
-          />
-          <span>The same movie can be added more than once</span>
         </label>
 
         <button className={styles.submit} type="submit" disabled={isSaving}>

@@ -45,9 +45,12 @@ export function ShortlistHeader({ votesLeft }: ShortlistHeaderProps) {
 
   const isMovieClub = getRoomType(room) === "club";
 
+  console.log(session);
   return (
     <header className={styles.header}>
-      <span className={styles.roomName}>{room.name}</span>
+      <span className={styles.roomName}>
+        {isMovieClub ? room.name : "Shortlist"}
+      </span>
       {isMovieClub && (
         <div className={styles.balances}>
           <span id="tour-votes" className={styles.voteBalance}>

@@ -1,6 +1,8 @@
 import type { Nomination } from "@/src/db/schema";
 import styles from "./MovieCard.module.css";
 import { getColor, getInitials } from "@/app/lib/utils";
+import classnames from "classnames";
+
 interface MovieCardProps {
   nomination: Nomination;
   rank: number;
@@ -8,6 +10,7 @@ interface MovieCardProps {
   hasUpvoted: boolean;
   canVote: boolean;
   isExpanded: boolean;
+  isCompleted?: boolean;
   onAddVote: () => void;
   onToggleDiscussion: () => void;
 }
@@ -19,6 +22,7 @@ export function MovieCard({
   hasUpvoted,
   canVote,
   isExpanded,
+  isCompleted = false,
   onAddVote,
   onToggleDiscussion,
 }: MovieCardProps) {
@@ -41,7 +45,9 @@ export function MovieCard({
           aria-label={`Expand details for ${details.title}`}
         >
           <div
-            className={`${styles.poster} ${hasSeen ? styles.watchedPoster : ""}`}
+            className={classnames(styles.poster, {
+              [styles.watchedPoster]: hasSeen || isCompleted,
+            })}
           >
             {details.posterUrl ? (
               <img src={details.posterUrl} alt="" />
@@ -65,7 +71,7 @@ export function MovieCard({
             {getInitials(nominator.name)}
           </span>
           <button
-            className={`${styles.stat} ${hasUpvoted ? styles.voted : ""}`}
+            className={classnames(styles.stat, { [styles.voted]: hasUpvoted })}
             type="button"
             onClick={onAddVote}
             disabled={!canVote}

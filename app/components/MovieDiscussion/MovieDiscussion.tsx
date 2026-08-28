@@ -20,6 +20,7 @@ interface MovieDiscussionProps {
   onUpdateComment: (commentId: number, comment: string) => Promise<boolean>;
   onMarkWatched?: () => void;
   onDelete?: () => void;
+  onToggleCompleted?: () => void;
   onClose: () => void;
 }
 
@@ -36,6 +37,7 @@ export function MovieDiscussion({
   onUpdateComment,
   onMarkWatched,
   onDelete,
+  onToggleCompleted,
   onClose,
 }: MovieDiscussionProps) {
   const {
@@ -75,49 +77,51 @@ export function MovieDiscussion({
             </span>
           </div>
           <MovieRatings services={ratings.services} />
-          <div className={styles.voteActions}>
-            <button
-              className={styles.votePrimary}
-              type="button"
-              onClick={onAddVote}
-              disabled={!canVote}
-              aria-label={`Vote for ${details.title}`}
-            >
-              Vote for this
-            </button>
-            <button
-              className={styles.voteSecondary}
-              type="button"
-              onClick={onRemoveVote}
-              disabled={!hasUpvoted}
-              aria-label={`Remove your vote from ${details.title}`}
-            >
-              Remove vote
-            </button>
-            <button
-              className={`${styles.watched} ${hasSeen ? styles.voted : ""}`}
-              type="button"
-              onClick={onMarkWatched}
-              aria-pressed={hasSeen}
-              aria-label={
-                hasSeen
-                  ? `Unmark ${details.title} as seen`
-                  : `Mark ${details.title} as seen`
-              }
-            >
-              {hasSeen ? "Seen it ✓" : "Seen it"}
-            </button>
-            {onDelete && (
+          {!nomination.completed && (
+            <div className={styles.voteActions}>
               <button
-                className={styles.deleteMovie}
+                className={styles.votePrimary}
                 type="button"
-                onClick={onDelete}
-                aria-label={`Delete ${details.title} from the watchlist`}
+                onClick={onAddVote}
+                disabled={!canVote}
+                aria-label={`Vote for ${details.title}`}
               >
-                Delete
+                Vote for this
               </button>
-            )}
-          </div>
+              <button
+                className={styles.voteSecondary}
+                type="button"
+                onClick={onRemoveVote}
+                disabled={!hasUpvoted}
+                aria-label={`Remove your vote from ${details.title}`}
+              >
+                Remove vote
+              </button>
+              <button
+                className={`${styles.watched} ${hasSeen ? styles.voted : ""}`}
+                type="button"
+                onClick={onMarkWatched}
+                aria-pressed={hasSeen}
+                aria-label={
+                  hasSeen
+                    ? `Unmark ${details.title} as seen`
+                    : `Mark ${details.title} as seen`
+                }
+              >
+                {hasSeen ? "Seen it ✓" : "Seen it"}
+              </button>
+              {onDelete && (
+                <button
+                  className={styles.deleteMovie}
+                  type="button"
+                  onClick={onDelete}
+                  aria-label={`Delete ${details.title} from the watchlist`}
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+          )}
         </div>
         <div className={styles.nominationQuote}>
           <span className={`avatar avatar-${getColor(nominator.name)}`}>
@@ -145,6 +149,23 @@ export function MovieDiscussion({
           onAddComment={onAddComment}
           onUpdateComment={onUpdateComment}
         />
+        {onToggleCompleted && (
+          <div className={styles.adminActions}>
+            <button
+              className={`${styles.completeToggle} ${nomination.completed ? styles.completeToggleActive : ""}`}
+              type="button"
+              onClick={onToggleCompleted}
+              aria-pressed={nomination.completed}
+              aria-label={
+                nomination.completed
+                  ? `Move ${details.title} out of Watched`
+                  : `Mark ${details.title} completed`
+              }
+            >
+              {nomination.completed ? "Completed ✓" : "Mark completed"}
+            </button>
+          </div>
+        )}
       </section>
     </motion.div>
   );

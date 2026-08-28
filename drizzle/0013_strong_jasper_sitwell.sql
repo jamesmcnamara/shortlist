@@ -1,0 +1,1 @@
+ALTER TABLE "nominations" ADD COLUMN "completed" boolean DEFAULT false NOT NULL;
