@@ -39,6 +39,30 @@ gives a watch list its running, non-resetting behaviour.
 Useful checks are `npm test`, `npm run typecheck` and `npm run build`. To create a
 new Drizzle migration after changing `src/db/schema.ts`, run `npm run db:generate`.
 
+## GitHub Codespaces
+
+This repository includes a devcontainer for Codespaces. Before creating a
+Codespace, add these Codespaces secrets for the repository or your account:
+
+- `DATABASE_URL`
+- `NEON_AUTH_BASE_URL`
+- `NEON_AUTH_JWKS_URL`
+- `NEON_AUTH_COOKIE_SECRET`
+- `TMDB_API_READ_ACCESS_TOKEN`
+- `MDB_API_KEY`
+
+On first creation, the devcontainer runs `npm ci` and writes any available
+secrets to `.env.local`. Then run:
+
+```sh
+npm run db:migrate
+npm run dev
+```
+
+Open the forwarded port 3030 preview. If sign-in redirects fail, add the
+Codespace preview domain (`https://<codespace-name>-3030.app.github.dev`) to
+Neon Auth's trusted domains.
+
 ## Tests
 
 `npm test` runs Vitest. The API tests execute the real route handlers against an
