@@ -1,6 +1,9 @@
 {
   "name": "shortlist",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/copilot-cli:1": {}
+  },
   "postCreateCommand": "npm ci && .devcontainer/setup-env.sh",
   "forwardPorts": [3030],
   "portsAttributes": {

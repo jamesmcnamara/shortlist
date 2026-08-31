@@ -45,6 +45,9 @@ This repository includes a devcontainer for Codespaces. Before creating a
 Codespace, add the personal Codespaces secret `SHORTLIST_ENV_BUNDLE` with
 repository access to this repository.
 
+The GitHub Copilot CLI is installed automatically by the devcontainer. Run
+`copilot` and use `/login` the first time you launch it.
+
 After filling in `.env.local`, run this from the repository root. It requires
 the GitHub CLI to be installed and authenticated:
 

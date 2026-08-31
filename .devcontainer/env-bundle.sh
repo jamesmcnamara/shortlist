@@ -2,6 +2,7 @@
 set -euo pipefail
 
 env_file=".env.local"
+secret_name="SHORTLIST_ENV_BUNDLE"
 
 decode_base64() {
   if base64 --decode </dev/null >/dev/null 2>&1; then
@@ -21,7 +22,10 @@ shift || true
 
 case "$command" in
   encode)
-    base64 < "$env_file" | tr -d '\n'
+    base64 < "$env_file" |
+      tr -d '\n' |
+      gh secret set "$secret_name" --app codespaces --user --repos "jamesmcnamara/shortlist"
+    echo "Updated $secret_name."
     ;;
   decode)
     if [[ -e "$env_file" ]]; then
