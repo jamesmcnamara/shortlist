@@ -10,23 +10,8 @@
     }
   },
   "secrets": {
-    "DATABASE_URL": {
-      "description": "Neon Postgres connection string for development."
-    },
-    "NEON_AUTH_BASE_URL": {
-      "description": "Neon Auth base URL for this development environment."
-    },
-    "NEON_AUTH_JWKS_URL": {
-      "description": "Neon Auth JWKS URL for this development environment."
-    },
-    "NEON_AUTH_COOKIE_SECRET": {
-      "description": "At least 32 characters; generate with `openssl rand -base64 32`."
-    },
-    "TMDB_API_READ_ACCESS_TOKEN": {
-      "description": "TMDB read access token used by movie search."
-    },
-    "MDB_API_KEY": {
-      "description": "MDBList API key used by movie metadata lookups."
+    "SHORTLIST_ENV_BUNDLE": {
+      "description": "Base64-encoded contents of .env.local for development."
     }
   }
 }

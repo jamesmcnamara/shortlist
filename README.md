@@ -42,17 +42,20 @@ new Drizzle migration after changing `src/db/schema.ts`, run `npm run db:generat
 ## GitHub Codespaces
 
 This repository includes a devcontainer for Codespaces. Before creating a
-Codespace, add these Codespaces secrets for the repository or your account:
+Codespace, add the personal Codespaces secret `SHORTLIST_ENV_BUNDLE` with
+repository access to this repository.
 
-- `DATABASE_URL`
-- `NEON_AUTH_BASE_URL`
-- `NEON_AUTH_JWKS_URL`
-- `NEON_AUTH_COOKIE_SECRET`
-- `TMDB_API_READ_ACCESS_TOKEN`
-- `MDB_API_KEY`
+After filling in `.env.local`, run this from the repository root. It requires
+the GitHub CLI to be installed and authenticated:
 
-On first creation, the devcontainer runs `npm ci` and writes any available
-secrets to `.env.local`. Then run:
+```sh
+./.devcontainer/env-bundle.sh encode
+```
+
+The command updates `SHORTLIST_ENV_BUNDLE` and restricts it to the current
+repository. Use `--repo OWNER/REPO` to target a different repository. On first
+Codespace creation, the devcontainer runs `npm ci` and decodes the bundle to
+`.env.local`. Then run:
 
 ```sh
 npm run db:migrate
