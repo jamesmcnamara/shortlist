@@ -1,4 +1,4 @@
-import type { Nomination, Room } from "@/src/db/schema";
+import type { Nomination, RatingSource, Room } from "@/src/db/schema";
 
 /**
  * Everything a sort or filter may depend on. Options read from here rather
@@ -27,13 +27,26 @@ export interface ViewState {
   filters: string[];
 }
 
-const byNumberDesc = (a: number |  undefined, b: number | undefined) =>
+const byNumberDesc = (a: number | undefined, b: number | undefined) =>
   (b ?? -Infinity) - (a ?? -Infinity);
 
 const time = (date: Date | string) => new Date(date).getTime();
 
-const imdbRating = ({ ratings }: Nomination["movie"]) =>
-  ratings.services.find(({ source }) => source === "imdb")?.value ?? undefined;
+const serviceRating =
+  (source: RatingSource) =>
+  ({ ratings }: Nomination["movie"]) =>
+    ratings.services.find((rating) => rating.source === source)?.value ??
+    undefined;
+
+const ratingSort = (source: RatingSource, label: string): SortOption => ({
+  id: `rating-${source}`,
+  label,
+  compare: (a, b) =>
+    byNumberDesc(
+      serviceRating(source)(a.movie),
+      serviceRating(source)(b.movie),
+    ),
+});
 
 export const SORTS: SortOption[] = [
   {
@@ -50,19 +63,22 @@ export const SORTS: SortOption[] = [
   {
     id: "title",
     label: "Title",
-    compare: (a, b) => a.movie.details.title.localeCompare(b.movie.details.title),
+    compare: (a, b) =>
+      a.movie.details.title.localeCompare(b.movie.details.title),
   },
   {
     id: "runtime",
     label: "Shortest first",
     compare: (a, b) =>
-      (a.movie.details.runtime ?? Infinity) - (b.movie.details.runtime ?? Infinity),
+      (a.movie.details.runtime ?? Infinity) -
+      (b.movie.details.runtime ?? Infinity),
   },
-  {
-    id: "rating",
-    label: "Highest rated",
-    compare: (a, b) => byNumberDesc(imdbRating(a.movie), imdbRating(b.movie)),
-  },
+  ratingSort("letterboxd", "Letterboxd"),
+  ratingSort("tomatoes", "Rotten Tomatoes critics"),
+  ratingSort("popcorn", "Rotten Tomatoes audience"),
+  ratingSort("imdb", "IMDb"),
+  ratingSort("metacritic", "Metacritic"),
+  ratingSort("rogerebert", "Roger Ebert"),
   {
     id: "year",
     label: "Newest release",

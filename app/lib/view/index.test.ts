@@ -7,7 +7,7 @@ import {
   toSearchParams,
   type ViewContext,
 } from "./index";
-import type { Nomination } from "@/src/db/schema";
+import type { Nomination, RatingSource } from "@/src/db/schema";
 
 const user = (id: string) => ({ id, name: id, email: `${id}@example.com` });
 
@@ -20,6 +20,7 @@ interface NominationOverrides {
   createdAt?: string;
   runtime?: number | null;
   imdbRating?: number | null;
+  ratings?: { source: RatingSource; value: number | null }[];
   year?: number | null;
   movieId?: number;
   seenBy?: string[];
@@ -34,6 +35,7 @@ const nomination = ({
   createdAt = `2024-01-0${id}T00:00:00Z`,
   runtime = 100,
   imdbRating = 7,
+  ratings,
   year = 2000,
   movieId = id,
   seenBy = [],
@@ -51,18 +53,17 @@ const nomination = ({
       tmdbId: movieId,
       details: { title, runtime, year },
       ratings: {
-        services:
-          imdbRating === null
-            ? []
-            : [
-                {
-                  source: "imdb",
-                  value: imdbRating,
-                  url: null,
-                  score: null,
-                  votes: null,
-                },
-              ],
+        services: (ratings ?? [{ source: "imdb", value: imdbRating }])
+          .filter(
+            (rating): rating is { source: RatingSource; value: number } =>
+              rating.value !== null,
+          )
+          .map((rating) => ({
+            ...rating,
+            url: null,
+            score: null,
+            votes: null,
+          })),
         raw: {},
       },
       createdAt: new Date(createdAt),
@@ -153,14 +154,32 @@ describe("applyView sorting", () => {
     ).toEqual([2, 1]);
   });
 
-  it("puts unrated movies last when sorting by rating", () => {
+  it.each([
+    ["rating-imdb", "imdb"],
+    ["rating-letterboxd", "letterboxd"],
+    ["rating-tomatoes", "tomatoes"],
+    ["rating-popcorn", "popcorn"],
+    ["rating-metacritic", "metacritic"],
+    ["rating-rogerebert", "rogerebert"],
+  ] as const)("sorts by %s and puts unrated movies last", (sort, source) => {
     const list = [
-      nomination({ id: 1, imdbRating: null }),
-      nomination({ id: 2, imdbRating: 6.1 }),
+      nomination({
+        id: 1,
+        ratings: [{ source, value: null }],
+      }),
+      nomination({
+        id: 2,
+        ratings: [{ source, value: 6.1 }],
+      }),
+      nomination({
+        id: 3,
+        ratings: [{ source, value: 8.4 }],
+      }),
     ];
-    expect(
-      ids(applyView(list, { sort: "rating", filters: [] }, context())),
-    ).toEqual([2, 1]);
+
+    expect(ids(applyView(list, { sort, filters: [] }, context()))).toEqual([
+      3, 2, 1,
+    ]);
   });
 
   it("does not mutate the input list", () => {
@@ -204,7 +223,9 @@ describe("applyView filtering", () => {
       nomination({ id: 3, seenBy: ["bob"] }),
     ];
     expect(
-      ids(applyView(seen, { sort: "recent", filters: ["unwatched"] }, context())),
+      ids(
+        applyView(seen, { sort: "recent", filters: ["unwatched"] }, context()),
+      ),
     ).toEqual([3, 1]);
   });
 

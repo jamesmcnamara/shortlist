@@ -439,7 +439,15 @@ describe("member management", () => {
 
   it("leaves a removed member's nominations in place", async () => {
     const { DELETE } = membersRoute;
-    const { room, movie } = await setup();
+    const { room } = await setup();
+    const [movie] = await db
+      .insert(movies)
+      .values({
+        tmdbId: 2,
+        details: { title: "Another Movie" },
+        ratings: { services: [], raw: {} },
+      })
+      .returning();
     await db
       .insert(nominations)
       .values({ roomId: room.id, userId: BOB, movieId: movie.id, cycle: 0 });

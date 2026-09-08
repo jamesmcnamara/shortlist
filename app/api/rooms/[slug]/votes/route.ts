@@ -80,7 +80,9 @@ export const POST = withRoomMember({ error: "Unable to create your vote" })(
       .values({ roomId: room.id, userId, nominationId, cycle })
       .returning({ id: votes.id });
 
-    if ((await activeVoteCount(db, room.id, userId, cycle)) > room.votesPerCycle) {
+    if (
+      (await activeVoteCount(db, room.id, userId, cycle)) > room.votesPerCycle
+    ) {
       await db.delete(votes).where(eq(votes.id, inserted.id));
       return Response.json(
         {
