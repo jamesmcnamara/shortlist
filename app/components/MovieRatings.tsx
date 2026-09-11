@@ -1,6 +1,6 @@
-import type { MDBRating, MovieRatings } from "@/src/db/schema";
+import type { MDBRating } from "@/src/db/schema";
 import { find } from "shades";
-import styles from "./MovieDiscussion.module.css";
+import styles from "./MovieRatings.module.css";
 
 interface RatingProps {
   name: string;

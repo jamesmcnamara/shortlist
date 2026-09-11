@@ -4,6 +4,7 @@ import type { Movie, Nomination } from "@/src/db/schema";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
+import { MovieRatings } from "./MovieRatings";
 import { MovieSearchResults } from "./MovieSearchResults";
 import styles from "./NominationPanel.module.css";
 import { PresetName } from "../lib/rooms";
@@ -293,6 +294,7 @@ const CandidateForm = ({
         {candidate.details.overview && (
           <span>{candidate.details.overview}</span>
         )}
+        <MovieRatings services={candidate.ratings.services} />
       </div>
       <button
         className={styles.close}

@@ -3,7 +3,7 @@ import type { Nomination, User, Vote } from "@/src/db/schema";
 import _ from "lodash";
 import { motion } from "motion/react";
 import styles from "./MovieDiscussion.module.css";
-import { MovieRatings } from "./MovieRatings";
+import { MovieRatings } from "@/app/components/MovieRatings";
 import { NomComs } from "./NomComs";
 import { EditableComment } from "./EditableComment";
 
