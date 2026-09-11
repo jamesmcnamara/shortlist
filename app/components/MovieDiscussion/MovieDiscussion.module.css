@@ -410,6 +410,14 @@
   font-weight: 700;
 }
 
+.runtime {
+  color: var(--muted);
+  font-size: 0.7906rem;
+  font-weight: 700;
+  font-style: italic;
+  margin: 0;
+}
+
 .voteActions {
   align-self: flex-end;
   gap: 0.4375rem;
@@ -490,6 +498,7 @@
 .commentText,
 .emptyComment {
   overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .emptyComment {

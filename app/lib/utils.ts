@@ -20,6 +20,9 @@ export const getInitials = (name: string) => {
   return (parts[0].slice(0, 1) + parts[1].slice(0, 1)).toUpperCase();
 };
 
+export const tmdbImageUrl = (path: string | null | undefined, size: string) =>
+  path ? `https://image.tmdb.org/t/p/${size}${path}` : null;
+
 export const getColor = (text: string) => {
   const colors = ["violet", "lilac", "mint", "gold"];
   const index =

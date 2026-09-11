@@ -5,6 +5,8 @@ import { authUsers } from "@/src/db/neon-auth-schema";
 
 const databaseUrl = process.env.DATABASE_URL;
 
+let _cached: DB | undefined;
+
 const createClient = () => {
   if (!databaseUrl) {
     throw new Error("DATABASE_URL is not configured");
@@ -25,5 +27,8 @@ export function setDbForTesting(factory: (() => DB) | null) {
 }
 
 export function getDb(): DB {
-  return override ? override() : createClient();
+  if (override) {
+    return override();
+  }
+  return (_cached ??= createClient());
 }

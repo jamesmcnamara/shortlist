@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { MovieCard } from "@/app/components/MovieCard";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
 import { NominationPanel } from "@/app/components/NominationPanel";
+import { LoadingOverlay } from "@/app/components/LoadingOverlay";
 import type { MovieDetails, Nomination } from "@/src/db/schema";
 
 const nomination: Nomination = {
@@ -37,6 +38,14 @@ const nomination: Nomination = {
 };
 
 describe("high-churn component smoke tests", () => {
+  it("renders an accessible loading overlay", () => {
+    render(<LoadingOverlay label="Searching movies..." />);
+
+    expect(
+      screen.getByRole("status", { name: "Searching movies..." }),
+    ).toBeTruthy();
+  });
+
   it("renders a movie card and exposes its vote interaction", () => {
     const onAddVote = vi.fn();
     const onToggleDiscussion = vi.fn();

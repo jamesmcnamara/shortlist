@@ -1,4 +1,5 @@
 import { MovieSearchResult } from "./MovieSearchResult";
+import { LoadingOverlay } from "./LoadingOverlay";
 import type { Movie } from "@/src/db/schema";
 import styles from "./MovieSearchResults.module.css";
 
@@ -16,11 +17,7 @@ export function MovieSearchResults({
   onSelect,
 }: MovieSearchResultsProps) {
   if (isLoading) {
-    return (
-      <p className={styles.status} role="status">
-        Searching TMDB...
-      </p>
-    );
+    return <LoadingOverlay fullscreen={false} label="Searching TMDB..." />;
   }
 
   if (error) {

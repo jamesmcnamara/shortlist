@@ -79,6 +79,9 @@ export function MovieDiscussion({
               <p className={styles.recommendation}>{details.overview}</p>
             )}
           </div>
+          <p className={styles.runtime}>
+            {details.year ?? "Unknown"} • {toHrs(details.runtime)}
+          </p>
           <MovieRatings services={ratings.services} />
           {!nomination.completed && (
             <div className={styles.voteActions}>
@@ -230,3 +233,11 @@ function SeenByList({ seenBy }: SeenByListProps) {
     </div>
   );
 }
+
+const toHrs = (minutes?: number) => {
+  if (minutes === undefined || minutes === null || isNaN(minutes))
+    return "Unknown";
+  const hrs = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hrs}h ${mins}m`;
+};

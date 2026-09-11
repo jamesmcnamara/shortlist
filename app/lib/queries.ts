@@ -8,6 +8,8 @@ import {
   type Nomination,
   type User,
 } from "@/src/db/schema";
+import { loadRoom } from "./load-room";
+import { findRoomBySlug } from "@/lib/auth/require-room";
 
 const nominationRelations = {
   movie: true,
@@ -63,7 +65,10 @@ const withSeenBy = async <T extends { movieId: number }>(
     roomId,
     rows.map((row) => row.movieId),
   );
-  return rows.map((row) => ({ ...row, seenBy: byMovie.get(row.movieId) ?? [] }));
+  return rows.map((row) => ({
+    ...row,
+    seenBy: byMovie.get(row.movieId) ?? [],
+  }));
 };
 
 /**
@@ -79,6 +84,16 @@ export async function listNominations(roomId: string): Promise<Nomination[]> {
   })) as Omit<Nomination, "seenBy">[];
 
   return withSeenBy(roomId, rows);
+}
+
+export async function listNominationsBySlug(
+  slug: string,
+): Promise<Nomination[]> {
+  const room = await findRoomBySlug(slug);
+  if (!room) {
+    throw new Error(`No room for slug "${slug}"`);
+  }
+  return listNominations(room.id);
 }
 
 export async function getNomination(

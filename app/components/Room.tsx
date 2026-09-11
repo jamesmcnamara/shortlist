@@ -15,6 +15,7 @@ import { useMemo, useState } from "react";
 import { filter, find, some } from "shades";
 import { useRoom } from "../r/[slug]/RoomContext";
 import styles from "./Room.module.css";
+import { LoadingOverlay } from "@/app/components/LoadingOverlay";
 
 export interface RoomAPI {
   rescind: (nominationId: number) => Promise<void>;
@@ -37,6 +38,7 @@ interface RoomProps {
   viewContext: ViewContext;
   userId: string | undefined;
   api: RoomAPI;
+  isLoading: boolean;
 }
 
 export function Room({
@@ -46,6 +48,7 @@ export function Room({
   setViewState,
   viewContext,
   nominees,
+  isLoading,
 }: RoomProps) {
   const { room, currentCycle, nominationsPerCycle, votesPerCycle, isAdmin } =
     useRoom();
@@ -191,30 +194,37 @@ export function Room({
             {message}
           </div>
         )}
-        {visible.length === 0 && (
-          <p className={styles.message} role="status">
-            {nominees.length === 0
-              ? "Nothing here yet. Add the first movie."
-              : "No movies match these filters."}
-          </p>
-        )}
-        <div id="tour-nominations" className={styles.movieList}>
-          {visible.map((nom, index) => (
-            <MovieCard
-              key={nom.id}
-              rank={index + 1}
-              nomination={nom}
-              hasSeen={some({ id: userId })(nom.seenBy)}
-              hasUpvoted={some({ userId })(nom.votes)}
-              canVote={canVoteOn(nom)}
-              isExpanded={focused === nom}
-              onAddVote={() => actions.changeVote(nom, "add")}
-              onToggleDiscussion={() =>
-                setFocusedId(focused === nom ? null : nom.id)
-              }
-            />
-          ))}
-        </div>
+        {(() => {
+          if (isLoading) return <LoadingOverlay />;
+          return (
+            <>
+              {visible.length === 0 && (
+                <p className={styles.message} role="status">
+                  {nominees.length === 0
+                    ? "Nothing here yet. Add the first movie."
+                    : "No movies match these filters."}
+                </p>
+              )}
+              <div id="tour-nominations" className={styles.movieList}>
+                {visible.map((nom, index) => (
+                  <MovieCard
+                    key={nom.id}
+                    rank={index + 1}
+                    nomination={nom}
+                    hasSeen={some({ id: userId })(nom.seenBy)}
+                    hasUpvoted={some({ userId })(nom.votes)}
+                    canVote={canVoteOn(nom)}
+                    isExpanded={focused === nom}
+                    onAddVote={() => actions.changeVote(nom, "add")}
+                    onToggleDiscussion={() =>
+                      setFocusedId(focused === nom ? null : nom.id)
+                    }
+                  />
+                ))}
+              </div>
+            </>
+          );
+        })()}
       </section>
 
       {watched.length > 0 && (
@@ -284,6 +294,53 @@ export function Room({
     </main>
   );
 }
+
+interface MovieListProps {
+  visible: Nomination[];
+  nominees: Nomination[];
+  userId: string | null;
+  focused: Nomination | null;
+  actions: any;
+  setFocusedId: (id: number | null) => void;
+  canVoteOn: (nom: Nomination) => boolean;
+}
+
+const MovieList = ({
+  visible,
+  nominees,
+  userId,
+  focused,
+  actions,
+  setFocusedId,
+  canVoteOn,
+}: MovieListProps) => (
+  <>
+    {visible.length === 0 && (
+      <p className={styles.message} role="status">
+        {nominees.length === 0
+          ? "Nothing here yet. Add the first movie."
+          : "No movies match these filters."}
+      </p>
+    )}
+    <div id="tour-nominations" className={styles.movieList}>
+      {visible.map((nom, index) => (
+        <MovieCard
+          key={nom.id}
+          rank={index + 1}
+          nomination={nom}
+          hasSeen={some({ id: userId })(nom.seenBy)}
+          hasUpvoted={some({ userId })(nom.votes)}
+          canVote={canVoteOn(nom)}
+          isExpanded={focused === nom}
+          onAddVote={() => actions.changeVote(nom, "add")}
+          onToggleDiscussion={() =>
+            setFocusedId(focused === nom ? null : nom.id)
+          }
+        />
+      ))}
+    </div>
+  </>
+);
 
 const headline = (room: SafeRoom) =>
   room.nominationsPerCycle === 1 ? "And the nominees are..." : room.name;

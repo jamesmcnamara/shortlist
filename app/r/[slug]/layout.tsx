@@ -2,13 +2,15 @@ import { notFound, redirect } from "next/navigation";
 import { loadRoom } from "@/app/lib/load-room";
 import { RoomProvider } from "./RoomContext";
 
+interface RoomLayoutProps {
+  children: React.ReactNode;
+  params: Promise<{ slug: string }>;
+}
+
 export default async function RoomLayout({
   children,
   params,
-}: {
-  children: React.ReactNode;
-  params: Promise<{ slug: string }>;
-}) {
+}: RoomLayoutProps) {
   const { slug } = await params;
   const result = await loadRoom(slug);
 
