@@ -1,24 +1,23 @@
-import type { MovieSearchResultData } from "@/app/components/MovieSearchResult";
 import type {
   MDBRating,
   MDBResponse,
+  Movie,
+  MovieDetails,
   MovieRatings,
   RatingSource,
 } from "@/src/db/schema";
+import { movies } from "@/src/db/schema";
+import { getDb } from "@/src/db/client";
 import { TMDB } from "@lorenzopant/tmdb";
+import { eq } from "drizzle-orm";
 import { matching, set } from "shades";
 
 let client: TMDB | null = null;
 
-interface MovieValues {
-  tmdbId: number;
-  details: Record<string, unknown>;
-  ratings: MovieRatings;
-}
 export interface MovieMetadataProvider {
   hasCredentials(): boolean;
-  search(query: string): Promise<MovieSearchResultData[]>;
-  fetchMovieValues(tmdbId: number): Promise<MovieValues>;
+  search(query: string): Promise<Movie[]>;
+  get(tmdbId: number): Promise<Movie>;
 }
 
 /**
@@ -31,32 +30,72 @@ const tmdb = () =>
     { language: "en-US" },
   ));
 
-class ProdMovieProvider implements MovieMetadataProvider {
+type StoredMovieRow = Pick<
+  typeof movies.$inferSelect,
+  "id" | "tmdbId" | "details" | "ratings" | "createdAt"
+>;
+
+const movieFromRow = (row: StoredMovieRow): Movie => {
+  if (row.tmdbId === null) {
+    throw new Error(`Stored movie ${row.id} has no TMDB id.`);
+  }
+
+  return {
+    id: row.id,
+    tmdbId: row.tmdbId,
+    details: row.details as MovieDetails,
+    ratings: row.ratings as MovieRatings,
+    createdAt: row.createdAt,
+  };
+};
+
+const storedMovieSelection = {
+  id: movies.id,
+  tmdbId: movies.tmdbId,
+  details: movies.details,
+  ratings: movies.ratings,
+  createdAt: movies.createdAt,
+};
+
+export class ProdMovieProvider implements MovieMetadataProvider {
   hasCredentials = () =>
-    Boolean(process.env.TMDB_API_READ_ACCESS_TOKEN || process.env.TMDB_API_KEY);
+    Boolean(
+      (process.env.TMDB_API_READ_ACCESS_TOKEN || process.env.TMDB_API_KEY) &&
+      process.env.MDB_API_KEY,
+    );
 
   search = async (query: string) => {
-    const api = tmdb();
-    const response = await api.search.movies({ query, include_adult: false });
+    const response = await tmdb().search.movies({
+      query,
+      include_adult: false,
+    });
+    const results = await Promise.allSettled(
+      response.results.slice(0, 3).map(({ id }) => this.get(id)),
+    );
 
-    return response.results.slice(0, 5).map((movie) => ({
-      id: movie.id,
-      title: movie.title,
-      releaseDate: movie.release_date,
-      overview: movie.overview,
-      posterUrl: movie.poster_path
-        ? api.images.poster(movie.poster_path, "w342")
-        : null,
-      tmdbRating: movie.vote_average !== 0 ? movie.vote_average : null,
-    }));
+    return results.flatMap((result) => {
+      if (result.status === "fulfilled") return [result.value];
+      console.error(result.reason);
+      return [];
+    });
   };
 
-  fetchMovieValues = async (tmdbId: number) => {
-    const api = tmdb();
-    const details = await api.movies.details({ movie_id: tmdbId });
-    const ratings = await getMdbRatings(tmdbId);
+  get = async (tmdbId: number) => {
+    const db = getDb();
+    const [cached] = await db
+      .select()
+      .from(movies)
+      .where(eq(movies.tmdbId, tmdbId))
+      .limit(1);
+    if (cached) return movieFromRow(cached);
 
-    return {
+    const api = tmdb();
+    const [details, ratings] = await Promise.all([
+      api.movies.details({ movie_id: tmdbId }),
+      getMdbRatings(tmdbId),
+    ]);
+
+    const values = {
       tmdbId: details.id,
       details: {
         ...details,
@@ -70,6 +109,23 @@ class ProdMovieProvider implements MovieMetadataProvider {
       },
       ratings,
     };
+
+    const [inserted] = await db
+      .insert(movies)
+      .values(values)
+      .onConflictDoNothing({ target: movies.tmdbId })
+      .returning(storedMovieSelection);
+    if (inserted) return movieFromRow(inserted);
+
+    const [winner] = await db
+      .select(storedMovieSelection)
+      .from(movies)
+      .where(eq(movies.tmdbId, tmdbId))
+      .limit(1);
+    if (!winner) {
+      throw new Error(`Unable to store movie ${tmdbId}.`);
+    }
+    return movieFromRow(winner);
   };
 }
 

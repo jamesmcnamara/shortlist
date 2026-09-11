@@ -91,21 +91,23 @@ async function setup(options: RoomOptions = {}) {
   return { room, movie, nomination };
 }
 
+async function cacheMovie(tmdbId = 999) {
+  const [movie] = await db
+    .insert(movies)
+    .values({
+      tmdbId,
+      details: { title: `Movie ${tmdbId}` },
+      ratings: { services: [], raw: {} },
+    })
+    .returning({ id: movies.id });
+  return movie;
+}
+
 beforeEach(async () => {
   setMovieProviderForTesting({
     hasCredentials: () => true,
     search: vi.fn().mockResolvedValue([]),
-    // Echo the requested id so distinct tmdbIds map to distinct movie rows;
-    // otherwise every nomination collides with movie 1 from setup() and the
-    // duplicate-nomination guard masks whatever this test is actually
-    // exercising (e.g. the nomination cap).
-    fetchMovieValues: vi.fn().mockImplementation((tmdbId: number) =>
-      Promise.resolve({
-        tmdbId,
-        details: { title: `Movie ${tmdbId}` },
-        ratings: { services: [], raw: {} },
-      }),
-    ),
+    get: vi.fn(),
   });
 
   const created = await createTestDb();
@@ -254,30 +256,32 @@ describe("nomination cap", () => {
   it("blocks a second nomination in a one-per-cycle room", async () => {
     const { POST } = nominationsRoute;
     await setup({ nominationsPerCycle: 1 });
+    const movie = await cacheMovie();
     asUser(ALICE);
 
-    const response = await POST(post({ tmdbId: 999 }), route());
+    const response = await POST(post({ movieId: movie.id }), route());
     expect(response.status).toBe(409);
   });
 
   it("does not apply another member's usage to the caller", async () => {
     const { POST } = nominationsRoute;
     await setup({ nominationsPerCycle: 1 });
-    // Bob has not nominated, so the cap must not stop him. Without TMDB
-    // credentials the call fails later, at the metadata fetch, not at the cap.
+    // Bob has not nominated, so the cap must not stop him.
+    const movie = await cacheMovie();
     asUser(BOB);
 
-    const response = await POST(post({ tmdbId: 999 }), route());
-    expect(response.status).not.toBe(409);
+    const response = await POST(post({ movieId: movie.id }), route());
+    expect(response.status).toBe(201);
   });
 
   it("does not check a cap at all when nominations are unlimited", async () => {
     const { POST } = nominationsRoute;
     await setup({ nominationsPerCycle: null });
+    const movie = await cacheMovie();
     asUser(ALICE);
 
-    const response = await POST(post({ tmdbId: 999 }), route());
-    expect(response.status).not.toBe(409);
+    const response = await POST(post({ movieId: movie.id }), route());
+    expect(response.status).toBe(201);
   });
 
   it("frees a slot once the existing nomination is marked completed", async () => {
@@ -287,10 +291,21 @@ describe("nomination cap", () => {
       .update(nominations)
       .set({ completed: true })
       .where(eq(nominations.id, nomination.id));
+    const movie = await cacheMovie();
     asUser(ALICE);
 
-    const response = await POST(post({ tmdbId: 999 }), route());
-    expect(response.status).not.toBe(409);
+    const response = await POST(post({ movieId: movie.id }), route());
+    expect(response.status).toBe(201);
+  });
+
+  it("rejects a movie that has not been materialized", async () => {
+    const { POST } = nominationsRoute;
+    await setup({ nominationsPerCycle: null });
+    asUser(ALICE);
+
+    const response = await POST(post({ movieId: 999 }), route());
+
+    expect(response.status).toBe(400);
   });
 });
 

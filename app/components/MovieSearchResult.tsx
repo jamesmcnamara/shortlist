@@ -1,22 +1,14 @@
+import type { Movie } from "@/src/db/schema";
 import styles from "./MovieSearchResult.module.css";
 
-export interface MovieSearchResultData {
-  id: number;
-  title: string;
-  releaseDate: string;
-  overview: string;
-  posterUrl: string | null;
-  tmdbRating: number | null;
-}
-
 interface MovieSearchResultProps {
-  movie: MovieSearchResultData;
-  onSelect?: (movie: MovieSearchResultData) => void;
+  movie: Movie;
+  onSelect?: (movie: Movie) => void;
 }
 
 export function MovieSearchResult({ movie, onSelect }: MovieSearchResultProps) {
-  const year = movie.releaseDate
-    ? movie.releaseDate.slice(0, 4)
+  const year = movie.details.release_date
+    ? movie.details.release_date.slice(0, 4)
     : "Year unknown";
 
   return (
@@ -32,17 +24,20 @@ export function MovieSearchResult({ movie, onSelect }: MovieSearchResultProps) {
         }
       }}
     >
-      {movie.posterUrl ? (
-        <img src={movie.posterUrl} alt={`Poster for ${movie.title}`} />
+      {movie.details.posterUrl ? (
+        <img
+          src={movie.details.posterUrl}
+          alt={`Poster for ${movie.details.title}`}
+        />
       ) : (
         <div className={styles.placeholder} aria-label="No poster available">
           No poster
         </div>
       )}
       <div className={styles.copy}>
-        <h3>{movie.title}</h3>
+        <h3>{movie.details.title}</h3>
         <p>{year}</p>
-        {movie.overview && <span>{movie.overview}</span>}
+        {movie.details.overview && <span>{movie.details.overview}</span>}
       </div>
     </li>
   );

@@ -287,18 +287,10 @@ export interface User {
 }
 
 export interface MovieDetails extends _MovieDetails {
-  posterUrl?: string;
-  description?: string;
-  year?: number;
+  posterUrl?: string | null;
+  description?: string | null;
+  year?: number | null;
 }
-// interface MovieDetails {
-//   title: string;
-//   posterUrl?: string;
-//   description?: string;
-//   year?: number;
-//   runtime?: number;
-//   tmdbRating?: number;
-// }
 
 export interface MDBResponse {
   ratings: MDBRating[];

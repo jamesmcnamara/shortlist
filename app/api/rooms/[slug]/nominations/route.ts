@@ -1,7 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { cycleFor } from "@/app/lib/cycles";
 import { getNomination, listNominations } from "@/app/lib/queries";
-import { getMovieProvider } from "@/app/lib/movie-metadata";
 import { withRoomMember, type RoomContext } from "@/lib/auth/require-room";
 import { getDb, type DB } from "@/src/db/client";
 import { movies, nominations, type Room } from "@/src/db/schema";
@@ -37,10 +36,10 @@ const activeNominationCount = (
 export const POST = withRoomMember({ error: "Unable to create nomination." })(
   async (request: Request, { room, userId }: RoomContext) => {
     const body = await request.json().catch(() => null);
-    const tmdbId = Number(body?.tmdbId);
-    if (!Number.isInteger(tmdbId)) {
+    const movieId = Number(body?.movieId);
+    if (!Number.isInteger(movieId)) {
       return Response.json(
-        { error: "A TMDB movie id is required." },
+        { error: "A movie id is required." },
         { status: 400 },
       );
     }
@@ -65,34 +64,21 @@ export const POST = withRoomMember({ error: "Unable to create nomination." })(
       }
     }
 
-    const provider = getMovieProvider();
-    if (!provider.hasCredentials()) {
-      return Response.json(
-        { error: "TMDB credentials are not configured." },
-        { status: 500 },
-      );
-    }
-
-    let values;
-    try {
-      values = await provider.fetchMovieValues(tmdbId);
-    } catch (error) {
-      console.error(error);
-      return Response.json(
-        { error: "Unable to load that movie right now." },
-        { status: 502 },
-      );
-    }
-
     const [movie] = await db
-      .insert(movies)
-      .values(values)
-      .onConflictDoUpdate({ target: movies.tmdbId, set: values })
-      .returning();
+      .select({ id: movies.id })
+      .from(movies)
+      .where(eq(movies.id, movieId))
+      .limit(1);
+    if (!movie) {
+      return Response.json(
+        { error: "That movie is no longer available." },
+        { status: 400 },
+      );
+    }
 
     const [inserted] = await db
       .insert(nominations)
-      .values({ roomId: room.id, userId, movieId: movie.id, comment, cycle })
+      .values({ roomId: room.id, userId, movieId, comment, cycle })
       .returning({ id: nominations.id });
 
     return Response.json(await getNomination(room.id, inserted.id), {

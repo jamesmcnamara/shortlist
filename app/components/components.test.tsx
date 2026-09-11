@@ -72,6 +72,7 @@ describe("high-churn component smoke tests", () => {
         currentNomination={null}
         isSubmitting={false}
         roomType="club"
+        existing={new Set()}
         onClose={onClose}
         onSubmit={vi.fn()}
         onRescind={vi.fn()}

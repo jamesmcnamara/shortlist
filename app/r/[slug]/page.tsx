@@ -70,7 +70,7 @@ function RoomPageContent() {
   const api: RoomAPI = {
     nominate: async (candidate, comment) => {
       const data = await client.nominations.create({
-        tmdbId: candidate.id,
+        movieId: candidate.id,
         comment,
       });
       setNominations((prev) => new Map(prev).set(data.id, data));

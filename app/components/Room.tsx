@@ -2,7 +2,6 @@
 
 import { MovieCard } from "@/app/components/MovieCard";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
-import type { MovieSearchResultData } from "@/app/components/MovieSearchResult";
 import { NominationPanel } from "@/app/components/NominationPanel";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import { ViewControls } from "@/app/components/ViewControls";
@@ -10,7 +9,7 @@ import { getRoomType } from "@/app/lib/rooms";
 import { useAPIActions } from "@/app/lib/useAPIActions";
 import { applyView, ViewContext, ViewState } from "@/app/lib/view";
 import { SafeRoom } from "@/lib/auth/require-room";
-import type { Nomination } from "@/src/db/schema";
+import type { Movie, Nomination } from "@/src/db/schema";
 import { AnimatePresence } from "motion/react";
 import { useMemo, useState } from "react";
 import { filter, find, some } from "shades";
@@ -19,10 +18,7 @@ import styles from "./Room.module.css";
 
 export interface RoomAPI {
   rescind: (nominationId: number) => Promise<void>;
-  nominate: (
-    candidate: MovieSearchResultData,
-    comment: string,
-  ) => Promise<void>;
+  nominate: (candidate: Movie, comment: string) => Promise<void>;
   changeVote: (
     nomination: Nomination,
     action: "add" | "remove",

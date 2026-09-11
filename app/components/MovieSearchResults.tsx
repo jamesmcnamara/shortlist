@@ -1,12 +1,12 @@
 import { MovieSearchResult } from "./MovieSearchResult";
-import type { MovieSearchResultData } from "./MovieSearchResult";
+import type { Movie } from "@/src/db/schema";
 import styles from "./MovieSearchResults.module.css";
 
 type MovieSearchResultsProps = {
-  results: MovieSearchResultData[];
+  results: Movie[];
   isLoading: boolean;
   error: string;
-  onSelect?: (movie: MovieSearchResultData) => void;
+  onSelect?: (movie: Movie) => void;
 };
 
 export function MovieSearchResults({

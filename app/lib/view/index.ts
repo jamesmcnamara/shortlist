@@ -27,7 +27,10 @@ export interface ViewState {
   filters: string[];
 }
 
-const byNumberDesc = (a: number | undefined, b: number | undefined) =>
+const byNumberDesc = (
+  a: number | null | undefined,
+  b: number | null | undefined,
+) =>
   (b ?? -Infinity) - (a ?? -Infinity);
 
 const time = (date: Date | string) => new Date(date).getTime();

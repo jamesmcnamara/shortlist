@@ -7,8 +7,8 @@ import type {
   User,
 } from "@/src/db/schema";
 import type { SafeRoom } from "@/lib/auth/require-room";
-import type { MovieSearchResultData } from "@/app/components/MovieSearchResult";
 import type { PresetName, RoomConfig } from "@/app/lib/rooms";
+import type { Movie } from "@/src/db/schema";
 
 export class ApiError extends Error {
   constructor(
@@ -127,7 +127,7 @@ export const api = {
       nominations: {
         list: (): Promise<Nomination[]> => request(`${base}/nominations`),
         create: (input: {
-          tmdbId: number;
+          movieId: number;
           comment: string;
         }): Promise<Nomination> =>
           request(`${base}/nominations`, {
@@ -194,8 +194,8 @@ export const api = {
     search: (
       query: string,
       signal?: AbortSignal,
-    ): Promise<MovieSearchResultData[]> =>
-      request<{ results: MovieSearchResultData[] }>(
+    ): Promise<Movie[]> =>
+      request<{ results: Movie[] }>(
         `/api/tmdb/search?query=${encodeURIComponent(query)}`,
         { signal },
       ).then(get("results")),

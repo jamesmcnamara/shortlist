@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   const provider = getMovieProvider();
   if (!provider.hasCredentials()) {
     return NextResponse.json(
-      { error: "TMDB credentials are not configured." },
+      { error: "Movie metadata credentials are not configured." },
       { status: 500 },
     );
   }
