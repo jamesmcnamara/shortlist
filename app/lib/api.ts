@@ -41,10 +41,16 @@ export interface RoomSummary {
   id: string;
   slug: string;
   name: string;
+  type: PresetName;
   cycleLength: string;
   nominationsPerCycle: number | null;
   votesPerCycle: number;
   role: RoomRole;
+}
+
+/** As `RoomSummary`, but scoped to a specific movie via `?movieId=`. */
+export interface RoomSummaryWithMovie extends RoomSummary {
+  hasMovie: boolean;
 }
 
 export interface RoomMemberSummary extends User {
@@ -74,6 +80,8 @@ export interface RoomDetail {
 export const api = {
   rooms: {
     list: (): Promise<RoomSummary[]> => request("/api/rooms"),
+    listForMovie: (movieId: number): Promise<RoomSummaryWithMovie[]> =>
+      request(`/api/rooms?movieId=${movieId}`),
     create: (input: {
       name: string;
       preset: PresetName;

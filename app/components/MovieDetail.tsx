@@ -6,12 +6,12 @@ import styles from "./MovieDetail.module.css";
 interface MovieDetailProps {
   movie: Movie;
   onBack: () => void;
+  onAdd?: (movie: Movie) => void;
 }
 
 /** Full-screen, richly rendered view of a single movie's details. */
-export function MovieDetail({ movie, onBack }: MovieDetailProps) {
+export function MovieDetail({ movie, onBack, onAdd }: MovieDetailProps) {
   const { details, ratings } = movie;
-  console.log(movie);
   const backdropUrl = tmdbImageUrl(details.backdrop_path, "w1280");
   const year = details.release_date ? details.release_date.slice(0, 4) : null;
 
@@ -66,13 +66,24 @@ export function MovieDetail({ movie, onBack }: MovieDetailProps) {
       </div>
 
       <div className={styles.body}>
-        {details.genres.length > 0 && (
-          <div className={styles.genres}>
-            {details.genres.map((genre) => (
-              <span key={genre.id} className={styles.genre}>
-                {genre.name}
-              </span>
-            ))}
+        {(details.genres.length > 0 || onAdd) && (
+          <div className={styles.genreRow}>
+            <div className={styles.genres}>
+              {details.genres.map((genre) => (
+                <span key={genre.id} className={styles.genre}>
+                  {genre.name}
+                </span>
+              ))}
+            </div>
+            {onAdd && (
+              <button
+                className={styles.addButton}
+                type="button"
+                onClick={() => onAdd(movie)}
+              >
+                + Add
+              </button>
+            )}
           </div>
         )}
 

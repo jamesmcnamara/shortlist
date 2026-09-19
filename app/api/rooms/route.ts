@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { withUser } from "@/lib/auth/require-user";
 import {
   generateInviteCode,
@@ -9,30 +9,51 @@ import {
   slugify,
 } from "@/app/lib/rooms";
 import { getDb } from "@/src/db/client";
-import { roomMembers, rooms } from "@/src/db/schema";
+import { nominations, roomMembers, rooms } from "@/src/db/schema";
 
 export const runtime = "nodejs";
 
-/** Rooms the caller belongs to, for the switcher and the landing redirect. */
+/**
+ * Rooms the caller belongs to, for the switcher, the landing redirect, and
+ * (with `?movieId=`) the "add to a list" picker, which needs to know which of
+ * those rooms already carry the movie.
+ */
 export const GET = withUser({ error: "Unable to load your rooms." })(async (
-  _request: Request,
+  request: Request,
   userId: string,
 ) => {
+  const rawMovieId = new URL(request.url).searchParams.get("movieId");
+  const movieId = rawMovieId === null ? null : Number(rawMovieId);
+  const hasValidMovieId = movieId !== null && Number.isInteger(movieId);
+
   const memberships = await getDb()
     .select({
       id: rooms.id,
       slug: rooms.slug,
       name: rooms.name,
+      type: rooms.type,
       cycleLength: rooms.cycleLength,
       nominationsPerCycle: rooms.nominationsPerCycle,
       votesPerCycle: rooms.votesPerCycle,
       role: roomMembers.role,
       joinedAt: roomMembers.joinedAt,
+      hasMovie: sql<boolean>`${nominations.id} is not null`,
     })
     .from(roomMembers)
     .innerJoin(rooms, eq(rooms.id, roomMembers.roomId))
+    .leftJoin(
+      nominations,
+      and(
+        eq(nominations.roomId, rooms.id),
+        eq(nominations.movieId, hasValidMovieId ? movieId : -1),
+      ),
+    )
     .where(eq(roomMembers.userId, userId))
     .orderBy(desc(roomMembers.joinedAt));
+
+  if (!hasValidMovieId) {
+    return Response.json(memberships.map(({ hasMovie, ...room }) => room));
+  }
 
   return Response.json(memberships);
 });
@@ -96,6 +117,7 @@ export const POST = withUser({ error: "Unable to create the room." })(async (
       createdBy: userId,
       inviteCode: generateInviteCode(),
       adminInviteCode: generateInviteCode(),
+      type: preset,
       ...PRESETS[preset],
       ...overrides.values,
     })

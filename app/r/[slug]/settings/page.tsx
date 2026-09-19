@@ -133,7 +133,7 @@ export default function RoomSettingsPage() {
       return;
     try {
       await client.delete();
-      router.push("/");
+      router.push("/rooms");
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Unable to delete the room.",

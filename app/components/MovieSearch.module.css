@@ -5,36 +5,11 @@
 .header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1rem;
   max-width: 44rem;
   margin: 0 auto;
   padding: 2rem 1.25rem 0;
-}
-
-.back {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 2.375rem;
-  height: 2.375rem;
-  border: 1px solid var(--border-strong);
-  border-radius: 62.4375rem;
-  background: var(--surface);
-  color: var(--text-soft);
-  text-decoration: none;
-  font-size: 1.125rem;
-}
-
-.back:hover {
-  border-color: var(--accent-soft);
-  color: var(--accent);
-}
-
-.title {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
 }
 
 .body {
@@ -76,5 +51,17 @@
   margin: 1.5rem 0 0;
   color: var(--muted);
   font-size: 0.9344rem;
+  text-align: center;
+}
+
+.status {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--accent-soft);
+  border-radius: 0.625rem;
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-size: 0.8625rem;
+  font-weight: 700;
   text-align: center;
 }

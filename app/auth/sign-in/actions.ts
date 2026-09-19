@@ -21,7 +21,11 @@ export async function signInWithEmail(
     password = password.padEnd(8, "x");
   }
 
-  const { error } = await auth.signIn.email({ email, password });
+  const { error } = await auth.signIn.email({
+    email,
+    password,
+    rememberMe: true,
+  });
 
   if (error) {
     return {

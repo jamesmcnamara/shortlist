@@ -10,6 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
+    "db:migrate:dev": "npm run neon:dev; npm run db:migrate",
+    "db:migrate:prod": "npm run neon:prod; npm run db:migrate; npm run neon:dev",
     "db:migrate": "node --env-file=.env.local ./scripts/migrate.mjs",
     "neon:prod": "neonctl checkout production",
     "neon:dev": "neonctl checkout dev/james"

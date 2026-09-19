@@ -1,4 +1,5 @@
 .result {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 0.625rem;
@@ -30,6 +31,7 @@
 
 .copy {
   min-width: 0;
+  flex: 1;
 }
 
 .copy h3 {
@@ -52,4 +54,25 @@
   line-height: 1.35;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.add {
+  display: grid;
+  flex: none;
+  place-items: center;
+  align-self: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 62.4375rem;
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.add:hover,
+.add:focus-visible {
+  border-color: var(--accent-soft);
+  background: var(--accent-wash);
 }

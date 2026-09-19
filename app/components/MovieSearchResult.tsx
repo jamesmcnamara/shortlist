@@ -4,9 +4,14 @@ import styles from "./MovieSearchResult.module.css";
 interface MovieSearchResultProps {
   movie: Movie;
   onSelect?: (movie: Movie) => void;
+  onAdd?: (movie: Movie) => void;
 }
 
-export function MovieSearchResult({ movie, onSelect }: MovieSearchResultProps) {
+export function MovieSearchResult({
+  movie,
+  onSelect,
+  onAdd,
+}: MovieSearchResultProps) {
   const year = movie.details.release_date
     ? movie.details.release_date.slice(0, 4)
     : "Year unknown";
@@ -39,6 +44,19 @@ export function MovieSearchResult({ movie, onSelect }: MovieSearchResultProps) {
         <p>{year}</p>
         {movie.details.overview && <span>{movie.details.overview}</span>}
       </div>
+      {onAdd && (
+        <button
+          className={styles.add}
+          type="button"
+          aria-label={`Add ${movie.details.title} to a list`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onAdd(movie);
+          }}
+        >
+          +
+        </button>
+      )}
     </li>
   );
 }

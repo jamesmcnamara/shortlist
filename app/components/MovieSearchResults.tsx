@@ -8,6 +8,7 @@ type MovieSearchResultsProps = {
   isLoading: boolean;
   error: string;
   onSelect?: (movie: Movie) => void;
+  onAdd?: (movie: Movie) => void;
 };
 
 export function MovieSearchResults({
@@ -15,6 +16,7 @@ export function MovieSearchResults({
   isLoading,
   error,
   onSelect,
+  onAdd,
 }: MovieSearchResultsProps) {
   if (isLoading) {
     return <LoadingOverlay fullscreen={false} label="Searching TMDB..." />;
@@ -42,7 +44,12 @@ export function MovieSearchResults({
       </div>
       <ul className={styles.list}>
         {results.map((movie) => (
-          <MovieSearchResult key={movie.id} movie={movie} onSelect={onSelect} />
+          <MovieSearchResult
+            key={movie.id}
+            movie={movie}
+            onSelect={onSelect}
+            onAdd={onAdd}
+          />
         ))}
       </ul>
     </section>

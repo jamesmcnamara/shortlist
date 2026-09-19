@@ -16,6 +16,7 @@ const ROOM_COLUMNS = {
   slug: rooms.slug,
   name: rooms.name,
   createdBy: rooms.createdBy,
+  type: rooms.type,
   nominationsPerCycle: rooms.nominationsPerCycle,
   votesPerCycle: rooms.votesPerCycle,
   cycleLength: rooms.cycleLength,

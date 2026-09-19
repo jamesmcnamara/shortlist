@@ -124,9 +124,4 @@ export function parseConfigUpdate(
   return { ok: true, values };
 }
 
-export const getRoomType = (room: SafeRoom): PresetName => {
-  if (!room.nominationsPerCycle) {
-    return "watchlist";
-  }
-  return "club";
-};
+export const getRoomType = (room: SafeRoom): PresetName => room.type;

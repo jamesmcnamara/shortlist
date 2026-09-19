@@ -16,7 +16,9 @@ import type { MovieDetails as _MovieDetails } from "@lorenzopant/tmdb";
 
 /**
  * A room is the generic container for a group's content. "Movie club" and
- * "watch list" are not distinct types; they are presets over these knobs.
+ * "watch list" are presets over the same knobs below, but `type` records
+ * which preset a room was created as, so features like "add to a list" can
+ * target watch lists without inferring it from `nominationsPerCycle`.
  */
 export const rooms = pgTable("rooms", {
   id: uuid().primaryKey().defaultRandom(),
@@ -28,6 +30,7 @@ export const rooms = pgTable("rooms", {
   inviteCode: text("invite_code").notNull().unique(),
   // A separate link that grants the "admin" role on join instead of "member".
   adminInviteCode: text("admin_invite_code").notNull().unique(),
+  type: text().notNull().default("club"),
   // null means unlimited
   nominationsPerCycle: integer("nominations_per_cycle"),
   votesPerCycle: integer("votes_per_cycle").notNull().default(5),
@@ -250,9 +253,11 @@ export const seenRelations = relations(seen, ({ one }) => ({
 
 export type CycleLength = "month" | "week" | "never";
 export type RoomRole = "admin" | "member";
+export type RoomType = "club" | "watchlist";
 
-export type Room = Omit<typeof rooms.$inferSelect, "cycleLength"> & {
+export type Room = Omit<typeof rooms.$inferSelect, "cycleLength" | "type"> & {
   cycleLength: CycleLength;
+  type: RoomType;
 };
 export type RoomMember = Omit<typeof roomMembers.$inferSelect, "role"> & {
   role: RoomRole;
