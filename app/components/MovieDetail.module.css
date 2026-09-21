@@ -44,6 +44,17 @@
   backdrop-filter: blur(4px);
 }
 
+.backIcon {
+  display: block;
+  width: 1.125rem;
+  height: 1.125rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
 .back:hover {
   background: rgba(20, 20, 26, 0.65);
 }

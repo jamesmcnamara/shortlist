@@ -29,7 +29,7 @@ export function MovieDetail({ movie, onBack, onAdd }: MovieDetailProps) {
           onClick={onBack}
           aria-label="Back to search"
         >
-          ←
+          <BackIcon />
         </button>
         <div className={styles.heading}>
           <div className={styles.poster}>
@@ -105,3 +105,9 @@ const formatRuntime = (minutes: number) => {
   const remainder = minutes % 60;
   return hours > 0 ? `${hours}h ${remainder}m` : `${remainder}m`;
 };
+
+const BackIcon = () => (
+  <svg className={styles.backIcon} viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M15 18 9 12l6-6" />
+  </svg>
+);

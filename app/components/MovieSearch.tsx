@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence } from "motion/react";
 import { useDebouncedCallback } from "use-debounce";
 import { api, ApiError } from "@/app/lib/api";
@@ -23,17 +23,16 @@ export function MovieSearch() {
   const [statusMessage, setStatusMessage] = useState("");
 
   const searcher = useDebouncedCallback(
-    (query: string) => {
-      api.tmdb
-        .search(query)
-        .then(setResults)
-        .catch((error) => {
-          setError(
-            error instanceof ApiError ? error.message : "Search failed.",
-          );
-          setResults([]);
-        })
-        .finally(() => setIsSearching(false));
+    async (_query: string) => {
+      try {
+        const results = await api.tmdb.search(query);
+        if (query.startsWith(_query)) setResults(results);
+      } catch (error) {
+        setError(error instanceof ApiError ? error.message : "Search failed.");
+        setResults([]);
+      } finally {
+        setIsSearching(false);
+      }
     },
     350,
     { trailing: true },
@@ -42,6 +41,7 @@ export function MovieSearch() {
   useEffect(() => {
     setError("");
     if (query.length < 2) {
+      searcher.cancel();
       setResults([]);
       setIsSearching(false);
       return;
@@ -85,6 +85,16 @@ export function MovieSearch() {
                 value={query}
                 onChange={withTargetValue(setQuery)}
               />
+              {query && (
+                <button
+                  type="button"
+                  className={styles.clearButton}
+                  aria-label="Clear search"
+                  onClick={() => setQuery("")}
+                >
+                  ×
+                </button>
+              )}
             </div>
 
             {query.length < 2 && !isSearching && (
