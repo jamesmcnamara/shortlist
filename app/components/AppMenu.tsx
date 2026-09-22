@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth/client";
+import { useClickOutside } from "@/app/lib/useClickOutside";
 import { FilmReelIcon } from "./FilmReelIcon";
 import styles from "./AppMenu.module.css";
 
@@ -18,18 +19,12 @@ export function AppMenu({ room, showMyRooms = true }: AppMenuProps) {
   const { data: session } = authClient.useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const menuRef = useClickOutside<HTMLDivElement>(
+    () => setIsOpen(false),
+    isOpen,
+  );
   const router = useRouter();
   const name = session?.user?.name || session?.user?.email || "";
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) setIsOpen(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [isOpen]);
 
   async function signOut() {
     setIsSigningOut(true);

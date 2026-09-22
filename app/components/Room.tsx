@@ -1,5 +1,6 @@
 "use client";
 
+import { LoadingOverlay } from "@/app/components/LoadingOverlay";
 import { MovieCard } from "@/app/components/MovieCard";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
 import { NominationPanel } from "@/app/components/NominationPanel";
@@ -12,10 +13,9 @@ import { SafeRoom } from "@/lib/auth/require-room";
 import type { Movie, Nomination } from "@/src/db/schema";
 import { AnimatePresence } from "motion/react";
 import { useMemo, useState } from "react";
-import { filter, find, some } from "shades";
+import { filter, find, map, some, sumOf } from "shades";
 import { useRoom } from "../r/[slug]/RoomContext";
 import styles from "./Room.module.css";
-import { LoadingOverlay } from "@/app/components/LoadingOverlay";
 
 export interface RoomAPI {
   rescind: (nominationId: number) => Promise<void>;
@@ -151,6 +151,11 @@ export function Room({
     votesLeft > 0 && (room.allowSelfVote || nomination.userId !== userId);
 
   const canDeleteNominations = isAdmin && getRoomType(room) === "watchlist";
+  const numberOfNominators = new Set(map("userId")(nominees)).size;
+  const numberOfVotes = map("votes")(nominees).reduce(sumOf("length"), 0);
+  const showMeta = numberOfNominators > 2 || numberOfVotes > 0;
+
+  console.log("noms", nominees);
 
   return (
     <main className={styles.shell}>
@@ -215,6 +220,7 @@ export function Room({
                     hasUpvoted={some({ userId })(nom.votes)}
                     canVote={canVoteOn(nom)}
                     isExpanded={focused === nom}
+                    showMeta={showMeta}
                     onAddVote={() => actions.changeVote(nom, "add")}
                     onToggleDiscussion={() =>
                       setFocusedId(focused === nom ? null : nom.id)
@@ -249,6 +255,7 @@ export function Room({
                   hasSeen={some({ id: userId })(nom.seenBy)}
                   hasUpvoted={some({ userId })(nom.votes)}
                   canVote={canVoteOn(nom)}
+                  showMeta={true}
                   isExpanded={focused === nom}
                   isCompleted
                   onAddVote={() => actions.changeVote(nom, "add")}
@@ -285,7 +292,12 @@ export function Room({
                 : undefined
             }
             onToggleCompleted={
-              isAdmin ? () => actions.toggleCompleted(focused.id) : undefined
+              isAdmin
+                ? () => {
+                    actions.toggleCompleted(focused.id);
+                    closeDiscussion();
+                  }
+                : undefined
             }
             onClose={closeDiscussion}
           />
@@ -294,53 +306,6 @@ export function Room({
     </main>
   );
 }
-
-interface MovieListProps {
-  visible: Nomination[];
-  nominees: Nomination[];
-  userId: string | null;
-  focused: Nomination | null;
-  actions: any;
-  setFocusedId: (id: number | null) => void;
-  canVoteOn: (nom: Nomination) => boolean;
-}
-
-const MovieList = ({
-  visible,
-  nominees,
-  userId,
-  focused,
-  actions,
-  setFocusedId,
-  canVoteOn,
-}: MovieListProps) => (
-  <>
-    {visible.length === 0 && (
-      <p className={styles.message} role="status">
-        {nominees.length === 0
-          ? "Nothing here yet. Add the first movie."
-          : "No movies match these filters."}
-      </p>
-    )}
-    <div id="tour-nominations" className={styles.movieList}>
-      {visible.map((nom, index) => (
-        <MovieCard
-          key={nom.id}
-          rank={index + 1}
-          nomination={nom}
-          hasSeen={some({ id: userId })(nom.seenBy)}
-          hasUpvoted={some({ userId })(nom.votes)}
-          canVote={canVoteOn(nom)}
-          isExpanded={focused === nom}
-          onAddVote={() => actions.changeVote(nom, "add")}
-          onToggleDiscussion={() =>
-            setFocusedId(focused === nom ? null : nom.id)
-          }
-        />
-      ))}
-    </div>
-  </>
-);
 
 const headline = (room: SafeRoom) =>
   room.nominationsPerCycle === 1 ? "And the nominees are..." : room.name;

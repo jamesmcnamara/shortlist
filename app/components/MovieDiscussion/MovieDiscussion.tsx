@@ -6,6 +6,7 @@ import styles from "./MovieDiscussion.module.css";
 import { MovieRatings } from "@/app/components/MovieRatings";
 import { NomComs } from "./NomComs";
 import { EditableComment } from "./EditableComment";
+import { useClickOutside } from "@/app/lib/useClickOutside";
 
 interface MovieDiscussionProps {
   nomination: Nomination;
@@ -47,8 +48,10 @@ export function MovieDiscussion({
     nomcoms,
     seenBy,
   } = nomination;
+  const drawerRef = useClickOutside<HTMLDivElement>(onClose);
   return (
     <motion.div
+      ref={drawerRef}
       className={styles.discussionDrawer}
       initial={{ y: "100%" }}
       animate={{ y: 0 }}

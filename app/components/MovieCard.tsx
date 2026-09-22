@@ -9,6 +9,7 @@ interface MovieCardProps {
   hasSeen: boolean;
   hasUpvoted: boolean;
   canVote: boolean;
+  showMeta: boolean;
   isExpanded: boolean;
   isCompleted?: boolean;
   onAddVote: () => void;
@@ -21,6 +22,7 @@ export function MovieCard({
   hasSeen,
   hasUpvoted,
   canVote,
+  showMeta,
   isExpanded,
   isCompleted = false,
   onAddVote,
@@ -63,31 +65,35 @@ export function MovieCard({
           </div>
         </button>
 
-        <div className={styles.meta}>
-          <span
-            className={`avatar avatar-${getColor(details.title)}`}
-            title={`Nominated by ${nominator.name}`}
-          >
-            {getInitials(nominator.name)}
-          </span>
-          <button
-            className={classnames(styles.stat, { [styles.voted]: hasUpvoted })}
-            type="button"
-            onClick={onAddVote}
-            disabled={!canVote}
-            aria-label={`Give a vote to ${details.title}`}
-          >
-            {votes.length} <span>↑</span>
-          </button>
-          {seenBy.length > 0 && (
+        {showMeta && (
+          <div className={styles.meta}>
             <span
-              className={styles.seenCount}
-              title={`Seen by ${seenBy.map((user) => user.name).join(", ")}`}
+              className={`avatar avatar-${getColor(details.title)}`}
+              title={`Nominated by ${nominator.name}`}
             >
-              👁 {seenBy.length}
+              {getInitials(nominator.name)}
             </span>
-          )}
-        </div>
+            <button
+              className={classnames(styles.stat, {
+                [styles.voted]: hasUpvoted,
+              })}
+              type="button"
+              onClick={onAddVote}
+              disabled={!canVote}
+              aria-label={`Give a vote to ${details.title}`}
+            >
+              {votes.length} <span>↑</span>
+            </button>
+            {seenBy.length > 0 && (
+              <span
+                className={styles.seenCount}
+                title={`Seen by ${seenBy.map((user) => user.name).join(", ")}`}
+              >
+                👁 {seenBy.length}
+              </span>
+            )}
+          </div>
+        )}
       </article>
     </>
   );
