@@ -14,7 +14,7 @@
     "db:migrate:prod": "npm run neon:prod; npm run db:migrate; npm run neon:dev",
     "db:migrate": "node --env-file=.env.local ./scripts/migrate.mjs",
     "neon:prod": "neonctl checkout production",
-    "neon:dev": "neonctl checkout dev/james"
+    "neon:dev": "neonctl checkout dev"
   },
   "dependencies": {
     "@lorenzopant/tmdb": "^1.25.0",

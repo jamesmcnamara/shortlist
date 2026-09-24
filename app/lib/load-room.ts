@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, lte, sql } from "drizzle-orm";
 import { cycleFor } from "@/app/lib/cycles";
 import {
   findMembership,
@@ -7,7 +7,13 @@ import {
 } from "@/lib/auth/require-room";
 import { requireUserId } from "@/lib/auth/require-user";
 import { getDb } from "@/src/db/client";
-import { roomMembers, rooms, type RoomRole } from "@/src/db/schema";
+import {
+  movies,
+  nominations,
+  roomMembers,
+  rooms,
+  type RoomRole,
+} from "@/src/db/schema";
 import type { RoomSummary } from "@/app/lib/api";
 
 export interface LoadedRoom {
@@ -37,6 +43,54 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
     .orderBy(desc(roomMembers.joinedAt));
 
   return memberships as RoomSummary[];
+}
+
+export interface RoomSummaryWithPosterPreviews extends RoomSummary {
+  posterUrls: string[];
+}
+
+/** Rooms the user belongs to, with up to three recent nomination posters. */
+export async function listRoomsWithPosterPreviewsForUser(
+  userId: string,
+): Promise<RoomSummaryWithPosterPreviews[]> {
+  const memberships = await listRoomsForUser(userId);
+  if (memberships.length === 0) return [];
+
+  const posterUrl = sql<string>`${movies.details} ->> 'posterUrl'`;
+  const rankedPosters = getDb()
+    .select({
+      roomId: nominations.roomId,
+      posterUrl: posterUrl.as("poster_url"),
+      rank:
+        sql<number>`row_number() over (partition by ${nominations.roomId} order by ${nominations.createdAt} desc, ${nominations.id} desc)`.as(
+          "poster_rank",
+        ),
+    })
+    .from(nominations)
+    .innerJoin(movies, eq(movies.id, nominations.movieId))
+    .where(
+      and(
+        inArray(nominations.roomId, memberships.map(({ id }) => id)),
+        sql`${posterUrl} is not null`,
+      ),
+    )
+    .as("ranked_posters");
+
+  const posters = await getDb()
+    .select({
+      roomId: rankedPosters.roomId,
+      posterUrl: rankedPosters.posterUrl,
+    })
+    .from(rankedPosters)
+    .where(lte(rankedPosters.rank, 3))
+    .orderBy(rankedPosters.roomId, rankedPosters.rank);
+
+  return memberships.map((room) => ({
+    ...room,
+    posterUrls: posters
+      .filter(({ roomId }) => roomId === room.id)
+      .map(({ posterUrl }) => posterUrl),
+  }));
 }
 
 export type LoadRoomResult =
