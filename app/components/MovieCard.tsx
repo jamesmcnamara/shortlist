@@ -13,7 +13,7 @@ interface MovieCardProps {
   isExpanded: boolean;
   isCompleted?: boolean;
   onAddVote: () => void;
-  onToggleDiscussion: () => void;
+  onClick: () => void;
 }
 
 export function MovieCard({
@@ -26,7 +26,7 @@ export function MovieCard({
   isExpanded,
   isCompleted = false,
   onAddVote,
-  onToggleDiscussion,
+  onClick,
 }: MovieCardProps) {
   const {
     movie: { details },
@@ -42,7 +42,7 @@ export function MovieCard({
         <button
           className={styles.posterButton}
           type="button"
-          onClick={onToggleDiscussion}
+          onClick={onClick}
           aria-expanded={false}
           aria-label={`Expand details for ${details.title}`}
         >

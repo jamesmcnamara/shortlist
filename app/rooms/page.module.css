@@ -54,6 +54,7 @@
   background: var(--surface);
   box-shadow: var(--shadow);
   color: var(--text);
+  text-decoration: none;
 }
 
 .roomCard:hover {

@@ -30,8 +30,7 @@ export interface ViewState {
 const byNumberDesc = (
   a: number | null | undefined,
   b: number | null | undefined,
-) =>
-  (b ?? -Infinity) - (a ?? -Infinity);
+) => (b ?? -Infinity) - (a ?? -Infinity);
 
 const time = (date: Date | string) => new Date(date).getTime();
 
@@ -105,6 +104,11 @@ export const FILTERS: FilterOption[] = [
     id: "mine",
     label: "My nominations",
     predicate: (nomination, { userId }) => nomination.userId === userId,
+  },
+  {
+    id: "not-mine",
+    label: "Nominated by others",
+    predicate: (nomination, { userId }) => nomination.userId !== userId,
   },
   {
     id: "voted",

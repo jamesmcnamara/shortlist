@@ -8,6 +8,7 @@ import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import { ViewControls } from "@/app/components/ViewControls";
 import { getRoomType } from "@/app/lib/rooms";
 import { useAPIActions } from "@/app/lib/useAPIActions";
+import { useMovieDiscussionHistory } from "@/app/lib/useMovieDiscussionHistory";
 import { applyView, ViewContext, ViewState } from "@/app/lib/view";
 import { SafeRoom } from "@/lib/auth/require-room";
 import type { Movie, Nomination } from "@/src/db/schema";
@@ -53,10 +54,10 @@ export function Room({
   const { room, currentCycle, nominationsPerCycle, votesPerCycle, isAdmin } =
     useRoom();
   const [isNominationOpen, setIsNominationOpen] = useState(false);
-  const [focusedId, setFocusedId] = useState<number | null>(null);
+  const { focusedId, closeDiscussion, openDiscussion } =
+    useMovieDiscussionHistory();
   const [isWatchedOpen, setIsWatchedOpen] = useState(false);
 
-  const closeDiscussion = () => setFocusedId(null);
   const focused = focusedId
     ? (find({ id: focusedId })(nominees) ?? null)
     : null;
@@ -155,8 +156,6 @@ export function Room({
   const numberOfVotes = map("votes")(nominees).reduce(sumOf("length"), 0);
   const showMeta = numberOfNominators > 2 || numberOfVotes > 0;
 
-  console.log("noms", nominees);
-
   return (
     <main className={styles.shell}>
       <ShortlistHeader votesLeft={votesLeft} />
@@ -222,9 +221,7 @@ export function Room({
                     isExpanded={focused === nom}
                     showMeta={showMeta}
                     onAddVote={() => actions.changeVote(nom, "add")}
-                    onToggleDiscussion={() =>
-                      setFocusedId(focused === nom ? null : nom.id)
-                    }
+                    onClick={() => openDiscussion(nom.id)}
                   />
                 ))}
               </div>
@@ -259,9 +256,7 @@ export function Room({
                   isExpanded={focused === nom}
                   isCompleted
                   onAddVote={() => actions.changeVote(nom, "add")}
-                  onToggleDiscussion={() =>
-                    setFocusedId(focused === nom ? null : nom.id)
-                  }
+                  onClick={() => openDiscussion(nom.id)}
                 />
               ))}
             </div>
