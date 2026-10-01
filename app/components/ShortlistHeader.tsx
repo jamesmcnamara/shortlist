@@ -1,6 +1,6 @@
 "use client";
 
-import { useRoom } from "@/app/r/[slug]/RoomContext";
+import { useRoom } from "@/app/[ownerId]/[slug]/RoomContext";
 import { getRoomType } from "../lib/rooms";
 import { AppMenu } from "./AppMenu";
 import styles from "./ShortlistHeader.module.css";
@@ -27,7 +27,11 @@ export function ShortlistHeader({ votesLeft }: ShortlistHeaderProps) {
         </div>
       )}
       <AppMenu
-        room={{ slug: room.slug, isAdmin }}
+        room={{
+          slug: room.slug,
+          ownerId: room.ownerId,
+          isAdmin,
+        }}
         showMyRooms={rooms.length > 1}
       />
     </header>

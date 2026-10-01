@@ -6,11 +6,12 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth/client";
 import { useClickOutside } from "@/app/lib/useClickOutside";
 import { FilmReelIcon } from "./FilmReelIcon";
+import { roomPath } from "@/lib/room-path";
 import styles from "./AppMenu.module.css";
 
 interface AppMenuProps {
   /** Omitted outside a room, which hides the room-scoped items. */
-  room?: { slug: string; isAdmin: boolean };
+  room?: { slug: string; ownerId: string; isAdmin: boolean };
   showMyRooms?: boolean;
 }
 
@@ -64,7 +65,7 @@ export function AppMenu({ room, showMyRooms = true }: AppMenuProps) {
             New room
           </MenuLink>
           {room?.isAdmin && (
-            <MenuLink href={`/r/${room.slug}/settings`} onNavigate={close}>
+            <MenuLink href={`${roomPath(room)}/settings`} onNavigate={close}>
               Settings
             </MenuLink>
           )}

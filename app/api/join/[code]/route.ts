@@ -1,4 +1,5 @@
 import { eq, or } from "drizzle-orm";
+import { roomPath } from "@/lib/room-path";
 import { requireUserId, unauthorized } from "@/lib/auth/require-user";
 import { getDb } from "@/src/db/client";
 import { roomMembers, rooms } from "@/src/db/schema";
@@ -27,6 +28,7 @@ export async function POST(
         id: rooms.id,
         slug: rooms.slug,
         name: rooms.name,
+        ownerId: rooms.createdBy,
         inviteCode: rooms.inviteCode,
         adminInviteCode: rooms.adminInviteCode,
       })
@@ -63,7 +65,10 @@ export async function POST(
         });
     }
 
-    return Response.json({ slug: room.slug, name: room.name });
+    return Response.json({
+      name: room.name,
+      path: roomPath(room),
+    });
   } catch (error) {
     console.error(error);
     return Response.json(

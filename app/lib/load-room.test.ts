@@ -3,7 +3,12 @@ import { listRoomsWithPosterPreviewsForUser } from "@/app/lib/load-room";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import { setDbForTesting, type DB } from "@/src/db/client";
 import { createTestDb } from "@/src/db/test-db";
-import { movies, nominations, roomMembers, rooms } from "@/src/db/schema";
+import {
+  movies,
+  nominations,
+  roomMembers,
+  rooms,
+} from "@/src/db/schema";
 
 vi.mock("@/lib/auth/require-user", () => ({
   requireUserId: vi.fn(),

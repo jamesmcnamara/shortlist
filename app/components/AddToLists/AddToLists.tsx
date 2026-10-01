@@ -61,37 +61,45 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
     [allRooms],
   );
 
-  const selectedSlugs = useMemo(
-    () => Object.keys(selected).filter((slug) => selected[slug]),
+  const selectedRoomIds = useMemo(
+    () => Object.keys(selected).filter((id) => selected[id]),
     [selected],
   );
 
-  function toggle(slug: string) {
-    setSelected((prev) => ({ ...prev, [slug]: !prev[slug] }));
-    setRowErrors((prev) => ({ ...prev, [slug]: "" }));
+  function toggle(id: string) {
+    setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
+    setRowErrors((prev) => ({ ...prev, [id]: "" }));
   }
 
   function addRoom(room: RoomSummaryWithMovie) {
     setAllRooms((prev) => [room, ...(prev ?? [])]);
-    setSelected((prev) => ({ ...prev, [room.slug]: true }));
+    setSelected((prev) => ({ ...prev, [room.id]: true }));
   }
 
   async function submit() {
-    if (selectedSlugs.length === 0 || isSubmitting) return;
+    if (selectedRoomIds.length === 0 || isSubmitting) return;
     setIsSubmitting(true);
-    setStatus((prev) => ({ ...prev, ...pending(selectedSlugs) }));
+    setStatus((prev) => ({ ...prev, ...pending(selectedRoomIds) }));
 
     const results = await Promise.allSettled(
-      selectedSlugs.map((slug) =>
-        api.room(slug).nominations.create({
+      selectedRoomIds.map((id) => {
+        const room = allRooms?.find((candidate) => candidate.id === id);
+        if (!room) throw new Error("The selected room is no longer available.");
+        return api.room(room.ownerId, room.slug).nominations.create({
           movieId: movie.id,
-          comment: comments[slug] ?? "",
-        }),
-      ),
+          comment: comments[id] ?? "",
+        });
+      }),
     );
 
-    setStatus((prev) => ({ ...prev, ...statusesFor(selectedSlugs, results) }));
-    setRowErrors((prev) => ({ ...prev, ...errorsFor(selectedSlugs, results) }));
+    setStatus((prev) => ({
+      ...prev,
+      ...statusesFor(selectedRoomIds, results),
+    }));
+    setRowErrors((prev) => ({
+      ...prev,
+      ...errorsFor(selectedRoomIds, results),
+    }));
     setIsSubmitting(false);
 
     const succeeded = results.filter(
@@ -137,15 +145,15 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
             )}
             {watchlists.map((room) => (
               <RoomRow
-                key={room.slug}
+                key={room.id}
                 room={room}
-                checked={Boolean(selected[room.slug])}
-                comment={comments[room.slug] ?? ""}
-                status={status[room.slug] ?? "idle"}
-                error={rowErrors[room.slug] ?? ""}
-                onToggle={() => toggle(room.slug)}
+                checked={Boolean(selected[room.id])}
+                comment={comments[room.id] ?? ""}
+                status={status[room.id] ?? "idle"}
+                error={rowErrors[room.id] ?? ""}
+                onToggle={() => toggle(room.id)}
                 onCommentChange={(value) =>
-                  setComments((prev) => ({ ...prev, [room.slug]: value }))
+                  setComments((prev) => ({ ...prev, [room.id]: value }))
                 }
               />
             ))}
@@ -156,7 +164,7 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
 
           {watchlists.length > 0 && (
             <SheetFooter
-              count={selectedSlugs.length}
+              count={selectedRoomIds.length}
               isSubmitting={isSubmitting}
             />
           )}

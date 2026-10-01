@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createTestDb } from "@/src/db/test-db";
 import { setDbForTesting, type DB } from "@/src/db/client";
-import { movies, nominations, rooms, roomMembers } from "@/src/db/schema";
+import {
+  movies,
+  nominations,
+  rooms,
+  roomMembers,
+} from "@/src/db/schema";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import * as roomsRoute from "./route";
 
@@ -124,9 +129,9 @@ describe("GET /api/rooms?movieId=", () => {
     const body = await (await GET(new Request("http://test"))).json();
 
     expect(body).toHaveLength(3);
-    expect(body.every((room: Record<string, unknown>) => "hasMovie" in room)).toBe(
-      false,
-    );
+    expect(
+      body.every((room: Record<string, unknown>) => "hasMovie" in room),
+    ).toBe(false);
   });
 
   it("marks only the room that already nominated the movie", async () => {

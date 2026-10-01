@@ -20,27 +20,34 @@ import type { MovieDetails as _MovieDetails } from "@lorenzopant/tmdb";
  * which preset a room was created as, so features like "add to a list" can
  * target watch lists without inferring it from `nominationsPerCycle`.
  */
-export const rooms = pgTable("rooms", {
-  id: uuid().primaryKey().defaultRandom(),
-  slug: text().notNull().unique(),
-  name: text().notNull(),
-  createdBy: uuid("created_by")
-    .notNull()
-    .references(() => authUsers.id),
-  inviteCode: text("invite_code").notNull().unique(),
-  // A separate link that grants the "admin" role on join instead of "member".
-  adminInviteCode: text("admin_invite_code").notNull().unique(),
-  type: text().notNull().default("club"),
-  // null means unlimited
-  nominationsPerCycle: integer("nominations_per_cycle"),
-  votesPerCycle: integer("votes_per_cycle").notNull().default(5),
-  cycleLength: text("cycle_length").notNull().default("month"),
-  allowSelfVote: boolean("allow_self_vote").notNull().default(false),
-  description: text(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-});
+export const rooms = pgTable(
+  "rooms",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    slug: text().notNull(),
+    legacySlug: text("legacy_slug").unique(),
+    name: text().notNull(),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => authUsers.id),
+    inviteCode: text("invite_code").notNull().unique(),
+    // A separate link that grants the "admin" role on join instead of "member".
+    adminInviteCode: text("admin_invite_code").notNull().unique(),
+    type: text().notNull().default("club"),
+    // null means unlimited
+    nominationsPerCycle: integer("nominations_per_cycle"),
+    votesPerCycle: integer("votes_per_cycle").notNull().default(5),
+    cycleLength: text("cycle_length").notNull().default("month"),
+    allowSelfVote: boolean("allow_self_vote").notNull().default(false),
+    description: text(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("rooms_creator_slug_idx").on(table.createdBy, table.slug),
+  ],
+);
 
 export const roomMembers = pgTable(
   "room_members",

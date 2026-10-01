@@ -1,8 +1,8 @@
-import { and, desc, eq, inArray, lte, sql } from "drizzle-orm";
+import type { RoomSummary } from "@/app/lib/api";
 import { cycleFor } from "@/app/lib/cycles";
 import {
   findMembership,
-  findRoomBySlug,
+  findRoomByPath,
   type SafeRoom,
 } from "@/lib/auth/require-room";
 import { requireUserId } from "@/lib/auth/require-user";
@@ -14,7 +14,7 @@ import {
   rooms,
   type RoomRole,
 } from "@/src/db/schema";
-import type { RoomSummary } from "@/app/lib/api";
+import { and, desc, eq, inArray, lte, sql } from "drizzle-orm";
 
 export interface LoadedRoom {
   /** Never the raw row: the invite code must not reach the client. */
@@ -31,6 +31,7 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
     .select({
       id: rooms.id,
       slug: rooms.slug,
+      ownerId: rooms.createdBy,
       name: rooms.name,
       cycleLength: rooms.cycleLength,
       nominationsPerCycle: rooms.nominationsPerCycle,
@@ -61,16 +62,18 @@ export async function listRoomsWithPosterPreviewsForUser(
     .select({
       roomId: nominations.roomId,
       posterUrl: posterUrl.as("poster_url"),
-      rank:
-        sql<number>`row_number() over (partition by ${nominations.roomId} order by ${nominations.createdAt} desc, ${nominations.id} desc)`.as(
-          "poster_rank",
-        ),
+      rank: sql<number>`row_number() over (partition by ${nominations.roomId} order by ${nominations.createdAt} desc, ${nominations.id} desc)`.as(
+        "poster_rank",
+      ),
     })
     .from(nominations)
     .innerJoin(movies, eq(movies.id, nominations.movieId))
     .where(
       and(
-        inArray(nominations.roomId, memberships.map(({ id }) => id)),
+        inArray(
+          nominations.roomId,
+          memberships.map(({ id }) => id),
+        ),
         sql`${posterUrl} is not null`,
       ),
     )
@@ -102,11 +105,14 @@ export type LoadRoomResult =
  * The server-side gate for the read path. A page renders only after this has
  * confirmed the viewer belongs to the room.
  */
-export async function loadRoom(slug: string): Promise<LoadRoomResult> {
+export async function loadRoom(
+  ownerId: string,
+  slug: string,
+): Promise<LoadRoomResult> {
   const userId = await requireUserId();
   if (!userId) return { status: "unauthenticated" };
 
-  const room = await findRoomBySlug(slug);
+  const room = await findRoomByPath(ownerId, slug);
   if (!room) return { status: "not-a-member" };
 
   const role = await findMembership(room.id, userId);

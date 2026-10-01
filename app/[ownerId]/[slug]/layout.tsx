@@ -1,28 +1,29 @@
 import { notFound, redirect } from "next/navigation";
 import { loadRoom } from "@/app/lib/load-room";
+import { isUuid, roomPath } from "@/lib/room-path";
 import { RoomProvider } from "./RoomContext";
 
 interface RoomLayoutProps {
   children: React.ReactNode;
-  params: Promise<{ slug: string }>;
+  params: Promise<{ ownerId: string; slug: string }>;
 }
 
 export default async function RoomLayout({
   children,
   params,
 }: RoomLayoutProps) {
-  const { slug } = await params;
-  const result = await loadRoom(slug);
+  const { ownerId, slug } = await params;
+  if (!isUuid(ownerId)) notFound();
 
+  const result = await loadRoom(ownerId, slug);
   if (result.status === "unauthenticated") {
-    redirect(`/auth/sign-in?next=${encodeURIComponent(`/r/${slug}`)}`);
+    redirect(
+      `/auth/sign-in?next=${encodeURIComponent(roomPath({ ownerId, slug }))}`,
+    );
   }
-  // Non-members see the same 404 as a room that does not exist, so slugs
-  // cannot be probed.
   if (result.status === "not-a-member") notFound();
 
   const { room, role, currentCycle, rooms } = result.data;
-
   return (
     <RoomProvider
       room={room}

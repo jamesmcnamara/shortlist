@@ -31,7 +31,7 @@ export default function NewRoomPage() {
     setIsSubmitting(true);
     try {
       const room = await api.rooms.create({ name: name.trim(), preset });
-      router.push(`/r/${room.slug}`);
+      router.push(room.path);
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Unable to create the room.",
@@ -64,7 +64,9 @@ export default function NewRoomPage() {
               required
             />
             {slug && (
-              <span className={styles.hint}>shortlist.app/r/{slug}</span>
+              <span className={styles.hint}>
+                shortlist.app/…/{slug}
+              </span>
             )}
           </div>
 

@@ -113,6 +113,20 @@
       "when": 1789668965971,
       "tag": "0015_lovely_may_parker",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1789668965972,
+      "tag": "0016_room_url_namespaces",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789668965973,
+      "tag": "0017_drop_user_handles",
+      "breakpoints": true
     }
   ]
 }

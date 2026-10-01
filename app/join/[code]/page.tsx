@@ -18,7 +18,7 @@ export default function JoinPage({ params }: JoinPageProps) {
   useEffect(() => {
     api
       .join(code)
-      .then(({ slug }) => router.replace(`/r/${slug}`))
+      .then(({ path }) => router.replace(path))
       .catch((error: Error) => {
         if (error instanceof ApiError && error.status === 401) {
           router.replace(

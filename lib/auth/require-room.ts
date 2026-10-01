@@ -1,4 +1,5 @@
 import { and, eq } from "drizzle-orm";
+import { parseRoomApiKey } from "@/lib/room-path";
 import { getDb } from "@/src/db/client";
 import { roomMembers, rooms, type Room, type RoomRole } from "@/src/db/schema";
 import { requireUserId, unauthorized } from "./require-user";
@@ -9,7 +10,10 @@ import { PresetName } from "@/app/lib/rooms";
  * gets handed to members or serialized into a page. Admin routes read it
  * explicitly via `findInviteCode`.
  */
-export type SafeRoom = Omit<Room, "inviteCode" | "adminInviteCode">;
+export type SafeRoom = Omit<Room, "inviteCode" | "adminInviteCode"> & {
+  ownerId: string;
+  path: string;
+};
 
 const ROOM_COLUMNS = {
   id: rooms.id,
@@ -23,6 +27,7 @@ const ROOM_COLUMNS = {
   allowSelfVote: rooms.allowSelfVote,
   description: rooms.description,
   createdAt: rooms.createdAt,
+  ownerId: rooms.createdBy,
 };
 
 export interface RoomContext {
@@ -50,11 +55,14 @@ export const notFound = () =>
 export const forbidden = (message = "You are not a member of this room.") =>
   Response.json({ error: message }, { status: 403 });
 
-export async function findRoomBySlug(slug: string): Promise<SafeRoom | null> {
+export async function findRoomByPath(
+  ownerId: string,
+  slug: string,
+): Promise<SafeRoom | null> {
   const [room] = await getDb()
     .select(ROOM_COLUMNS)
     .from(rooms)
-    .where(eq(rooms.slug, slug))
+    .where(and(eq(rooms.createdBy, ownerId), eq(rooms.slug, slug)))
     .limit(1);
   return (room as SafeRoom) ?? null;
 }
@@ -123,7 +131,9 @@ const withResolvedRoom =
 
     try {
       const params = await routeContext.params;
-      const room = await findRoomBySlug(params.slug);
+      const roomPath = parseRoomApiKey(params.slug);
+      if (!roomPath) return notFound();
+      const room = await findRoomByPath(roomPath.ownerId, roomPath.slug);
       // Non-members get the same 404 as a nonexistent room, so room slugs
       // cannot be probed for existence.
       if (!room) return notFound();

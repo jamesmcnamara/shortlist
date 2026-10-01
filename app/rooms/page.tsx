@@ -1,8 +1,8 @@
-import { redirect } from "next/navigation";
-import Link from "next/link";
 import { listRoomsWithPosterPreviewsForUser } from "@/app/lib/load-room";
 import { requireUserId } from "@/lib/auth/require-user";
-import { PRESET_LABELS, type PresetName } from "@/app/lib/rooms";
+import { roomPath } from "@/lib/room-path";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export default async function Rooms() {
 
   const rooms = await listRoomsWithPosterPreviewsForUser(userId);
   if (rooms.length === 0) redirect("/rooms/new");
-  if (rooms.length === 1) redirect(`/r/${rooms[0].slug}`);
+  if (rooms.length === 1) redirect(roomPath(rooms[0]));
 
   return (
     <main className={styles.shell}>
@@ -32,7 +32,7 @@ export default async function Rooms() {
         <ul className={styles.list}>
           {rooms.map((room) => (
             <li key={room.id}>
-              <Link className={styles.roomCard} href={`/r/${room.slug}`}>
+              <Link className={styles.roomCard} href={roomPath(room)}>
                 <span className={styles.roomDetails}>
                   <span className={styles.roomName}>{room.name}</span>
                 </span>
@@ -58,9 +58,4 @@ export default async function Rooms() {
       </div>
     </main>
   );
-}
-
-/** Mirrors app/lib/rooms.ts#getRoomType, but for the slimmer RoomSummary shape. */
-function roomTypeOf(nominationsPerCycle: number | null): PresetName {
-  return nominationsPerCycle ? "club" : "watchlist";
 }

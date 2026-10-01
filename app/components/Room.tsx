@@ -15,7 +15,7 @@ import type { Movie, Nomination } from "@/src/db/schema";
 import { AnimatePresence } from "motion/react";
 import { useMemo, useState } from "react";
 import { filter, find, map, some, sumOf } from "shades";
-import { useRoom } from "../r/[slug]/RoomContext";
+import { useRoom } from "../[ownerId]/[slug]/RoomContext";
 import styles from "./Room.module.css";
 
 export interface RoomAPI {

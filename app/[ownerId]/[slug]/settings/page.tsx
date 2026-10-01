@@ -9,6 +9,7 @@ import { PRESETS, type PresetName } from "@/app/lib/rooms";
 import { withTargetValue } from "@/app/lib/utils";
 import type { CycleLength, RoomRole } from "@/src/db/schema";
 import { useRoom } from "../RoomContext";
+import { roomPath } from "@/lib/room-path";
 import styles from "./page.module.css";
 
 const CYCLE_LABELS: Record<CycleLength, string> = {
@@ -46,7 +47,7 @@ export default function RoomSettingsPage() {
     return (
       <main className={styles.shell}>
         <p className={styles.error}>Only room admins can change settings.</p>
-        <Link className={styles.back} href={`/r/${room.slug}`}>
+        <Link className={styles.back} href={roomPath(room)}>
           Back to the list
         </Link>
       </main>
@@ -158,7 +159,7 @@ export default function RoomSettingsPage() {
           <h1 className={styles.title}>{room.name}</h1>
           <p className={styles.subtitle}>Room settings</p>
         </div>
-        <Link className={styles.back} href={`/r/${room.slug}`}>
+        <Link className={styles.back} href={roomPath(room)}>
           Back to the list
         </Link>
       </header>

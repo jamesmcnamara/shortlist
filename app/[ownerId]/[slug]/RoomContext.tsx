@@ -40,7 +40,7 @@ export function RoomProvider({
       role,
       currentCycle,
       rooms,
-      client: api.room(room.slug),
+      client: api.room(room.ownerId, room.slug),
       isAdmin: role === "admin",
       nominationsPerCycle: room.nominationsPerCycle,
       votesPerCycle: room.votesPerCycle,

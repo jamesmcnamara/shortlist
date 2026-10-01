@@ -8,6 +8,7 @@ import {
   PRESETS,
   slugify,
 } from "@/app/lib/rooms";
+import { roomPath } from "@/lib/room-path";
 import { getDb } from "@/src/db/client";
 import { nominations, roomMembers, rooms } from "@/src/db/schema";
 
@@ -30,6 +31,7 @@ export const GET = withUser({ error: "Unable to load your rooms." })(async (
     .select({
       id: rooms.id,
       slug: rooms.slug,
+      ownerId: rooms.createdBy,
       name: rooms.name,
       type: rooms.type,
       cycleLength: rooms.cycleLength,
@@ -100,7 +102,7 @@ export const POST = withUser({ error: "Unable to create the room." })(async (
   const [existing] = await db
     .select({ id: rooms.id })
     .from(rooms)
-    .where(eq(rooms.slug, slug))
+    .where(and(eq(rooms.createdBy, userId), eq(rooms.slug, slug)))
     .limit(1);
   if (existing) {
     return Response.json(
@@ -134,5 +136,8 @@ export const POST = withUser({ error: "Unable to create the room." })(async (
     adminInviteCode: _withheldAdmin,
     ...safe
   } = room;
-  return Response.json(safe, { status: 201 });
+  return Response.json(
+    { ...safe, ownerId: userId, path: roomPath({ ownerId: userId, slug }) },
+    { status: 201 },
+  );
 });

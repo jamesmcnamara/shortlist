@@ -9,6 +9,7 @@ import type {
 import type { SafeRoom } from "@/lib/auth/require-room";
 import type { PresetName, RoomConfig } from "@/app/lib/rooms";
 import type { Movie } from "@/src/db/schema";
+import { roomApiKey } from "@/lib/room-path";
 
 export class ApiError extends Error {
   constructor(
@@ -40,6 +41,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export interface RoomSummary {
   id: string;
   slug: string;
+  ownerId: string;
   name: string;
   type: PresetName;
   cycleLength: string;
@@ -74,8 +76,8 @@ export interface RoomDetail {
 }
 
 /**
- * Room-scoped calls are reached through `api.room(slug)`, so the slug is bound
- * once rather than threaded through every call site.
+ * Room-scoped calls bind the owner's handle and room slug once rather than
+ * threading the canonical room identity through every call site.
  */
 export const api = {
   rooms: {
@@ -90,7 +92,7 @@ export const api = {
     }): Promise<SafeRoom> =>
       request("/api/rooms", { method: "POST", body: JSON.stringify(input) }),
   },
-  join: (code: string): Promise<{ slug: string; name: string }> =>
+  join: (code: string): Promise<{ path: string; name: string }> =>
     request(`/api/join/${encodeURIComponent(code)}`, { method: "POST" }),
   feedback: {
     create: (input: {
@@ -102,8 +104,8 @@ export const api = {
         body: JSON.stringify(input),
       }),
   },
-  room: (slug: string) => {
-    const base = `/api/rooms/${encodeURIComponent(slug)}`;
+  room: (ownerId: string, slug: string) => {
+    const base = `/api/rooms/${encodeURIComponent(roomApiKey({ ownerId, slug }))}`;
     return {
       get: (): Promise<RoomDetail> => request(base),
       update: (
@@ -199,10 +201,7 @@ export const api = {
     };
   },
   tmdb: {
-    search: (
-      query: string,
-      signal?: AbortSignal,
-    ): Promise<Movie[]> =>
+    search: (query: string, signal?: AbortSignal): Promise<Movie[]> =>
       request<{ results: Movie[] }>(
         `/api/tmdb/search?query=${encodeURIComponent(query)}`,
         { signal },

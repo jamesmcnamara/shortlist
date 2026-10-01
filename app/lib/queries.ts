@@ -8,8 +8,7 @@ import {
   type Nomination,
   type User,
 } from "@/src/db/schema";
-import { loadRoom } from "./load-room";
-import { findRoomBySlug } from "@/lib/auth/require-room";
+import { findRoomByPath } from "@/lib/auth/require-room";
 
 const nominationRelations = {
   movie: true,
@@ -86,10 +85,11 @@ export async function listNominations(roomId: string): Promise<Nomination[]> {
   return withSeenBy(roomId, rows);
 }
 
-export async function listNominationsBySlug(
+export async function listNominationsByPath(
+  ownerId: string,
   slug: string,
 ): Promise<Nomination[]> {
-  const room = await findRoomBySlug(slug);
+  const room = await findRoomByPath(ownerId, slug);
   if (!room) {
     throw new Error(`No room for slug "${slug}"`);
   }

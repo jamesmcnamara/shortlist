@@ -34,7 +34,9 @@ const asUser = (id: string) => {
   currentUserId.value = id;
 };
 
-const route = (slug = "room") => ({ params: Promise.resolve({ slug }) });
+const route = (slug = "room") => ({
+  params: Promise.resolve({ slug: `${ALICE}:${slug}` }),
+});
 const post = (body: unknown) =>
   new Request("http://test/api", {
     method: "POST",
@@ -430,6 +432,22 @@ describe("room creation", () => {
 
     expect(second.status).toBe(409);
   });
+
+  it("allows another creator to use the same slug", async () => {
+    const { POST } = roomsRoute;
+    asUser(ALICE);
+    await POST(post({ name: "Movie Club", preset: "club" }));
+
+    asUser(BOB);
+    const response = await POST(post({ name: "Movie Club", preset: "club" }));
+
+    expect(response.status).toBe(201);
+    expect(await response.json()).toMatchObject({
+      slug: "movie-club",
+      ownerId: BOB,
+      path: `/${BOB}/movie-club`,
+    });
+  });
 });
 
 describe("member management", () => {
@@ -440,7 +458,7 @@ describe("member management", () => {
 
     const response = await DELETE(
       new Request("http://test", { method: "DELETE" }),
-      { params: Promise.resolve({ slug: "room", userId: BOB }) },
+      { params: Promise.resolve({ slug: `${ALICE}:room`, userId: BOB }) },
     );
 
     // Bob is not an admin, so removing him is fine; the guard is about admins.
@@ -469,7 +487,7 @@ describe("member management", () => {
     asUser(ALICE);
 
     await DELETE(new Request("http://test", { method: "DELETE" }), {
-      params: Promise.resolve({ slug: "room", userId: BOB }),
+      params: Promise.resolve({ slug: `${ALICE}:room`, userId: BOB }),
     });
 
     const remaining = await db
@@ -486,7 +504,7 @@ describe("member management", () => {
 
     const response = await DELETE(
       new Request("http://test", { method: "DELETE" }),
-      { params: Promise.resolve({ slug: "room", userId: ALICE }) },
+      { params: Promise.resolve({ slug: `${ALICE}:room`, userId: ALICE }) },
     );
     expect(response.status).toBe(409);
   });
@@ -497,7 +515,7 @@ describe("member management", () => {
     asUser(ALICE);
 
     const response = await PATCH(post({ role: "member" }), {
-      params: Promise.resolve({ slug: "room", userId: ALICE }),
+      params: Promise.resolve({ slug: `${ALICE}:room`, userId: ALICE }),
     });
     expect(response.status).toBe(409);
   });

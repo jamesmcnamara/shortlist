@@ -55,11 +55,12 @@ describe("high-churn component smoke tests", () => {
         nomination={nomination}
         rank={1}
         hasSeen
+        showMeta
         hasUpvoted={false}
         canVote
         isExpanded={false}
         onAddVote={onAddVote}
-        onToggleDiscussion={onToggleDiscussion}
+        onClick={onToggleDiscussion}
       />,
     );
 

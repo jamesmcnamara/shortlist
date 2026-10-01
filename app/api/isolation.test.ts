@@ -55,7 +55,9 @@ interface Fixture {
 
 let fixture: Fixture;
 
-const route = (slug: string) => ({ params: Promise.resolve({ slug }) });
+const route = (slug: string, ownerId = ALICE) => ({
+  params: Promise.resolve({ slug: `${ownerId}:${slug}` }),
+});
 const post = (body: unknown) =>
   new Request("http://test/api", {
     method: "POST",
@@ -160,6 +162,39 @@ beforeEach(async () => {
 });
 
 describe("room membership", () => {
+  it("resolves duplicate room slugs within their creator namespaces", async () => {
+    const [otherClub] = await fixture.db
+      .insert(rooms)
+      .values({
+        slug: "club",
+        name: "Another Club",
+        createdBy: MALLORY,
+        inviteCode: "invite-other-club",
+        adminInviteCode: "invite-other-club-admin",
+        nominationsPerCycle: null,
+        votesPerCycle: 5,
+        cycleLength: "never",
+      })
+      .returning();
+    await fixture.db.insert(roomMembers).values({
+      roomId: otherClub.id,
+      userId: BOB,
+      role: "member",
+    });
+
+    const { GET } = nominationsRoute;
+    asUser(BOB);
+
+    const aliceClub = await GET(new Request("http://test"), route("club"));
+    const malloryClub = await GET(
+      new Request("http://test"),
+      route("club", MALLORY),
+    );
+
+    expect(await aliceClub.json()).toHaveLength(1);
+    expect(await malloryClub.json()).toEqual([]);
+  });
+
   it("returns only the caller's own room contents", async () => {
     const { GET } = nominationsRoute;
     asUser(BOB);
@@ -479,7 +514,7 @@ describe("admin-only routes", () => {
   it("keeps the invite code out of the server-rendered room payload", async () => {
     asUser(BOB);
 
-    const result = await loadRoom("club");
+    const result = await loadRoom(ALICE, "club");
     expect(result.status).toBe("ok");
     if (result.status !== "ok") return;
     // This object is serialized into the RSC payload for every member.
@@ -533,7 +568,7 @@ describe("invites", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ slug: "secret" });
+    expect(await response.json()).toMatchObject({ path: `/${MALLORY}/secret` });
   });
 
   it("treats re-joining as a no-op", async () => {
@@ -572,7 +607,7 @@ describe("invites", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ slug: "secret" });
+    expect(await response.json()).toMatchObject({ path: `/${MALLORY}/secret` });
 
     const [membership] = await fixture.db
       .select()
