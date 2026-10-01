@@ -23,7 +23,11 @@ export async function createTestDb() {
     create table neon_auth."user" (
       id uuid primary key,
       name text not null,
-      email text not null
+      email text not null,
+      "emailVerified" boolean not null,
+      image text,
+      "createdAt" timestamptz not null,
+      "updatedAt" timestamptz not null
     );
   `);
 

@@ -1,8 +1,8 @@
-import { auth } from "@/lib/auth/server";
+import { getSession } from "@/lib/auth/server";
 
 export async function requireUserId(): Promise<string | null> {
-  const { data: session } = await auth.getSession();
-  return session?.user?.id ?? null;
+  const session = await getSession();
+  return session?.user.id ?? null;
 }
 
 export function unauthorized() {

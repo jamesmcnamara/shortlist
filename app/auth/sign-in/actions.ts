@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth/server";
 import { getSafeRedirect } from "@/lib/auth/redirect";
 
@@ -21,13 +22,10 @@ export async function signInWithEmail(
     password = password.padEnd(8, "x");
   }
 
-  const { error } = await auth.signIn.email({
-    email,
-    password,
-    rememberMe: true,
-  });
-
-  if (error) {
+  try {
+    await auth.api.signInEmail({ body: { email, password, rememberMe: true } });
+  } catch (error) {
+    if (!(error instanceof APIError)) throw error;
     return {
       error: error.message || "That email and password combo didn't work.",
     };

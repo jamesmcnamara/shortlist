@@ -4,11 +4,8 @@ import { GET } from "@/app/api/tmdb/search/route";
 
 const currentUserId = vi.hoisted(() => ({ value: "user-1" }));
 vi.mock("@/lib/auth/server", () => ({
-  auth: {
-    getSession: async () => ({
-      data: currentUserId.value ? { user: { id: currentUserId.value } } : null,
-    }),
-  },
+  getSession: async () =>
+    currentUserId.value ? { user: { id: currentUserId.value } } : null,
 }));
 
 afterEach(() => {

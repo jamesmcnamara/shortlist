@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth/server";
 import { getSafeRedirect } from "@/lib/auth/redirect";
 
@@ -23,9 +24,10 @@ export async function signUpWithEmail(
     password = password.padEnd(8, "x");
   }
 
-  const { error } = await auth.signUp.email({ name, email, password });
-
-  if (error) {
+  try {
+    await auth.api.signUpEmail({ body: { name, email, password } });
+  } catch (error) {
+    if (!(error instanceof APIError)) throw error;
     return { error: error.message || "Could not create that account." };
   }
 

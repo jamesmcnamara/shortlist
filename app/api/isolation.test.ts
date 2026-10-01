@@ -28,11 +28,8 @@ import * as joinRoute from "./join/[code]/route";
 // Auth is the one thing stubbed; everything below it runs for real.
 const currentUserId = vi.hoisted(() => ({ value: "" }));
 vi.mock("@/lib/auth/server", () => ({
-  auth: {
-    getSession: async () => ({
-      data: currentUserId.value ? { user: { id: currentUserId.value } } : null,
-    }),
-  },
+  getSession: async () =>
+    currentUserId.value ? { user: { id: currentUserId.value } } : null,
 }));
 
 const ALICE = "11111111-1111-1111-1111-111111111111";
