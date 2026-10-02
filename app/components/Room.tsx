@@ -6,25 +6,19 @@ import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussio
 import { NominationPanel } from "@/app/components/NominationPanel";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import { ViewControls } from "@/app/components/ViewControls";
-import { getRoomType } from "@/app/lib/rooms";
 import { useAPIActions } from "@/app/lib/useAPIActions";
 import { useMovieDiscussionHistory } from "@/app/lib/useMovieDiscussionHistory";
 import { applyView, ViewContext, ViewState } from "@/app/lib/view";
-import { SafeRoom } from "@/lib/auth/require-room";
 import type { Movie, Nomination } from "@/src/db/schema";
 import { AnimatePresence } from "motion/react";
 import { useMemo, useState } from "react";
-import { filter, find, map, some, sumOf } from "shades";
+import { find, map, some } from "shades";
 import { useRoom } from "../[ownerId]/[slug]/RoomContext";
 import styles from "./Room.module.css";
 
 export interface RoomAPI {
   rescind: (nominationId: number) => Promise<void>;
   nominate: (candidate: Movie, comment: string) => Promise<void>;
-  changeVote: (
-    nomination: Nomination,
-    action: "add" | "remove",
-  ) => Promise<void>;
   addNomCom: (nominationId: number, comment: string) => Promise<void>;
   updateNomRec: (nominationId: number, comment: string) => Promise<void>;
   toggleWatched: (movieId: number) => Promise<void>;
@@ -51,8 +45,7 @@ export function Room({
   nominees,
   isLoading,
 }: RoomProps) {
-  const { room, currentCycle, nominationsPerCycle, votesPerCycle, isAdmin } =
-    useRoom();
+  const { room, isAdmin } = useRoom();
   const [isNominationOpen, setIsNominationOpen] = useState(false);
   const { focusedId, closeDiscussion, openDiscussion } =
     useMovieDiscussionHistory();
@@ -62,21 +55,6 @@ export function Room({
     ? (find({ id: focusedId })(nominees) ?? null)
     : null;
 
-  const myNominationsThisCycle = useMemo(
-    () =>
-      userId
-        ? filter({ userId, cycle: currentCycle, completed: false })(
-            nominees as Nomination[],
-          )
-        : [],
-    [nominees, userId, currentCycle],
-  );
-
-  // Only a room that allows exactly one nomination has a single "current" one
-  // to replace; anywhere else, nominating always adds.
-  const replaceableNomination =
-    nominationsPerCycle === 1 ? (myNominationsThisCycle[0] ?? null) : null;
-
   const { actions, message, isSubmitting } = useAPIActions({
     nominate: {
       api: api.nominate,
@@ -85,7 +63,6 @@ export function Room({
     },
     rescind: {
       api: api.rescind,
-      skip: !replaceableNomination?.id,
       onSuccess: closeDiscussion,
       action: "rescind your nomination",
     },
@@ -104,10 +81,6 @@ export function Room({
     updateNomRec: {
       api: api.updateNomRec,
       action: "update your recommendation",
-    },
-    changeVote: {
-      api: api.changeVote,
-      action: "update your vote",
     },
     toggleCompleted: {
       api: api.toggleCompleted,
@@ -138,57 +111,34 @@ export function Room({
     [nominees],
   );
 
-  const votesLeft = useMemo(() => {
-    if (!userId) return 0;
-    const cast = filter({ userId, cycle: currentCycle })(
-      filter({ completed: false })(nominees).flatMap(
-        (nomination) => nomination.votes,
-      ),
-    ).length;
-    return Math.max(0, votesPerCycle - cast);
-  }, [nominees, userId, currentCycle, votesPerCycle]);
-
-  const canVoteOn = (nomination: Nomination) =>
-    votesLeft > 0 && (room.allowSelfVote || nomination.userId !== userId);
-
-  const canDeleteNominations = isAdmin && getRoomType(room) === "watchlist";
-  const numberOfNominators = new Set(map("userId")(nominees)).size;
-  const numberOfVotes = map("votes")(nominees).reduce(sumOf("length"), 0);
-  const showMeta = numberOfNominators > 2 || numberOfVotes > 0;
+  const showMeta = new Set(map("userId")(nominees)).size > 2;
 
   return (
     <main className={styles.shell}>
-      <ShortlistHeader votesLeft={votesLeft} />
+      <ShortlistHeader />
 
       <section
         className={styles.nominations}
         aria-labelledby="nominations-title"
       >
         <h1 id="nominations-title" className={styles.sectionHeader}>
-          {headline(room)}
+          {room.name}
         </h1>
 
         <ViewControls
           state={viewState}
           onChange={setViewState}
-          context={viewContext}
-          nominateLabel={nominateLabel(
-            nominationsPerCycle,
-            Boolean(replaceableNomination),
-          )}
+          nominateLabel="Add a movie"
           onNominate={() => setIsNominationOpen((open) => !open)}
         />
 
         <AnimatePresence initial={false}>
           {isNominationOpen && (
             <NominationPanel
-              currentNomination={replaceableNomination}
               existing={existing}
               isSubmitting={isSubmitting}
-              roomType={getRoomType(room)}
               onClose={() => setIsNominationOpen(false)}
               onSubmit={actions.nominate}
-              onRescind={() => actions.rescind(replaceableNomination!.id)}
             />
           )}
         </AnimatePresence>
@@ -209,18 +159,15 @@ export function Room({
                     : "No movies match these filters."}
                 </p>
               )}
-              <div id="tour-nominations" className={styles.movieList}>
+              <div className={styles.movieList}>
                 {visible.map((nom, index) => (
                   <MovieCard
                     key={nom.id}
                     rank={index + 1}
                     nomination={nom}
                     hasSeen={some({ id: userId })(nom.seenBy)}
-                    hasUpvoted={some({ userId })(nom.votes)}
-                    canVote={canVoteOn(nom)}
                     isExpanded={focused === nom}
                     showMeta={showMeta}
-                    onAddVote={() => actions.changeVote(nom, "add")}
                     onClick={() => openDiscussion(nom.id)}
                   />
                 ))}
@@ -250,12 +197,9 @@ export function Room({
                   rank={index + 1}
                   nomination={nom}
                   hasSeen={some({ id: userId })(nom.seenBy)}
-                  hasUpvoted={some({ userId })(nom.votes)}
-                  canVote={canVoteOn(nom)}
                   showMeta={true}
                   isExpanded={focused === nom}
                   isCompleted
-                  onAddVote={() => actions.changeVote(nom, "add")}
                   onClick={() => openDiscussion(nom.id)}
                 />
               ))}
@@ -269,12 +213,8 @@ export function Room({
           <MovieDiscussion
             key={focused.id}
             nomination={focused}
-            hasUpvoted={some({ userId })(focused.votes)}
             hasSeen={some({ id: userId })(focused.seenBy)}
-            canVote={canVoteOn(focused)}
             currentUserId={userId ?? null}
-            onAddVote={() => actions.changeVote(focused, "add")}
-            onRemoveVote={() => actions.changeVote(focused, "remove")}
             onAddComment={(comment) => actions.addNomCom(focused.id, comment)}
             onUpdateNominationComment={(comment) =>
               actions.updateNomRec(focused.id, comment)
@@ -282,7 +222,7 @@ export function Room({
             onUpdateComment={actions.updateNomCom}
             onMarkWatched={() => actions.toggleWatched(focused.movieId)}
             onDelete={
-              canDeleteNominations
+              isAdmin
                 ? () => actions.rescind(focused.id)
                 : undefined
             }
@@ -301,14 +241,3 @@ export function Room({
     </main>
   );
 }
-
-const headline = (room: SafeRoom) =>
-  room.nominationsPerCycle === 1 ? "And the nominees are..." : room.name;
-
-const nominateLabel = (
-  nominationsPerCycle: number | null,
-  hasNomination: boolean,
-) => {
-  if (nominationsPerCycle !== 1) return "Add a movie";
-  return hasNomination ? "Replace your nomination" : "Choose your fighter";
-};

@@ -9,7 +9,6 @@ import {
   rooms,
   roomMembers,
   seen,
-  votes,
 } from "@/src/db/schema";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import { loadRoom } from "@/app/lib/load-room";
@@ -19,7 +18,6 @@ import { loadRoom } from "@/app/lib/load-room";
 import * as roomsRoute from "./rooms/route";
 import * as roomRoute from "./rooms/[slug]/route";
 import * as nominationsRoute from "./rooms/[slug]/nominations/route";
-import * as votesRoute from "./rooms/[slug]/votes/route";
 import * as nomcomsRoute from "./rooms/[slug]/nomcoms/route";
 import * as seenRoute from "./rooms/[slug]/seen/route";
 import * as rotateInviteRoute from "./rooms/[slug]/invite/rotate/route";
@@ -79,9 +77,6 @@ beforeEach(async () => {
       createdBy: ALICE,
       inviteCode: "invite-a",
       adminInviteCode: "invite-a-admin",
-      nominationsPerCycle: 1,
-      votesPerCycle: 2,
-      cycleLength: "never",
     })
     .returning();
 
@@ -93,9 +88,6 @@ beforeEach(async () => {
       createdBy: MALLORY,
       inviteCode: "invite-b",
       adminInviteCode: "invite-b-admin",
-      nominationsPerCycle: null,
-      votesPerCycle: 5,
-      cycleLength: "never",
     })
     .returning();
 
@@ -127,7 +119,6 @@ beforeEach(async () => {
       roomId: roomA.id,
       userId: ALICE,
       movieId: insertedMovies[0].id,
-      cycle: 0,
     })
     .returning();
 
@@ -137,7 +128,6 @@ beforeEach(async () => {
       roomId: roomB.id,
       userId: MALLORY,
       movieId: insertedMovies[1].id,
-      cycle: 0,
     })
     .returning();
 
@@ -168,9 +158,6 @@ describe("room membership", () => {
         createdBy: MALLORY,
         inviteCode: "invite-other-club",
         adminInviteCode: "invite-other-club-admin",
-        nominationsPerCycle: null,
-        votesPerCycle: 5,
-        cycleLength: "never",
       })
       .returning();
     await fixture.db.insert(roomMembers).values({
@@ -232,20 +219,6 @@ describe("room membership", () => {
 });
 
 describe("cross-room writes", () => {
-  it("cannot vote on another room's nomination through its own room", async () => {
-    const { POST } = votesRoute;
-    asUser(BOB);
-
-    const response = await POST(
-      post({ nominationId: fixture.nominationInB }),
-      route("club"),
-    );
-
-    expect(response.status).toBe(404);
-    const cast = await fixture.db.select().from(votes);
-    expect(cast).toHaveLength(0);
-  });
-
   it("cannot comment on another room's nomination", async () => {
     const { POST } = nomcomsRoute;
     asUser(BOB);
@@ -463,22 +436,25 @@ describe("cross-room writes", () => {
 });
 
 describe("admin-only routes", () => {
-  it("refuses a config change from a non-admin member", async () => {
+  it("refuses a rename from a non-admin member", async () => {
     const { PATCH } = roomRoute;
     asUser(BOB);
 
-    const response = await PATCH(post({ votesPerCycle: 99 }), route("club"));
+    const response = await PATCH(post({ name: "Hijacked" }), route("club"));
     expect(response.status).toBe(403);
 
-    const [room] = await fixture.db.select().from(rooms);
-    expect(room.votesPerCycle).toBe(2);
+    const [room] = await fixture.db
+      .select()
+      .from(rooms)
+      .where(eq(rooms.slug, "club"));
+    expect(room.name).toBe("Club");
   });
 
-  it("allows an admin to change config", async () => {
+  it("allows an admin to rename the room", async () => {
     const { PATCH } = roomRoute;
     asUser(ALICE);
 
-    const response = await PATCH(post({ votesPerCycle: 4 }), route("club"));
+    const response = await PATCH(post({ name: "Renamed" }), route("club"));
     expect(response.status).toBe(200);
   });
 
@@ -486,7 +462,7 @@ describe("admin-only routes", () => {
     const { PATCH } = roomRoute;
     asUser(MALLORY);
 
-    const response = await PATCH(post({ votesPerCycle: 99 }), route("club"));
+    const response = await PATCH(post({ name: "Hijacked" }), route("club"));
     expect(response.status).toBe(404);
   });
 
@@ -518,12 +494,12 @@ describe("admin-only routes", () => {
     expect(JSON.stringify(result.data.room)).not.toContain("invite-a");
   });
 
-  it("does not leak the invite code through a config update", async () => {
+  it("does not leak the invite code through a rename", async () => {
     const { PATCH } = roomRoute;
     asUser(ALICE);
 
     const body = await (
-      await PATCH(post({ votesPerCycle: 3 }), route("club"))
+      await PATCH(post({ name: "Renamed" }), route("club"))
     ).json();
     expect(body.inviteCode).toBeUndefined();
   });

@@ -1,31 +1,18 @@
 "use client";
 
 import { useRoom } from "@/app/[ownerId]/[slug]/RoomContext";
-import { getRoomType } from "../lib/rooms";
 import { AppMenu } from "./AppMenu";
 import styles from "./ShortlistHeader.module.css";
 import Link from "next/link";
 
-type ShortlistHeaderProps = {
-  votesLeft: number;
-};
-
-export function ShortlistHeader({ votesLeft }: ShortlistHeaderProps) {
+export function ShortlistHeader() {
   const { room, rooms, isAdmin } = useRoom();
-  const isMovieClub = getRoomType(room) === "club";
 
   return (
     <header className={styles.header}>
       <span className={styles.roomName}>
-        <Link href="/">{isMovieClub ? room.name : "Shortlist"}</Link>
+        <Link href="/">Shortlist</Link>
       </span>
-      {isMovieClub && (
-        <div className={styles.balances}>
-          <span id="tour-votes" className={styles.voteBalance}>
-            {votesLeft} {votesLeft === 1 ? "vote" : "votes"} left
-          </span>
-        </div>
-      )}
       <AppMenu
         room={{
           slug: room.slug,

@@ -1,17 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import {
-  availableFilters,
-  SORTS,
-  type ViewContext,
-  type ViewState,
-} from "@/app/lib/view";
+import { FILTERS, SORTS, type ViewState } from "@/app/lib/view";
 import styles from "./ViewControls.module.css";
 
 interface ViewControlsProps {
   state: ViewState;
-  context: ViewContext;
   onChange: (state: ViewState) => void;
   nominateLabel: string;
   onNominate: () => void;
@@ -26,12 +20,10 @@ type Expanded = "sort" | "filter" | null;
  */
 export function ViewControls({
   state,
-  context,
   onChange,
   nominateLabel,
   onNominate,
 }: ViewControlsProps) {
-  const filters = availableFilters(context);
   const [expanded, setExpanded] = useState<Expanded>(null);
 
   const toggleExpanded = (panel: Exclude<Expanded, null>) =>
@@ -55,7 +47,6 @@ export function ViewControls({
       <div className={styles.actions}>
         <button
           className={styles.nominateButton}
-          id="tour-nominate"
           type="button"
           onClick={onNominate}
         >
@@ -97,7 +88,7 @@ export function ViewControls({
 
       {expanded === "filter" && (
         <div className={styles.options} role="group" aria-label="Filters">
-          {filters.map((filter) => {
+          {FILTERS.map((filter) => {
             const isActive = state.filters.includes(filter.id);
             return (
               <button

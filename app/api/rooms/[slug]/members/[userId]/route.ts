@@ -6,7 +6,7 @@ import { roomMembers } from "@/src/db/schema";
 export const runtime = "nodejs";
 
 /**
- * Removing a member deliberately leaves their nominations and votes in place —
+ * Removing a member deliberately leaves their movies in place —
  * otherwise a departure would silently gut the list.
  */
 export const DELETE = withRoomAdmin({ error: "Unable to remove that member." })(

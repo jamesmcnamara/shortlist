@@ -21,16 +21,15 @@ export function NewListForm({ onCreated }: NewListFormProps) {
     setError("");
     setIsSubmitting(true);
     try {
-      const room = await api.rooms.create({
-        name: trimmed,
-        preset: "watchlist",
-      });
+      const room = await api.rooms.create({ name: trimmed });
       onCreated({ ...room, role: "admin", hasMovie: false });
       setName("");
       setIsOpen(false);
     } catch (error) {
       setError(
-        error instanceof ApiError ? error.message : "Unable to create the list.",
+        error instanceof ApiError
+          ? error.message
+          : "Unable to create the list.",
       );
     } finally {
       setIsSubmitting(false);

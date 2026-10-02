@@ -4,19 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, type RoomDetail } from "@/app/lib/api";
-import { CYCLE_LENGTHS } from "@/app/lib/cycles";
-import { PRESETS, type PresetName } from "@/app/lib/rooms";
 import { withTargetValue } from "@/app/lib/utils";
-import type { CycleLength, RoomRole } from "@/src/db/schema";
+import type { RoomRole } from "@/src/db/schema";
 import { useRoom } from "../RoomContext";
 import { roomPath } from "@/lib/room-path";
 import styles from "./page.module.css";
-
-const CYCLE_LABELS: Record<CycleLength, string> = {
-  month: "Every month",
-  week: "Every week",
-  never: "Never — one running list",
-};
 
 export default function RoomSettingsPage() {
   const { room, client, isAdmin } = useRoom();
@@ -24,12 +16,6 @@ export default function RoomSettingsPage() {
 
   const [detail, setDetail] = useState<RoomDetail | null>(null);
   const [name, setName] = useState(room.name);
-  const [nominationsPerCycle, setNominationsPerCycle] = useState(
-    room.nominationsPerCycle,
-  );
-  const [votesPerCycle, setVotesPerCycle] = useState(room.votesPerCycle);
-  const [cycleLength, setCycleLength] = useState<CycleLength>(room.cycleLength);
-  const [allowSelfVote, setAllowSelfVote] = useState(room.allowSelfVote);
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -54,27 +40,13 @@ export default function RoomSettingsPage() {
     );
   }
 
-  const applyPreset = (preset: PresetName) => {
-    const values = PRESETS[preset];
-    setNominationsPerCycle(values.nominationsPerCycle);
-    setVotesPerCycle(values.votesPerCycle);
-    setCycleLength(values.cycleLength);
-    setAllowSelfVote(values.allowSelfVote);
-  };
-
   async function save(event: React.FormEvent) {
     event.preventDefault();
     setError("");
     setMessage("");
     setIsSaving(true);
     try {
-      await client.update({
-        name: name.trim(),
-        nominationsPerCycle,
-        votesPerCycle,
-        cycleLength,
-        allowSelfVote,
-      });
+      await client.update({ name: name.trim() });
       setMessage("Saved.");
       router.refresh();
     } catch (error) {
@@ -126,11 +98,7 @@ export default function RoomSettingsPage() {
   }
 
   async function deleteRoom() {
-    if (
-      !confirm(
-        `Delete ${room.name}? Every nomination, vote and comment goes with it.`,
-      )
-    )
+    if (!confirm(`Delete ${room.name}? Every movie and comment goes with it.`))
       return;
     try {
       await client.delete();
@@ -172,25 +140,7 @@ export default function RoomSettingsPage() {
       )}
 
       <form className={styles.section} onSubmit={save}>
-        <h2 className={styles.sectionTitle}>How it works</h2>
-
-        <div className={styles.presetRow}>
-          <span className={styles.label}>Start from</span>
-          <button
-            type="button"
-            className={styles.ghostButton}
-            onClick={() => applyPreset("club")}
-          >
-            Movie club
-          </button>
-          <button
-            type="button"
-            className={styles.ghostButton}
-            onClick={() => applyPreset("watchlist")}
-          >
-            Watch list
-          </button>
-        </div>
+        <h2 className={styles.sectionTitle}>Details</h2>
 
         <label className={styles.field}>
           <span className={styles.label}>Name</span>
@@ -200,77 +150,6 @@ export default function RoomSettingsPage() {
             onChange={withTargetValue(setName)}
             required
           />
-        </label>
-
-        <div className={styles.field}>
-          <span className={styles.label}>
-            Nominations per person, per cycle
-          </span>
-          <div className={styles.inlineRow}>
-            <label className={styles.checkbox}>
-              <input
-                type="checkbox"
-                checked={nominationsPerCycle === null}
-                onChange={(event) =>
-                  setNominationsPerCycle(event.target.checked ? null : 1)
-                }
-              />
-              <span>Unlimited</span>
-            </label>
-            {nominationsPerCycle !== null && (
-              <input
-                className={styles.number}
-                type="number"
-                min={1}
-                value={nominationsPerCycle}
-                onChange={withTargetValue((value) =>
-                  setNominationsPerCycle(Number(value)),
-                )}
-              />
-            )}
-          </div>
-        </div>
-
-        <label className={styles.field}>
-          <span className={styles.label}>Votes per person, per cycle</span>
-          <input
-            className={styles.number}
-            type="number"
-            min={0}
-            value={votesPerCycle}
-            onChange={withTargetValue((value) =>
-              setVotesPerCycle(Number(value)),
-            )}
-          />
-        </label>
-
-        <label className={styles.field}>
-          <span className={styles.label}>Reset</span>
-          <select
-            className={styles.input}
-            value={cycleLength}
-            onChange={withTargetValue((value) =>
-              setCycleLength(value as CycleLength),
-            )}
-          >
-            {CYCLE_LENGTHS.map((length) => (
-              <option key={length} value={length}>
-                {CYCLE_LABELS[length]}
-              </option>
-            ))}
-          </select>
-          <span className={styles.hint}>
-            Cannot be changed once the room has nominations.
-          </span>
-        </label>
-
-        <label className={styles.checkbox}>
-          <input
-            type="checkbox"
-            checked={allowSelfVote}
-            onChange={(event) => setAllowSelfVote(event.target.checked)}
-          />
-          <span>People can vote for their own picks</span>
         </label>
 
         <button className={styles.submit} type="submit" disabled={isSaving}>
@@ -369,7 +248,7 @@ export default function RoomSettingsPage() {
       <section className={`${styles.section} ${styles.danger}`}>
         <h2 className={styles.sectionTitle}>Danger zone</h2>
         <p className={styles.hint}>
-          Deleting the room removes every nomination, vote and comment in it.
+          Deleting the room removes every movie and comment in it.
         </p>
         <button
           type="button"

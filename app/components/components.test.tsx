@@ -14,7 +14,6 @@ const nomination: Nomination = {
   userId: "user",
   movieId: 1,
   comment: "A recommendation",
-  cycle: 0,
   completed: false,
   createdAt: new Date(),
   movie: {
@@ -31,7 +30,6 @@ const nomination: Nomination = {
     } as MovieDetails,
     ratings: { raw: {}, services: [] },
   },
-  votes: [],
   nomcoms: [],
   nominator: { id: "user", name: "Alice", email: "alice@example.com" },
   seenBy: [],
@@ -46,8 +44,7 @@ describe("high-churn component smoke tests", () => {
     ).toBeTruthy();
   });
 
-  it("renders a movie card and exposes its vote interaction", () => {
-    const onAddVote = vi.fn();
+  it("renders a movie card and expands it on click", () => {
     const onToggleDiscussion = vi.fn();
 
     render(
@@ -56,10 +53,7 @@ describe("high-churn component smoke tests", () => {
         rank={1}
         hasSeen
         showMeta
-        hasUpvoted={false}
-        canVote
         isExpanded={false}
-        onAddVote={onAddVote}
         onClick={onToggleDiscussion}
       />,
     );
@@ -69,9 +63,9 @@ describe("high-churn component smoke tests", () => {
       "watchedPoster",
     );
     fireEvent.click(
-      screen.getByRole("button", { name: "Give a vote to A Movie" }),
+      screen.getByRole("button", { name: "Expand details for A Movie" }),
     );
-    expect(onAddVote).toHaveBeenCalledOnce();
+    expect(onToggleDiscussion).toHaveBeenCalledOnce();
   });
 
   it("renders the nomination panel and closes it", () => {
@@ -79,19 +73,14 @@ describe("high-churn component smoke tests", () => {
 
     render(
       <NominationPanel
-        currentNomination={null}
         isSubmitting={false}
-        roomType="club"
         existing={new Set()}
         onClose={onClose}
         onSubmit={vi.fn()}
-        onRescind={vi.fn()}
       />,
     );
 
-    expect(
-      screen.getByRole("heading", { name: "Nominate a movie" }),
-    ).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Add a movie" })).toBeTruthy();
     fireEvent.click(
       screen.getByRole("button", { name: "Close nomination panel" }),
     );
@@ -105,11 +94,7 @@ describe("high-churn component smoke tests", () => {
       <MovieDiscussion
         nomination={nomination}
         hasSeen={false}
-        hasUpvoted={false}
-        canVote
         currentUserId="user"
-        onAddVote={vi.fn()}
-        onRemoveVote={vi.fn()}
         onAddComment={vi.fn()}
         onUpdateNominationComment={onUpdateNominationComment}
         onUpdateComment={vi.fn()}

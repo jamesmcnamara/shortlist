@@ -14,12 +14,7 @@ import { relations } from "drizzle-orm";
 import { authUsers } from "./neon-auth-schema";
 import type { MovieDetails as _MovieDetails } from "@lorenzopant/tmdb";
 
-/**
- * A room is the generic container for a group's content. "Movie club" and
- * "watch list" are presets over the same knobs below, but `type` records
- * which preset a room was created as, so features like "add to a list" can
- * target watch lists without inferring it from `nominationsPerCycle`.
- */
+/** A room is a shared watch list for a group. */
 export const rooms = pgTable(
   "rooms",
   {
@@ -33,12 +28,6 @@ export const rooms = pgTable(
     inviteCode: text("invite_code").notNull().unique(),
     // A separate link that grants the "admin" role on join instead of "member".
     adminInviteCode: text("admin_invite_code").notNull().unique(),
-    type: text().notNull().default("club"),
-    // null means unlimited
-    nominationsPerCycle: integer("nominations_per_cycle"),
-    votesPerCycle: integer("votes_per_cycle").notNull().default(5),
-    cycleLength: text("cycle_length").notNull().default("month"),
-    allowSelfVote: boolean("allow_self_vote").notNull().default(false),
     description: text(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -93,46 +82,13 @@ export const nominations = pgTable(
       .notNull()
       .references(() => movies.id),
     comment: text("comment"),
-    cycle: integer().notNull(),
     completed: boolean("completed").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
   (table) => [
-    index("nominations_room_cycle_idx").on(table.roomId, table.cycle),
     uniqueIndex("nominations_room_movie_idx").on(table.roomId, table.movieId),
-  ],
-);
-
-export const votes = pgTable(
-  "votes",
-  {
-    id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    roomId: uuid("room_id")
-      .notNull()
-      .references(() => rooms.id, { onDelete: "cascade" }),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => authUsers.id),
-    nominationId: integer("nomination_id")
-      .notNull()
-      .references(() => nominations.id, { onDelete: "cascade" }),
-    comment: text("comment"),
-    cycle: integer().notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => [
-    // Stacking multiple votes on one nomination is intended, so there is
-    // deliberately no unique constraint. This index serves budget counting.
-    index("votes_room_user_cycle_idx").on(
-      table.roomId,
-      table.userId,
-      table.cycle,
-    ),
-    index("votes_nomination_idx").on(table.nominationId),
   ],
 );
 
@@ -226,20 +182,11 @@ export const nominationsRelations = relations(nominations, ({ one, many }) => ({
     fields: [nominations.movieId],
     references: [movies.id],
   }),
-  votes: many(votes),
   nomcoms: many(nomcoms),
   nominator: one(authUsers, {
     fields: [nominations.userId],
     references: [authUsers.id],
   }),
-}));
-
-export const votesRelations = relations(votes, ({ one }) => ({
-  nomination: one(nominations, {
-    fields: [votes.nominationId],
-    references: [nominations.id],
-  }),
-  voter: one(authUsers, { fields: [votes.userId], references: [authUsers.id] }),
 }));
 
 export const nomcomsRelations = relations(nomcoms, ({ one }) => ({
@@ -258,14 +205,9 @@ export const seenRelations = relations(seen, ({ one }) => ({
   movie: one(movies, { fields: [seen.movieId], references: [movies.id] }),
 }));
 
-export type CycleLength = "month" | "week" | "never";
 export type RoomRole = "admin" | "member";
-export type RoomType = "club" | "watchlist";
 
-export type Room = Omit<typeof rooms.$inferSelect, "cycleLength" | "type"> & {
-  cycleLength: CycleLength;
-  type: RoomType;
-};
+export type Room = typeof rooms.$inferSelect;
 export type RoomMember = Omit<typeof roomMembers.$inferSelect, "role"> & {
   role: RoomRole;
 };
@@ -279,13 +221,11 @@ export type Movie = Exclude<
 export type RawNomination = typeof nominations.$inferSelect;
 export type Nomination = RawNomination & {
   movie: Movie;
-  votes: Vote[];
   nomcoms: NomCom[];
   nominator: User;
   /** Members of this nomination's room who have marked the movie seen. */
   seenBy: User[];
 };
-export type Vote = typeof votes.$inferSelect & { voter: User };
 export type NomCom = typeof nomcoms.$inferSelect & { commenter: User };
 export type Seen = typeof seen.$inferSelect;
 export type Feedback = Omit<typeof feedback.$inferSelect, "category"> & {

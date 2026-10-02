@@ -7,12 +7,9 @@ interface MovieCardProps {
   nomination: Nomination;
   rank: number;
   hasSeen: boolean;
-  hasUpvoted: boolean;
-  canVote: boolean;
   showMeta: boolean;
   isExpanded: boolean;
   isCompleted?: boolean;
-  onAddVote: () => void;
   onClick: () => void;
 }
 
@@ -20,17 +17,13 @@ export function MovieCard({
   nomination,
   rank,
   hasSeen,
-  hasUpvoted,
-  canVote,
   showMeta,
   isExpanded,
   isCompleted = false,
-  onAddVote,
   onClick,
 }: MovieCardProps) {
   const {
     movie: { details },
-    votes,
     nominator,
     seenBy,
   } = nomination;
@@ -73,17 +66,6 @@ export function MovieCard({
             >
               {getInitials(nominator.name)}
             </span>
-            <button
-              className={classnames(styles.stat, {
-                [styles.voted]: hasUpvoted,
-              })}
-              type="button"
-              onClick={onAddVote}
-              disabled={!canVote}
-              aria-label={`Give a vote to ${details.title}`}
-            >
-              {votes.length} <span>↑</span>
-            </button>
             {seenBy.length > 0 && (
               <span
                 className={styles.seenCount}

@@ -2,10 +2,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { withUser } from "@/lib/auth/require-user";
 import {
   generateInviteCode,
-  isPresetName,
   isValidSlug,
-  parseConfigUpdate,
-  PRESETS,
   slugify,
 } from "@/app/lib/rooms";
 import { roomPath } from "@/lib/room-path";
@@ -33,10 +30,6 @@ export const GET = withUser({ error: "Unable to load your rooms." })(async (
       slug: rooms.slug,
       ownerId: rooms.createdBy,
       name: rooms.name,
-      type: rooms.type,
-      cycleLength: rooms.cycleLength,
-      nominationsPerCycle: rooms.nominationsPerCycle,
-      votesPerCycle: rooms.votesPerCycle,
       role: roomMembers.role,
       joinedAt: roomMembers.joinedAt,
       hasMovie: sql<boolean>`${nominations.id} is not null`,
@@ -73,14 +66,6 @@ export const POST = withUser({ error: "Unable to create the room." })(async (
     );
   }
 
-  const preset = body?.preset ?? "club";
-  if (!isPresetName(preset)) {
-    return Response.json(
-      { error: "Choose either a movie club or a watch list." },
-      { status: 400 },
-    );
-  }
-
   const slug =
     typeof body?.slug === "string" && body.slug.trim()
       ? slugify(body.slug)
@@ -90,12 +75,6 @@ export const POST = withUser({ error: "Unable to create the room." })(async (
       { error: "That name cannot be turned into a URL. Try another." },
       { status: 400 },
     );
-  }
-
-  // Overrides let creation and the admin panel share one validation path.
-  const overrides = parseConfigUpdate(body?.config);
-  if (!overrides.ok) {
-    return Response.json({ error: overrides.error }, { status: 400 });
   }
 
   const db = getDb();
@@ -119,9 +98,6 @@ export const POST = withUser({ error: "Unable to create the room." })(async (
       createdBy: userId,
       inviteCode: generateInviteCode(),
       adminInviteCode: generateInviteCode(),
-      type: preset,
-      ...PRESETS[preset],
-      ...overrides.values,
     })
     .returning();
 

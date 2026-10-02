@@ -1,6 +1,4 @@
 import { eq } from "drizzle-orm";
-import { cycleFor } from "@/app/lib/cycles";
-import { parseConfigUpdate } from "@/app/lib/rooms";
 import {
   findInviteCode,
   findAdminInviteCode,
@@ -9,7 +7,7 @@ import {
   type RoomContext,
 } from "@/lib/auth/require-room";
 import { getDb } from "@/src/db/client";
-import { roomMembers, rooms, nominations } from "@/src/db/schema";
+import { roomMembers, rooms } from "@/src/db/schema";
 import { authUsers } from "@/src/db/neon-auth-schema";
 
 export const runtime = "nodejs";
@@ -38,7 +36,6 @@ export const GET = withRoomMember({ error: "Unable to load the room." })(async (
     adminInviteCode:
       role === "admin" ? await findAdminInviteCode(room.id) : undefined,
     membership: { userId, role },
-    currentCycle: cycleFor(room),
     members,
   });
 });
@@ -46,44 +43,14 @@ export const GET = withRoomMember({ error: "Unable to load the room." })(async (
 export const PATCH = withRoomAdmin({ error: "Unable to update the room." })(
   async (request: Request, { room }: RoomContext) => {
     const body = await request.json().catch(() => null);
-    const parsed = parseConfigUpdate(body);
-    if (!parsed.ok) {
-      return Response.json({ error: parsed.error }, { status: 400 });
-    }
-
-    const values: Record<string, unknown> = { ...parsed.values };
-    if (typeof body?.name === "string" && body.name.trim()) {
-      values.name = body.name.trim();
-    }
-
-    if (Object.keys(values).length === 0) {
+    const name = typeof body?.name === "string" ? body.name.trim() : "";
+    if (!name) {
       return Response.json({ error: "Nothing to update." }, { status: 400 });
-    }
-
-    // Changing the cycle length re-bases every cycle number, so existing
-    // nominations and votes would land in a different bucket than the one they
-    // were cast in. Left as an explicit constraint rather than silently
-    // corrupting history.
-    if (values.cycleLength && values.cycleLength !== room.cycleLength) {
-      const [existing] = await getDb()
-        .select({ id: nominations.id })
-        .from(nominations)
-        .where(eq(nominations.roomId, room.id))
-        .limit(1);
-      if (existing) {
-        return Response.json(
-          {
-            error:
-              "The cycle length cannot be changed once a room has nominations.",
-          },
-          { status: 409 },
-        );
-      }
     }
 
     const [updated] = await getDb()
       .update(rooms)
-      .set(values)
+      .set({ name })
       .where(eq(rooms.id, room.id))
       .returning();
 

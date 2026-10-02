@@ -1,12 +1,10 @@
-import type { Nomination, RatingSource, Room } from "@/src/db/schema";
+import type { Nomination, RatingSource } from "@/src/db/schema";
 
 /**
  * Everything a sort or filter may depend on. Options read from here rather
  * than closing over component state, so they stay pure and testable.
  */
 export interface ViewContext {
-  room: Pick<Room, "cycleLength">;
-  currentCycle: number;
   userId?: string;
 }
 
@@ -51,12 +49,6 @@ const ratingSort = (source: RatingSource, label: string): SortOption => ({
 });
 
 export const SORTS: SortOption[] = [
-  {
-    id: "votes",
-    label: "Most votes",
-    compare: (a, b) =>
-      b.votes.length - a.votes.length || time(b.createdAt) - time(a.createdAt),
-  },
   {
     id: "recent",
     label: "Recently added",
@@ -110,24 +102,6 @@ export const FILTERS: FilterOption[] = [
     label: "Nominated by others",
     predicate: (nomination, { userId }) => nomination.userId !== userId,
   },
-  {
-    id: "voted",
-    label: "I voted for",
-    predicate: (nomination, { userId }) =>
-      nomination.votes.some((vote) => vote.userId === userId),
-  },
-  {
-    id: "unvoted",
-    label: "I have not voted for",
-    predicate: (nomination, { userId }) =>
-      !nomination.votes.some((vote) => vote.userId === userId),
-  },
-  {
-    id: "current-cycle",
-    label: "This cycle",
-    predicate: (nomination, { currentCycle }) =>
-      nomination.cycle === currentCycle,
-  },
 ];
 
 const byId = <T extends { id: string }>(options: T[]) =>
@@ -136,19 +110,7 @@ const byId = <T extends { id: string }>(options: T[]) =>
 export const SORTS_BY_ID = byId(SORTS);
 export const FILTERS_BY_ID = byId(FILTERS);
 
-/** A room that never resets has no meaningful "this cycle". */
-export const availableFilters = (context: ViewContext): FilterOption[] =>
-  FILTERS.filter(
-    (filter) =>
-      filter.id !== "current-cycle" || context.room.cycleLength !== "never",
-  );
-
-export const defaultViewState = (
-  room: Pick<Room, "cycleLength">,
-): ViewState => ({
-  sort: room.cycleLength === "never" ? "recent" : "votes",
-  filters: [],
-});
+export const DEFAULT_VIEW_STATE: ViewState = { sort: "recent", filters: [] };
 
 /**
  * Filters then sorts, without mutating the input. Unknown ids are ignored so a
@@ -173,29 +135,21 @@ export function applyView(
   return [...filtered].sort((a, b) => sort.compare(a, b, context));
 }
 
-export function parseViewState(
-  params: URLSearchParams,
-  room: Pick<Room, "cycleLength">,
-): ViewState {
-  const fallback = defaultViewState(room);
+export function parseViewState(params: URLSearchParams): ViewState {
   const sort = params.get("sort");
   const filters = (params.get("filters") ?? "")
     .split(",")
     .filter((id) => FILTERS_BY_ID.has(id));
 
   return {
-    sort: sort && SORTS_BY_ID.has(sort) ? sort : fallback.sort,
+    sort: sort && SORTS_BY_ID.has(sort) ? sort : DEFAULT_VIEW_STATE.sort,
     filters,
   };
 }
 
-export function toSearchParams(
-  state: ViewState,
-  room: Pick<Room, "cycleLength">,
-): URLSearchParams {
+export function toSearchParams(state: ViewState): URLSearchParams {
   const params = new URLSearchParams();
-  const fallback = defaultViewState(room);
-  if (state.sort !== fallback.sort) params.set("sort", state.sort);
+  if (state.sort !== DEFAULT_VIEW_STATE.sort) params.set("sort", state.sort);
   if (state.filters.length) params.set("filters", state.filters.join(","));
   return params;
 }

@@ -23,14 +23,9 @@ export default async function RoomLayout({
   }
   if (result.status === "not-a-member") notFound();
 
-  const { room, role, currentCycle, rooms } = result.data;
+  const { room, role, rooms } = result.data;
   return (
-    <RoomProvider
-      room={room}
-      role={role}
-      currentCycle={currentCycle}
-      rooms={rooms}
-    >
+    <RoomProvider room={room} role={role} rooms={rooms}>
       {children}
     </RoomProvider>
   );

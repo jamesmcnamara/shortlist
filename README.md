@@ -4,29 +4,11 @@ A tiny Next.js + Vercel + Neon app for deciding what to watch, built on Drizzle 
 
 ## Rooms
 
-All content lives in a **room**, and every nomination, vote, comment and watched
-marking is scoped to one. Members only ever see the rooms they belong to; rooms
-are joined through a shareable invite link.
-
-A room is not a fixed "type" — it is a set of knobs that an admin can change at
-`/r/<slug>/settings`:
-
-| Knob                  | Meaning                                                               |
-| --------------------- | --------------------------------------------------------------------- |
-| Nominations per cycle | How many movies each person may add. Unlimited when unset.            |
-| Votes per cycle       | How many votes each person gets. Several may be stacked on one movie. |
-| Reset                 | Whether the cycle turns over monthly, weekly, or never.               |
-| Self-voting           | Whether people may vote for their own picks.                          |
-| Duplicates            | Whether the same movie may be added twice.                            |
-
-Two presets are offered when creating a room, and both are just starting values
-for the knobs above:
-
-- **Movie club** — one nomination each per month, then everyone votes.
-- **Watch list** — add as many movies as you like, with votes deciding what rises.
-
-"Reset: never" collapses the cycle to a single always-open period, which is what
-gives a watch list its running, non-resetting behaviour.
+All content lives in a **room**, which is a shared watch list. Every movie,
+comment and watched marking is scoped to one. Members only ever see the rooms
+they belong to; rooms are joined through a shareable invite link. Admins can
+rename a room, manage its members and rotate its invite links from its settings
+page.
 
 ## Local development
 

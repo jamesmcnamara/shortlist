@@ -3,22 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/app/lib/api";
-import {
-  PRESET_DESCRIPTIONS,
-  PRESET_LABELS,
-  slugify,
-  type PresetName,
-} from "@/app/lib/rooms";
+import { slugify } from "@/app/lib/rooms";
 import { withTargetValue } from "@/app/lib/utils";
 import styles from "@/app/auth/auth.module.css";
-import newRoomStyles from "./page.module.css";
-
-const PRESETS: PresetName[] = ["club", "watchlist"];
 
 export default function NewRoomPage() {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [preset, setPreset] = useState<PresetName>("club");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -30,7 +21,7 @@ export default function NewRoomPage() {
     setError("");
     setIsSubmitting(true);
     try {
-      const room = await api.rooms.create({ name: name.trim(), preset });
+      const room = await api.rooms.create({ name: name.trim() });
       router.push(room.path);
     } catch (error) {
       setError(
@@ -60,42 +51,13 @@ export default function NewRoomPage() {
               id="name"
               value={name}
               onChange={withTargetValue(setName)}
-              placeholder="Friday Night Club"
+              placeholder="Friday Night Movies"
               required
             />
             {slug && (
-              <span className={styles.hint}>
-                shortlist.app/…/{slug}
-              </span>
+              <span className={styles.hint}>shortlist.app/…/{slug}</span>
             )}
           </div>
-
-          <fieldset className={newRoomStyles.presets}>
-            <legend className={styles.label}>How it works</legend>
-            {PRESETS.map((option) => (
-              <label
-                key={option}
-                className={`${newRoomStyles.preset} ${
-                  preset === option ? newRoomStyles.presetActive : ""
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="preset"
-                  value={option}
-                  checked={preset === option}
-                  onChange={() => setPreset(option)}
-                  className={newRoomStyles.presetInput}
-                />
-                <span className={newRoomStyles.presetName}>
-                  {PRESET_LABELS[option]}
-                </span>
-                <span className={newRoomStyles.presetDescription}>
-                  {PRESET_DESCRIPTIONS[option]}
-                </span>
-              </label>
-            ))}
-          </fieldset>
 
           {error && <p className={styles.error}>{error}</p>}
 

@@ -7,7 +7,6 @@ import type {
   User,
 } from "@/src/db/schema";
 import type { SafeRoom } from "@/lib/auth/require-room";
-import type { PresetName, RoomConfig } from "@/app/lib/rooms";
 import type { Movie } from "@/src/db/schema";
 import { roomApiKey } from "@/lib/room-path";
 
@@ -43,10 +42,6 @@ export interface RoomSummary {
   slug: string;
   ownerId: string;
   name: string;
-  type: PresetName;
-  cycleLength: string;
-  nominationsPerCycle: number | null;
-  votesPerCycle: number;
   role: RoomRole;
 }
 
@@ -71,7 +66,6 @@ export interface RoomDetail {
   inviteCode?: string;
   adminInviteCode?: string;
   membership: { userId: string; role: RoomRole };
-  currentCycle: number;
   members: RoomMemberSummary[];
 }
 
@@ -86,9 +80,7 @@ export const api = {
       request(`/api/rooms?movieId=${movieId}`),
     create: (input: {
       name: string;
-      preset: PresetName;
       slug?: string;
-      config?: Partial<RoomConfig>;
     }): Promise<SafeRoom> =>
       request("/api/rooms", { method: "POST", body: JSON.stringify(input) }),
   },
@@ -108,9 +100,7 @@ export const api = {
     const base = `/api/rooms/${encodeURIComponent(roomApiKey({ ownerId, slug }))}`;
     return {
       get: (): Promise<RoomDetail> => request(base),
-      update: (
-        input: Partial<RoomConfig> & { name?: string },
-      ): Promise<SafeRoom> =>
+      update: (input: { name?: string }): Promise<SafeRoom> =>
         request(base, { method: "PATCH", body: JSON.stringify(input) }),
       delete: (): Promise<void> => request(base, { method: "DELETE" }),
       rotateInvite: (
@@ -163,18 +153,6 @@ export const api = {
         delete: (nominationId: number): Promise<void> =>
           request(`${base}/nominations?id=${nominationId}`, {
             method: "DELETE",
-          }),
-      },
-      votes: {
-        create: (nominationId: number): Promise<Nomination> =>
-          request(`${base}/votes`, {
-            method: "POST",
-            body: JSON.stringify({ nominationId }),
-          }),
-        delete: (nominationId: number): Promise<Nomination> =>
-          request(`${base}/votes`, {
-            method: "DELETE",
-            body: JSON.stringify({ nominationId }),
           }),
       },
       nomcoms: {

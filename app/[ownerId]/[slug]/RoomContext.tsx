@@ -8,13 +8,9 @@ import type { RoomRole } from "@/src/db/schema";
 interface RoomContextValue {
   room: SafeRoom;
   role: RoomRole;
-  currentCycle: number;
   rooms: RoomSummary[];
   client: RoomApi;
   isAdmin: boolean;
-  /** null when the room does not cap nominations. */
-  nominationsPerCycle: number | null;
-  votesPerCycle: number;
 }
 
 const RoomContext = createContext<RoomContextValue | null>(null);
@@ -22,7 +18,6 @@ const RoomContext = createContext<RoomContextValue | null>(null);
 interface RoomProviderProps {
   room: SafeRoom;
   role: RoomRole;
-  currentCycle: number;
   rooms: RoomSummary[];
   children: React.ReactNode;
 }
@@ -30,7 +25,6 @@ interface RoomProviderProps {
 export function RoomProvider({
   room,
   role,
-  currentCycle,
   rooms,
   children,
 }: RoomProviderProps) {
@@ -38,14 +32,11 @@ export function RoomProvider({
     () => ({
       room,
       role,
-      currentCycle,
       rooms,
       client: api.room(room.ownerId, room.slug),
       isAdmin: role === "admin",
-      nominationsPerCycle: room.nominationsPerCycle,
-      votesPerCycle: room.votesPerCycle,
     }),
-    [room, role, currentCycle, rooms],
+    [room, role, rooms],
   );
 
   return <RoomContext.Provider value={value}>{children}</RoomContext.Provider>;

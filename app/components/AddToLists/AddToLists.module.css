@@ -248,10 +248,6 @@
   font-size: 0.9344rem;
 }
 
-.emptyHint {
-  color: var(--muted) !important;
-  font-size: 0.8625rem !important;
-}
 
 .newList {
   display: grid;

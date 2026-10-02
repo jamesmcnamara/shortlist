@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createTestDb } from "@/src/db/test-db";
 import { setDbForTesting, type DB } from "@/src/db/client";
-import {
-  movies,
-  nominations,
-  rooms,
-  roomMembers,
-} from "@/src/db/schema";
+import { movies, nominations, rooms, roomMembers } from "@/src/db/schema";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import * as roomsRoute from "./route";
 
@@ -48,10 +43,6 @@ beforeEach(async () => {
       createdBy: CASEY,
       inviteCode: "invite-club",
       adminInviteCode: "invite-club-admin",
-      type: "club",
-      nominationsPerCycle: 1,
-      votesPerCycle: 2,
-      cycleLength: "month",
     })
     .returning();
 
@@ -63,10 +54,6 @@ beforeEach(async () => {
       createdBy: CASEY,
       inviteCode: "invite-watchlist",
       adminInviteCode: "invite-watchlist-admin",
-      type: "watchlist",
-      nominationsPerCycle: null,
-      votesPerCycle: 5,
-      cycleLength: "never",
     })
     .returning();
 
@@ -78,10 +65,6 @@ beforeEach(async () => {
       createdBy: CASEY,
       inviteCode: "invite-other",
       adminInviteCode: "invite-other-admin",
-      type: "watchlist",
-      nominationsPerCycle: null,
-      votesPerCycle: 5,
-      cycleLength: "never",
     })
     .returning();
 
@@ -100,13 +83,11 @@ beforeEach(async () => {
     })
     .returning();
 
-  // Already nominated into the watchlist, but not the other watchlist or the
-  // club room.
+  // Already in the watchlist, but not the other watchlist or the club room.
   await db.insert(nominations).values({
     roomId: watchlist.id,
     userId: CASEY,
     movieId: movie.id,
-    cycle: 0,
   });
 
   fixture = {
@@ -149,27 +130,6 @@ describe("GET /api/rooms?movieId=", () => {
       club: false,
       watchlist: true,
       "other-watchlist": false,
-    });
-  });
-
-  it("still returns the room's type so club rooms can be excluded as add targets", async () => {
-    const { GET } = roomsRoute;
-    asUser(CASEY);
-
-    const body = await (
-      await GET(new Request(`http://test?movieId=${fixture.movieId}`))
-    ).json();
-
-    const types = Object.fromEntries(
-      body.map((room: { slug: string; type: string }) => [
-        room.slug,
-        room.type,
-      ]),
-    );
-    expect(types).toEqual({
-      club: "club",
-      watchlist: "watchlist",
-      "other-watchlist": "watchlist",
     });
   });
 });

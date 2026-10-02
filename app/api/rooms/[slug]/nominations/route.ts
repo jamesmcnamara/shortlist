@@ -1,9 +1,8 @@
 import { and, eq } from "drizzle-orm";
-import { cycleFor } from "@/app/lib/cycles";
 import { getNomination, listNominations } from "@/app/lib/queries";
 import { withRoomMember, type RoomContext } from "@/lib/auth/require-room";
-import { getDb, type DB } from "@/src/db/client";
-import { movies, nominations, type Room } from "@/src/db/schema";
+import { getDb } from "@/src/db/client";
+import { movies, nominations } from "@/src/db/schema";
 
 export const runtime = "nodejs";
 
@@ -11,27 +10,6 @@ export const GET = withRoomMember({ error: "Unable to load nominations" })(
   async (_request: Request, { room }: RoomContext) =>
     Response.json(await listNominations(room.id)),
 );
-
-/**
- * Only nominations still awaiting a verdict count against a room's per-cycle
- * cap; once one is marked completed and moves to Watched, the nominator gets
- * their slot back.
- */
-const activeNominationCount = (
-  db: DB,
-  roomId: string,
-  userId: string,
-  cycle: number,
-) =>
-  db.$count(
-    nominations,
-    and(
-      eq(nominations.roomId, roomId),
-      eq(nominations.userId, userId),
-      eq(nominations.cycle, cycle),
-      eq(nominations.completed, false),
-    ),
-  );
 
 export const POST = withRoomMember({ error: "Unable to create nomination." })(
   async (request: Request, { room, userId }: RoomContext) => {
@@ -48,21 +26,7 @@ export const POST = withRoomMember({ error: "Unable to create nomination." })(
         ? body.comment.trim()
         : null;
 
-    const cycle = cycleFor(room);
     const db = getDb();
-
-    // A null cap means unlimited, which is what makes a watch list a watch
-    // list. There is no separate code path for it. Checked before any external
-    // call, so hitting your own limit never depends on TMDB being reachable.
-    if (room.nominationsPerCycle !== null) {
-      const active = await activeNominationCount(db, room.id, userId, cycle);
-      if (active >= room.nominationsPerCycle) {
-        return Response.json(
-          { error: nominationLimitMessage(room.nominationsPerCycle) },
-          { status: 409 },
-        );
-      }
-    }
 
     const [movie] = await db
       .select({ id: movies.id })
@@ -78,7 +42,7 @@ export const POST = withRoomMember({ error: "Unable to create nomination." })(
 
     const [inserted] = await db
       .insert(nominations)
-      .values({ roomId: room.id, userId, movieId, comment, cycle })
+      .values({ roomId: room.id, userId, movieId, comment })
       .returning({ id: nominations.id });
 
     return Response.json(await getNomination(room.id, inserted.id), {
@@ -158,8 +122,7 @@ export const DELETE = withRoomMember({
     );
   }
 
-  // Admins can remove any nomination in a watchlist-style room; everyone else
-  // can only rescind their own.
+  // Admins can remove any nomination; everyone else can only rescind their own.
   const ownershipCondition =
     role === "admin" ? undefined : eq(nominations.userId, userId);
 
@@ -180,8 +143,3 @@ export const DELETE = withRoomMember({
     );
   return new Response(null, { status: 204 });
 });
-
-const nominationLimitMessage = (limit: number) =>
-  limit === 1
-    ? "You can only nominate one movie per cycle."
-    : `You have used all ${limit} of your nominations for this cycle.`;

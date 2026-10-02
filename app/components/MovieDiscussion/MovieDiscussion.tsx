@@ -1,6 +1,5 @@
 import { getColor, getInitials } from "@/app/lib/utils";
-import type { Nomination, User, Vote } from "@/src/db/schema";
-import _ from "lodash";
+import type { Nomination, User } from "@/src/db/schema";
 import { motion } from "motion/react";
 import styles from "./MovieDiscussion.module.css";
 import { MovieRatings } from "@/app/components/MovieRatings";
@@ -10,12 +9,8 @@ import { useClickOutside } from "@/app/lib/useClickOutside";
 
 interface MovieDiscussionProps {
   nomination: Nomination;
-  hasUpvoted: boolean;
   hasSeen: boolean;
-  canVote: boolean;
   currentUserId: string | null;
-  onAddVote: () => void;
-  onRemoveVote: () => void;
   onAddComment: (comment: string) => Promise<boolean>;
   onUpdateNominationComment: (comment: string) => Promise<boolean>;
   onUpdateComment: (commentId: number, comment: string) => Promise<boolean>;
@@ -27,12 +22,8 @@ interface MovieDiscussionProps {
 
 export function MovieDiscussion({
   nomination,
-  hasUpvoted,
   hasSeen,
-  canVote,
   currentUserId,
-  onAddVote,
-  onRemoveVote,
   onAddComment,
   onUpdateNominationComment,
   onUpdateComment,
@@ -43,7 +34,6 @@ export function MovieDiscussion({
 }: MovieDiscussionProps) {
   const {
     movie: { details, ratings },
-    votes,
     nominator,
     nomcoms,
     seenBy,
@@ -87,25 +77,7 @@ export function MovieDiscussion({
           </p>
           <MovieRatings services={ratings.services} />
           {!nomination.completed && (
-            <div className={styles.voteActions}>
-              <button
-                className={styles.votePrimary}
-                type="button"
-                onClick={onAddVote}
-                disabled={!canVote}
-                aria-label={`Vote for ${details.title}`}
-              >
-                Vote for this
-              </button>
-              <button
-                className={styles.voteSecondary}
-                type="button"
-                onClick={onRemoveVote}
-                disabled={!hasUpvoted}
-                aria-label={`Remove your vote from ${details.title}`}
-              >
-                Remove vote
-              </button>
+            <div className={styles.movieActions}>
               <button
                 className={`${styles.watched} ${hasSeen ? styles.voted : ""}`}
                 type="button"
@@ -149,7 +121,6 @@ export function MovieDiscussion({
             />
           </div>
         </div>
-        <VoterList votes={votes} />
         <SeenByList seenBy={seenBy} />
         <NomComs
           nominationId={nomination.id}
@@ -177,36 +148,6 @@ export function MovieDiscussion({
         )}
       </section>
     </motion.div>
-  );
-}
-
-interface VoterListProps {
-  votes: Vote[];
-}
-
-function VoterList({ votes }: VoterListProps) {
-  const groups = _.groupBy(votes, (vote) => vote.voter.name);
-  return (
-    <div className={styles.voters}>
-      <span className={styles.voterCount}>
-        {votes.length} {votes.length === 1 ? "vote" : "votes"} so far
-      </span>
-      <div className={styles.voterList}>
-        {Object.entries(groups).map(([name, votes]) => {
-          const count = votes.length;
-          return (
-            <span
-              key={name}
-              className={`${styles.voter} avatar avatar-${getColor(name)}`}
-              title={`${name}: ${count} ${count === 1 ? "vote" : "votes"}`}
-            >
-              {getInitials(name)}
-              {count > 1 && <small>{count}</small>}
-            </span>
-          );
-        })}
-      </div>
-    </div>
   );
 }
 

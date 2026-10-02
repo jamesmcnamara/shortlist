@@ -45,7 +45,6 @@ export function AppMenu({ room, showMyRooms = true }: AppMenuProps) {
     <div className={styles.menu} ref={menuRef}>
       <button
         className={styles.menuButton}
-        id="tour-menu"
         type="button"
         aria-haspopup="menu"
         aria-expanded={isOpen}

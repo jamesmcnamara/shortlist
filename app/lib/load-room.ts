@@ -1,5 +1,4 @@
 import type { RoomSummary } from "@/app/lib/api";
-import { cycleFor } from "@/app/lib/cycles";
 import {
   findMembership,
   findRoomByPath,
@@ -20,7 +19,6 @@ export interface LoadedRoom {
   /** Never the raw row: the invite code must not reach the client. */
   room: SafeRoom;
   role: RoomRole;
-  currentCycle: number;
   rooms: RoomSummary[];
   userId: string;
 }
@@ -33,9 +31,6 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
       slug: rooms.slug,
       ownerId: rooms.createdBy,
       name: rooms.name,
-      cycleLength: rooms.cycleLength,
-      nominationsPerCycle: rooms.nominationsPerCycle,
-      votesPerCycle: rooms.votesPerCycle,
       role: roomMembers.role,
     })
     .from(roomMembers)
@@ -123,7 +118,6 @@ export async function loadRoom(
     data: {
       room,
       role,
-      currentCycle: cycleFor(room),
       rooms: await listRoomsForUser(userId),
       userId,
     },

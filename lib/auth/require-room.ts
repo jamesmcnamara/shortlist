@@ -3,7 +3,6 @@ import { parseRoomApiKey } from "@/lib/room-path";
 import { getDb } from "@/src/db/client";
 import { roomMembers, rooms, type Room, type RoomRole } from "@/src/db/schema";
 import { requireUserId, unauthorized } from "./require-user";
-import { PresetName } from "@/app/lib/rooms";
 
 /**
  * The invite code is a capability, so it is never part of the room object that
@@ -20,11 +19,6 @@ const ROOM_COLUMNS = {
   slug: rooms.slug,
   name: rooms.name,
   createdBy: rooms.createdBy,
-  type: rooms.type,
-  nominationsPerCycle: rooms.nominationsPerCycle,
-  votesPerCycle: rooms.votesPerCycle,
-  cycleLength: rooms.cycleLength,
-  allowSelfVote: rooms.allowSelfVote,
   description: rooms.description,
   createdAt: rooms.createdAt,
   ownerId: rooms.createdBy,

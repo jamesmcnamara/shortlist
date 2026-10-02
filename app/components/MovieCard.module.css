@@ -98,24 +98,6 @@
   margin-right: auto;
 }
 
-.stat {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.3125rem;
-  border: 0;
-  border-radius: 0.375rem;
-  background: transparent;
-  color: var(--muted);
-  font-size: 0.7906rem;
-  font-weight: 800;
-}
-
-.stat span {
-  color: var(--accent);
-  font-size: 1.0781rem;
-}
-
 .seenCount {
   display: inline-flex;
   align-items: center;
@@ -124,15 +106,4 @@
   color: var(--muted);
   font-size: 0.7906rem;
   font-weight: 800;
-}
-
-.stat:last-child span {
-  font-size: 1.0062rem;
-}
-
-.stat:hover,
-.stat:focus-visible,
-.voted {
-  background: var(--accent-wash);
-  color: var(--accent);
 }

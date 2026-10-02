@@ -12,9 +12,6 @@ import { findRoomByPath } from "@/lib/auth/require-room";
 
 const nominationRelations = {
   movie: true,
-  votes: {
-    with: { voter: true },
-  },
   nomcoms: {
     with: { commenter: true },
   },

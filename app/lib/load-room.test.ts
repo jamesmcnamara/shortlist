@@ -3,12 +3,7 @@ import { listRoomsWithPosterPreviewsForUser } from "@/app/lib/load-room";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import { setDbForTesting, type DB } from "@/src/db/client";
 import { createTestDb } from "@/src/db/test-db";
-import {
-  movies,
-  nominations,
-  roomMembers,
-  rooms,
-} from "@/src/db/schema";
+import { movies, nominations, roomMembers, rooms } from "@/src/db/schema";
 
 vi.mock("@/lib/auth/require-user", () => ({
   requireUserId: vi.fn(),
@@ -81,41 +76,35 @@ describe("listRoomsWithPosterPreviewsForUser", () => {
         roomId: firstRoom.id,
         userId: USER_ID,
         movieId: insertedMovies[0].id,
-        cycle: 0,
         createdAt: new Date("2026-01-01"),
       },
       {
         roomId: firstRoom.id,
         userId: USER_ID,
         movieId: insertedMovies[1].id,
-        cycle: 0,
         createdAt: new Date("2026-01-02"),
       },
       {
         roomId: firstRoom.id,
         userId: USER_ID,
         movieId: insertedMovies[2].id,
-        cycle: 0,
         createdAt: new Date("2026-01-03"),
       },
       {
         roomId: firstRoom.id,
         userId: USER_ID,
         movieId: insertedMovies[3].id,
-        cycle: 0,
         createdAt: new Date("2026-01-04"),
       },
       {
         roomId: secondRoom.id,
         userId: USER_ID,
         movieId: insertedMovies[4].id,
-        cycle: 0,
       },
       {
         roomId: otherRoom.id,
         userId: OTHER_USER_ID,
         movieId: insertedMovies[5].id,
-        cycle: 0,
       },
     ]);
 

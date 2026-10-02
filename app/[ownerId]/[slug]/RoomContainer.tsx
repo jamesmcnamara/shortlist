@@ -1,7 +1,5 @@
 "use client";
 
-import { useFirstRoomTour } from "@/app/components/onboarding/useFirstRoomTour";
-import { getRoomType } from "@/app/lib/rooms";
 import { parseViewState, toSearchParams } from "@/app/lib/view";
 import { authClient } from "@/lib/auth/client";
 import { Room, type RoomAPI } from "@/app/components/Room";
@@ -15,7 +13,7 @@ export interface RoomContainerProps {
 }
 
 export function RoomContainer({ noms }: RoomContainerProps) {
-  const { room, client, currentCycle } = useRoom();
+  const { client } = useRoom();
   const { data: session } = authClient.useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,30 +21,21 @@ export function RoomContainer({ noms }: RoomContainerProps) {
 
   const userId = session?.user?.id;
 
-  useFirstRoomTour({
-    roomType: getRoomType(room),
-    isReady: true,
-  });
-
   const all = useMemo(() => Array.from(nominations.values()), [nominations]);
 
-  const viewContext = useMemo(
-    () => ({ room, currentCycle, userId }),
-    [room, currentCycle, userId],
-  );
+  const viewContext = useMemo(() => ({ userId }), [userId]);
 
   const viewState = useMemo(
-    () => parseViewState(new URLSearchParams(searchParams.toString()), room),
-    [searchParams, room],
+    () => parseViewState(new URLSearchParams(searchParams.toString())),
+    [searchParams],
   );
 
   const setViewState = useCallback(
     (next: typeof viewState) => {
-      const params = toSearchParams(next, room);
-      const query = params.toString();
+      const query = toSearchParams(next).toString();
       router.replace(query ? `?${query}` : "?", { scroll: false });
     },
-    [room, router],
+    [router],
   );
 
   const api: RoomAPI = {
@@ -64,12 +53,6 @@ export function RoomContainer({ noms }: RoomContainerProps) {
         next.delete(nominationId);
         return next;
       });
-    },
-    changeVote: async (nomination, action) => {
-      const data = await (
-        action === "add" ? client.votes.create : client.votes.delete
-      )(nomination.id);
-      setNominations((prev) => new Map(prev).set(data.id, data));
     },
     addNomCom: async (nominationId, comment) => {
       const data = await client.nomcoms.create(nominationId, comment);

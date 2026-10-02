@@ -173,42 +173,11 @@
   color: var(--success);
 }
 
-.voteActions {
+.movieActions {
   display: flex;
   align-items: center;
   gap: 0.375rem;
   flex: none;
-}
-
-.votePrimary,
-.voteSecondary {
-  display: inline-grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  font-size: 1.15rem;
-  line-height: 1;
-  font-weight: 800;
-}
-
-.votePrimary {
-  background: var(--accent);
-  color: white;
-}
-
-.voteSecondary {
-  background: var(--accent-wash);
-  color: var(--accent);
-}
-
-.votePrimary:disabled,
-.voteSecondary:disabled,
-.stat:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
 }
 
 .commentsFooter {
@@ -418,13 +387,11 @@
   margin: 0;
 }
 
-.voteActions {
+.movieActions {
   align-self: flex-end;
   gap: 0.4375rem;
 }
 
-.votePrimary,
-.voteSecondary,
 .watched,
 .deleteMovie {
   width: auto;
@@ -437,16 +404,6 @@
   white-space: nowrap;
 }
 
-.votePrimary {
-  background: var(--accent-soft);
-  color: #1e5e6a;
-}
-
-.voteSecondary {
-  background: transparent;
-  color: var(--muted);
-}
-
 .watched {
   background: transparent;
   color: var(--success);
@@ -457,8 +414,6 @@
   color: var(--danger, #d64545);
 }
 
-.votePrimary:disabled,
-.voteSecondary:disabled,
 .watched:disabled {
   cursor: not-allowed;
   opacity: 0.45;
@@ -656,13 +611,9 @@
     align-items: flex-start;
   }
 
-  .voteActions {
+  .movieActions {
     width: 100%;
     align-self: auto;
-  }
-
-  .votePrimary {
-    flex: 1;
   }
 
   .commentForm {

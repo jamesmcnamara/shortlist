@@ -127,6 +127,13 @@
       "when": 1789668965973,
       "tag": "0017_drop_user_handles",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790894355013,
+      "tag": "0018_remove_movie_club",
+      "breakpoints": true
     }
   ]
 }

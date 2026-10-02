@@ -21,8 +21,7 @@ interface AddToListsProps {
 
 /**
  * Bottom sheet for adding a movie to one or more shared watch lists at once,
- * each with its own optional note. Movie club rooms use nominations instead,
- * so they never appear here.
+ * each with its own optional note.
  */
 export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
   const [allRooms, setAllRooms] = useState<RoomSummaryWithMovie[] | null>(null);
@@ -55,11 +54,6 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
-
-  const watchlists = useMemo(
-    () => (allRooms ?? []).filter((room) => room.type === "watchlist"),
-    [allRooms],
-  );
 
   const selectedRoomIds = useMemo(
     () => Object.keys(selected).filter((id) => selected[id]),
@@ -140,10 +134,8 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
                 {loadError}
               </p>
             )}
-            {allRooms !== null && watchlists.length === 0 && (
-              <EmptyState hasOtherRooms={allRooms.length > 0} />
-            )}
-            {watchlists.map((room) => (
+            {allRooms?.length === 0 && <EmptyState />}
+            {(allRooms ?? []).map((room) => (
               <RoomRow
                 key={room.id}
                 room={room}
@@ -162,7 +154,7 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
             )}
           </div>
 
-          {watchlists.length > 0 && (
+          {(allRooms ?? []).length > 0 && (
             <SheetFooter
               count={selectedRoomIds.length}
               isSubmitting={isSubmitting}
