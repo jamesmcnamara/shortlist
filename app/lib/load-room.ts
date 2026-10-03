@@ -1,4 +1,4 @@
-import type { RoomSummary } from "@/app/lib/api";
+import type { RoomSummary, RoomSummaryWithPosterPreviews } from "@/app/lib/api";
 import {
   findMembership,
   findRoomByPath,
@@ -39,10 +39,6 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
     .orderBy(desc(roomMembers.joinedAt));
 
   return memberships as RoomSummary[];
-}
-
-export interface RoomSummaryWithPosterPreviews extends RoomSummary {
-  posterUrls: string[];
 }
 
 /** Rooms the user belongs to, with up to three recent nomination posters. */

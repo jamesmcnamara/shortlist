@@ -20,20 +20,49 @@ export class ApiError extends Error {
   }
 }
 
+type MutationListener = (path: string, method: string) => Promise<void>;
+const mutationListeners = new Set<MutationListener>();
+
+export function subscribeToMutations(listener: MutationListener) {
+  let active = true;
+  const subscription: MutationListener = async (path, method) => {
+    if (active) await listener(path, method);
+  };
+  mutationListeners.add(subscription);
+  return () => {
+    active = false;
+    mutationListeners.delete(subscription);
+  };
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const method = init?.method ?? "GET";
+  // Capture the current session's listeners before a request can outlive logout.
+  const listeners = method === "GET" ? [] : [...mutationListeners];
   const response = await fetch(path, {
+    cache: "no-store",
     ...init,
     headers: init?.body
       ? { "content-type": "application/json", ...init.headers }
       : init?.headers,
   });
 
-  if (response.status === 204) return undefined as T;
-
-  const data = await response.json().catch(() => null);
+  const data =
+    response.status === 204
+      ? undefined
+      : await response.json().catch(() => {
+          throw new ApiError(
+            "The server returned an invalid response.",
+            response.status,
+          );
+        });
   if (!response.ok) {
+    if ([401, 403, 404].includes(response.status)) {
+      await Promise.all(listeners.map((listener) => listener(path, method)));
+    }
     throw new ApiError(data?.error ?? "Request failed.", response.status);
   }
+  await Promise.all(listeners.map((listener) => listener(path, method)));
   return data as T;
 }
 
@@ -43,6 +72,10 @@ export interface RoomSummary {
   ownerId: string;
   name: string;
   role: RoomRole;
+}
+
+export interface RoomSummaryWithPosterPreviews extends RoomSummary {
+  posterUrls: string[];
 }
 
 /** As `RoomSummary`, but scoped to a specific movie via `?movieId=`. */
@@ -76,6 +109,8 @@ export interface RoomDetail {
 export const api = {
   rooms: {
     list: (): Promise<RoomSummary[]> => request("/api/rooms"),
+    listWithPosters: (): Promise<RoomSummaryWithPosterPreviews[]> =>
+      request("/api/rooms?previews=true"),
     listForMovie: (movieId: number): Promise<RoomSummaryWithMovie[]> =>
       request(`/api/rooms?movieId=${movieId}`),
     create: (input: {

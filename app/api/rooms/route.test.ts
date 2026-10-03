@@ -112,6 +112,56 @@ describe("GET /api/rooms?movieId=", () => {
     ).toBe(false);
   });
 
+  describe("GET /api/rooms?previews=true", () => {
+    it("returns poster previews without invite codes or non-member rooms", async () => {
+      asUser(CASEY);
+      const otherUserId = "55555555-5555-5555-5555-555555555555";
+      await fixture.db.insert(authUsers).values({
+        id: otherUserId,
+        name: "Other",
+        email: "other@example.com",
+      });
+      await fixture.db.insert(rooms).values({
+        slug: "private",
+        name: "Private",
+        createdBy: otherUserId,
+        inviteCode: "private-invite",
+        adminInviteCode: "private-admin-invite",
+      });
+      const [posterMovie] = await fixture.db.insert(movies).values({
+        tmdbId: 2,
+        details: { title: "Poster movie", posterUrl: "https://example.com/poster.jpg" },
+        ratings: { services: [], raw: {} },
+      }).returning();
+      await fixture.db.insert(nominations).values({
+        roomId: fixture.club.id,
+        userId: CASEY,
+        movieId: posterMovie.id,
+      });
+
+      const response = await roomsRoute.GET(new Request("http://test?previews=true"));
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body).toHaveLength(3);
+      expect(body).toContainEqual(expect.objectContaining({
+        slug: "club",
+        posterUrls: ["https://example.com/poster.jpg"],
+      }));
+      expect(body).toContainEqual(expect.objectContaining({
+        slug: "other-watchlist",
+        posterUrls: [],
+      }));
+      expect(JSON.stringify(body)).not.toContain("invite");
+      expect(JSON.stringify(body)).not.toContain("Private");
+    });
+
+    it("requires a signed-in user", async () => {
+      asUser("");
+      const response = await roomsRoute.GET(new Request("http://test?previews=true"));
+      expect(response.status).toBe(401);
+    });
+  });
+
   it("marks only the room that already nominated the movie", async () => {
     const { GET } = roomsRoute;
     asUser(CASEY);

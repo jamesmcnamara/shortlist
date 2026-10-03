@@ -17,7 +17,7 @@ import { useRoom } from "../[ownerId]/[slug]/RoomContext";
 import styles from "./Room.module.css";
 
 export interface RoomAPI {
-  rescind: (nominationId: number) => Promise<void>;
+  delete: (nominationId: number) => Promise<void>;
   nominate: (candidate: Movie, comment: string) => Promise<void>;
   addNomCom: (nominationId: number, comment: string) => Promise<void>;
   updateNomRec: (nominationId: number, comment: string) => Promise<void>;
@@ -33,7 +33,6 @@ interface RoomProps {
   viewContext: ViewContext;
   userId: string | undefined;
   api: RoomAPI;
-  isLoading: boolean;
 }
 
 export function Room({
@@ -43,7 +42,6 @@ export function Room({
   setViewState,
   viewContext,
   nominees,
-  isLoading,
 }: RoomProps) {
   const { room, isAdmin } = useRoom();
   const [isNominationOpen, setIsNominationOpen] = useState(false);
@@ -61,8 +59,8 @@ export function Room({
       action: "submit your nomination",
       onStart: () => setIsNominationOpen(false),
     },
-    rescind: {
-      api: api.rescind,
+    delete: {
+      api: api.delete,
       onSuccess: closeDiscussion,
       action: "rescind your nomination",
     },
@@ -148,33 +146,26 @@ export function Room({
             {message}
           </div>
         )}
-        {(() => {
-          if (isLoading) return <LoadingOverlay />;
-          return (
-            <>
-              {visible.length === 0 && (
-                <p className={styles.message} role="status">
-                  {nominees.length === 0
-                    ? "Nothing here yet. Add the first movie."
-                    : "No movies match these filters."}
-                </p>
-              )}
-              <div className={styles.movieList}>
-                {visible.map((nom, index) => (
-                  <MovieCard
-                    key={nom.id}
-                    rank={index + 1}
-                    nomination={nom}
-                    hasSeen={some({ id: userId })(nom.seenBy)}
-                    isExpanded={focused === nom}
-                    showMeta={showMeta}
-                    onClick={() => openDiscussion(nom.id)}
-                  />
-                ))}
-              </div>
-            </>
-          );
-        })()}
+        {visible.length === 0 && (
+          <p className={styles.message} role="status">
+            {nominees.length === 0
+              ? "Nothing here yet. Add the first movie."
+              : "No movies match these filters."}
+          </p>
+        )}
+        <div className={styles.movieList}>
+          {visible.map((nom, index) => (
+            <MovieCard
+              key={nom.id}
+              rank={index + 1}
+              nomination={nom}
+              hasSeen={some({ id: userId })(nom.seenBy)}
+              isExpanded={focused === nom}
+              showMeta={showMeta}
+              onClick={() => openDiscussion(nom.id)}
+            />
+          ))}
+        </div>
       </section>
 
       {watched.length > 0 && (
@@ -221,11 +212,7 @@ export function Room({
             }
             onUpdateComment={actions.updateNomCom}
             onMarkWatched={() => actions.toggleWatched(focused.movieId)}
-            onDelete={
-              isAdmin
-                ? () => actions.rescind(focused.id)
-                : undefined
-            }
+            onDelete={isAdmin ? () => actions.delete(focused.id) : undefined}
             onToggleCompleted={
               isAdmin
                 ? () => {

@@ -100,6 +100,7 @@ function MenuLink({ href, onNavigate, children }: MenuLinkProps) {
     <Link
       className={styles.menuItem}
       href={href}
+      prefetch
       role="menuitem"
       onClick={onNavigate}
     >

@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api, type RoomDetail } from "@/app/lib/api";
 import { withTargetValue } from "@/app/lib/utils";
 import type { RoomRole } from "@/src/db/schema";
 import { useRoom } from "../RoomContext";
@@ -11,23 +10,15 @@ import { roomPath } from "@/lib/room-path";
 import styles from "./page.module.css";
 
 export default function RoomSettingsPage() {
-  const { room, client, isAdmin } = useRoom();
+  const { room, client, isAdmin, detail } = useRoom();
   const router = useRouter();
 
-  const [detail, setDetail] = useState<RoomDetail | null>(null);
   const [name, setName] = useState(room.name);
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [inviteKind, setInviteKind] = useState<"member" | "admin">("member");
-
-  useEffect(() => {
-    client
-      .get()
-      .then(setDetail)
-      .catch((error: Error) => setError(error.message));
-  }, [client]);
 
   if (!isAdmin) {
     return (
@@ -48,7 +39,6 @@ export default function RoomSettingsPage() {
     try {
       await client.update({ name: name.trim() });
       setMessage("Saved.");
-      router.refresh();
     } catch (error) {
       setError(error instanceof Error ? error.message : "Unable to save.");
     } finally {
@@ -59,8 +49,7 @@ export default function RoomSettingsPage() {
   async function rotateInvite() {
     setError("");
     try {
-      const updated = await client.rotateInvite(inviteKind);
-      setDetail((prev) => (prev ? { ...prev, ...updated } : prev));
+      await client.rotateInvite(inviteKind);
       setMessage("The old link no longer works.");
     } catch (error) {
       setError(
@@ -73,7 +62,6 @@ export default function RoomSettingsPage() {
     setError("");
     try {
       await client.members.setRole(userId, role);
-      setDetail(await client.get());
     } catch (error) {
       setError(
         error instanceof Error
@@ -87,7 +75,6 @@ export default function RoomSettingsPage() {
     setError("");
     try {
       await client.members.remove(userId);
-      setDetail(await client.get());
     } catch (error) {
       setError(
         error instanceof Error

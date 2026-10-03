@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { DataProvider } from "./lib/data/DataProvider";
 
 export const metadata: Metadata = {
   title: "Shortlist",
@@ -28,7 +29,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <DataProvider>{children}</DataProvider>
+      </body>
     </html>
   );
 }

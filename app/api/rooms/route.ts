@@ -8,6 +8,7 @@ import {
 import { roomPath } from "@/lib/room-path";
 import { getDb } from "@/src/db/client";
 import { nominations, roomMembers, rooms } from "@/src/db/schema";
+import { listRoomsWithPosterPreviewsForUser } from "@/app/lib/load-room";
 
 export const runtime = "nodejs";
 
@@ -20,7 +21,11 @@ export const GET = withUser({ error: "Unable to load your rooms." })(async (
   request: Request,
   userId: string,
 ) => {
-  const rawMovieId = new URL(request.url).searchParams.get("movieId");
+  const params = new URL(request.url).searchParams;
+  if (params.get("previews") === "true") {
+    return Response.json(await listRoomsWithPosterPreviewsForUser(userId));
+  }
+  const rawMovieId = params.get("movieId");
   const movieId = rawMovieId === null ? null : Number(rawMovieId);
   const hasValidMovieId = movieId !== null && Number.isInteger(movieId);
 

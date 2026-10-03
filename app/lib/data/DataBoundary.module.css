@@ -1,0 +1,13 @@
+.message {
+  width: min(100% - 2.5rem, 53.75rem);
+  margin: 1.5rem auto;
+  color: var(--text);
+}
+
+.message button {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.25rem;
+  background: var(--surface-muted);
+  color: var(--text);
+}

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { api, ApiError, type RoomSummaryWithMovie } from "@/app/lib/api";
+import { useRoomsForMovie } from "@/app/lib/data/queries";
 import type { Movie } from "@/src/db/schema";
 import { EmptyState } from "./EmptyState";
 import { RoomRow } from "./RoomRow";
@@ -24,28 +25,13 @@ interface AddToListsProps {
  * each with its own optional note.
  */
 export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
-  const [allRooms, setAllRooms] = useState<RoomSummaryWithMovie[] | null>(null);
-  const [loadError, setLoadError] = useState("");
+  const { data: allRooms, error, retry } = useRoomsForMovie(movie.id);
+  const loadError = error?.message;
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [comments, setComments] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<Record<string, RowStatus>>({});
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    api.rooms
-      .listForMovie(movie.id)
-      .then((data) => {
-        if (!cancelled) setAllRooms(data);
-      })
-      .catch(() => {
-        if (!cancelled) setLoadError("Unable to load your lists.");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [movie.id]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -66,7 +52,6 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
   }
 
   function addRoom(room: RoomSummaryWithMovie) {
-    setAllRooms((prev) => [room, ...(prev ?? [])]);
     setSelected((prev) => ({ ...prev, [room.id]: true }));
   }
 
@@ -128,10 +113,14 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
           }}
         >
           <div className={styles.rooms}>
-            {allRooms === null && !loadError && <RoomSkeleton />}
+            {!allRooms && !loadError && <RoomSkeleton />}
             {loadError && (
               <p className={styles.status} role="alert">
                 {loadError}
+                {" "}
+                <button type="button" onClick={() => retry()}>
+                  Try again
+                </button>
               </p>
             )}
             {allRooms?.length === 0 && <EmptyState />}
@@ -149,7 +138,7 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
                 }
               />
             ))}
-            {allRooms !== null && !loadError && (
+            {allRooms && !loadError && (
               <NewListForm onCreated={addRoom} />
             )}
           </div>

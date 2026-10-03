@@ -1,9 +1,21 @@
 "use client";
 
 import { createContext, useContext, useMemo } from "react";
-import { api, type RoomApi, type RoomSummary } from "@/app/lib/api";
+import {
+  api,
+  type RoomApi,
+  type RoomDetail,
+  type RoomSummary,
+} from "@/app/lib/api";
 import type { SafeRoom } from "@/lib/auth/require-room";
-import type { RoomRole } from "@/src/db/schema";
+import type { Nomination, RoomRole } from "@/src/db/schema";
+import {
+  useNominations,
+  useRoomDetail,
+  useRooms,
+} from "@/app/lib/data/queries";
+import { DataBoundary } from "@/app/lib/data/DataBoundary";
+import { isAccessError } from "@/app/lib/data/DataProvider";
 
 interface RoomContextValue {
   room: SafeRoom;
@@ -11,35 +23,50 @@ interface RoomContextValue {
   rooms: RoomSummary[];
   client: RoomApi;
   isAdmin: boolean;
+  detail: RoomDetail;
+  noms: Nomination[];
 }
 
 const RoomContext = createContext<RoomContextValue | null>(null);
 
 interface RoomProviderProps {
-  room: SafeRoom;
-  role: RoomRole;
-  rooms: RoomSummary[];
+  ownerId: string;
+  slug: string;
   children: React.ReactNode;
 }
 
-export function RoomProvider({
-  room,
-  role,
-  rooms,
-  children,
-}: RoomProviderProps) {
-  const value = useMemo<RoomContextValue>(
-    () => ({
-      room,
-      role,
+export function RoomProvider({ ownerId, slug, children }: RoomProviderProps) {
+  const { data: detail, ...detailQuery } = useRoomDetail({ ownerId, slug });
+  const { data: rooms, ...roomsQuery } = useRooms();
+  const { data: noms, ...nomQuery } = useNominations({
+    ownerId,
+    slug,
+  });
+  const client = useMemo(() => api.room(ownerId, slug), [ownerId, slug]);
+  const value = useMemo<RoomContextValue | null>(() => {
+    if (!detail || !rooms || !noms) return null;
+    return {
+      room: detail.room,
+      role: detail.membership.role,
       rooms,
-      client: api.room(room.ownerId, room.slug),
-      isAdmin: role === "admin",
-    }),
-    [room, role, rooms],
-  );
+      client,
+      isAdmin: detail.membership.role === "admin",
+      detail,
+      noms,
+    };
+  }, [detail, rooms, noms, client]);
 
-  return <RoomContext.Provider value={value}>{children}</RoomContext.Provider>;
+  const queries = [detailQuery, roomsQuery, nomQuery];
+  const errors = queries.map((query) => query.error);
+  return (
+    <DataBoundary
+      pending={!value}
+      error={errors.find(isAccessError) ?? errors.find(Boolean)}
+      retry={() => Promise.all(queries.map((query) => query.retry()))}
+    >
+      <RoomContext.Provider value={value}>{children}</RoomContext.Provider>
+    </DataBoundary>
+  );
 }
 
 export function useRoom(): RoomContextValue {
