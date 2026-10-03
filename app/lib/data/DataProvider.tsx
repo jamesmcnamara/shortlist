@@ -1,20 +1,28 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useRef } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { usePathname } from "next/navigation";
 import { SWRConfig, useSWRConfig } from "swr";
 import { authClient } from "@/lib/auth/client";
 import { ApiError, subscribeToMutations } from "../api";
+import { createCacheProvider } from "./cache-provider";
 
 interface DataSession {
   userId?: string;
   isPending: boolean;
   error: { message?: string } | null;
   retry: () => unknown;
+  cacheReady: boolean;
 }
 
 const SessionContext = createContext<DataSession | null>(null);
-
 export function useDataSession() {
   const session = useContext(SessionContext);
   if (!session) throw new Error("Data hooks must be used inside DataProvider.");
@@ -26,25 +34,46 @@ export const isAccessError = (error: unknown): error is ApiError =>
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const { data: session, isPending, error, refetch } = authClient.useSession();
+  const [cacheReady, setCacheReady] = useState(false);
+
+  // Wait for hydration before enabling queries that can read localStorage.
+  // prevents accessing localStorage on the server
+  useEffect(() => setCacheReady(true), []);
+
   return (
     <SessionContext.Provider
-      value={{ userId: session?.user.id, isPending, error, retry: refetch }}
+      value={{
+        userId: session?.user.id,
+        isPending,
+        error,
+        retry: refetch,
+        cacheReady,
+      }}
     >
-      <SessionCache key={session?.session.id ?? "anonymous"}>
+      <SessionCache
+        key={`${session?.session.id ?? "anonymous"}:${cacheReady}`}
+        userId={session?.user.id}
+      >
         {children}
       </SessionCache>
     </SessionContext.Provider>
   );
 }
 
-function SessionCache({ children }: { children: React.ReactNode }) {
+function SessionCache({
+  children,
+  userId,
+}: {
+  children: React.ReactNode;
+  userId?: string;
+}) {
   const config = useMemo(
     () => ({
-      provider: () => new Map(),
+      provider: () => createCacheProvider(userId),
       shouldRetryOnError: (error: Error) => !isAccessError(error),
       errorRetryCount: 2,
     }),
-    [],
+    [userId],
   );
 
   return (

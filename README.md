@@ -12,17 +12,18 @@ page.
 
 ## Client data caching
 
-The home page, room pages, settings, and the room picker share an in-memory SWR
-cache. Previously loaded content appears immediately on revisits while SWR
-refreshes it in the background. It also refreshes on navigation, window focus,
-and reconnect. This is not persistent or offline storage: reloading the app
-starts a fresh cache.
+The home page, room pages, settings, and the room picker share an SWR cache
+backed by `localStorage`. Previously loaded content appears immediately after
+revisiting or reloading while SWR refreshes it in the background. It also
+refreshes on navigation, window focus, and reconnect. This is not offline
+storage: the app still needs the server to fetch current data.
 
 `app/lib/data/` owns the provider, query hooks, loading/error boundary, and room
 actions. Components use these hooks and the existing API client, not SWR cache
 keys or invalidation calls. The provider survives navigation and creates a new
 cache on login, logout, or a session change. Access-denied responses hide cached
 content; temporary refresh failures retain it with an error and retry control.
+The saved cache is namespaced by user ID and stores only successful query data.
 
 Successful API writes refresh the shared room queries automatically. This is
 deliberately broad: watched status and membership changes can affect multiple
@@ -32,8 +33,8 @@ New reads belong in `app/lib/data/queries.ts`; writes should keep using
 
 Room HTML is a data-free shell; the existing authenticated API routes enforce
 membership for every read and write. The service worker caches assets, but
-authenticated API responses and page navigations use the network, so a second
-persistent cache cannot interfere with SWR freshness or account isolation.
+authenticated API responses and page navigations use the network, leaving SWR
+as the only cache for private data.
 
 ## Local development
 

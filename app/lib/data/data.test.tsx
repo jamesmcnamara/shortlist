@@ -73,6 +73,7 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 }
 
 beforeEach(() => {
+  localStorage.clear();
   auth.data = { session: { id: "session-alice" }, user: { id: "alice" } };
   auth.isPending = false;
   auth.error = null;
@@ -365,7 +366,7 @@ describe("shared data cache", () => {
     await waitFor(() => expect(result.current.data).toEqual([]));
   });
 
-  it("discards cache on logout and a new login, even for the same user", async () => {
+  it("restores the same user's cache after logout and a new login", async () => {
     const secondLogin = deferred<Response>();
     fetchMock
       .mockResolvedValueOnce(json([{ id: 1, comment: "Private" }]))
@@ -382,7 +383,8 @@ describe("shared data cache", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     auth.data = { session: { id: "new-session" }, user: { id: "alice" } };
     rerender();
-    expect(result.current.data).toBeUndefined();
+    expect(result.current.data?.[0].comment).toBe("Private");
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     await act(async () =>
       secondLogin.resolve(json([{ id: 1, comment: "New session" }])),
     );

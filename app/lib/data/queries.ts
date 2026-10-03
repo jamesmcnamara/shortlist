@@ -6,8 +6,8 @@ import { roomApiKey } from "@/lib/room-path";
 import { isAccessError, useDataSession } from "./DataProvider";
 
 function useQuery<T>(key: string, fetcher: () => Promise<T>) {
-  const { userId } = useDataSession();
-  const query = useSWR<T, Error>(userId ? key : null, fetcher);
+  const { userId, cacheReady } = useDataSession();
+  const query = useSWR<T, Error>(userId && cacheReady ? key : null, fetcher);
   return {
     data: isAccessError(query.error) ? undefined : query.data,
     error: query.error,
