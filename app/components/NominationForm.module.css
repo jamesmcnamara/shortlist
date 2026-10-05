@@ -1,28 +1,9 @@
 .panel {
-  margin: -0.75rem 0 2.25rem;
-  padding: 1.375rem;
+  padding: 1.125rem;
   border: 1px solid var(--accent-soft);
   border-radius: 0.875rem;
   background: var(--surface);
   box-shadow: var(--shadow);
-}
-
-.heading {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-}
-
-.heading h2 {
-  margin: 0;
-  font-size: 1.725rem;
-  letter-spacing: -0.06em;
-}
-
-.intro {
-  margin: 0.375rem 0 1.375rem;
-  color: var(--muted);
-  font-size: 1.0062rem;
 }
 
 .close {
@@ -39,33 +20,6 @@
   color: var(--text-soft);
   font-size: 0.9344rem;
   font-weight: 800;
-}
-
-.searchInput {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 0 0.8125rem;
-  border: 1px solid var(--border);
-  border-radius: 0.5625rem;
-  background: white;
-}
-
-.searchInput span {
-  color: var(--accent);
-  font-size: 1.5812rem;
-}
-
-.searchInput input {
-  width: 100%;
-  padding: 0.75rem 0;
-  border: 0;
-  outline: 0;
-  background: transparent;
-}
-
-.searchInput input::placeholder {
-  color: var(--muted-soft);
 }
 
 .selected {
@@ -166,30 +120,6 @@
 .footer button span {
   margin-left: 0.4375rem;
   color: var(--accent-light);
-}
-
-.limitMessage {
-  display: flex;
-  align-items: center;
-  gap: 0.8125rem;
-  padding: 0.875rem;
-  border-radius: 0.625rem;
-  background: var(--surface-muted);
-}
-
-.limitMessage > span {
-  color: var(--success);
-  font-size: 1.5812rem;
-}
-
-.limitMessage strong {
-  font-size: 1.0062rem;
-}
-
-.limitMessage p {
-  margin: 0.25rem 0 0;
-  color: var(--muted);
-  font-size: 0.8625rem;
 }
 
 @media (max-width: 40rem) {

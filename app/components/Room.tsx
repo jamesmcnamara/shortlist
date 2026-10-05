@@ -3,7 +3,6 @@
 import { LoadingOverlay } from "@/app/components/LoadingOverlay";
 import { MovieCard } from "@/app/components/MovieCard";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
-import { NominationPanel } from "@/app/components/NominationPanel";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import { ViewControls } from "@/app/components/ViewControls";
 import { useAPIActions } from "@/app/lib/useAPIActions";
@@ -44,7 +43,6 @@ export function Room({
   nominees,
 }: RoomProps) {
   const { room, isAdmin } = useRoom();
-  const [isNominationOpen, setIsNominationOpen] = useState(false);
   const { focusedId, closeDiscussion, openDiscussion } =
     useMovieDiscussionHistory();
   const [isWatchedOpen, setIsWatchedOpen] = useState(false);
@@ -57,7 +55,6 @@ export function Room({
     nominate: {
       api: api.nominate,
       action: "submit your nomination",
-      onStart: () => setIsNominationOpen(false),
     },
     delete: {
       api: api.delete,
@@ -126,20 +123,10 @@ export function Room({
         <ViewControls
           state={viewState}
           onChange={setViewState}
-          nominateLabel="Add a movie"
-          onNominate={() => setIsNominationOpen((open) => !open)}
+          existing={existing}
+          isSubmitting={isSubmitting}
+          onNominate={actions.nominate}
         />
-
-        <AnimatePresence initial={false}>
-          {isNominationOpen && (
-            <NominationPanel
-              existing={existing}
-              isSubmitting={isSubmitting}
-              onClose={() => setIsNominationOpen(false)}
-              onSubmit={actions.nominate}
-            />
-          )}
-        </AnimatePresence>
 
         {message && (
           <div className={styles.message} role="status">

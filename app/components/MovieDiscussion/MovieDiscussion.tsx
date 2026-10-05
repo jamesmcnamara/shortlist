@@ -114,7 +114,7 @@ export function MovieDiscussion({
               value={nomination.comment ?? ""}
               canEdit={nomination.userId === currentUserId}
               allowBlank
-              emptyText="No pitch yet."
+              emptyText=""
               editLabel={`Edit ${details.title} nomination comment`}
               inputLabel={`Nomination comment for ${details.title}`}
               onSave={onUpdateNominationComment}
@@ -122,13 +122,6 @@ export function MovieDiscussion({
           </div>
         </div>
         <SeenByList seenBy={seenBy} />
-        <NomComs
-          nominationId={nomination.id}
-          nomcoms={nomcoms}
-          currentUserId={currentUserId}
-          onAddComment={onAddComment}
-          onUpdateComment={onUpdateComment}
-        />
         {onToggleCompleted && (
           <div className={styles.adminActions}>
             <button

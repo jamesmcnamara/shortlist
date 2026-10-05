@@ -1,10 +1,18 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { MovieCard } from "@/app/components/MovieCard";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
-import { NominationPanel } from "@/app/components/NominationPanel";
+import { NominationForm } from "@/app/components/NominationForm";
+import { ViewControls } from "@/app/components/ViewControls";
 import { LoadingOverlay } from "@/app/components/LoadingOverlay";
 import type { MovieDetails, Nomination } from "@/src/db/schema";
 
@@ -34,6 +42,8 @@ const nomination: Nomination = {
   nominator: { id: "user", name: "Alice", email: "alice@example.com" },
   seenBy: [],
 };
+
+afterEach(cleanup);
 
 describe("high-churn component smoke tests", () => {
   it("renders an accessible loading overlay", () => {
@@ -68,23 +78,51 @@ describe("high-churn component smoke tests", () => {
     expect(onToggleDiscussion).toHaveBeenCalledOnce();
   });
 
-  it("renders the nomination panel and closes it", () => {
-    const onClose = vi.fn();
-
+  it("expands the search bar over the sort and filter toggles", async () => {
     render(
-      <NominationPanel
-        isSubmitting={false}
+      <ViewControls
+        state={{ sort: "newest", filters: [] }}
+        onChange={vi.fn()}
         existing={new Set()}
-        onClose={onClose}
-        onSubmit={vi.fn()}
+        isSubmitting={false}
+        onNominate={vi.fn()}
       />,
     );
 
-    expect(screen.getByRole("heading", { name: "Add a movie" })).toBeTruthy();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Close nomination panel" }),
+    const search = screen.getByRole("textbox", {
+      name: "Search for a movie to add",
+    });
+    expect(screen.getByRole("button", { name: "Sort by" })).toBeTruthy();
+
+    act(() => search.focus());
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "Sort by" })).toBeNull(),
     );
-    expect(onClose).toHaveBeenCalledOnce();
+
+    fireEvent.click(screen.getByRole("button", { name: "Close search" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Sort by" })).toBeTruthy(),
+    );
+  });
+
+  it("submits a nomination comment", () => {
+    const onSubmit = vi.fn();
+
+    render(
+      <NominationForm
+        candidate={nomination.movie}
+        isSubmitting={false}
+        onCancel={vi.fn()}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Why should we watch it?" }),
+      { target: { value: "So good" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Add movie/ }));
+    expect(onSubmit).toHaveBeenCalledWith("So good");
   });
 
   it("lets the current user edit their nomination comment", async () => {
