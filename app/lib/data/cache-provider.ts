@@ -1,4 +1,6 @@
 const CACHE_KEY = "shortlist:swr-cache";
+// Search results are only useful for the current visit.
+const EPHEMERAL_PREFIX = "/api/tmdb/";
 
 type CacheEntry = { data?: unknown; _k?: unknown };
 
@@ -44,7 +46,10 @@ class LocalStorageCache extends Map<string, CacheEntry> {
 
     try {
       const entries = [...this.entries()]
-        .filter(([, value]) => value.data !== undefined)
+        .filter(
+          ([key, value]) =>
+            value.data !== undefined && !key.startsWith(EPHEMERAL_PREFIX),
+        )
         .map(([key, value]) => [key, { data: value.data, _k: value._k }]);
       window.localStorage.setItem(this.storageKey, JSON.stringify(entries));
     } catch (error) {

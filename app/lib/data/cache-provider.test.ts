@@ -31,6 +31,16 @@ describe("persistent SWR cache provider", () => {
     expect(JSON.parse(localStorage.getItem(aliceKey) ?? "[]")).toEqual([]);
   });
 
+  it("keeps movie search results in memory only", () => {
+    const cache = createCacheProvider("alice");
+    cache.set("/api/tmdb/search?query=alien", { data: [{ id: 1 }] });
+
+    expect(cache.get("/api/tmdb/search?query=alien")?.data).toEqual([
+      { id: 1 },
+    ]);
+    expect(JSON.parse(localStorage.getItem(aliceKey) ?? "[]")).toEqual([]);
+  });
+
   it("keeps each user's cache separate", () => {
     createCacheProvider("alice").set("/api/rooms", { data: ["Alice"] });
     createCacheProvider("bob").set("/api/rooms", { data: ["Bob"] });

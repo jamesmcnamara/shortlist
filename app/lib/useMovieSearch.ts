@@ -1,6 +1,6 @@
 import { api, ApiError } from "@/app/lib/api";
 import type { Movie } from "@/src/db/schema";
-import { useEffect, useState } from "react";
+import useSWRImmutable from "swr/immutable";
 import { useDebounce } from "use-debounce";
 
 const MIN_QUERY_LENGTH = 2;
@@ -11,46 +11,32 @@ export interface MovieSearchResult {
   isLoading: boolean;
 }
 
-/** Debounced TMDB search that drops responses for stale queries. */
+const searchKey = (query: string) =>
+  query.length >= MIN_QUERY_LENGTH
+    ? `/api/tmdb/search?query=${encodeURIComponent(query)}`
+    : null;
+
+/** Debounced, cached TMDB search. */
 export function useMovieSearch(query: string): MovieSearchResult {
   const trimmed = query.trim();
   const [debounced] = useDebounce(trimmed, 350);
-  const [results, setResults] = useState<Movie[]>([]);
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    setError("");
-    setResults([]);
-    if (debounced.length < MIN_QUERY_LENGTH) {
-      setIsLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    setIsLoading(true);
-    api.tmdb
-      .search(debounced, controller.signal)
-      .then((movies) => {
-        if (!controller.signal.aborted) setResults(movies);
-      })
-      .catch((error) => {
-        if (controller.signal.aborted) return;
-        setError(error instanceof ApiError ? error.message : "Search failed.");
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setIsLoading(false);
-      });
-
-    return () => controller.abort();
-  }, [debounced]);
+  const { data, error, isLoading } = useSWRImmutable<Movie[], Error>(
+    searchKey(debounced),
+    () => api.tmdb.search(debounced),
+  );
 
   const isActive = trimmed.length >= MIN_QUERY_LENGTH;
   const isStale = trimmed !== debounced;
+  const isSettled = isActive && !isStale;
 
   return {
-    results: isActive && !isStale ? results : [],
-    error: isActive && !isStale ? error : "",
+    results: isSettled ? (data ?? []) : [],
+    error:
+      isSettled && error
+        ? error instanceof ApiError
+          ? error.message
+          : "Search failed."
+        : "",
     isLoading: isActive && (isStale || isLoading),
   };
 }
