@@ -19,9 +19,11 @@ async function loadMovies(tmdbIds: number[]): Promise<Movie[]> {
   if (tmdbIds.length === 0 || !provider.hasCredentials()) return [];
 
   const results = await Promise.allSettled(tmdbIds.map(provider.get));
-  return results.flatMap((result) =>
-    result.status === "fulfilled" ? [result.value] : [],
-  );
+  return results.flatMap((result) => {
+    if (result.status === "fulfilled") return [result.value];
+    console.error(result.reason);
+    return [];
+  });
 }
 
 export default async function ComparePage({ searchParams }: ComparePageProps) {

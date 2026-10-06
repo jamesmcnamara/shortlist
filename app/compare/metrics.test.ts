@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import type { Movie } from "@/src/db/schema";
 import {
   compareHref,
-  MAX_MOVIES,
   METRICS,
   parseTmdbIds,
   scoreRow,
+  sortMovies,
 } from "./metrics";
 
 const higher = { range: [0, 10] as [number, number], lowerIsBetter: false };
@@ -81,9 +81,10 @@ describe("parseTmdbIds", () => {
     expect(parseTmdbIds("abc,0,-4,1.5,1234567890,,42, 9")).toEqual([42]);
   });
 
-  it("caps at MAX_MOVIES", () => {
-    const ids = Array.from({ length: MAX_MOVIES + 3 }, (_, i) => i + 1);
-    expect(parseTmdbIds(ids.join(","))).toHaveLength(MAX_MOVIES);
+  it("keeps lots of ids but stops at a sane ceiling", () => {
+    const ids = Array.from({ length: 80 }, (_, i) => i + 1);
+    expect(parseTmdbIds(ids.slice(0, 12).join(","))).toHaveLength(12);
+    expect(parseTmdbIds(ids.join(","))).toHaveLength(50);
   });
 
   it("handles a missing param", () => {
@@ -98,5 +99,23 @@ describe("compareHref", () => {
 
   it("drops the query when empty", () => {
     expect(compareHref([])).toBe("/compare");
+  });
+});
+
+describe("sortMovies", () => {
+  const byValue = {
+    read: (movie: Movie) => (movie.id === 4 ? null : movie.id % 10),
+  };
+  const movies = [13, 4, 31, 22, 3].map((id) => ({ id }) as Movie);
+  const ids = (list: Movie[]) => list.map(({ id }) => id);
+
+  it("sorts highest first, keeping ties in order and missing last", () => {
+    expect(ids(sortMovies(movies, byValue, "desc"))).toEqual([
+      13, 3, 22, 31, 4,
+    ]);
+  });
+
+  it("sorts lowest first with missing still last", () => {
+    expect(ids(sortMovies(movies, byValue, "asc"))).toEqual([31, 22, 13, 3, 4]);
   });
 });

@@ -3,9 +3,10 @@ import { find } from "shades";
 
 export type Scale = "absolute" | "relative";
 
-export const MAX_MOVIES = 5;
+// Not a UI limit, just keeps a hand-crafted URL from fanning out into lots of TMDB fetches.
+const MAX_URL_MOVIES = 50;
 
-/** Reads `?tmdb=1,2,3` into unique, positive TMDB ids, capped at MAX_MOVIES. */
+/** Reads `?tmdb=1,2,3` into unique, positive TMDB ids. */
 export const parseTmdbIds = (param: string | string[] | undefined) =>
   [
     ...new Set(
@@ -16,7 +17,7 @@ export const parseTmdbIds = (param: string | string[] | undefined) =>
         .map(Number)
         .filter((id) => id > 0),
     ),
-  ].slice(0, MAX_MOVIES);
+  ].slice(0, MAX_URL_MOVIES);
 
 export const compareHref = (tmdbIds: number[]) =>
   tmdbIds.length > 0 ? `/compare?tmdb=${tmdbIds.join(",")}` : "/compare";
@@ -88,6 +89,25 @@ export const METRICS: Metric[] = [
     format: (value) => formatRuntime(Math.round(value)),
   },
 ];
+
+export type SortDirection = "desc" | "asc";
+
+/** Orders movies by a metric's raw value. Missing values always go last. */
+export const sortMovies = (
+  movies: Movie[],
+  metric: Pick<Metric, "read">,
+  direction: SortDirection,
+) => {
+  const sign = direction === "desc" ? -1 : 1;
+  return movies
+    .map((movie) => ({ movie, value: metric.read(movie) }))
+    .toSorted((a, b) =>
+      a.value === null || b.value === null
+        ? Number(a.value === null) - Number(b.value === null)
+        : sign * (a.value - b.value),
+    )
+    .map(({ movie }) => movie);
+};
 
 const clamp = (value: number) => Math.min(1, Math.max(0, value));
 

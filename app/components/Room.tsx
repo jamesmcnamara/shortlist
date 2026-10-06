@@ -1,6 +1,6 @@
 "use client";
 
-import { compareHref, MAX_MOVIES } from "@/app/compare/metrics";
+import { compareHref } from "@/app/compare/metrics";
 import { MovieCard } from "@/app/components/MovieCard";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
@@ -13,7 +13,7 @@ import classnames from "classnames";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { find, map, some } from "shades";
+import { all, filter, find, get, map, some } from "shades";
 import { useRoom } from "../[ownerId]/[slug]/RoomContext";
 import styles from "./Room.module.css";
 
@@ -68,9 +68,7 @@ export function Room({
         ? [tmdbId]
         : current.includes(tmdbId)
           ? current.filter((id) => id !== tmdbId)
-          : current.length < MAX_MOVIES
-            ? [...current, tmdbId]
-            : current,
+          : [...current, tmdbId],
     );
 
   const cardProps = (nom: Nomination) => {
@@ -134,6 +132,10 @@ export function Room({
       ),
     [nominees, viewState, viewContext],
   );
+
+  const visibleIds = filter(Boolean)(
+    get(all(), "movie", "tmdbId")(visible),
+  ) as number[];
 
   const watched = useMemo(
     () => nominees.filter((nom) => nom.completed),
@@ -243,9 +245,14 @@ export function Room({
             exit={{ y: "120%" }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           >
-            <span aria-live="polite">
-              {comparing.length} of {MAX_MOVIES} picked
-            </span>
+            <span aria-live="polite">{comparing.length} picked</span>
+            <button
+              type="button"
+              className={styles.compareAll}
+              onClick={() => setComparing(visibleIds)}
+            >
+              Select All
+            </button>
             <button
               type="button"
               className={styles.compareCancel}
