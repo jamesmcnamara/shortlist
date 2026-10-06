@@ -1,15 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MovieSearchResults } from "@/app/components/MovieSearchResults";
 import { useMovieSearch } from "@/app/lib/useMovieSearch";
 import { capitalize, withTargetValue } from "@/app/lib/utils";
 import type { Movie } from "@/src/db/schema";
-import { METRICS, scoreRow, type Scale } from "./metrics";
+import {
+  compareHref,
+  MAX_MOVIES,
+  METRICS,
+  scoreRow,
+  type Scale,
+} from "./metrics";
 import styles from "./page.module.css";
 import { filter, not } from "shades";
-
-const MAX_MOVIES = 5;
 
 const SCALE_HINTS: Record<Scale, string> = {
   relative: "Colors rank these movies against each other.",
@@ -35,11 +39,19 @@ const heat = (score: number) => {
   return `color-mix(in srgb, ${HEAT_STOPS[index + 1]} ${weight}%, ${HEAT_STOPS[index]})`;
 };
 
-export function MovieCompare() {
+export function MovieCompare({ initialMovies }: { initialMovies: Movie[] }) {
   const [query, setQuery] = useState("");
-  const [movies, setMovies] = useState<Movie[]>([]);
+  const [movies, setMovies] = useState<Movie[]>(initialMovies);
   const [scale, setScale] = useState<Scale>("relative");
   const { results, error, isLoading } = useMovieSearch(query);
+
+  useEffect(() => {
+    window.history.replaceState(
+      null,
+      "",
+      compareHref(movies.flatMap(({ tmdbId }) => tmdbId ?? [])),
+    );
+  }, [movies]);
 
   const isFull = movies.length >= MAX_MOVIES;
   const freshResults = results.filter(
@@ -154,7 +166,7 @@ export function MovieCompare() {
       <section className={styles.search} aria-label="Add a movie">
         {isFull ? (
           <p className={styles.hint}>
-            Four's a crowd. Remove one to add another.
+            Full house. Remove one to add another.
           </p>
         ) : (
           <>

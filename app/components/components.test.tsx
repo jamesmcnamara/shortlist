@@ -65,6 +65,7 @@ describe("high-churn component smoke tests", () => {
         showMeta
         isExpanded={false}
         onClick={onToggleDiscussion}
+        onLongPress={vi.fn()}
       />,
     );
 

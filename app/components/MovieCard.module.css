@@ -9,6 +9,9 @@
   border: 0;
   background: transparent;
   text-align: left;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .poster {
@@ -40,6 +43,41 @@
 
 .watchedPoster img {
   filter: grayscale(0.5) saturate(0.5) brightness(0.5);
+}
+
+.selectedPoster {
+  outline: 0.1875rem solid var(--text);
+  outline-offset: 0.1875rem;
+}
+
+.selectMark {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 1;
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 0.125rem solid white;
+  border-radius: 50%;
+  background: rgba(20, 20, 32, 0.35);
+  box-shadow: 0 1px 4px rgba(20, 20, 32, 0.4);
+  place-items: center;
+}
+
+.selectedPoster .selectMark {
+  border-color: var(--text);
+  background: var(--text);
+}
+
+.selectedPoster .selectMark::after {
+  width: 0.4375rem;
+  height: 0.75rem;
+  margin-top: -0.1875rem;
+  border: solid white;
+  border-width: 0 0.15625rem 0.15625rem 0;
+  content: "";
+  transform: rotate(45deg);
 }
 
 .posterShade {

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Movie } from "@/src/db/schema";
-import { METRICS, scoreRow } from "./metrics";
+import {
+  compareHref,
+  MAX_MOVIES,
+  METRICS,
+  parseTmdbIds,
+  scoreRow,
+} from "./metrics";
 
 const higher = { range: [0, 10] as [number, number], lowerIsBetter: false };
 const runtime = { range: [80, 180] as [number, number], lowerIsBetter: true };
@@ -63,5 +69,34 @@ describe("METRICS", () => {
   it("formats runtimes as hours and minutes", () => {
     const runtimeMetric = METRICS.find(({ name }) => name === "Runtime")!;
     expect(runtimeMetric.format(125)).toBe("2h 5m");
+  });
+});
+
+describe("parseTmdbIds", () => {
+  it("keeps valid unique ids in order", () => {
+    expect(parseTmdbIds("12,7,12,3")).toEqual([12, 7, 3]);
+  });
+
+  it("drops junk, zero, negatives, and oversized ids", () => {
+    expect(parseTmdbIds("abc,0,-4,1.5,1234567890,,42, 9")).toEqual([42]);
+  });
+
+  it("caps at MAX_MOVIES", () => {
+    const ids = Array.from({ length: MAX_MOVIES + 3 }, (_, i) => i + 1);
+    expect(parseTmdbIds(ids.join(","))).toHaveLength(MAX_MOVIES);
+  });
+
+  it("handles a missing param", () => {
+    expect(parseTmdbIds(undefined)).toEqual([]);
+  });
+});
+
+describe("compareHref", () => {
+  it("builds a query when there are ids", () => {
+    expect(compareHref([1, 2])).toBe("/compare?tmdb=1,2");
+  });
+
+  it("drops the query when empty", () => {
+    expect(compareHref([])).toBe("/compare");
   });
 });

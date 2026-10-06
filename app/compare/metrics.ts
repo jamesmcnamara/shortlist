@@ -3,6 +3,24 @@ import { find } from "shades";
 
 export type Scale = "absolute" | "relative";
 
+export const MAX_MOVIES = 5;
+
+/** Reads `?tmdb=1,2,3` into unique, positive TMDB ids, capped at MAX_MOVIES. */
+export const parseTmdbIds = (param: string | string[] | undefined) =>
+  [
+    ...new Set(
+      [param ?? []]
+        .flat()
+        .flatMap((value) => value.split(","))
+        .filter((value) => /^\d{1,9}$/.test(value))
+        .map(Number)
+        .filter((id) => id > 0),
+    ),
+  ].slice(0, MAX_MOVIES);
+
+export const compareHref = (tmdbIds: number[]) =>
+  tmdbIds.length > 0 ? `/compare?tmdb=${tmdbIds.join(",")}` : "/compare";
+
 export interface Metric {
   name: string;
   logo: string | null;

@@ -2,6 +2,7 @@ import type { Nomination } from "@/src/db/schema";
 import styles from "./MovieCard.module.css";
 import { getColor, getInitials } from "@/app/lib/utils";
 import classnames from "classnames";
+import { useLongPress } from "@/app/lib/useLongPress";
 
 interface MovieCardProps {
   nomination: Nomination;
@@ -10,7 +11,10 @@ interface MovieCardProps {
   showMeta: boolean;
   isExpanded: boolean;
   isCompleted?: boolean;
+  /** Set while picking movies to compare; undefined otherwise. */
+  isSelected?: boolean;
   onClick: () => void;
+  onLongPress: () => void;
 }
 
 export function MovieCard({
@@ -20,8 +24,12 @@ export function MovieCard({
   showMeta,
   isExpanded,
   isCompleted = false,
+  isSelected,
   onClick,
+  onLongPress,
 }: MovieCardProps) {
+  const longPress = useLongPress(onLongPress);
+  const isSelecting = isSelected !== undefined;
   const {
     movie: { details },
     nominator,
@@ -36,21 +44,31 @@ export function MovieCard({
           className={styles.posterButton}
           type="button"
           onClick={onClick}
-          aria-expanded={false}
-          aria-label={`Expand details for ${details.title}`}
+          {...longPress}
+          aria-expanded={isSelecting ? undefined : false}
+          aria-pressed={isSelected}
+          aria-label={
+            isSelecting
+              ? `Select ${details.title} to compare`
+              : `Expand details for ${details.title}`
+          }
         >
           <div
             className={classnames(styles.poster, {
               [styles.watchedPoster]: hasSeen || isCompleted,
+              [styles.selectedPoster]: isSelected,
             })}
           >
             {details.posterUrl ? (
-              <img src={details.posterUrl} alt="" />
+              <img src={details.posterUrl} alt="" draggable={false} />
             ) : (
               <span>{details.title.slice(0, 1)}</span>
             )}
             <span className={styles.rank}>{String(rank).padStart(2, "0")}</span>
             <span className={styles.posterShade} />
+            {isSelecting && (
+              <span className={styles.selectMark} aria-hidden="true" />
+            )}
             <span className={styles.movieLabel}>
               <strong>{details.title}</strong>
               <small>{details.year ?? "Year unknown"}</small>

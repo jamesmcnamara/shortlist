@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingOverlay } from "@/app/components/LoadingOverlay";
+import { compareHref, MAX_MOVIES } from "@/app/compare/metrics";
 import { MovieCard } from "@/app/components/MovieCard";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
@@ -9,8 +9,10 @@ import { useAPIActions } from "@/app/lib/useAPIActions";
 import { useMovieDiscussionHistory } from "@/app/lib/useMovieDiscussionHistory";
 import { applyView, ViewContext, ViewState } from "@/app/lib/view";
 import type { Movie, Nomination } from "@/src/db/schema";
-import { AnimatePresence } from "motion/react";
-import { useMemo, useState } from "react";
+import classnames from "classnames";
+import { AnimatePresence, motion } from "motion/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { find, map, some } from "shades";
 import { useRoom } from "../[ownerId]/[slug]/RoomContext";
 import styles from "./Room.module.css";
@@ -46,6 +48,46 @@ export function Room({
   const { focusedId, closeDiscussion, openDiscussion } =
     useMovieDiscussionHistory();
   const [isWatchedOpen, setIsWatchedOpen] = useState(false);
+  // TMDB ids picked for comparison, or null when not picking.
+  const [comparing, setComparing] = useState<number[] | null>(null);
+  const router = useRouter();
+  const isComparing = comparing !== null;
+
+  useEffect(() => {
+    if (!isComparing) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setComparing(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isComparing]);
+
+  const togglePick = (tmdbId: number) =>
+    setComparing((current) =>
+      !current
+        ? [tmdbId]
+        : current.includes(tmdbId)
+          ? current.filter((id) => id !== tmdbId)
+          : current.length < MAX_MOVIES
+            ? [...current, tmdbId]
+            : current,
+    );
+
+  const cardProps = (nom: Nomination) => {
+    const { tmdbId } = nom.movie;
+    return {
+      isSelected: comparing
+        ? tmdbId !== null && comparing.includes(tmdbId)
+        : undefined,
+      onClick: () => {
+        if (!comparing) openDiscussion(nom.id);
+        else if (tmdbId !== null) togglePick(tmdbId);
+      },
+      onLongPress: () => {
+        if (tmdbId !== null) togglePick(tmdbId);
+      },
+    };
+  };
 
   const focused = focusedId
     ? (find({ id: focusedId })(nominees) ?? null)
@@ -109,7 +151,11 @@ export function Room({
   const showMeta = new Set(map("userId")(nominees)).size > 2;
 
   return (
-    <main className={styles.shell}>
+    <main
+      className={classnames(styles.shell, {
+        [styles.shellComparing]: isComparing,
+      })}
+    >
       <ShortlistHeader />
 
       <section
@@ -149,7 +195,7 @@ export function Room({
               hasSeen={some({ id: userId })(nom.seenBy)}
               isExpanded={focused === nom}
               showMeta={showMeta}
-              onClick={() => openDiscussion(nom.id)}
+              {...cardProps(nom)}
             />
           ))}
         </div>
@@ -178,13 +224,46 @@ export function Room({
                   showMeta={true}
                   isExpanded={focused === nom}
                   isCompleted
-                  onClick={() => openDiscussion(nom.id)}
+                  {...cardProps(nom)}
                 />
               ))}
             </div>
           )}
         </section>
       )}
+
+      <AnimatePresence>
+        {comparing && (
+          <motion.div
+            className={styles.compareBar}
+            role="region"
+            aria-label="Compare movies"
+            initial={{ y: "120%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "120%" }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <span aria-live="polite">
+              {comparing.length} of {MAX_MOVIES} picked
+            </span>
+            <button
+              type="button"
+              className={styles.compareCancel}
+              onClick={() => setComparing(null)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={styles.compareGo}
+              disabled={comparing.length < 2}
+              onClick={() => router.push(compareHref(comparing))}
+            >
+              Compare
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {focused && (
