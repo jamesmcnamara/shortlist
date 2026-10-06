@@ -30,3 +30,6 @@ export const getColor = (text: string) => {
     colors.length;
   return colors[index];
 };
+
+export const capitalize = (text: string) =>
+  text.charAt(0).toUpperCase() + text.slice(1);

@@ -1,0 +1,99 @@
+import type { Movie, RatingSource } from "@/src/db/schema";
+import { find } from "shades";
+
+export type Scale = "absolute" | "relative";
+
+export interface Metric {
+  name: string;
+  logo: string | null;
+  /** The full possible range, used by the absolute scale. */
+  range: [number, number];
+  lowerIsBetter: boolean;
+  read: (movie: Movie) => number | null;
+  format: (value: number) => string;
+}
+
+// Zero means "no data" for both MDBList ratings and TMDB runtimes.
+const positive = (value: number | null | undefined) =>
+  typeof value === "number" && Number.isFinite(value) && value > 0
+    ? value
+    : null;
+
+const rating = (source: RatingSource) => (movie: Movie) =>
+  positive(find({ source })(movie.ratings?.services)?.value);
+
+const formatRuntime = (minutes: number) => {
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return hours > 0 ? `${hours}h ${remainder}m` : `${remainder}m`;
+};
+
+export const METRICS: Metric[] = [
+  {
+    name: "IMDb",
+    logo: "/ratings/imdb.svg",
+    range: [3, 9],
+    lowerIsBetter: false,
+    read: rating("imdb"),
+    format: (value) => value.toFixed(1),
+  },
+  {
+    name: "Letterboxd",
+    logo: "/ratings/letterboxd.svg",
+    range: [1.5, 4.6],
+    lowerIsBetter: false,
+    read: rating("letterboxd"),
+    format: (value) => value.toFixed(1),
+  },
+  {
+    name: "Rotten Tomatoes",
+    logo: "/ratings/rottentomatoes.svg",
+    range: [0, 100],
+    lowerIsBetter: false,
+    read: rating("tomatoes"),
+    format: (value) => `${Math.round(value)}%`,
+  },
+  {
+    name: "Rotten Tomatoes audience",
+    logo: "/ratings/rottentomatoes-popcorn.svg",
+    range: [0, 100],
+    lowerIsBetter: false,
+    read: rating("popcorn"),
+    format: (value) => `${Math.round(value)}%`,
+  },
+  {
+    name: "Runtime",
+    logo: null,
+    range: [80, 180],
+    lowerIsBetter: true,
+    read: (movie) => positive(movie.details?.runtime),
+    format: (value) => formatRuntime(Math.round(value)),
+  },
+];
+
+const clamp = (value: number) => Math.min(1, Math.max(0, value));
+
+/**
+ * How good each value is, from 0 (worst) to 1 (best), or null when there's
+ * nothing to color. Relative scoring needs at least two values to compare;
+ * when they're all tied, they all count as best.
+ */
+export const scoreRow = (
+  values: (number | null)[],
+  metric: Pick<Metric, "range" | "lowerIsBetter">,
+  scale: Scale,
+): (number | null)[] => {
+  const present = values.filter((value): value is number => value !== null);
+  const [low, high] =
+    scale === "absolute"
+      ? metric.range
+      : [Math.min(...present), Math.max(...present)];
+  const canScore = scale === "absolute" || present.length >= 2;
+
+  return values.map((value) => {
+    if (value === null || !canScore) return null;
+    if (high === low) return 1;
+    const position = clamp((value - low) / (high - low));
+    return metric.lowerIsBetter ? 1 - position : position;
+  });
+};

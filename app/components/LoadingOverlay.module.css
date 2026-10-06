@@ -13,6 +13,8 @@
   display: grid;
   place-items: center;
   background: rgba(20, 20, 24, 0.62);
+  border-radius: 0.5rem;
+  padding: 1.5rem 0;
 }
 
 .reel {
@@ -24,11 +26,5 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .reel {
-    animation: none;
   }
 }

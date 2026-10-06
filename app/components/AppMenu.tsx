@@ -68,8 +68,8 @@ export function AppMenu({ room, showMyRooms = true }: AppMenuProps) {
               Settings
             </MenuLink>
           )}
-          <MenuLink href="/letterboxd" onNavigate={close}>
-            Letterboxd RSS
+          <MenuLink href="/compare" onNavigate={close}>
+            Compare
           </MenuLink>
           <MenuLink href="/feedback" onNavigate={close}>
             Feedback
