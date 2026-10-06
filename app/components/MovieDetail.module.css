@@ -4,6 +4,7 @@
 }
 
 .backdrop {
+  --focus: var(--on-dark);
   position: relative;
   display: flex;
   align-items: flex-end;
@@ -12,7 +13,7 @@
   background-color: var(--surface-muted);
   background-size: cover;
   background-position: center 20%;
-  color: white;
+  color: var(--on-dark);
 }
 
 .backdrop::before {
@@ -37,9 +38,9 @@
   width: 2.375rem;
   height: 2.375rem;
   border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 62.4375rem;
+  border-radius: var(--radius-pill);
   background: rgba(20, 20, 26, 0.45);
-  color: white;
+  color: var(--on-dark);
   font-size: 1.125rem;
   backdrop-filter: blur(4px);
 }
@@ -153,7 +154,7 @@
 .genre {
   padding: 0.3125rem 0.6875rem;
   border: 1px solid var(--border-strong);
-  border-radius: 62.4375rem;
+  border-radius: var(--radius-pill);
   background: var(--surface-muted);
   color: var(--text-soft);
   font-size: 0.7906rem;
@@ -163,17 +164,18 @@
 .addButton {
   flex: none;
   border: 0;
-  border-radius: 62.4375rem;
+  border-radius: var(--radius-pill);
   padding: 0.3125rem 0.8125rem;
   background: var(--accent);
-  color: white;
+  color: var(--on-dark);
   font-size: 0.7906rem;
   font-weight: 800;
 }
 
 .addButton:hover,
 .addButton:focus-visible {
-  background: var(--accent-light);
+  background: var(--accent-wash);
+  color: var(--accent);
 }
 
 .overview {

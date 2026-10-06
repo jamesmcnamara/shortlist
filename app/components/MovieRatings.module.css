@@ -12,7 +12,7 @@
   min-height: 1.625rem;
   padding: 0.25rem 0.4375rem;
   border: 1px solid var(--border);
-  border-radius: 62.4375rem;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--text-soft);
   font-size: 0.7188rem;
@@ -35,4 +35,15 @@
   border-color: var(--accent-light);
   box-shadow: 0 3px 8px rgba(43, 43, 73, 0.1);
   transform: translateY(-0.0625rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rating {
+    transition: none;
+  }
+
+  .rating:hover,
+  .rating:focus-visible {
+    transform: none;
+  }
 }

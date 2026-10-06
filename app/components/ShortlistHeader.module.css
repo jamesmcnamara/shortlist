@@ -18,7 +18,7 @@
 
 .roomName a {
   text-decoration: none;
-  color: black;
+  color: var(--text);
 }
 
 @media (max-width: 40rem) {

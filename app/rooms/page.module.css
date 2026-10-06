@@ -1,7 +1,7 @@
 .shell {
   display: grid;
   place-items: start center;
-  min-height: 100vh;
+  min-height: 100dvh;
   padding: 3rem 1.25rem;
 }
 
@@ -28,7 +28,7 @@
   padding: 0.5rem 0.875rem;
   border-radius: 0.625rem;
   background: var(--accent);
-  color: white;
+  color: var(--on-dark);
   font-size: 0.9344rem;
   font-weight: 700;
   white-space: nowrap;
@@ -73,11 +73,6 @@
   white-space: nowrap;
   font-size: 1.0781rem;
   font-weight: 700;
-}
-
-.roomType {
-  color: var(--muted);
-  font-size: 0.8625rem;
 }
 
 .posters {

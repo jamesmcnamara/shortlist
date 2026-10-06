@@ -82,10 +82,9 @@
   padding: 0.75rem 0.8125rem;
   border: 1px solid var(--border);
   border-radius: 0.5625rem;
-  background: white;
+  background: var(--surface);
   font: inherit;
   font-size: 1.0062rem;
-  outline: 0;
   resize: vertical;
 }
 
@@ -109,10 +108,10 @@
 
 .footer button {
   border: 0;
-  border-radius: 62.4375rem;
+  border-radius: var(--radius-pill);
   padding: 0.6875rem 0.9375rem;
   background: var(--text);
-  color: white;
+  color: var(--on-dark);
   font-size: 0.8625rem;
   font-weight: 800;
 }

@@ -38,7 +38,7 @@
 
 .pill {
   padding: 0.5rem 0.6875rem;
-  border-radius: 62.4375rem;
+  border-radius: var(--radius-pill);
   background: var(--surface-muted);
   color: var(--muted);
   font-size: 0.7906rem;

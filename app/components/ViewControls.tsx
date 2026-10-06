@@ -6,7 +6,7 @@ import { useMovieSearch } from "@/app/lib/useMovieSearch";
 import { withTargetValue } from "@/app/lib/utils";
 import { FILTERS, SORTS, type ViewState } from "@/app/lib/view";
 import type { Movie } from "@/src/db/schema";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useRef, useState } from "react";
 import classnames from "classnames";
 import styles from "./ViewControls.module.css";
@@ -20,8 +20,6 @@ interface ViewControlsProps {
 }
 
 type Expanded = "sort" | "filter" | null;
-
-const transition = { duration: 0.2, ease: "easeOut" } as const;
 
 /**
  * Renders whatever the registries expose, so adding a sort or filter needs no
@@ -42,6 +40,11 @@ export function ViewControls({
   const [candidate, setCandidate] = useState<Movie | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const search = useMovieSearch(query);
+  const reducedMotion = useReducedMotion();
+  const transition = {
+    duration: reducedMotion ? 0 : 0.2,
+    ease: "easeOut",
+  } as const;
 
   const isSearchOpen = isFocused || query !== "";
 
@@ -126,9 +129,9 @@ export function ViewControls({
             <motion.div
               key="toggles"
               className={styles.toggles}
-              initial={{ opacity: 0, width: 0, marginLeft: 0 }}
-              animate={{ opacity: 1, width: "auto", marginLeft: 8 }}
-              exit={{ opacity: 0, width: 0, marginLeft: 0 }}
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: "auto" }}
+              exit={{ opacity: 0, width: 0 }}
               transition={transition}
             >
               <button

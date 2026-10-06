@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { DataProvider } from "./lib/data/DataProvider";
+import { MotionProvider } from "./components/MotionProvider";
 
 export const metadata: Metadata = {
   title: "Shortlist",
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#3f7893",
+  themeColor: "#386d87",
 };
 
 export default function RootLayout({
@@ -30,7 +31,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <DataProvider>{children}</DataProvider>
+        <MotionProvider>
+          <DataProvider>{children}</DataProvider>
+        </MotionProvider>
       </body>
     </html>
   );

@@ -1,8 +1,8 @@
 .success {
   padding: 0.625rem 0.75rem;
   border-radius: 0.625rem;
-  background: #eafaf0;
-  color: #1a7d43;
+  background: var(--success-wash);
+  color: var(--success);
   font-size: 0.9344rem;
 }
 

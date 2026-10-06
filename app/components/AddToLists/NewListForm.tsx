@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { api, ApiError, type RoomSummaryWithMovie } from "@/app/lib/api";
 import { withTargetValue } from "@/app/lib/utils";
 import styles from "./AddToLists.module.css";
@@ -14,6 +14,7 @@ export function NewListForm({ onCreated }: NewListFormProps) {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const reducedMotion = useReducedMotion();
 
   async function create() {
     const trimmed = name.trim();
@@ -54,7 +55,7 @@ export function NewListForm({ onCreated }: NewListFormProps) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: reducedMotion ? 0 : 0.2, ease: "easeOut" }}
           >
             <div className={styles.newListRow}>
               <input

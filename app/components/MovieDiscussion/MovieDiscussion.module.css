@@ -4,7 +4,7 @@
   right: 0;
   bottom: 0;
   left: 0;
-  max-height: 80vh;
+  max-height: 80dvh;
   overflow-y: auto;
 }
 
@@ -12,341 +12,16 @@
   position: relative;
   margin: 0;
   padding: 1.25rem;
-  border-top: 1px solid var(--border-strong);
-  border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(0.75rem);
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08);
-}
-
-.closeDiscussion {
-  width: 2rem;
-  height: 2rem;
-  min-height: 2rem;
-  padding: 0;
-  border-radius: 62.4375rem;
-  background: transparent;
-  color: var(--muted);
-  font-size: 1.0062rem;
-  line-height: 1;
-}
-
-.closeDiscussion:hover,
-.closeDiscussion:focus-visible {
-  background: var(--accent-wash);
-  color: var(--accent);
-}
-
-.expandedHeader,
-.nominator,
-.voters {
-  display: flex;
-  align-items: center;
-}
-
-.expandedHeader {
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-.nominator {
-  gap: 0.625rem;
-}
-
-.nominator strong {
-  display: block;
-  margin-top: 0.1875rem;
-  font-size: 1.0062rem;
-}
-
-.eyebrow {
-  display: block;
-  color: var(--muted-soft);
-  font-size: 0.6469rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.recommendation {
-  margin: 1.25rem 0;
-  color: var(--text-soft);
-  font-size: 1.2937rem;
-  letter-spacing: -0.03em;
-}
-
-.voters {
-  justify-content: space-between;
-  gap: 0.875rem;
-  padding: 0.6875rem 0;
-  border-top: 1px dashed var(--border);
-}
-
-.voterList {
-  display: flex;
-  align-items: center;
-  gap: 0.3125rem;
-}
-
-.voter {
-  position: relative;
-  flex: 0 0 1.5625rem;
-  width: 1.5625rem;
-  height: 1.5625rem;
-  padding: 0;
-  border-radius: 62.4375rem;
-  white-space: nowrap;
-}
-
-.voter small {
-  position: absolute;
-  top: -0.3125rem;
-  right: -0.375rem;
-  display: inline-grid;
-  place-items: center;
-  min-width: 0.9375rem;
-  height: 0.9375rem;
-  padding: 0 0.1875rem;
-  border: 2px solid var(--surface);
-  border-radius: 62.4375rem;
-  background: var(--accent);
-  color: white;
-  font-size: 0.575rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.watched,
-.commentLink {
-  border: 0;
-  background: transparent;
-  color: var(--success);
-  font-size: 0.7906rem;
-  font-weight: 800;
-}
-
-.watched {
-  display: inline-grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: var(--success-wash);
-}
-
-.deleteMovie {
-  border: 0;
-  background: transparent;
-  color: var(--danger, #d64545);
-  font-size: 0.7906rem;
-  font-weight: 800;
-}
-
-.adminActions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 0.5rem;
-  padding-top: 0.75rem;
   border-top: 1px solid var(--border);
-}
-
-.completeToggle {
-  padding: 0.5rem 0.875rem;
-  border: 1px solid var(--border-strong, var(--border));
-  border-radius: 0.5rem;
-  background: transparent;
-  color: var(--muted);
-  font-size: 0.7906rem;
-  font-weight: 800;
-}
-
-.completeToggle:hover,
-.completeToggle:focus-visible {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.completeToggleActive {
-  border-color: var(--success);
-  background: var(--success-wash);
-  color: var(--success);
-}
-
-.movieActions {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  flex: none;
-}
-
-.commentsFooter {
-  margin-top: 0.5rem;
-  padding-top: 0.9375rem;
-  border-top: 1px solid var(--border);
-}
-
-.nomcoms {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
-}
-
-.nomcomList {
-  display: grid;
-  gap: 0.625rem;
-  margin: 0.75rem 0;
-}
-
-.nomcomItem {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.8625rem;
-  line-height: 1.45;
-}
-
-.nomcomList strong {
-  color: var(--text-soft);
-}
-
-.commentForm {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.commentForm textarea {
-  width: 100%;
-  min-height: 3.25rem;
-  padding: 0.5625rem 0.625rem;
-  border: 1px solid var(--border-strong);
-  border-radius: 0.4375rem;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  font-size: 0.8625rem;
-  line-height: 1.45;
-  outline: 0;
-  resize: vertical;
-}
-
-.commentForm textarea::placeholder {
-  color: var(--muted-soft);
-}
-
-.commentForm textarea:focus {
-  border-color: var(--accent);
-}
-
-.commentForm button {
-  justify-self: end;
-  border: 0;
-  border-radius: 0.4375rem;
-  padding: 0.4375rem 0.625rem;
-  background: var(--accent);
-  color: white;
-  font-size: 0.7906rem;
-  font-weight: 800;
-}
-
-.commentForm button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.commentList {
-  display: grid;
-  gap: 0.5rem;
-  margin: 0.75rem 0 0.5rem;
-}
-
-.commentList p {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.7906rem;
-}
-
-.commentList strong {
-  color: var(--text-soft);
-}
-
-.commentLink {
-  padding: 0.25rem 0;
-  color: var(--accent);
-}
-
-.commentLink span {
-  margin-left: 0.375rem;
-}
-
-@keyframes reveal {
-  from {
-    opacity: 0;
-    transform: translateY(-0.375rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (max-width: 40rem) {
-  .expanded {
-    padding: 1rem;
-  }
-
-  .recommendation {
-    font-size: 1.15rem;
-  }
-}
-
-.activeCard .poster {
-  box-shadow: 0 10px 0 var(--accent-light);
-  transform: translateY(-0.375rem);
-}
-
-.activeCard .posterButton:hover .poster,
-.activeCard .posterButton:focus-visible .poster {
-  box-shadow: 0 14px 0 var(--accent-light);
-  transform: translateY(-0.5rem);
-}
-
-.stat {
-  padding: 0.25rem 0.125rem;
-  border-radius: 62.4375rem;
-  color: var(--muted);
-  font-size: 0.7906rem;
-  font-weight: 800;
-}
-
-.stat span {
-  display: none;
-}
-
-.stat:hover,
-.stat:focus-visible,
-.voted {
-  background: transparent;
-  color: var(--accent);
-}
-
-.expanded {
-  margin: 0;
-  padding: 1.25rem;
-  border-top: 1px solid var(--border);
-  border-bottom: 0;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(0.75rem);
   box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .expandedHeader {
+  display: flex;
   flex-direction: column;
+  justify-content: space-between;
   align-items: stretch;
   gap: 0.75rem;
 }
@@ -371,52 +46,106 @@
   position: absolute;
   top: 1.25rem;
   right: 1.25rem;
+  width: 2rem;
+  height: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.0062rem;
+  line-height: 1;
 }
 
-.discussionMeta {
+.closeDiscussion:hover,
+.closeDiscussion:focus-visible {
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+
+.discussionMeta,
+.runtime {
   color: var(--muted);
   font-size: 0.7906rem;
   font-weight: 700;
 }
 
 .runtime {
-  color: var(--muted);
-  font-size: 0.7906rem;
-  font-weight: 700;
   font-style: italic;
   margin: 0;
 }
 
+.recommendation {
+  margin: 1.25rem 0;
+  color: var(--text-soft);
+  font-size: 1.2937rem;
+  letter-spacing: -0.03em;
+}
+
 .movieActions {
+  display: flex;
+  align-items: center;
   align-self: flex-end;
   gap: 0.4375rem;
+  flex: none;
 }
 
 .watched,
 .deleteMovie {
-  width: auto;
-  height: auto;
   min-height: 2rem;
   padding: 0.5rem 0.6875rem;
-  border-radius: 62.4375rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
   font-size: 0.7188rem;
+  font-weight: 800;
   line-height: 1;
   white-space: nowrap;
 }
 
 .watched {
-  background: transparent;
+  display: inline-grid;
+  place-items: center;
   color: var(--success);
 }
 
 .deleteMovie {
-  background: transparent;
-  color: var(--danger, #d64545);
+  color: var(--danger);
 }
 
 .watched:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+.adminActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.completeToggle {
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.7906rem;
+  font-weight: 800;
+}
+
+.completeToggle:hover,
+.completeToggle:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.completeToggleActive {
+  border-color: var(--success);
+  background: var(--success-wash);
+  color: var(--success);
 }
 
 .nominationQuote,
@@ -477,7 +206,7 @@
   height: 1.375rem;
   padding: 0;
   border: 0;
-  border-radius: 62.4375rem;
+  border-radius: var(--radius-pill);
   background: var(--accent-wash);
   color: var(--accent);
   font-size: 0.7906rem;
@@ -488,7 +217,7 @@
 .editComment:hover,
 .editComment:focus-visible {
   background: var(--accent);
-  color: white;
+  color: var(--on-dark);
 }
 
 .editCommentForm {
@@ -497,22 +226,26 @@
   margin-top: 0.375rem;
 }
 
-.editCommentForm textarea {
+.editCommentForm textarea,
+.commentForm textarea {
   width: 100%;
-  min-height: 3rem;
-  padding: 0.625rem 0.6875rem;
   border: 1px solid var(--border-strong);
   border-radius: 0.625rem;
   background: var(--surface);
   color: var(--text);
   font: inherit;
-  font-size: 0.8625rem;
+  font-size: 1rem;
   line-height: 1.45;
-  outline: 0;
+}
+
+.editCommentForm textarea {
+  min-height: 3rem;
+  padding: 0.625rem 0.6875rem;
   resize: vertical;
 }
 
-.editCommentForm textarea:focus {
+.editCommentForm textarea:focus,
+.commentForm textarea:focus {
   border-color: var(--accent);
 }
 
@@ -523,7 +256,7 @@
 
 .editActions button {
   border: 0;
-  border-radius: 62.4375rem;
+  border-radius: var(--radius-pill);
   padding: 0.5rem 0.6875rem;
   font-size: 0.7188rem;
   font-weight: 800;
@@ -536,16 +269,20 @@
 
 .editActions button[type="submit"] {
   background: var(--text);
-  color: white;
+  color: var(--on-dark);
 }
 
-.editActions button:disabled {
+.editActions button:disabled,
+.commentForm button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
 
 .voters {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 0.875rem;
   padding: 0.75rem 0;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
@@ -557,23 +294,43 @@
   font-weight: 800;
 }
 
-.nomcoms {
-  margin-top: 1rem;
-  padding-top: 0;
-  border-top: 0;
+.voterList {
+  display: flex;
+  align-items: center;
+  gap: 0.3125rem;
 }
 
-.nomcoms > .eyebrow {
+.voter {
+  flex: 0 0 1.5625rem;
+  width: 1.5625rem;
+  height: 1.5625rem;
+  padding: 0;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.nomcoms {
+  margin-top: 1rem;
+}
+
+.eyebrow {
+  display: block;
   margin-bottom: 0.625rem;
-  color: #9a7c4a;
+  color: var(--muted);
+  font-size: 0.6469rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .nomcomList {
+  display: grid;
   gap: 0;
   margin: 0 0 1rem;
 }
 
 .nomcomItem {
+  margin: 0;
   padding: 0.75rem 0;
   border-top: 1px solid var(--border);
   color: var(--text-soft);
@@ -594,19 +351,38 @@
 .commentForm textarea {
   min-height: 2.75rem;
   padding: 0.75rem 0.8125rem;
-  border-radius: 0.625rem;
-  font-size: 0.8625rem;
   resize: none;
+}
+
+.commentForm textarea::placeholder {
+  color: var(--muted-soft);
 }
 
 .commentForm button {
   flex: none;
-  border-radius: 62.4375rem;
+  border: 0;
+  border-radius: var(--radius-pill);
   padding: 0.625rem 0.8125rem;
   background: var(--text);
+  color: var(--on-dark);
+  font-size: 0.7906rem;
+  font-weight: 800;
 }
 
 @media (max-width: 40rem) {
+  .expanded {
+    padding: 1rem;
+  }
+
+  .closeDiscussion {
+    top: 1rem;
+    right: 1rem;
+  }
+
+  .recommendation {
+    font-size: 1.15rem;
+  }
+
   .expandedHeader {
     align-items: flex-start;
   }

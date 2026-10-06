@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import styles from "../auth.module.css";
+import styles from "@/app/components/FormPage.module.css";
 import { SignInForm } from "./SignInForm";
 
 export default function SignInPage() {

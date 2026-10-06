@@ -5,6 +5,9 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["{app,lib,src}/**/*.test.{ts,tsx}"],
+    css: {
+      include: [/\.module\.css$/],
+    },
   },
   resolve: {
     alias: {

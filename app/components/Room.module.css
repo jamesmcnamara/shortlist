@@ -5,22 +5,25 @@
 }
 
 .shellComparing {
-  padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+  padding-bottom: calc(10rem + env(safe-area-inset-bottom));
 }
 
 .compareBar {
+  --focus: var(--on-dark);
   position: fixed;
   right: 0;
   bottom: calc(1rem + env(safe-area-inset-bottom));
   left: 0;
   z-index: 20;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 0.375rem;
   width: min(100% - 1.5rem, 28rem);
   margin: 0 auto;
   padding: 0.5rem 0.5rem 0.5rem 1.125rem;
-  border-radius: 62.4375rem;
+  border-radius: var(--radius-pill);
   background: var(--text);
   box-shadow: 0 0.75rem 1.75rem rgba(20, 20, 32, 0.28);
   color: var(--surface);
@@ -39,7 +42,7 @@
   min-height: 2.5rem;
   padding: 0.5rem 0.875rem;
   border: 0;
-  border-radius: 62.4375rem;
+  border-radius: var(--radius-pill);
   font-weight: 800;
   white-space: nowrap;
 }
@@ -81,15 +84,18 @@
   .compareBar {
     gap: 0.25rem;
     width: calc(100% - 1rem);
-    padding-left: 0.875rem;
+    padding-left: 0.625rem;
   }
 
-  .compareCancel {
-    padding-inline: 0.5rem;
+  .compareBar span {
+    font-size: 0.8125rem;
   }
 
+  .compareAll,
+  .compareCancel,
   .compareGo {
-    padding-inline: 0.75rem;
+    padding-inline: 0.5rem;
+    font-size: 0.8125rem;
   }
 }
 
@@ -122,23 +128,16 @@
 
 .watchedToggle:hover,
 .watchedToggle:focus-visible {
-  color: var(--fg, inherit);
-}
-
-.listMeta {
-  margin: 0.5rem 0 0;
-  color: var(--muted);
-  font-size: 0.7906rem;
-  font-weight: 700;
+  color: var(--text);
 }
 
 .message {
   margin: 0;
   padding: 0.75rem 1.25rem;
-  border: 1px solid #e3a0a0;
+  border: 1px solid var(--danger-border);
   border-radius: 0.5rem;
-  background: #fdecec;
-  color: #b42318;
+  background: var(--danger-wash);
+  color: var(--danger);
   font-size: 0.9375rem;
   font-weight: 700;
   text-align: center;
@@ -150,39 +149,6 @@
   gap: 2.125rem 1.125rem;
 }
 
-.emptyState {
-  padding: 3.75rem 1.25rem;
-  border: 1px dashed var(--border-strong);
-  text-align: center;
-}
-
-.emptyState > span {
-  color: var(--accent);
-  font-size: 1.5812rem;
-}
-
-.emptyState h2 {
-  margin: 0.625rem 0 0.25rem;
-  font-size: 1.2937rem;
-}
-
-.emptyState p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.8625rem;
-}
-
-.footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 1.25rem;
-  margin-top: 4.25rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
-  color: var(--muted-soft);
-  font-size: 0.7188rem;
-}
-
 @media (max-width: 40rem) {
   .shell {
     width: min(100% - 1.75rem, 53.75rem);
@@ -191,11 +157,6 @@
 
   .nominations {
     gap: 1.25rem;
-  }
-
-  .footer {
-    align-items: start;
-    flex-direction: column;
   }
 
   .movieList {

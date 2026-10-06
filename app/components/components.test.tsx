@@ -79,6 +79,25 @@ describe("high-churn component smoke tests", () => {
     expect(onToggleDiscussion).toHaveBeenCalledOnce();
   });
 
+  it("marks an expanded card without adding an undefined class", () => {
+    const { container } = render(
+      <MovieCard
+        nomination={nomination}
+        rank={1}
+        hasSeen={false}
+        showMeta
+        isExpanded
+        onClick={vi.fn()}
+        onLongPress={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelector("article")?.className).toContain("activeCard");
+    expect(container.querySelector("article")?.className).not.toContain(
+      "undefined",
+    );
+  });
+
   it("expands the search bar over the sort and filter toggles", async () => {
     render(
       <ViewControls

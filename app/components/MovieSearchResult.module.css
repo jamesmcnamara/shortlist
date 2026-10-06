@@ -64,7 +64,7 @@
   width: 2rem;
   height: 2rem;
   border: 1px solid var(--border-strong);
-  border-radius: 62.4375rem;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--accent);
   font-size: 1.15rem;

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import styles from "../auth.module.css";
+import styles from "@/app/components/FormPage.module.css";
 import { SignUpForm } from "./SignUpForm";
 
 export default function SignUpPage() {

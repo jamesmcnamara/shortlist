@@ -1,14 +1,14 @@
 .shell {
   display: grid;
   place-items: center;
-  min-height: 100vh;
+  min-height: 100dvh;
   padding: 2rem 1.25rem;
 }
 
 .card {
   width: 100%;
   max-width: 23.75rem;
-  padding: 2rem;
+  padding: min(2rem, 6vw);
   border: 1px solid var(--border);
   border-radius: 1.125rem;
   background: var(--surface);
@@ -24,21 +24,11 @@
   letter-spacing: -0.04em;
 }
 
-.mark {
-  display: grid;
-  place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 0.5rem 0.5rem 0.5rem 0.125rem;
-  background: var(--accent);
-  color: white;
-  font-size: 1.0781rem;
-}
-
 .title {
   margin: 1.5rem 0 0.25rem;
   font-size: 1.5812rem;
   letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
 }
 
 .subtitle {
@@ -82,8 +72,8 @@
 .error {
   padding: 0.625rem 0.75rem;
   border-radius: 0.625rem;
-  background: #fdecec;
-  color: #a02a2a;
+  background: var(--danger-wash);
+  color: var(--danger);
   font-size: 0.9344rem;
 }
 
@@ -93,7 +83,7 @@
   border: none;
   border-radius: 0.625rem;
   background: var(--accent);
-  color: white;
+  color: var(--on-dark);
   font-size: 1.0062rem;
   font-weight: 700;
 }

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/app/lib/api";
 import { withTargetValue } from "@/app/lib/utils";
 import type { FeedbackCategory } from "@/src/db/schema";
-import authStyles from "@/app/auth/auth.module.css";
+import formStyles from "@/app/components/FormPage.module.css";
 import styles from "./page.module.css";
 
 const CATEGORY_LABELS: Record<FeedbackCategory, string> = {
@@ -53,14 +53,14 @@ export default function FeedbackPage() {
   }
 
   return (
-    <main className={authStyles.shell}>
-      <div className={authStyles.card}>
-        <div className={authStyles.brand}>
+    <main className={formStyles.shell}>
+      <div className={formStyles.card}>
+        <div className={formStyles.brand}>
           <span>Shortlist</span>
         </div>
 
-        <h1 className={authStyles.title}>Send feedback</h1>
-        <p className={authStyles.subtitle}>
+        <h1 className={formStyles.title}>Send feedback</h1>
+        <p className={formStyles.subtitle}>
           Bugs, feature ideas, design gripes, or copy that reads wrong — all of
           it is welcome. Tell me whatever's on your mind. But be so gentle, I am
           fragile and require constant praise.
@@ -72,7 +72,7 @@ export default function FeedbackPage() {
               Thanks! Your feedback has been sent.
             </p>
             <button
-              className={authStyles.submit}
+              className={formStyles.submit}
               type="button"
               onClick={() => router.back()}
             >
@@ -80,13 +80,13 @@ export default function FeedbackPage() {
             </button>
           </>
         ) : (
-          <form className={authStyles.form} onSubmit={handleSubmit}>
-            <div className={authStyles.field}>
-              <label className={authStyles.label} htmlFor="category">
+          <form className={formStyles.form} onSubmit={handleSubmit}>
+            <div className={formStyles.field}>
+              <label className={formStyles.label} htmlFor="category">
                 What kind of feedback is this? (optional)
               </label>
               <select
-                className={authStyles.input}
+                className={formStyles.input}
                 id="category"
                 value={category}
                 onChange={withTargetValue((value) =>
@@ -104,12 +104,12 @@ export default function FeedbackPage() {
               </select>
             </div>
 
-            <div className={authStyles.field}>
-              <label className={authStyles.label} htmlFor="message">
+            <div className={formStyles.field}>
+              <label className={formStyles.label} htmlFor="message">
                 Your feedback
               </label>
               <textarea
-                className={authStyles.input}
+                className={formStyles.input}
                 id="message"
                 rows={6}
                 value={message}
@@ -118,10 +118,10 @@ export default function FeedbackPage() {
               />
             </div>
 
-            {error && <p className={authStyles.error}>{error}</p>}
+            {error && <p className={formStyles.error}>{error}</p>}
 
             <button
-              className={authStyles.submit}
+              className={formStyles.submit}
               type="submit"
               disabled={isSubmitting}
             >

@@ -79,7 +79,7 @@ export function MovieDiscussion({
           {!nomination.completed && (
             <div className={styles.movieActions}>
               <button
-                className={`${styles.watched} ${hasSeen ? styles.voted : ""}`}
+                className={styles.watched}
                 type="button"
                 onClick={onMarkWatched}
                 aria-pressed={hasSeen}

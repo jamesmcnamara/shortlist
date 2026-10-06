@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getSafeRedirect } from "@/lib/auth/redirect";
-import styles from "../auth.module.css";
+import styles from "@/app/components/FormPage.module.css";
 import { signUpWithEmail } from "./actions";
 
 export function SignUpForm() {

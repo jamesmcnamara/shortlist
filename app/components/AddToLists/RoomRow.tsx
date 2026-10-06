@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { withTargetValue } from "@/app/lib/utils";
 import type { RoomSummaryWithMovie } from "@/app/lib/api";
 import type { RowStatus } from "./types";
@@ -27,6 +27,7 @@ export function RoomRow({
   const justAdded = status === "done";
   const isPending = status === "pending";
   const locked = room.hasMovie || justAdded;
+  const reducedMotion = useReducedMotion();
 
   return (
     <div className={styles.row}>
@@ -53,7 +54,7 @@ export function RoomRow({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: reducedMotion ? 0 : 0.2, ease: "easeOut" }}
           >
             <textarea
               className={styles.comment}

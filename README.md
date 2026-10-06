@@ -47,6 +47,33 @@ as the only cache for private data.
 Useful checks are `npm test`, `npm run typecheck` and `npm run build`. To create a
 new Drizzle migration after changing `src/db/schema.ts`, run `npm run db:generate`.
 
+## CSS
+
+`app/globals.css` owns the light-theme tokens, reset, focus ring, and intentional
+global utilities (`avatar` and `srOnly`). Component and page styles belong in
+their colocated CSS Modules. Shared standalone form pages use
+`app/components/FormPage.module.css`.
+
+Use semantic color tokens: `--page` for the beige canvas, `--surface` for cards,
+`--on-dark` for light foregrounds, and the danger/success tokens for feedback.
+Use `--radius-pill` for pill shapes. Keep one base rule per selector and place
+responsive and reduced-motion overrides after it. Merge exact local duplicates
+rather than introducing a universal button abstraction.
+
+CSS Module classes only match elements in that module; use `:global(.avatar)`
+when targeting the shared avatar utility. Inputs that suppress their own focus
+outline must have a visible container focus treatment. Loading animations and
+hover movement need targeted reduced-motion alternatives; `MotionProvider`
+respects the system setting for Motion transforms, while height/width animations
+use `useReducedMotion` to change immediately.
+
+Run `npm run lint:css` to catch invalid CSS and duplicate rules/declarations.
+It excludes the ignored Letterboxd prototype. CSS changes also need browser
+checks at narrow and wide widths, enlarged text, keyboard focus, and reduced
+motion; the DOM tests cannot verify layout or the rendered cascade.
+Component tests load real CSS Module exports to catch missing class references,
+and `app/styles.test.ts` checks shared foreground/background contrast thresholds.
+
 ## GitHub Codespaces
 
 This repository includes a devcontainer for Codespaces. Before creating a

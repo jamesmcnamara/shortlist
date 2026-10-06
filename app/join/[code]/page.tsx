@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { use } from "react";
 import { ApiError, api } from "@/app/lib/api";
-import styles from "@/app/auth/auth.module.css";
+import styles from "@/app/components/FormPage.module.css";
 
 interface JoinPageProps {
   params: Promise<{ code: string }>;

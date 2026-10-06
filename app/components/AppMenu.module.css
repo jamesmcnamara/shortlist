@@ -9,7 +9,7 @@
   width: 2.375rem;
   height: 2.375rem;
   border: 1px solid var(--border-strong);
-  border-radius: 62.4375rem;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--text-soft);
 }

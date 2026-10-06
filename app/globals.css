@@ -1,22 +1,29 @@
 :root {
   color-scheme: light;
   font-family: Helvetica, Arial, sans-serif;
-  color: #26262d;
-  background: #f6f1e9;
+  color: var(--text);
+  background: var(--page);
+  --page: #f6f1e9;
   --text: #26262d;
   --text-soft: #555563;
-  --muted: #858592;
-  --muted-soft: #b0b0bb;
+  --muted: #666674;
+  --muted-soft: #686875;
   --border: #e5e5eb;
   --border-strong: #d4d4df;
   --surface: #ffffff;
   --surface-muted: #eee9e1;
-  --accent: #3f7893;
+  --accent: #386d87;
   --accent-light: #8fbaca;
   --accent-soft: #bcd7e1;
   --accent-wash: #e3f0f4;
-  --success: #32846d;
+  --focus: var(--accent);
+  --success: #266c58;
   --success-wash: #e9f4ef;
+  --danger: #a02a2a;
+  --danger-wash: #fbeeee;
+  --danger-border: #e0b4b4;
+  --on-dark: #ffffff;
+  --radius-pill: 62.4375rem;
   --shadow: 0 0.75rem 1.75rem rgba(43, 43, 73, 0.08);
 }
 
@@ -26,11 +33,12 @@
 
 body {
   margin: 0;
-  background: #f6f1e9;
+  background: var(--page);
 }
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -39,11 +47,8 @@ button {
   cursor: pointer;
 }
 
-button:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-[role="button"]:focus-visible {
-  outline: 0.1875rem solid var(--accent-soft);
+:focus-visible {
+  outline: 0.1875rem solid var(--focus);
   outline-offset: 0.125rem;
 }
 
@@ -85,12 +90,4 @@ textarea:focus-visible,
 .avatar-gold {
   background: #eee0b5;
   color: #76602a;
-}
-.avatar-violet-old {
-  background: #d2d0ff;
-  color: #4c489c;
-}
-.avatar-lilac-old {
-  background: #ddd4ef;
-  color: #665483;
 }

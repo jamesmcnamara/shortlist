@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/app/lib/api";
 import { slugify } from "@/app/lib/rooms";
 import { withTargetValue } from "@/app/lib/utils";
-import styles from "@/app/auth/auth.module.css";
+import styles from "@/app/components/FormPage.module.css";
 
 export default function NewRoomPage() {
   const router = useRouter();
