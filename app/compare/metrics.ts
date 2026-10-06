@@ -47,6 +47,10 @@ const formatRuntime = (minutes: number) => {
   return hours > 0 ? `${hours}h ${remainder}m` : `${remainder}m`;
 };
 
+const toFixed = (digits: number) => (value: number) => value.toFixed(digits);
+
+const toPct = (value: number) => `${Math.round(value)}%`;
+
 export const METRICS: Metric[] = [
   {
     name: "IMDb",
@@ -54,7 +58,7 @@ export const METRICS: Metric[] = [
     range: [5.5, 7.5],
     lowerIsBetter: false,
     read: rating("imdb"),
-    format: (value) => value.toFixed(1),
+    format: toFixed(1),
   },
   {
     name: "Letterboxd",
@@ -62,7 +66,7 @@ export const METRICS: Metric[] = [
     range: [3, 4],
     lowerIsBetter: false,
     read: rating("letterboxd"),
-    format: (value) => value.toFixed(1),
+    format: toFixed(1),
   },
   {
     name: "Rotten Tomatoes",
@@ -70,7 +74,7 @@ export const METRICS: Metric[] = [
     range: [50, 95],
     lowerIsBetter: false,
     read: rating("tomatoes"),
-    format: (value) => `${Math.round(value)}%`,
+    format: toPct,
   },
   {
     name: "Rotten Tomatoes audience",
@@ -78,7 +82,7 @@ export const METRICS: Metric[] = [
     range: [50, 95],
     lowerIsBetter: false,
     read: rating("popcorn"),
-    format: (value) => `${Math.round(value)}%`,
+    format: toPct,
   },
   {
     name: "Runtime",
@@ -86,7 +90,7 @@ export const METRICS: Metric[] = [
     range: [80, 180],
     lowerIsBetter: true,
     read: (movie) => positive(movie.details?.runtime),
-    format: (value) => formatRuntime(Math.round(value)),
+    format: formatRuntime,
   },
 ];
 

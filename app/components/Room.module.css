@@ -8,6 +8,10 @@
   padding-bottom: calc(10rem + env(safe-area-inset-bottom));
 }
 
+.bulkImport {
+  margin-top: 1.25rem;
+}
+
 .compareBar {
   --focus: var(--on-dark);
   position: fixed;

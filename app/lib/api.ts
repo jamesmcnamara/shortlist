@@ -9,6 +9,7 @@ import type {
 import type { SafeRoom } from "@/lib/auth/require-room";
 import type { Movie } from "@/src/db/schema";
 import { roomApiKey } from "@/lib/room-path";
+import type { MovieImportResult } from "./bulk-movie-import";
 
 export class ApiError extends Error {
   constructor(
@@ -160,6 +161,11 @@ export const api = {
           }),
       },
       nominations: {
+        importTitle: (title: string): Promise<MovieImportResult> =>
+          request(`${base}/nominations/import`, {
+            method: "POST",
+            body: JSON.stringify({ title }),
+          }),
         list: (): Promise<Nomination[]> => request(`${base}/nominations`),
         create: (input: {
           movieId: number;

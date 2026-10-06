@@ -32,6 +32,7 @@ describe("TMDB search route", () => {
     ]);
     setMovieProviderForTesting({
       hasCredentials: () => true,
+      bestMatch: vi.fn(),
       search,
       get: vi.fn(),
     });
@@ -65,6 +66,7 @@ describe("TMDB search route", () => {
   it("returns a gateway error when the provider fails", async () => {
     setMovieProviderForTesting({
       hasCredentials: () => true,
+      bestMatch: vi.fn(),
       search: vi.fn().mockRejectedValue(new Error("upstream failed")),
       get: vi.fn(),
     });
@@ -81,6 +83,7 @@ describe("TMDB search route", () => {
     const search = vi.fn();
     setMovieProviderForTesting({
       hasCredentials: () => true,
+      bestMatch: vi.fn(),
       search,
       get: vi.fn(),
     });

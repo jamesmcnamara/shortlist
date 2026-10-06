@@ -61,6 +61,44 @@ beforeEach(async () => {
 });
 
 describe("ProdMovieProvider", () => {
+  it("hydrates only the first raw search match for import", async () => {
+    const provider = new ProdMovieProvider();
+    tmdbApi.search.movies.mockResolvedValue({
+      results: [{ id: 12 }, { id: 13 }],
+    });
+    const result = await provider.bestMatch("Arrival");
+    expect(result?.tmdbId).toBe(12);
+    expect(tmdbApi.search.movies).toHaveBeenCalledWith({
+      query: "Arrival",
+      include_adult: false,
+    });
+    expect(tmdbApi.movies.details).toHaveBeenCalledOnce();
+    expect(tmdbApi.movies.details).toHaveBeenCalledWith({ movie_id: 12 });
+  });
+
+  it("returns no match only when search has no results", async () => {
+    tmdbApi.search.movies.mockResolvedValue({ results: [] });
+    expect(await new ProdMovieProvider().bestMatch("Unknown")).toBeNull();
+    expect(tmdbApi.movies.details).not.toHaveBeenCalled();
+  });
+
+  it("does not fall through to another movie when the first match fails", async () => {
+    tmdbApi.search.movies.mockResolvedValue({
+      results: [{ id: 12 }, { id: 13 }],
+    });
+    tmdbApi.movies.details.mockRejectedValue(new Error("Metadata unavailable"));
+    await expect(new ProdMovieProvider().bestMatch("Arrival")).rejects.toThrow(
+      "Metadata unavailable",
+    );
+    expect(tmdbApi.movies.details).toHaveBeenCalledOnce();
+  });
+
+  it("surfaces a search failure rather than reporting no match", async () => {
+    tmdbApi.search.movies.mockRejectedValue(new Error("Search unavailable"));
+    await expect(new ProdMovieProvider().bestMatch("Arrival")).rejects.toThrow(
+      "Search unavailable",
+    );
+  });
   it("requires credentials for both metadata services", () => {
     const provider = new ProdMovieProvider();
 

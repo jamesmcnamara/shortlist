@@ -243,6 +243,19 @@ describe("high-churn component smoke tests", () => {
     );
   });
 
+  it("keeps bulk import out of the top list controls", () => {
+    render(
+      <ViewControls
+        state={{ sort: "newest", filters: [] }}
+        onChange={vi.fn()}
+        existing={new Set()}
+        isSubmitting={false}
+        onNominate={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "Import movies" })).toBeNull();
+  });
+
   it("submits a nomination comment", () => {
     const onSubmit = vi.fn();
 

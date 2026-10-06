@@ -85,6 +85,7 @@ async function cacheMovie(tmdbId = 999) {
 beforeEach(async () => {
   setMovieProviderForTesting({
     hasCredentials: () => true,
+    bestMatch: vi.fn(),
     search: vi.fn().mockResolvedValue([]),
     get: vi.fn(),
   });

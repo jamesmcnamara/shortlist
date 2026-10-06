@@ -220,6 +220,7 @@ describe("shared data cache", () => {
       if (reads === 2) return stale.promise;
       return json([{ id: 1, comment: reads === 1 ? "Old" : "New" }]);
     });
+
     const { result } = renderHook(() => useNominations(room), {
       wrapper: Wrapper,
     });
@@ -240,6 +241,36 @@ describe("shared data cache", () => {
       await pendingRead;
     });
     expect(result.current.data?.[0].comment).toBe("New");
+  });
+
+  it("refreshes room nominations after a per-title import write", async () => {
+    let imported = false;
+    fetchMock.mockImplementation(async (input, init) => {
+      if (init?.method === "POST") {
+        expect(input).toBe(`${base}/nominations/import`);
+        expect(init.body).toBe(JSON.stringify({ title: "Arrival" }));
+        imported = true;
+        return json({
+          status: "added",
+          movie: { id: 1, title: "Arrival", year: 2016 },
+        });
+      }
+      return json(imported ? [{ id: 1 }] : []);
+    });
+    const { result } = renderHook(() => useNominations(room), {
+      wrapper: Wrapper,
+    });
+    await waitFor(() => expect(result.current.data).toEqual([]));
+    await act(async () => {
+      const outcome = await api
+        .room(room.ownerId, room.slug)
+        .nominations.importTitle("Arrival");
+      expect(outcome).toEqual({
+        status: "added",
+        movie: { id: 1, title: "Arrival", year: 2016 },
+      });
+    });
+    expect(result.current.data).toEqual([{ id: 1 }]);
   });
 
   it("keeps cached content and exposes temporary refresh failures", async () => {

@@ -10,6 +10,22 @@ they belong to; rooms are joined through a shareable invite link. Admins can
 rename a room, manage its members and rotate its invite links from its settings
 page.
 
+### Bulk movie import
+
+At the bottom of a list, below Watched, choose **Import movies**. Paste one movie
+title per line, then start the import. Each title uses the first TMDB search match without a review
+step; the results show the matched movie and year so you can spot incorrect
+matches and remove them from the list. Each title can be up to 300 characters.
+
+Movies are added one at a time under your name, with no note. Blank lines and
+repeated titles are ignored. Movies already on the list (including Watched) are
+skipped without changing their notes or status. Missing matches and failures are
+reported separately, and other titles continue importing. **Stop** finishes the
+current movie before pausing; use **Continue import** for remaining titles or
+**Retry failed titles** for errors.
+Keep the page open while importing; navigating away stops further requests but
+does not undo movies already added.
+
 ## Client data caching
 
 The home page, room pages, settings, and the room picker share an SWR cache

@@ -2,6 +2,7 @@
 
 import { compareHref } from "@/app/compare/metrics";
 import { MovieCard } from "@/app/components/MovieCard";
+import { BulkMovieImport } from "@/app/components/BulkMovieImport";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import { ViewControls } from "@/app/components/ViewControls";
@@ -9,6 +10,7 @@ import { useAPIActions } from "@/app/lib/useAPIActions";
 import { useMovieDiscussionHistory } from "@/app/lib/useMovieDiscussionHistory";
 import { applyView, ViewContext, ViewState } from "@/app/lib/view";
 import type { Movie, Nomination } from "@/src/db/schema";
+import type { MovieImportResult } from "@/app/lib/bulk-movie-import";
 import classnames from "classnames";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
@@ -18,12 +20,11 @@ import { useRoom } from "../[ownerId]/[slug]/RoomContext";
 import styles from "./Room.module.css";
 
 export interface RoomAPI {
+  importTitle: (title: string) => Promise<MovieImportResult>;
   delete: (nominationId: number) => Promise<void>;
   nominate: (candidate: Movie, comment: string) => Promise<void>;
-  addNomCom: (nominationId: number, comment: string) => Promise<void>;
   updateNomRec: (nominationId: number, comment: string) => Promise<void>;
   toggleWatched: (movieId: number) => Promise<void>;
-  updateNomCom: (nomcomId: number, comment: string) => Promise<void>;
   toggleCompleted: (nominationId: number) => Promise<void>;
 }
 
@@ -161,6 +162,7 @@ export function Room({
         </h1>
 
         <ViewControls
+          key={room.id}
           state={viewState}
           onChange={setViewState}
           existing={existing}
@@ -225,6 +227,14 @@ export function Room({
           )}
         </section>
       )}
+
+      <div className={styles.bulkImport}>
+        <BulkMovieImport
+          key={room.id}
+          onImport={api.importTitle}
+          isDisabled={isSubmitting}
+        />
+      </div>
 
       <AnimatePresence>
         {comparing && (

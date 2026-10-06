@@ -17,6 +17,7 @@ let client: TMDB | null = null;
 export interface MovieMetadataProvider {
   hasCredentials(): boolean;
   search(query: string): Promise<Movie[]>;
+  bestMatch(query: string): Promise<Movie | null>;
   get(tmdbId: number): Promise<Movie>;
 }
 
@@ -78,6 +79,15 @@ export class ProdMovieProvider implements MovieMetadataProvider {
       console.error(result.reason);
       return [];
     });
+  };
+
+  bestMatch = async (query: string): Promise<Movie | null> => {
+    const response = await tmdb().search.movies({
+      query,
+      include_adult: false,
+    });
+    const first = response.results[0];
+    return first ? this.get(first.id) : null;
   };
 
   get = async (tmdbId: number) => {

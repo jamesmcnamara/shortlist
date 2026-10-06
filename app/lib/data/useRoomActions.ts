@@ -8,20 +8,15 @@ import { useDataSession } from "./DataProvider";
 export function useRoomActions(client: RoomApi, noms: Nomination[]): RoomAPI {
   const { userId } = useDataSession();
   return {
+    importTitle: client.nominations.importTitle,
     nominate: async (candidate, comment) => {
       await client.nominations.create({ movieId: candidate.id, comment });
     },
     delete: async (id) => {
       await client.nominations.delete(id);
     },
-    addNomCom: async (id, comment) => {
-      await client.nomcoms.create(id, comment);
-    },
     updateNomRec: async (id, comment) => {
       await client.nominations.updateComment(id, comment);
-    },
-    updateNomCom: async (id, comment) => {
-      await client.nomcoms.update(id, comment);
     },
     toggleWatched: async (movieId) => {
       const nomination = noms.find((item) => item.movieId === movieId);
