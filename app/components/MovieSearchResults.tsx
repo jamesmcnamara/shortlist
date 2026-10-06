@@ -9,6 +9,7 @@ type MovieSearchResultsProps = {
   error: string;
   onSelect?: (movie: Movie) => void;
   onAdd?: (movie: Movie) => void;
+  onQuickAdd?: (movie: Movie) => Promise<void>;
 };
 
 export function MovieSearchResults({
@@ -17,6 +18,7 @@ export function MovieSearchResults({
   error,
   onSelect,
   onAdd,
+  onQuickAdd,
 }: MovieSearchResultsProps) {
   if (isLoading) {
     return <LoadingOverlay fullscreen={false} label="Searching TMDB..." />;
@@ -49,6 +51,7 @@ export function MovieSearchResults({
             movie={movie}
             onSelect={onSelect}
             onAdd={onAdd}
+            onQuickAdd={onQuickAdd}
           />
         ))}
       </ul>

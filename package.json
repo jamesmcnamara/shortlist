@@ -25,6 +25,7 @@
     "better-auth": "~1.4.22",
     "classnames": "^2.5.1",
     "drizzle-orm": "^0.44.2",
+    "fp-ts": "^2.16.11",
     "lodash": "^4.18.1",
     "motion": "^12.43.0",
     "next": "^16.2.12",

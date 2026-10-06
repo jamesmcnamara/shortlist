@@ -24,6 +24,7 @@ const SCALE_HINTS: Record<Scale, string> = {
 
 // GitHub's diff backgrounds, extrapolated one step past each end for punch.
 const HEAT_STOPS = [
+  "#ff948f",
   "#ffb1ad",
   "#ffcecb",
   "#ffebe9",
@@ -31,6 +32,7 @@ const HEAT_STOPS = [
   "#dafbe1",
   "#aceebb",
   "#7ee195",
+  "#50d46f",
 ];
 
 const heat = (score: number) => {

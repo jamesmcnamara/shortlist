@@ -7,7 +7,7 @@
   background: rgba(20, 20, 24, 0.62);
 }
 
-.inline {
+.contained {
   width: 100%;
   height: 100%;
   display: grid;
@@ -17,10 +17,28 @@
   padding: 1.5rem 0;
 }
 
+.inline {
+  display: inline-grid;
+  flex: none;
+  align-self: center;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: rgba(20, 20, 24, 0.62);
+}
+
 .reel {
   color: var(--surface);
   filter: drop-shadow(0 0.25rem 0.75rem rgba(0, 0, 0, 0.35));
   animation: spin 1.1s linear infinite;
+}
+
+.centeredRotation {
+  overflow: visible;
+  transform-box: view-box;
+  /* The reel's center is (205, 180) in its 360 x 360 viewBox. */
+  transform-origin: calc(100% * 205 / 360) 50%;
 }
 
 @keyframes spin {

@@ -14,6 +14,8 @@ import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussio
 import { NominationForm } from "@/app/components/NominationForm";
 import { ViewControls } from "@/app/components/ViewControls";
 import { LoadingOverlay } from "@/app/components/LoadingOverlay";
+import loadingStyles from "@/app/components/LoadingOverlay.module.css";
+import { MovieSearchResult } from "@/app/components/MovieSearchResult";
 import type { MovieDetails, Nomination } from "@/src/db/schema";
 
 const nomination: Nomination = {
@@ -46,11 +48,121 @@ const nomination: Nomination = {
 afterEach(cleanup);
 
 describe("high-churn component smoke tests", () => {
+  it("preserves the existing search result add action", () => {
+    const onAdd = vi.fn();
+    const onSelect = vi.fn();
+    render(
+      <MovieSearchResult
+        movie={nomination.movie}
+        onAdd={onAdd}
+        onSelect={onSelect}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Add A Movie to a list" }),
+    );
+    expect(onAdd).toHaveBeenCalledWith(nomination.movie);
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
   it("renders an accessible loading overlay", () => {
     render(<LoadingOverlay label="Searching movies..." />);
 
     expect(
       screen.getByRole("status", { name: "Searching movies..." }),
+    ).toBeTruthy();
+  });
+
+  it("opts into reel-centered rotation only for the original icon", () => {
+    const { rerender } = render(<LoadingOverlay />);
+    const reel = () => screen.getByRole("status").querySelector("svg");
+
+    expect(reel()?.classList.contains(loadingStyles.centeredRotation)).toBe(
+      false,
+    );
+
+    rerender(<LoadingOverlay centeredRotation />);
+    expect(reel()?.classList.contains(loadingStyles.centeredRotation)).toBe(
+      true,
+    );
+
+    rerender(<LoadingOverlay fullscreen={false} centeredRotation />);
+    expect(reel()?.classList.contains(loadingStyles.centeredRotation)).toBe(
+      true,
+    );
+
+    rerender(<LoadingOverlay inline centeredRotation />);
+    expect(reel()?.classList.contains(loadingStyles.centeredRotation)).toBe(
+      false,
+    );
+  });
+
+  it("keeps fullscreen and contained loaders while supporting a compact inline loader", () => {
+    const { rerender } = render(<LoadingOverlay />);
+    const loader = () => screen.getByRole("status", { name: "Loading..." });
+
+    expect(loader().className).toBe(loadingStyles.overlay);
+    expect(loader().querySelector("svg")?.getAttribute("width")).toBe("56");
+    expect(loader().querySelector("svg")?.getAttribute("viewBox")).toBe(
+      "0 0 360 360",
+    );
+
+    rerender(<LoadingOverlay fullscreen={false} />);
+    expect(loader().className).toBe(loadingStyles.contained);
+    expect(loader().querySelector("svg")?.getAttribute("width")).toBe("56");
+
+    rerender(<LoadingOverlay inline />);
+    expect(loader().className).toBe(loadingStyles.inline);
+    expect(loader().querySelector("svg")?.getAttribute("width")).toBe("20");
+    expect(loader().querySelector("svg")?.getAttribute("viewBox")).toBe(
+      "25 0 360 360",
+    );
+    expect(loader().querySelector("path")?.getAttribute("d")).toMatch(
+      /^M205 25a155 155 0 1 1 0 310a155 155 0 1 1 0-310z/,
+    );
+    expect(loader().querySelector("path")?.getAttribute("fill-rule")).toBe(
+      "evenodd",
+    );
+  });
+
+  it("shows a compact loader only while quick-adding a search result", async () => {
+    let finishAdding!: () => void;
+    const pendingAdd = new Promise<void>((resolve) => {
+      finishAdding = resolve;
+    });
+    const onQuickAdd = vi.fn(() => pendingAdd);
+    const onSelect = vi.fn();
+    render(
+      <MovieSearchResult
+        movie={nomination.movie}
+        onQuickAdd={onQuickAdd}
+        onSelect={onSelect}
+      />,
+    );
+
+    expect(screen.queryByRole("status")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Add A Movie to this list" }),
+    );
+
+    expect(onQuickAdd).toHaveBeenCalledWith(nomination.movie);
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("status", { name: "Adding movie..." }).className,
+    ).toBe(loadingStyles.inline);
+    expect(
+      screen.queryByRole("button", { name: "Add A Movie to this list" }),
+    ).toBeNull();
+
+    await act(async () => {
+      finishAdding();
+      await pendingAdd;
+    });
+
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Add A Movie to this list" }),
     ).toBeTruthy();
   });
 
@@ -92,7 +204,9 @@ describe("high-churn component smoke tests", () => {
       />,
     );
 
-    expect(container.querySelector("article")?.className).toContain("activeCard");
+    expect(container.querySelector("article")?.className).toContain(
+      "activeCard",
+    );
     expect(container.querySelector("article")?.className).not.toContain(
       "undefined",
     );
@@ -119,7 +233,11 @@ describe("high-churn component smoke tests", () => {
       expect(screen.queryByRole("button", { name: "Sort by" })).toBeNull(),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Close search" }));
+    const closeSearch = screen.getByRole("button", { name: "Close search" });
+    expect(closeSearch.querySelector("svg")?.getAttribute("viewBox")).toBe(
+      "0 0 16 16",
+    );
+    fireEvent.click(closeSearch);
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Sort by" })).toBeTruthy(),
     );
@@ -146,16 +264,14 @@ describe("high-churn component smoke tests", () => {
   });
 
   it("lets the current user edit their nomination comment", async () => {
-    const onUpdateNominationComment = vi.fn().mockResolvedValue(true);
+    const onUpdateComment = vi.fn().mockResolvedValue(true);
 
     render(
       <MovieDiscussion
         nomination={nomination}
         hasSeen={false}
         currentUserId="user"
-        onAddComment={vi.fn()}
-        onUpdateNominationComment={onUpdateNominationComment}
-        onUpdateComment={vi.fn()}
+        onUpdateComment={onUpdateComment}
         onMarkWatched={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -176,7 +292,7 @@ describe("high-churn component smoke tests", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() =>
-      expect(onUpdateNominationComment).toHaveBeenCalledWith("A sharper pitch"),
+      expect(onUpdateComment).toHaveBeenCalledWith("A sharper pitch"),
     );
   });
 });

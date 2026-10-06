@@ -56,19 +56,23 @@
   -webkit-line-clamp: 2;
 }
 
-.add {
+.add,
+.addIcon {
   display: grid;
   flex: none;
   place-items: center;
   align-self: center;
   width: 2rem;
   height: 2rem;
+  padding: 0;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--accent);
-  font-size: 1.15rem;
-  line-height: 1;
+}
+
+.addIcon {
+  color: var(--muted);
 }
 
 .add:hover,

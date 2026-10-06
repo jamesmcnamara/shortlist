@@ -1,6 +1,7 @@
 "use client";
 
 import { MovieSearchResults } from "@/app/components/MovieSearchResults";
+import { CloseIcon } from "@/app/components/CloseIcon";
 import { NominationForm } from "@/app/components/NominationForm";
 import { useMovieSearch } from "@/app/lib/useMovieSearch";
 import { withTargetValue } from "@/app/lib/utils";
@@ -89,6 +90,15 @@ export function ViewControls({
     }
   };
 
+  const quickAdd = async (movie: Movie) => {
+    if (movie.tmdbId !== null && existing.has(movie.tmdbId)) {
+      setNotice("This movie is already on the list.");
+      return;
+    }
+    await onNominate(movie, "");
+    closeSearch();
+  };
+
   return (
     <div className={styles.controls}>
       <div className={styles.actions}>
@@ -115,11 +125,9 @@ export function ViewControls({
               type="button"
               className={styles.clearSearch}
               aria-label="Close search"
-              // Keeps focus in the input so the row doesn't collapse mid-click.
-              onMouseDown={(e) => e.preventDefault()}
               onClick={closeSearch}
             >
-              ×
+              <CloseIcon />
             </button>
           )}
         </div>
@@ -207,6 +215,7 @@ export function ViewControls({
           isLoading={search.isLoading}
           error={search.error}
           onSelect={selectMovie}
+          onQuickAdd={quickAdd}
         />
       )}
 

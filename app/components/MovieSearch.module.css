@@ -53,8 +53,8 @@
 }
 
 .clearButton {
-  position: relative;
   display: grid;
+  flex: none;
   width: 1.75rem;
   height: 1.75rem;
   padding: 0;
@@ -63,26 +63,7 @@
   background: var(--muted);
   color: var(--surface);
   cursor: pointer;
-  font-size: 0;
   place-items: center;
-}
-
-.clearButton::before,
-.clearButton::after {
-  position: absolute;
-  width: 0.875rem;
-  height: 0.125rem;
-  border-radius: var(--radius-pill);
-  background: currentColor;
-  content: "";
-}
-
-.clearButton::before {
-  transform: rotate(45deg);
-}
-
-.clearButton::after {
-  transform: rotate(-45deg);
 }
 
 .clearButton:focus-visible {

@@ -11,9 +11,7 @@ interface MovieDiscussionProps {
   nomination: Nomination;
   hasSeen: boolean;
   currentUserId: string | null;
-  onAddComment: (comment: string) => Promise<boolean>;
-  onUpdateNominationComment: (comment: string) => Promise<boolean>;
-  onUpdateComment: (commentId: number, comment: string) => Promise<boolean>;
+  onUpdateComment: (comment: string) => Promise<boolean>;
   onMarkWatched?: () => void;
   onDelete?: () => void;
   onToggleCompleted?: () => void;
@@ -24,8 +22,6 @@ export function MovieDiscussion({
   nomination,
   hasSeen,
   currentUserId,
-  onAddComment,
-  onUpdateNominationComment,
   onUpdateComment,
   onMarkWatched,
   onDelete,
@@ -117,7 +113,7 @@ export function MovieDiscussion({
               emptyText=""
               editLabel={`Edit ${details.title} nomination comment`}
               inputLabel={`Nomination comment for ${details.title}`}
-              onSave={onUpdateNominationComment}
+              onSave={onUpdateComment}
             />
           </div>
         </div>

@@ -51,7 +51,7 @@ export const METRICS: Metric[] = [
   {
     name: "IMDb",
     logo: "/ratings/imdb.svg",
-    range: [3, 9],
+    range: [5.5, 7.5],
     lowerIsBetter: false,
     read: rating("imdb"),
     format: (value) => value.toFixed(1),
@@ -59,7 +59,7 @@ export const METRICS: Metric[] = [
   {
     name: "Letterboxd",
     logo: "/ratings/letterboxd.svg",
-    range: [1.5, 4.6],
+    range: [3, 4],
     lowerIsBetter: false,
     read: rating("letterboxd"),
     format: (value) => value.toFixed(1),
@@ -67,7 +67,7 @@ export const METRICS: Metric[] = [
   {
     name: "Rotten Tomatoes",
     logo: "/ratings/rottentomatoes.svg",
-    range: [0, 100],
+    range: [50, 95],
     lowerIsBetter: false,
     read: rating("tomatoes"),
     format: (value) => `${Math.round(value)}%`,
@@ -75,7 +75,7 @@ export const METRICS: Metric[] = [
   {
     name: "Rotten Tomatoes audience",
     logo: "/ratings/rottentomatoes-popcorn.svg",
-    range: [0, 100],
+    range: [50, 95],
     lowerIsBetter: false,
     read: rating("popcorn"),
     format: (value) => `${Math.round(value)}%`,

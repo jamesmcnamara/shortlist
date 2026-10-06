@@ -105,14 +105,6 @@ export function Room({
       api: api.toggleWatched,
       action: "update your watched status",
     },
-    addNomCom: {
-      api: api.addNomCom,
-      action: "add your comment",
-    },
-    updateNomCom: {
-      api: api.updateNomCom,
-      action: "update your comment",
-    },
     updateNomRec: {
       api: api.updateNomRec,
       action: "update your recommendation",
@@ -279,21 +271,15 @@ export function Room({
             nomination={focused}
             hasSeen={some({ id: userId })(focused.seenBy)}
             currentUserId={userId ?? null}
-            onAddComment={(comment) => actions.addNomCom(focused.id, comment)}
-            onUpdateNominationComment={(comment) =>
+            onUpdateComment={(comment) =>
               actions.updateNomRec(focused.id, comment)
             }
-            onUpdateComment={actions.updateNomCom}
             onMarkWatched={() => actions.toggleWatched(focused.movieId)}
             onDelete={isAdmin ? () => actions.delete(focused.id) : undefined}
-            onToggleCompleted={
-              isAdmin
-                ? () => {
-                    actions.toggleCompleted(focused.id);
-                    closeDiscussion();
-                  }
-                : undefined
-            }
+            onToggleCompleted={when(isAdmin)(() => {
+              actions.toggleCompleted(focused.id);
+              closeDiscussion();
+            })}
             onClose={closeDiscussion}
           />
         )}
@@ -301,3 +287,8 @@ export function Room({
     </main>
   );
 }
+
+const when =
+  (condition: boolean) =>
+  <T extends any>(arg: T) =>
+    condition ? arg : undefined;

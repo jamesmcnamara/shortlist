@@ -8,6 +8,7 @@ import { withTargetValue } from "@/app/lib/utils";
 import type { Movie } from "@/src/db/schema";
 import { AddToLists } from "@/app/components/AddToLists/AddToLists";
 import { AppMenu } from "@/app/components/AppMenu";
+import { CloseIcon } from "@/app/components/CloseIcon";
 import { MovieDetail } from "@/app/components/MovieDetail";
 import { MovieSearchResults } from "@/app/components/MovieSearchResults";
 import styles from "./MovieSearch.module.css";
@@ -92,7 +93,7 @@ export function MovieSearch() {
                   aria-label="Clear search"
                   onClick={() => setQuery("")}
                 >
-                  ×
+                  <CloseIcon />
                 </button>
               )}
             </div>
