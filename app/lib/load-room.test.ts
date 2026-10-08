@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { listRoomsWithPosterPreviewsForUser } from "@/app/lib/load-room";
+import {
+  listRoomsWithPosterPreviewsForUser,
+  MAX_POSTER_PREVIEWS,
+} from "@/app/lib/load-room";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import { setDbForTesting, type DB } from "@/src/db/client";
 import { createTestDb } from "@/src/db/test-db";
@@ -25,7 +28,7 @@ beforeEach(async () => {
 });
 
 describe("listRoomsWithPosterPreviewsForUser", () => {
-  it("returns up to three recent posters from each room the user belongs to", async () => {
+  it("returns the most recent posters, up to the cap, from each room the user belongs to", async () => {
     const [firstRoom, secondRoom, otherRoom] = await db
       .insert(rooms)
       .values([
@@ -59,52 +62,40 @@ describe("listRoomsWithPosterPreviewsForUser", () => {
       { roomId: otherRoom.id, userId: OTHER_USER_ID },
     ]);
 
-    const insertedMovies = await db
+    const posterCount = MAX_POSTER_PREVIEWS + 1;
+    const posterMovies = await db
+      .insert(movies)
+      .values(
+        Array.from({ length: posterCount }, (_, i) => ({
+          details: { title: `Movie ${i}`, posterUrl: `/${i}.jpg` },
+          ratings: {},
+        })),
+      )
+      .returning();
+    const [noPosterMovie, otherMovie] = await db
       .insert(movies)
       .values([
-        { details: { title: "One", posterUrl: "/one.jpg" }, ratings: {} },
-        { details: { title: "Two", posterUrl: "/two.jpg" }, ratings: {} },
-        { details: { title: "Three", posterUrl: "/three.jpg" }, ratings: {} },
-        { details: { title: "Four", posterUrl: "/four.jpg" }, ratings: {} },
         { details: { title: "No poster" }, ratings: {} },
         { details: { title: "Other", posterUrl: "/other.jpg" }, ratings: {} },
       ])
       .returning();
 
     await db.insert(nominations).values([
-      {
+      ...posterMovies.map((movie, i) => ({
         roomId: firstRoom.id,
         userId: USER_ID,
-        movieId: insertedMovies[0].id,
-        createdAt: new Date("2026-01-01"),
-      },
-      {
-        roomId: firstRoom.id,
-        userId: USER_ID,
-        movieId: insertedMovies[1].id,
-        createdAt: new Date("2026-01-02"),
-      },
-      {
-        roomId: firstRoom.id,
-        userId: USER_ID,
-        movieId: insertedMovies[2].id,
-        createdAt: new Date("2026-01-03"),
-      },
-      {
-        roomId: firstRoom.id,
-        userId: USER_ID,
-        movieId: insertedMovies[3].id,
-        createdAt: new Date("2026-01-04"),
-      },
+        movieId: movie.id,
+        createdAt: new Date(Date.UTC(2026, 0, i + 1)),
+      })),
       {
         roomId: secondRoom.id,
         userId: USER_ID,
-        movieId: insertedMovies[4].id,
+        movieId: noPosterMovie.id,
       },
       {
         roomId: otherRoom.id,
         userId: OTHER_USER_ID,
-        movieId: insertedMovies[5].id,
+        movieId: otherMovie.id,
       },
     ]);
 
@@ -115,7 +106,10 @@ describe("listRoomsWithPosterPreviewsForUser", () => {
 
     expect(bySlug).toEqual({
       second: [],
-      first: ["/four.jpg", "/three.jpg", "/two.jpg"],
+      first: Array.from(
+        { length: MAX_POSTER_PREVIEWS },
+        (_, i) => `/${posterCount - 1 - i}.jpg`,
+      ),
     });
   });
 });

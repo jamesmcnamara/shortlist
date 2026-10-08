@@ -80,7 +80,9 @@ describe("streaming service row", () => {
         .getByRole("link", { name: "Watch on Kanopy: Free" })
         .getAttribute("rel"),
     ).toBe("noopener noreferrer");
-    expect(screen.getByText("Free")).toBeTruthy();
+    const freeLabel = screen.getByText("FREE");
+    expect(freeLabel.className).toBe(streamingStyles.free);
+    expect(freeLabel.parentElement?.className).toBe(streamingStyles.iconWrap);
     expect(screen.queryByText("Service 999")).toBeNull();
     expect(
       screen.getByRole("link", { name: "JustWatch" }).getAttribute("href"),
@@ -102,6 +104,7 @@ describe("streaming service row", () => {
     expect(
       screen.getByRole("link", { name: "Watch on Custom: Free with ads" }),
     ).toBeTruthy();
+    expect(screen.getByText("FREE")).toBeTruthy();
     expect(screen.queryByText("Netflix")).toBeNull();
   });
 
@@ -116,14 +119,17 @@ describe("streaming service row", () => {
         ])}
       />,
     );
-    expect(screen.getAllByText("Netflix")).toHaveLength(1);
+    const netflixLinks = screen.getAllByRole("link", {
+      name: "Watch on Netflix: Free",
+    });
+    expect(netflixLinks).toHaveLength(1);
+    expect(netflixLinks[0].getAttribute("href")).toBe(
+      "https://stream.example.com/1796",
+    );
     expect(
-      screen
-        .getByRole("link", { name: "Watch on Netflix: Free" })
-        .getAttribute("href"),
-    ).toBe("https://stream.example.com/1796");
-    expect(
-      screen.getByRole("link", { name: /Watch on Amazon Prime Video/ }),
+      screen.getByRole("link", {
+        name: "Watch on Prime: Included with subscription",
+      }),
     ).toBeTruthy();
     expect(
       STREAMING_SERVICES.flatMap((service) => service.packageIds),
@@ -140,18 +146,22 @@ describe("streaming service row", () => {
       { ...availability([]), status: "not_found" as const },
       "No matching movie found on JustWatch.",
     ],
-    [availability([]), "Not included on your streaming services."],
+    [availability([]), "It's fuckin' nowhere, man. Ghost town."],
   ])("distinguishes empty and unknown states", (data, message) => {
     render(<MovieStreaming availability={data} />);
     expect(screen.getByText(message)).toBeTruthy();
   });
 
-  it("keeps the service name when an icon fails", () => {
+  it("keeps the service link accessible when an icon fails", () => {
     render(<MovieStreaming availability={availability([offer(8)])} />);
     const link = screen.getByRole("link", { name: /Watch on Netflix/ });
     fireEvent.error(link.querySelector("img")!);
     expect(link.querySelector("img")).toBeNull();
-    expect(screen.getByText("Netflix")).toBeTruthy();
+    expect(
+      screen.getByRole("link", {
+        name: "Watch on Netflix: Included with subscription",
+      }),
+    ).toBe(link);
   });
 
   it("does not render an unsafe stored offer URL", () => {
@@ -189,6 +199,7 @@ describe("streaming service row", () => {
     />);
     expect(screen.getByRole("link", { name: "Watch on Prime: Rent" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Watch on Apple TV: Rent" })).toBeTruthy();
+    expect(screen.getAllByText("RENT")).toHaveLength(2);
     expect(screen.queryByRole("link", { name: /Netflix/ })).toBeNull();
     expect(screen.getByRole("link", { name: "Watch on Hulu: Included with subscription" })).toBeTruthy();
   });

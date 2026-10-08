@@ -72,15 +72,11 @@ export function MovieStreaming({
                 title={`${offer.serviceName}: ${LABELS[offer.type]}`}
               >
                 {offer.iconUrl && (
-                  <ServiceIcon key={offer.iconUrl} url={offer.iconUrl} />
-                )}
-                {offer.type !== "FLATRATE" && (
-                  <span
-                    className={
-                      offer.type === "RENT" ? styles.rent : styles.free
-                    }
-                  >
-                    {LABELS[offer.type]}
+                  <span className={styles.iconWrap}>
+                    <ServiceIcon key={offer.iconUrl} url={offer.iconUrl} />
+                    {offer.type === "RENT" && (
+                      <span className={styles.rent}>RENT</span>
+                    )}
                   </span>
                 )}
               </a>
@@ -91,13 +87,13 @@ export function MovieStreaming({
         <>
           <p className={styles.empty} role="status">
             {refreshFailed
-              ? "Couldn't check JustWatch. Try again later."
+              ? "Couldn't check JustWatch. Try again tomorrow."
               : !availability
-                ? "Streaming availability not checked yet."
+                ? "Streaming not checked yet."
                 : availability.status === "unavailable"
                   ? "Streaming availability is temporarily unavailable."
                   : availability.status === "not_found"
-                    ? "No matching movie found on JustWatch."
+                    ? "Couldn't find it, man."
                     : "It's fuckin' nowhere, man. Ghost town."}
           </p>
           {onRefresh && (

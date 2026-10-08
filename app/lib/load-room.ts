@@ -41,7 +41,10 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
   return memberships as RoomSummary[];
 }
 
-/** Rooms the user belongs to, with up to three recent nomination posters. */
+/** Enough to fill the widest room card; the UI clips whatever doesn't fit. */
+export const MAX_POSTER_PREVIEWS = 12;
+
+/** Rooms the user belongs to, with their most recent nomination posters. */
 export async function listRoomsWithPosterPreviewsForUser(
   userId: string,
 ): Promise<RoomSummaryWithPosterPreviews[]> {
@@ -76,7 +79,7 @@ export async function listRoomsWithPosterPreviewsForUser(
       posterUrl: rankedPosters.posterUrl,
     })
     .from(rankedPosters)
-    .where(lte(rankedPosters.rank, 3))
+    .where(lte(rankedPosters.rank, MAX_POSTER_PREVIEWS))
     .orderBy(rankedPosters.roomId, rankedPosters.rank);
 
   return memberships.map((room) => ({

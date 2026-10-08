@@ -4,6 +4,7 @@ import { useRooms } from "@/app/lib/data/queries";
 import { DataBoundary } from "@/app/lib/data/DataBoundary";
 import { roomPath } from "@/lib/room-path";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { redirect } from "next/navigation";
 import styles from "./page.module.css";
 
@@ -36,10 +37,11 @@ export default function Rooms() {
                   </span>
                   {room.posterUrls.length > 0 ? (
                     <span className={styles.posters} aria-hidden="true">
-                      {room.posterUrls.map((posterUrl) => (
+                      {room.posterUrls.map((posterUrl, i) => (
                         <img
                           className={styles.poster}
                           key={posterUrl}
+                          style={{ "--i": i } as CSSProperties}
                           src={posterUrl}
                           alt=""
                           width="48"

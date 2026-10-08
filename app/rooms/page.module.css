@@ -43,6 +43,11 @@
 }
 
 .roomCard {
+  --poster-width: 3rem;
+  --poster-height: 4.5rem;
+  --poster-overlap: 1.5rem;
+  --poster-gutter: 0rem;
+
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -75,54 +80,55 @@
   font-weight: 700;
 }
 
+/* Name keeps its natural width (min 6rem); posters fill whatever is left. */
+.roomCard:has(.posters) {
+  grid-template-columns: minmax(6rem, max-content) minmax(
+      calc(var(--poster-width) + var(--poster-gutter)),
+      1fr
+    );
+}
+
+/*
+ * Posters that don't fully fit wrap to a second line, which sits below the
+ * clipped area. The vertical padding (cancelled by negative margins) keeps
+ * shadows from being clipped.
+ */
 .posters {
+  --shadow-room: 1rem;
+
   display: flex;
-  align-items: center;
-  padding-left: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  row-gap: calc(var(--shadow-room) * 2);
+  min-width: 0;
+  height: calc(var(--poster-height) + var(--shadow-room) * 2);
+  margin-block: calc(var(--shadow-room) * -1);
+  padding: var(--shadow-room) 0.25rem var(--shadow-room) var(--poster-gutter);
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .poster {
-  position: relative;
-  width: 3rem;
-  height: 4.5rem;
+  z-index: calc(100 - var(--i));
+  width: var(--poster-width);
+  height: var(--poster-height);
   border: 2px solid var(--surface);
   border-radius: 0.4375rem;
   background: var(--surface-muted);
-  box-shadow: 0 0.375rem 0.875rem rgba(43, 43, 73, 0.14);
+  box-shadow: 0 0.375rem 0.375rem rgba(43, 43, 73, 0.14);
   object-fit: cover;
 }
 
 .poster + .poster {
-  margin-left: -1.5rem;
-}
-
-.poster:nth-child(1) {
-  z-index: 3;
-}
-
-.poster:nth-child(2) {
-  z-index: 2;
-}
-
-.poster:nth-child(3) {
-  z-index: 1;
+  margin-left: calc(var(--poster-overlap) * -1);
 }
 
 @media (max-width: 24rem) {
   .roomCard {
     gap: 0.75rem;
-  }
-
-  .posters {
-    padding-left: 1rem;
-  }
-
-  .poster {
-    width: 2.625rem;
-    height: 3.9375rem;
-  }
-
-  .poster + .poster {
-    margin-left: -1.375rem;
+    --poster-width: 2.625rem;
+    --poster-height: 3.9375rem;
+    --poster-overlap: 1.375rem;
+    --poster-gutter: 1rem;
   }
 }
