@@ -94,7 +94,7 @@ export function MovieStreaming({
                   ? "Streaming availability is temporarily unavailable."
                   : availability.status === "not_found"
                     ? "Couldn't find it, man."
-                    : "It's fuckin' nowhere, man. Ghost town."}
+                    : "It's fuckin' nowhere. Ghost town."}
           </p>
           {onRefresh && (
             <button
@@ -144,17 +144,19 @@ const getOffers = (
   services: readonly StreamingService[],
   availability?: JustWatchAvailability,
 ) =>
-  services.flatMap((service) => {
-    const offer = availability?.offers
-      .filter(
-        (item) =>
-          service.packageIds.includes(item.packageId) &&
-          (item.type !== "RENT" || service.rent) &&
-          httpsUrl(item.url),
-      )
-      .sort((a, b) => PRIORITY[a.type] - PRIORITY[b.type])[0];
-    return offer ? [{ ...offer, serviceName: service.name }] : [];
-  });
+  services
+    .flatMap((service) => {
+      const offer = availability?.offers
+        .filter(
+          (item) =>
+            service.packageIds.includes(item.packageId) &&
+            (item.type !== "RENT" || service.rent) &&
+            httpsUrl(item.url),
+        )
+        .sort((a, b) => PRIORITY[a.type] - PRIORITY[b.type])[0];
+      return offer ? [{ ...offer, serviceName: service.name }] : [];
+    })
+    .sort((a, b) => PRIORITY[a.type] - PRIORITY[b.type]);
 
 const stopPropagation = (event: React.SyntheticEvent) => {
   event.stopPropagation();

@@ -55,7 +55,6 @@ export function MovieCard({
         >
           <div
             className={classnames(styles.poster, {
-              [styles.watchedPoster]: hasSeen || isCompleted,
               [styles.selectedPoster]: isSelected,
             })}
           >
@@ -66,6 +65,14 @@ export function MovieCard({
             )}
             <span className={styles.rank}>{String(rank).padStart(2, "0")}</span>
             <span className={styles.posterShade} />
+            {(hasSeen || isCompleted) && (
+              <span
+                className={styles.watchedMark}
+                role="img"
+                aria-label="Watched"
+                title="Watched"
+              />
+            )}
             {isSelecting && (
               <span className={styles.selectMark} aria-hidden="true" />
             )}

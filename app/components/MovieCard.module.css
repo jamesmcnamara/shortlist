@@ -52,16 +52,13 @@
   object-fit: cover;
 }
 
-.watchedPoster img {
-  filter: grayscale(0.5) saturate(0.5) brightness(0.5);
-}
-
 .selectedPoster {
   outline: 0.1875rem solid var(--text);
   outline-offset: 0.1875rem;
 }
 
-.selectMark {
+.selectMark,
+.watchedMark {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
@@ -76,12 +73,22 @@
   place-items: center;
 }
 
+.watchedMark {
+  border-color: #16a34a;
+  background: #16a34a;
+}
+
+.watchedMark ~ .selectMark {
+  top: 2.5rem;
+}
+
 .selectedPoster .selectMark {
   border-color: var(--text);
   background: var(--text);
 }
 
-.selectedPoster .selectMark::after {
+.selectedPoster .selectMark::after,
+.watchedMark::after {
   width: 0.4375rem;
   height: 0.75rem;
   margin-top: -0.1875rem;

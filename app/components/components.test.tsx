@@ -158,13 +158,73 @@ describe("high-churn component smoke tests", () => {
     );
 
     expect(screen.getByText("A Movie")).toBeTruthy();
-    expect(screen.getByAltText("").parentElement?.className).toContain(
+    expect(screen.getByRole("img", { name: "Watched" })).toBeTruthy();
+    expect(screen.getByAltText("").parentElement?.className).not.toContain(
       "watchedPoster",
     );
     fireEvent.click(
       screen.getByRole("button", { name: "Expand details for A Movie" }),
     );
     expect(onToggleDiscussion).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    { hasSeen: false, isCompleted: false, watched: false },
+    { hasSeen: true, isCompleted: false, watched: true },
+    { hasSeen: false, isCompleted: true, watched: true },
+    { hasSeen: true, isCompleted: true, watched: true },
+  ])(
+    "shows the watched badge when seen=$hasSeen and completed=$isCompleted",
+    ({ hasSeen, isCompleted, watched }) => {
+      render(
+        <MovieCard
+          nomination={nomination}
+          rank={1}
+          hasSeen={hasSeen}
+          isCompleted={isCompleted}
+          showMeta={false}
+          isExpanded={false}
+          onClick={vi.fn()}
+          onLongPress={vi.fn()}
+        />,
+      );
+
+      expect(screen.queryAllByRole("img", { name: "Watched" })).toHaveLength(
+        watched ? 1 : 0,
+      );
+    },
+  );
+
+  it("keeps the watched badge and comparison selector on a missing poster", () => {
+    const onClick = vi.fn();
+    render(
+      <MovieCard
+        nomination={{
+          ...nomination,
+          movie: {
+            ...nomination.movie,
+            details: { ...nomination.movie.details, posterUrl: null },
+          },
+        }}
+        rank={1}
+        hasSeen
+        showMeta={false}
+        isExpanded={false}
+        isSelected
+        onClick={onClick}
+        onLongPress={vi.fn()}
+      />,
+    );
+
+    const badge = screen.getByRole("img", { name: "Watched" });
+    expect(badge.nextElementSibling?.className).toContain("selectMark");
+    expect(screen.getByText("A")).toBeTruthy();
+    const button = screen.getByRole("button", {
+      name: "Select A Movie to compare",
+    });
+    expect(button.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(button);
+    expect(onClick).toHaveBeenCalledOnce();
   });
 
   it("marks an expanded card without adding an undefined class", () => {
