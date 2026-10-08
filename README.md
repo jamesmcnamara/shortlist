@@ -31,16 +31,20 @@ does not undo movies already added.
 New movies fetch US availability from JustWatch's unofficial GraphQL endpoint
 and store it in `movie.details.justWatch`. No API key or schema migration is
 needed. Search results and movie discussions show service icons and direct
-links, excluding rentals and purchases. Free and ad-supported offers are
-labeled; other offers require a subscription. Kanopy may require library access.
+links, excluding purchases. Free and ad-supported offers are labeled; other
+offers require a subscription. Kanopy may require library access. Rentals are
+shown only for services marked `rent: true` (Amazon and Apple), and only when no
+free or subscription offer exists. JustWatch no longer lists Google rentals in
+the US.
 
 The shared row accepts a service list. Its default list lives in
-`app/lib/streaming-services.ts`: Amazon Prime Video, Netflix, Kanopy, HBO Max,
-Hulu, and Disney+. IDs are JustWatch package IDs, not TMDB provider IDs, and
-include the separate Netflix and Prime Video ad-supported packages. HBO through
+`app/lib/streaming-services.ts`. IDs are JustWatch package IDs, not TMDB
+provider IDs, and include the separate Netflix and Prime Video ad-supported
+packages plus Amazon's rental store (10) and the Apple TV Store (2). HBO through
 Amazon Channels is not included because it requires a separate subscription.
 Availability is stored independently of this filter so changing the configured
-services does not require refetching every movie.
+services does not require refetching every movie. Movies checked before rentals
+were added need a refresh to pick them up.
 
 In a list's menu, choose **Bulk add JustWatch** to add or refresh availability
 for all its movies, including Watched. Requests run one at a time, update shared

@@ -15,6 +15,7 @@ interface MovieDiscussionProps {
   onMarkWatched?: () => void;
   onDelete?: () => void;
   onToggleCompleted?: () => void;
+  onRefreshJustWatch?: () => Promise<unknown>;
   onClose: () => void;
 }
 
@@ -26,12 +27,12 @@ export function MovieDiscussion({
   onMarkWatched,
   onDelete,
   onToggleCompleted,
+  onRefreshJustWatch,
   onClose,
 }: MovieDiscussionProps) {
   const {
     movie: { details, ratings },
     nominator,
-    nomcoms,
     seenBy,
   } = nomination;
   const drawerRef = useClickOutside<HTMLDivElement>(onClose);
@@ -72,7 +73,10 @@ export function MovieDiscussion({
             {details.year ?? "Unknown"} • {toHrs(details.runtime)}
           </p>
           <MovieRatings services={ratings.services} />
-          <MovieStreaming availability={details.justWatch} />
+          <MovieStreaming
+            availability={details.justWatch}
+            onRefresh={onRefreshJustWatch}
+          />
           {!nomination.completed && (
             <div className={styles.movieActions}>
               <button

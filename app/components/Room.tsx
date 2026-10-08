@@ -3,8 +3,6 @@
 import { compareHref } from "@/app/compare/metrics";
 import { MovieCard } from "@/app/components/MovieCard";
 import { BulkMovieImport } from "@/app/components/BulkMovieImport";
-import { BulkJustWatchStatus } from "@/app/components/BulkJustWatchStatus";
-import { useBulkJustWatch } from "@/app/lib/useBulkJustWatch";
 import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
@@ -50,11 +48,6 @@ export function Room({
   nominees,
 }: RoomProps) {
   const { room, isAdmin } = useRoom();
-  const bulkJustWatch = useBulkJustWatch(
-    room.id,
-    nominees.map((nomination) => nomination.movie),
-    api.refreshJustWatch,
-  );
   const { focusedId, closeDiscussion, openDiscussion } =
     useMovieDiscussionHistory();
   const [isWatchedOpen, setIsWatchedOpen] = useState(false);
@@ -160,12 +153,7 @@ export function Room({
         [styles.shellComparing]: isComparing,
       })}
     >
-      <ShortlistHeader
-        onBulkJustWatch={
-          nominees.length > 0 ? () => void bulkJustWatch.start() : undefined
-        }
-        isUpdatingJustWatch={bulkJustWatch.isRunning}
-      />
+      <ShortlistHeader />
 
       <section
         className={styles.nominations}
@@ -174,7 +162,6 @@ export function Room({
         <h1 id="nominations-title" className={styles.sectionHeader}>
           {room.name}
         </h1>
-        <BulkJustWatchStatus bulk={bulkJustWatch} />
 
         <ViewControls
           key={room.id}
@@ -300,6 +287,7 @@ export function Room({
               actions.updateNomRec(focused.id, comment)
             }
             onMarkWatched={() => actions.toggleWatched(focused.movieId)}
+            onRefreshJustWatch={() => api.refreshJustWatch(focused.movieId)}
             onDelete={isAdmin ? () => actions.delete(focused.id) : undefined}
             onToggleCompleted={when(isAdmin)(() => {
               actions.toggleCompleted(focused.id);

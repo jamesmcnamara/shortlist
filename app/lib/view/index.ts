@@ -1,4 +1,6 @@
 import type { Nomination, RatingSource } from "@/src/db/schema";
+import { STREAMING_SERVICES } from "../streaming-services";
+import { some } from "shades";
 
 /**
  * Everything a sort or filter may depend on. Options read from here rather
@@ -68,8 +70,8 @@ export const SORTS: SortOption[] = [
       (b.movie.details.runtime ?? Infinity),
   },
   ratingSort("letterboxd", "Letterboxd"),
-  ratingSort("tomatoes", "Rotten Tomatoes critics"),
-  ratingSort("popcorn", "Rotten Tomatoes audience"),
+  ratingSort("tomatoes", "RT critics"),
+  ratingSort("popcorn", "RT audience"),
   ratingSort("imdb", "IMDb"),
   ratingSort("metacritic", "Metacritic"),
   ratingSort("rogerebert", "Roger Ebert"),
@@ -102,7 +104,22 @@ export const FILTERS: FilterOption[] = [
     label: "Nominated by others",
     predicate: (nomination, { userId }) => nomination.userId !== userId,
   },
+  {
+    id: "streaming-available",
+    label: "Free to stream",
+    predicate: (nomination) =>
+      !!some({
+        type: "FLATRATE",
+        packageId: inServiceIds,
+      })(nomination.movie.details?.justWatch?.offers ?? []),
+  },
 ];
+
+const SERVICE_IDS = new Set(
+  STREAMING_SERVICES.flatMap((service) => service.packageIds),
+);
+
+const inServiceIds = SERVICE_IDS.has.bind(SERVICE_IDS);
 
 const byId = <T extends { id: string }>(options: T[]) =>
   new Map(options.map((option) => [option.id, option]));

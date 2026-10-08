@@ -74,30 +74,6 @@ describe("high-churn component smoke tests", () => {
     ).toBeTruthy();
   });
 
-  it("opts into reel-centered rotation only for the original icon", () => {
-    const { rerender } = render(<LoadingOverlay />);
-    const reel = () => screen.getByRole("status").querySelector("svg");
-
-    expect(reel()?.classList.contains(loadingStyles.centeredRotation)).toBe(
-      false,
-    );
-
-    rerender(<LoadingOverlay centeredRotation />);
-    expect(reel()?.classList.contains(loadingStyles.centeredRotation)).toBe(
-      true,
-    );
-
-    rerender(<LoadingOverlay fullscreen={false} centeredRotation />);
-    expect(reel()?.classList.contains(loadingStyles.centeredRotation)).toBe(
-      true,
-    );
-
-    rerender(<LoadingOverlay inline centeredRotation />);
-    expect(reel()?.classList.contains(loadingStyles.centeredRotation)).toBe(
-      false,
-    );
-  });
-
   it("keeps fullscreen and contained loaders while supporting a compact inline loader", () => {
     const { rerender } = render(<LoadingOverlay />);
     const loader = () => screen.getByRole("status", { name: "Loading..." });

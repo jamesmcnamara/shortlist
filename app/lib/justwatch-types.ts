@@ -1,4 +1,4 @@
-export type StreamingType = "FREE" | "ADS" | "FLATRATE";
+export type StreamingType = "FREE" | "ADS" | "FLATRATE" | "RENT";
 
 export interface StreamingOffer {
   packageId: number;
@@ -19,4 +19,5 @@ export interface JustWatchAvailability {
 export interface StreamingService {
   name: string;
   packageIds: readonly number[];
+  rent?: boolean;
 }

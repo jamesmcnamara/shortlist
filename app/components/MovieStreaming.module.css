@@ -48,9 +48,35 @@
   color: var(--success);
 }
 
+.rent {
+  color: var(--muted);
+}
+
 .empty {
   margin: 0;
   color: var(--muted);
+}
+
+.refresh {
+  min-height: 2rem;
+  padding: 0 0.625rem;
+  border: 1px solid var(--text);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.refresh:hover:not(:disabled),
+.refresh:focus-visible {
+  background: var(--text);
+  color: var(--surface);
+}
+
+.refresh:disabled {
+  opacity: 0.5;
+  cursor: progress;
 }
 
 .attribution {

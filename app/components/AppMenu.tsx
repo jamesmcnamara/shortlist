@@ -13,17 +13,10 @@ interface AppMenuProps {
   /** Omitted outside a room, which hides the room-scoped items. */
   room?: { slug: string; ownerId: string; isAdmin: boolean };
   showMyRooms?: boolean;
-  onBulkJustWatch?: () => void;
-  isUpdatingJustWatch?: boolean;
 }
 
 /** The account and navigation menu, shared by every header. */
-export function AppMenu({
-  room,
-  showMyRooms = true,
-  onBulkJustWatch,
-  isUpdatingJustWatch = false,
-}: AppMenuProps) {
+export function AppMenu({ room, showMyRooms = true }: AppMenuProps) {
   const { data: session } = authClient.useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -85,22 +78,6 @@ export function AppMenu({
           <hr className={styles.divider} />
           {isExpanded && (
             <>
-              {room && onBulkJustWatch && (
-                <button
-                  className={styles.menuItem}
-                  type="button"
-                  role="menuitem"
-                  disabled={isUpdatingJustWatch}
-                  onClick={() => {
-                    close();
-                    onBulkJustWatch();
-                  }}
-                >
-                  {isUpdatingJustWatch
-                    ? "Updating JustWatch..."
-                    : "Bulk JustWatch"}
-                </button>
-              )}
               <MenuLink href="/feedback" onNavigate={close}>
                 Feedback
               </MenuLink>

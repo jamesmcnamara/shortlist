@@ -18,7 +18,7 @@ const QUERY = `
             externalIds { tmdbId }
           }
           offers(country: US, platform: WEB, filter: {
-            monetizationTypes: [FREE, ADS, FLATRATE]
+            monetizationTypes: [FREE, ADS, FLATRATE, RENT]
           }) {
             monetizationType
             standardWebURL
@@ -38,7 +38,10 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const isStreamingType = (value: unknown): value is StreamingType =>
-  value === "FREE" || value === "ADS" || value === "FLATRATE";
+  value === "FREE" ||
+  value === "ADS" ||
+  value === "FLATRATE" ||
+  value === "RENT";
 
 export function httpsUrl(value: unknown, base?: string): string | null {
   if (typeof value !== "string" || !value.trim()) return null;
