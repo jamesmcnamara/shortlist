@@ -3,6 +3,9 @@
 import { compareHref } from "@/app/compare/metrics";
 import { MovieCard } from "@/app/components/MovieCard";
 import { BulkMovieImport } from "@/app/components/BulkMovieImport";
+import { BulkJustWatchStatus } from "@/app/components/BulkJustWatchStatus";
+import { useBulkJustWatch } from "@/app/lib/useBulkJustWatch";
+import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import { ViewControls } from "@/app/components/ViewControls";
@@ -21,6 +24,7 @@ import styles from "./Room.module.css";
 
 export interface RoomAPI {
   importTitle: (title: string) => Promise<MovieImportResult>;
+  refreshJustWatch: (movieId: number) => Promise<JustWatchAvailability>;
   delete: (nominationId: number) => Promise<void>;
   nominate: (candidate: Movie, comment: string) => Promise<void>;
   updateNomRec: (nominationId: number, comment: string) => Promise<void>;
@@ -46,6 +50,11 @@ export function Room({
   nominees,
 }: RoomProps) {
   const { room, isAdmin } = useRoom();
+  const bulkJustWatch = useBulkJustWatch(
+    room.id,
+    nominees.map((nomination) => nomination.movie),
+    api.refreshJustWatch,
+  );
   const { focusedId, closeDiscussion, openDiscussion } =
     useMovieDiscussionHistory();
   const [isWatchedOpen, setIsWatchedOpen] = useState(false);
@@ -151,7 +160,12 @@ export function Room({
         [styles.shellComparing]: isComparing,
       })}
     >
-      <ShortlistHeader />
+      <ShortlistHeader
+        onBulkJustWatch={
+          nominees.length > 0 ? () => void bulkJustWatch.start() : undefined
+        }
+        isUpdatingJustWatch={bulkJustWatch.isRunning}
+      />
 
       <section
         className={styles.nominations}
@@ -160,6 +174,7 @@ export function Room({
         <h1 id="nominations-title" className={styles.sectionHeader}>
           {room.name}
         </h1>
+        <BulkJustWatchStatus bulk={bulkJustWatch} />
 
         <ViewControls
           key={room.id}

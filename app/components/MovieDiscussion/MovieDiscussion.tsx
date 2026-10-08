@@ -3,9 +3,9 @@ import type { Nomination, User } from "@/src/db/schema";
 import { motion } from "motion/react";
 import styles from "./MovieDiscussion.module.css";
 import { MovieRatings } from "@/app/components/MovieRatings";
-import { NomComs } from "./NomComs";
 import { EditableComment } from "./EditableComment";
 import { useClickOutside } from "@/app/lib/useClickOutside";
+import { MovieStreaming } from "@/app/components/MovieStreaming";
 
 interface MovieDiscussionProps {
   nomination: Nomination;
@@ -72,6 +72,7 @@ export function MovieDiscussion({
             {details.year ?? "Unknown"} • {toHrs(details.runtime)}
           </p>
           <MovieRatings services={ratings.services} />
+          <MovieStreaming availability={details.justWatch} />
           {!nomination.completed && (
             <div className={styles.movieActions}>
               <button

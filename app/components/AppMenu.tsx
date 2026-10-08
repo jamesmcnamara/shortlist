@@ -13,13 +13,21 @@ interface AppMenuProps {
   /** Omitted outside a room, which hides the room-scoped items. */
   room?: { slug: string; ownerId: string; isAdmin: boolean };
   showMyRooms?: boolean;
+  onBulkJustWatch?: () => void;
+  isUpdatingJustWatch?: boolean;
 }
 
 /** The account and navigation menu, shared by every header. */
-export function AppMenu({ room, showMyRooms = true }: AppMenuProps) {
+export function AppMenu({
+  room,
+  showMyRooms = true,
+  onBulkJustWatch,
+  isUpdatingJustWatch = false,
+}: AppMenuProps) {
   const { data: session } = authClient.useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const menuRef = useClickOutside<HTMLDivElement>(
     () => setIsOpen(false),
     isOpen,
@@ -71,18 +79,42 @@ export function AppMenu({ room, showMyRooms = true }: AppMenuProps) {
           <MenuLink href="/compare" onNavigate={close}>
             Compare
           </MenuLink>
-          <MenuLink href="/feedback" onNavigate={close}>
-            Feedback
-          </MenuLink>
-          <button
-            className={styles.menuItem}
-            type="button"
-            role="menuitem"
-            disabled={isSigningOut}
-            onClick={signOut}
-          >
-            {isSigningOut ? "Signing out…" : "Sign out"}
-          </button>
+          <MenuButton onClick={() => setIsExpanded(!isExpanded)}>
+            {isExpanded ? "Collapse" : "Extra Settings"}
+          </MenuButton>
+          <hr className={styles.divider} />
+          {isExpanded && (
+            <>
+              {room && onBulkJustWatch && (
+                <button
+                  className={styles.menuItem}
+                  type="button"
+                  role="menuitem"
+                  disabled={isUpdatingJustWatch}
+                  onClick={() => {
+                    close();
+                    onBulkJustWatch();
+                  }}
+                >
+                  {isUpdatingJustWatch
+                    ? "Updating JustWatch..."
+                    : "Bulk JustWatch"}
+                </button>
+              )}
+              <MenuLink href="/feedback" onNavigate={close}>
+                Feedback
+              </MenuLink>
+              <button
+                className={styles.menuItem}
+                type="button"
+                role="menuitem"
+                disabled={isSigningOut}
+                onClick={signOut}
+              >
+                {isSigningOut ? "Signing out…" : "Sign out"}
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -106,5 +138,18 @@ function MenuLink({ href, onNavigate, children }: MenuLinkProps) {
     >
       {children}
     </Link>
+  );
+}
+
+interface MenuButtonProps {
+  onClick(): void;
+  children: React.ReactNode;
+}
+
+function MenuButton({ onClick, children }: MenuButtonProps) {
+  return (
+    <button className={styles.menuItem} type="button" onClick={onClick}>
+      {children}
+    </button>
   );
 }

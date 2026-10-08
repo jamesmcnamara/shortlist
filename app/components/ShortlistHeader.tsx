@@ -5,7 +5,13 @@ import { AppMenu } from "./AppMenu";
 import styles from "./ShortlistHeader.module.css";
 import Link from "next/link";
 
-export function ShortlistHeader() {
+export function ShortlistHeader({
+  onBulkJustWatch,
+  isUpdatingJustWatch,
+}: {
+  onBulkJustWatch?: () => void;
+  isUpdatingJustWatch?: boolean;
+}) {
   const { room, rooms, isAdmin } = useRoom();
 
   return (
@@ -20,6 +26,8 @@ export function ShortlistHeader() {
           isAdmin,
         }}
         showMyRooms={rooms.length > 1}
+        onBulkJustWatch={onBulkJustWatch}
+        isUpdatingJustWatch={isUpdatingJustWatch}
       />
     </header>
   );

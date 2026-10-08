@@ -12,7 +12,14 @@ vi.mock("@/app/[ownerId]/[slug]/RoomContext", () => ({
   useRoom: () => ({ room: { id: "room", name: "Watchlist" }, isAdmin: true }),
 }));
 vi.mock("./ShortlistHeader", () => ({
-  ShortlistHeader: () => <header>Shortlist</header>,
+  ShortlistHeader: ({ onBulkJustWatch }: { onBulkJustWatch?: () => void }) => (
+    <header>
+      Shortlist
+      {onBulkJustWatch && (
+        <button type="button" onClick={onBulkJustWatch}>Bulk add JustWatch</button>
+      )}
+    </header>
+  ),
 }));
 vi.mock("./ViewControls", () => ({
   ViewControls: () => <div>List controls</div>,
@@ -46,6 +53,7 @@ const watched: Nomination = {
 };
 
 const createApi = (): RoomAPI => ({
+  refreshJustWatch: vi.fn(),
   importTitle: vi.fn().mockResolvedValue({
     status: "added",
     movie: { id: 2, title: "Arrival", year: 2016 },
@@ -71,6 +79,20 @@ function show(nominees: Nomination[], api = createApi()) {
 }
 
 describe("room bulk import placement", () => {
+  it("refreshes watched movies from the menu and shows progress", async () => {
+    const api = createApi();
+    vi.mocked(api.refreshJustWatch).mockResolvedValue({
+      country: "US", checkedAt: new Date().toISOString(),
+      status: "matched", offers: [], url: null,
+    });
+    show([watched], api);
+    fireEvent.click(screen.getByRole("button", { name: "Bulk add JustWatch" }));
+    await waitFor(() => expect(api.refreshJustWatch).toHaveBeenCalledWith(watched.movieId));
+    await waitFor(() =>
+      expect(screen.getByText("JustWatch update complete. 1 of 1 processed. 1 updated.")).toBeTruthy(),
+    );
+  });
+
   it("places import after Watched whether collapsed or expanded", () => {
     show([watched]);
     const importButton = screen.getByRole("button", { name: "Import movies" });

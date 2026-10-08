@@ -11,6 +11,7 @@ import { getDb } from "@/src/db/client";
 import { TMDB } from "@lorenzopant/tmdb";
 import { eq } from "drizzle-orm";
 import { matching, set } from "shades";
+import * as justwatch from "./justwatch";
 
 let client: TMDB | null = null;
 
@@ -104,11 +105,21 @@ export class ProdMovieProvider implements MovieMetadataProvider {
       api.movies.details({ movie_id: tmdbId }),
       getMdbRatings(tmdbId),
     ]);
+    const justWatch = await justwatch
+      .getAvailability(tmdbId, details.title)
+      .catch((error: unknown) => {
+        console.error(
+          `Unable to load JustWatch for TMDB movie ${tmdbId}.`,
+          error,
+        );
+        return justwatch.unavailable();
+      });
 
     const values = {
       tmdbId: details.id,
       details: {
         ...details,
+        justWatch,
         posterUrl: details.poster_path
           ? api.images.poster(details.poster_path, "w342")
           : null,

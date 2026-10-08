@@ -10,7 +10,7 @@
   cursor: pointer;
 }
 
-.result img,
+.result > img,
 .placeholder {
   width: 2.625rem;
   height: 3.875rem;
@@ -40,13 +40,13 @@
   font-size: 0.9344rem;
 }
 
-.copy p {
+.copy > p {
   margin: 0 0 0.25rem;
   color: var(--muted);
   font-size: 0.7906rem;
 }
 
-.copy span {
+.overview {
   display: -webkit-box;
   overflow: hidden;
   color: var(--muted);
@@ -54,6 +54,19 @@
   line-height: 1.35;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.select {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-weight: inherit;
+  text-align: left;
+}
+
+.select:hover {
+  text-decoration: underline;
 }
 
 .add,

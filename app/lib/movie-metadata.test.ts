@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { ProdMovieProvider } from "@/app/lib/movie-metadata";
 import { setDbForTesting, type DB } from "@/src/db/client";
@@ -26,6 +26,7 @@ vi.mock("@lorenzopant/tmdb", () => ({
 }));
 
 let db: DB;
+let close: () => Promise<void>;
 
 const details = (id: number) =>
   ({
@@ -43,21 +44,40 @@ beforeEach(async () => {
   vi.stubEnv("MDB_API_KEY", "test-key");
   const created = await createTestDb();
   db = created.db as unknown as DB;
+  close = () => created.client.close();
   setDbForTesting(() => db);
   tmdbApi.movies.details.mockImplementation(({ movie_id }) =>
     Promise.resolve(details(movie_id)),
   );
   vi.stubGlobal(
     "fetch",
-    vi.fn(() =>
-      Promise.resolve(
-        Response.json({
+    vi.fn((url: string, init?: RequestInit) => {
+      if (url === "https://apis.justwatch.com/graphql") {
+        const { variables } = JSON.parse(String(init?.body));
+        return Promise.resolve(Response.json({
+          data: { popularTitles: { edges: [{
+            node: {
+              content: {
+                externalIds: { tmdbId: variables.title.replace("Movie ", "") },
+                fullPath: "/us/movie/test",
+              },
+              offers: [],
+            },
+          }] } },
+        }));
+      }
+      return Promise.resolve(Response.json({
           ratings: [],
           ids: {},
-        }),
-      ),
-    ),
+      }));
+    }),
   );
+});
+
+afterEach(async () => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  await close();
 });
 
 describe("ProdMovieProvider", () => {
@@ -140,6 +160,11 @@ describe("ProdMovieProvider", () => {
         posterUrl: "https://image.test/w342/movie-11.jpg",
         description: "Overview 11",
         year: 2025,
+        justWatch: {
+          country: "US",
+          status: "matched",
+          offers: [],
+        },
       },
       ratings: { services: [] },
     });
@@ -149,7 +174,26 @@ describe("ProdMovieProvider", () => {
       .where(eq(movies.tmdbId, 11));
     expect(stored.id).toBe(result.id);
     expect(tmdbApi.movies.details).toHaveBeenCalledOnce();
-    expect(fetch).toHaveBeenCalledOnce();
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect((stored.details as MovieDetails).justWatch).toEqual(result.details.justWatch);
+  });
+
+  it("keeps movie creation working but records and logs unavailable JustWatch", async () => {
+    const fetchMetadata = fetch;
+    vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) =>
+      url === "https://apis.justwatch.com/graphql"
+        ? Promise.reject(new Error("JustWatch unavailable"))
+        : fetchMetadata(url, init),
+    ));
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const result = await new ProdMovieProvider().get(11);
+    expect(result.details.justWatch?.status).toBe("unavailable");
+    expect(result.details.justWatch?.offers).toEqual([]);
+    expect(log).toHaveBeenCalledWith(
+      "Unable to load JustWatch for TMDB movie 11.",
+      expect.any(Error),
+    );
+    expect(await db.select().from(movies)).toHaveLength(1);
   });
 
   it("returns one stored row when concurrent misses race", async () => {

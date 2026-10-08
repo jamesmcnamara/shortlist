@@ -13,6 +13,7 @@ import {
 import { relations } from "drizzle-orm";
 import { authUsers } from "./neon-auth-schema";
 import type { MovieDetails as _MovieDetails } from "@lorenzopant/tmdb";
+import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
 
 /** A room is a shared watch list for a group. */
 export const rooms = pgTable(
@@ -242,6 +243,7 @@ export interface MovieDetails extends _MovieDetails {
   posterUrl?: string | null;
   description?: string | null;
   year?: number | null;
+  justWatch?: JustWatchAvailability;
 }
 
 export interface MDBResponse {

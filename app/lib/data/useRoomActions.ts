@@ -9,6 +9,7 @@ export function useRoomActions(client: RoomApi, noms: Nomination[]): RoomAPI {
   const { userId } = useDataSession();
   return {
     importTitle: client.nominations.importTitle,
+    refreshJustWatch: client.refreshJustWatch,
     nominate: async (candidate, comment) => {
       await client.nominations.create({ movieId: candidate.id, comment });
     },

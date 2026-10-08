@@ -2,6 +2,7 @@ import type { Movie } from "@/src/db/schema";
 import { useState } from "react";
 import { LoadingOverlay } from "@/app/components/LoadingOverlay";
 import styles from "./MovieSearchResult.module.css";
+import { MovieStreaming } from "./MovieStreaming";
 
 interface MovieSearchResultProps {
   movie: Movie;
@@ -24,15 +25,7 @@ export function MovieSearchResult({
   return (
     <li
       className={styles.result}
-      role={onSelect ? "button" : undefined}
-      tabIndex={onSelect ? 0 : undefined}
       onClick={() => onSelect?.(movie)}
-      onKeyDown={(event) => {
-        if (onSelect && (event.key === "Enter" || event.key === " ")) {
-          event.preventDefault();
-          onSelect(movie);
-        }
-      }}
     >
       {movie.details.posterUrl ? (
         <img
@@ -45,9 +38,27 @@ export function MovieSearchResult({
         </div>
       )}
       <div className={styles.copy}>
-        <h3>{movie.details.title}</h3>
+        <h3>
+          {onSelect ? (
+            <button
+              className={styles.select}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onSelect(movie);
+              }}
+            >
+              {movie.details.title}
+            </button>
+          ) : (
+            movie.details.title
+          )}
+        </h3>
         <p>{year}</p>
-        {movie.details.overview && <span>{movie.details.overview}</span>}
+        {movie.details.overview && (
+          <span className={styles.overview}>{movie.details.overview}</span>
+        )}
+        <MovieStreaming availability={movie.details.justWatch} />
       </div>
       {(() => {
         switch (true) {

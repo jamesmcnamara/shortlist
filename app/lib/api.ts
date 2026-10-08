@@ -10,6 +10,7 @@ import type { SafeRoom } from "@/lib/auth/require-room";
 import type { Movie } from "@/src/db/schema";
 import { roomApiKey } from "@/lib/room-path";
 import type { MovieImportResult } from "./bulk-movie-import";
+import type { JustWatchAvailability } from "./justwatch-types";
 
 export class ApiError extends Error {
   constructor(
@@ -136,6 +137,11 @@ export const api = {
     const base = `/api/rooms/${encodeURIComponent(roomApiKey({ ownerId, slug }))}`;
     return {
       get: (): Promise<RoomDetail> => request(base),
+      refreshJustWatch: (movieId: number): Promise<JustWatchAvailability> =>
+        request(`${base}/justwatch`, {
+          method: "POST",
+          body: JSON.stringify({ movieId }),
+        }),
       update: (input: { name?: string }): Promise<SafeRoom> =>
         request(base, { method: "PATCH", body: JSON.stringify(input) }),
       delete: (): Promise<void> => request(base, { method: "DELETE" }),

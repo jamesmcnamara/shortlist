@@ -26,6 +26,35 @@ current movie before pausing; use **Continue import** for remaining titles or
 Keep the page open while importing; navigating away stops further requests but
 does not undo movies already added.
 
+### JustWatch streaming availability
+
+New movies fetch US availability from JustWatch's unofficial GraphQL endpoint
+and store it in `movie.details.justWatch`. No API key or schema migration is
+needed. Search results and movie discussions show service icons and direct
+links, excluding rentals and purchases. Free and ad-supported offers are
+labeled; other offers require a subscription. Kanopy may require library access.
+
+The shared row accepts a service list. Its default list lives in
+`app/lib/streaming-services.ts`: Amazon Prime Video, Netflix, Kanopy, HBO Max,
+Hulu, and Disney+. IDs are JustWatch package IDs, not TMDB provider IDs, and
+include the separate Netflix and Prime Video ad-supported packages. HBO through
+Amazon Channels is not included because it requires a separate subscription.
+Availability is stored independently of this filter so changing the configured
+services does not require refetching every movie.
+
+In a list's menu, choose **Bulk add JustWatch** to add or refresh availability
+for all its movies, including Watched. Requests run one at a time, update shared
+movie metadata, and refresh the list automatically. You can stop after the
+current movie, continue, or retry failures. Keep the page open while updating.
+Movies shared by other lists receive the same metadata update.
+
+Older movies remain usable without availability data. Lookup failures do not
+prevent creating a movie and are shown as unavailable, not as "no services."
+Bulk refresh failures preserve previous data. Movies are matched by their TMDB
+ID, never just their title; unmatched movies are reported separately.
+The row links to JustWatch for attribution. This undocumented endpoint may
+change or stop working, and cached availability can become outdated.
+
 ## Client data caching
 
 The home page, room pages, settings, and the room picker share an SWR cache
