@@ -1,10 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { withUser } from "@/lib/auth/require-user";
-import {
-  generateInviteCode,
-  isValidSlug,
-  slugify,
-} from "@/app/lib/rooms";
+import { generateInviteCode } from "@/app/lib/rooms";
 import { roomPath } from "@/lib/room-path";
 import { getDb } from "@/src/db/client";
 import { nominations, roomMembers, rooms } from "@/src/db/schema";
@@ -32,9 +28,8 @@ export const GET = withUser({ error: "Unable to load your rooms." })(async (
   const memberships = await getDb()
     .select({
       id: rooms.id,
-      slug: rooms.slug,
-      ownerId: rooms.createdBy,
       name: rooms.name,
+      watchlistFor: rooms.watchlistFor,
       role: roomMembers.role,
       joinedAt: roomMembers.joinedAt,
       hasMovie: sql<boolean>`${nominations.id} is not null`,
@@ -71,34 +66,10 @@ export const POST = withUser({ error: "Unable to create the room." })(async (
     );
   }
 
-  const slug =
-    typeof body?.slug === "string" && body.slug.trim()
-      ? slugify(body.slug)
-      : slugify(name);
-  if (!isValidSlug(slug)) {
-    return Response.json(
-      { error: "That name cannot be turned into a URL. Try another." },
-      { status: 400 },
-    );
-  }
-
   const db = getDb();
-  const [existing] = await db
-    .select({ id: rooms.id })
-    .from(rooms)
-    .where(and(eq(rooms.createdBy, userId), eq(rooms.slug, slug)))
-    .limit(1);
-  if (existing) {
-    return Response.json(
-      { error: "A room with that name already exists." },
-      { status: 409 },
-    );
-  }
-
   const [room] = await db
     .insert(rooms)
     .values({
-      slug,
       name,
       createdBy: userId,
       inviteCode: generateInviteCode(),
@@ -118,7 +89,7 @@ export const POST = withUser({ error: "Unable to create the room." })(async (
     ...safe
   } = room;
   return Response.json(
-    { ...safe, ownerId: userId, path: roomPath({ ownerId: userId, slug }) },
+    { ...safe, path: roomPath(room) },
     { status: 201 },
   );
 });

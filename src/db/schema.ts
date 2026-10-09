@@ -20,9 +20,10 @@ export const rooms = pgTable(
   "rooms",
   {
     id: uuid().primaryKey().defaultRandom(),
-    slug: text().notNull(),
-    legacySlug: text("legacy_slug").unique(),
     name: text().notNull(),
+    watchlistFor: uuid("watchlist_for")
+      .unique()
+      .references(() => authUsers.id),
     createdBy: uuid("created_by")
       .notNull()
       .references(() => authUsers.id),
@@ -34,9 +35,6 @@ export const rooms = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [
-    uniqueIndex("rooms_creator_slug_idx").on(table.createdBy, table.slug),
-  ],
 );
 
 export const roomMembers = pgTable(

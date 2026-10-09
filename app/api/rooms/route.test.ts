@@ -4,6 +4,7 @@ import { setDbForTesting, type DB } from "@/src/db/client";
 import { movies, nominations, rooms, roomMembers } from "@/src/db/schema";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import * as roomsRoute from "./route";
+import { createWatchlist } from "@/lib/auth/create-watchlist";
 
 // Auth is the one thing stubbed; everything below it runs for real.
 const currentUserId = vi.hoisted(() => ({ value: "" }));
@@ -19,9 +20,9 @@ const asUser = (id: string) => {
 
 interface Fixture {
   db: DB;
-  club: { id: string; slug: string };
-  watchlist: { id: string; slug: string };
-  otherWatchlist: { id: string; slug: string };
+  club: { id: string };
+  watchlist: { id: string };
+  otherWatchlist: { id: string };
   movieId: number;
 }
 
@@ -38,7 +39,6 @@ beforeEach(async () => {
   const [club] = await db
     .insert(rooms)
     .values({
-      slug: "club",
       name: "Club",
       createdBy: CASEY,
       inviteCode: "invite-club",
@@ -49,7 +49,6 @@ beforeEach(async () => {
   const [watchlist] = await db
     .insert(rooms)
     .values({
-      slug: "watchlist",
       name: "Watchlist",
       createdBy: CASEY,
       inviteCode: "invite-watchlist",
@@ -60,7 +59,6 @@ beforeEach(async () => {
   const [otherWatchlist] = await db
     .insert(rooms)
     .values({
-      slug: "other-watchlist",
       name: "Other Watchlist",
       createdBy: CASEY,
       inviteCode: "invite-other",
@@ -100,6 +98,20 @@ beforeEach(async () => {
 });
 
 describe("GET /api/rooms?movieId=", () => {
+  it.each(["", "?previews=true", "?movieId=1"])(
+    "includes the designated watchlist marker in room summaries (%s)",
+    async (query) => {
+      asUser(CASEY);
+      await createWatchlist(CASEY);
+      const body = await (await roomsRoute.GET(new Request(`http://test${query}`))).json();
+      expect(body).toContainEqual(expect.objectContaining({
+        name: "Watchlist", watchlistFor: CASEY, role: "admin",
+      }));
+      expect(body.filter((room: { watchlistFor: string | null }) => room.watchlistFor === CASEY))
+        .toHaveLength(1);
+    },
+  );
+
   it("reports hasMovie per room without it when the param is absent", async () => {
     const { GET } = roomsRoute;
     asUser(CASEY);
@@ -122,7 +134,6 @@ describe("GET /api/rooms?movieId=", () => {
         email: "other@example.com",
       });
       await fixture.db.insert(rooms).values({
-        slug: "private",
         name: "Private",
         createdBy: otherUserId,
         inviteCode: "private-invite",
@@ -144,11 +155,11 @@ describe("GET /api/rooms?movieId=", () => {
       const body = await response.json();
       expect(body).toHaveLength(3);
       expect(body).toContainEqual(expect.objectContaining({
-        slug: "club",
+        id: fixture.club.id,
         posterUrls: ["https://example.com/poster.jpg"],
       }));
       expect(body).toContainEqual(expect.objectContaining({
-        slug: "other-watchlist",
+        id: fixture.otherWatchlist.id,
         posterUrls: [],
       }));
       expect(JSON.stringify(body)).not.toContain("invite");
@@ -170,16 +181,16 @@ describe("GET /api/rooms?movieId=", () => {
       await GET(new Request(`http://test?movieId=${fixture.movieId}`))
     ).json();
 
-    const bySlug = Object.fromEntries(
-      body.map((room: { slug: string; hasMovie: boolean }) => [
-        room.slug,
+    const hasMovieByRoomId = Object.fromEntries(
+      body.map((room: { id: string; hasMovie: boolean }) => [
+        room.id,
         room.hasMovie,
       ]),
     );
-    expect(bySlug).toEqual({
-      club: false,
-      watchlist: true,
-      "other-watchlist": false,
+    expect(hasMovieByRoomId).toEqual({
+      [fixture.club.id]: false,
+      [fixture.watchlist.id]: true,
+      [fixture.otherWatchlist.id]: false,
     });
   });
 });

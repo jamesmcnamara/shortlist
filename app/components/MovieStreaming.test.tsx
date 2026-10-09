@@ -80,9 +80,11 @@ describe("streaming service row", () => {
         .getByRole("link", { name: "Watch on Kanopy: Free" })
         .getAttribute("rel"),
     ).toBe("noopener noreferrer");
-    const freeLabel = screen.getByText("FREE");
-    expect(freeLabel.className).toBe(streamingStyles.free);
-    expect(freeLabel.parentElement?.className).toBe(streamingStyles.iconWrap);
+    const freeLink = screen.getByRole("link", { name: "Watch on Kanopy: Free" });
+    expect(freeLink.getAttribute("title")).toBe("Kanopy: Free");
+    expect(freeLink.querySelector("img")?.parentElement?.className)
+      .toBe(streamingStyles.iconWrap);
+    expect(screen.queryByText("FREE")).toBeNull();
     expect(screen.queryByText("Service 999")).toBeNull();
     expect(
       screen.getByRole("link", { name: "JustWatch" }).getAttribute("href"),
@@ -104,8 +106,9 @@ describe("streaming service row", () => {
     expect(
       screen.getByRole("link", { name: "Watch on Custom: Free with ads" }),
     ).toBeTruthy();
-    expect(screen.getByText("FREE")).toBeTruthy();
-    expect(screen.queryByText("Netflix")).toBeNull();
+    expect(screen.getByRole("link", { name: "Watch on Custom: Free with ads" })
+      .getAttribute("href")).toBe("https://stream.example.com/999");
+    expect(screen.queryByRole("link", { name: /Watch on Netflix/ })).toBeNull();
   });
 
   it("matches subscription variants and prefers free offers without duplicates", () => {
@@ -137,19 +140,19 @@ describe("streaming service row", () => {
   });
 
   it.each([
-    [undefined, "Streaming availability not checked yet."],
+    [undefined, "Streaming not checked yet."],
     [
       { ...availability([]), status: "unavailable" as const },
       "Streaming availability is temporarily unavailable.",
     ],
     [
       { ...availability([]), status: "not_found" as const },
-      "No matching movie found on JustWatch.",
+      "Couldn't find it, man.",
     ],
-    [availability([]), "It's fuckin' nowhere, man. Ghost town."],
+    [availability([]), "It's fuckin' nowhere. Ghost town."],
   ])("distinguishes empty and unknown states", (data, message) => {
     render(<MovieStreaming availability={data} />);
-    expect(screen.getByText(message)).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toBe(message);
   });
 
   it("keeps the service link accessible when an icon fails", () => {
@@ -220,7 +223,7 @@ describe("streaming service row", () => {
     expect(onRefresh).toHaveBeenCalledTimes(1);
     fail(new Error("Down"));
     expect(
-      await screen.findByText("Couldn't check JustWatch. Try again later."),
+      await screen.findByText("Couldn't check JustWatch. Try again tomorrow."),
     ).toBeTruthy();
     expect(
       screen

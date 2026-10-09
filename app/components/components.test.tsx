@@ -117,7 +117,7 @@ describe("high-churn component smoke tests", () => {
       />,
     );
 
-    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.queryByRole("status", { name: "Adding movie..." })).toBeNull();
     fireEvent.click(
       screen.getByRole("button", { name: "Add A Movie to this list" }),
     );
@@ -136,7 +136,7 @@ describe("high-churn component smoke tests", () => {
       await pendingAdd;
     });
 
-    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.queryByRole("status", { name: "Adding movie..." })).toBeNull();
     expect(
       screen.getByRole("button", { name: "Add A Movie to this list" }),
     ).toBeTruthy();
@@ -276,6 +276,34 @@ describe("high-churn component smoke tests", () => {
     fireEvent.click(closeSearch);
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Sort by" })).toBeTruthy(),
+    );
+  });
+
+  it("opens and closes the sort and filter option panels", async () => {
+    render(
+      <ViewControls
+        state={{ sort: "newest", filters: [] }}
+        onChange={vi.fn()}
+        existing={new Set()}
+        isSubmitting={false}
+        onNominate={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Sort by" }));
+    expect(screen.getByRole("group", { name: "Sort by" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Sort by" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("group", { name: "Sort by" })).toBeNull(),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Filter" }));
+    expect(screen.getByRole("group", { name: "Filters" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Filter" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("group", { name: "Filters" })).toBeNull(),
     );
   });
 

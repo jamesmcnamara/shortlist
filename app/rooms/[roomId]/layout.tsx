@@ -4,18 +4,18 @@ import { RoomProvider } from "./RoomContext";
 
 interface RoomLayoutProps {
   children: React.ReactNode;
-  params: Promise<{ ownerId: string; slug: string }>;
+  params: Promise<{ roomId: string }>;
 }
 
 export default async function RoomLayout({
   children,
   params,
 }: RoomLayoutProps) {
-  const { ownerId, slug } = await params;
-  if (!isUuid(ownerId)) notFound();
+  const { roomId } = await params;
+  if (!isUuid(roomId)) notFound();
 
   return (
-    <RoomProvider ownerId={ownerId} slug={slug}>
+    <RoomProvider roomId={roomId}>
       {children}
     </RoomProvider>
   );

@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Room, type RoomAPI } from "./Room";
 import type { Nomination } from "@/src/db/schema";
@@ -8,18 +14,11 @@ import type { Nomination } from "@/src/db/schema";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
-vi.mock("@/app/[ownerId]/[slug]/RoomContext", () => ({
+vi.mock("@/app/rooms/[roomId]/RoomContext", () => ({
   useRoom: () => ({ room: { id: "room", name: "Watchlist" }, isAdmin: true }),
 }));
 vi.mock("./ShortlistHeader", () => ({
-  ShortlistHeader: ({ onBulkJustWatch }: { onBulkJustWatch?: () => void }) => (
-    <header>
-      Shortlist
-      {onBulkJustWatch && (
-        <button type="button" onClick={onBulkJustWatch}>Bulk add JustWatch</button>
-      )}
-    </header>
-  ),
+  ShortlistHeader: () => <header>Shortlist</header>,
 }));
 vi.mock("./ViewControls", () => ({
   ViewControls: () => <div>List controls</div>,
@@ -78,44 +77,59 @@ function show(nominees: Nomination[], api = createApi()) {
   );
 }
 
-describe("room bulk import placement", () => {
-  it("refreshes watched movies from the menu and shows progress", async () => {
-    const api = createApi();
-    vi.mocked(api.refreshJustWatch).mockResolvedValue({
-      country: "US", checkedAt: new Date().toISOString(),
-      status: "matched", offers: [], url: null,
-    });
-    show([watched], api);
-    fireEvent.click(screen.getByRole("button", { name: "Bulk add JustWatch" }));
-    await waitFor(() => expect(api.refreshJustWatch).toHaveBeenCalledWith(watched.movieId));
-    await waitFor(() =>
-      expect(screen.getByText("JustWatch update complete. 1 of 1 processed. 1 updated.")).toBeTruthy(),
-    );
+describe("room movie animations", () => {
+  it("renders active movies immediately and keeps completed movies collapsed", () => {
+    show([watched, { ...watched, id: 2, completed: false }]);
+    const cards = screen.getAllByRole("article");
+    expect(cards).toHaveLength(1);
+    expect(cards[0].textContent).toBe("Watched movie");
+    expect(cards[0].parentElement?.style.opacity).toBe("1");
+    expect(screen.getByRole("button", { name: /Watched/ }).getAttribute("aria-expanded"))
+      .toBe("false");
   });
+});
 
+describe("room bulk import placement", () => {
   it("places import after Watched whether collapsed or expanded", () => {
     show([watched]);
     const importButton = screen.getByRole("button", { name: "Import movies" });
     const watchedToggle = screen.getByRole("button", { name: /Watched/ });
-    expect(watchedToggle.compareDocumentPosition(importButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      watchedToggle.compareDocumentPosition(importButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     fireEvent.click(watchedToggle);
-    expect(screen.getByText("Watched movie").compareDocumentPosition(importButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(importButton.closest("main")?.lastElementChild?.contains(importButton)).toBe(true);
+    expect(
+      screen.getByText("Watched movie").compareDocumentPosition(importButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      importButton.closest("main")?.lastElementChild?.contains(importButton),
+    ).toBe(true);
   });
 
   it("still imports from the bottom of an empty list", async () => {
     const api = createApi();
     show([], api);
     const importButton = screen.getByRole("button", { name: "Import movies" });
-    expect(screen.getByText("Nothing here yet. Add the first movie.").compareDocumentPosition(importButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      screen
+        .getByText("Nothing here yet. Add the first movie.")
+        .compareDocumentPosition(importButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     fireEvent.click(importButton);
     fireEvent.change(screen.getByRole("textbox", { name: "Movie titles" }), {
       target: { value: "Arrival" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Import 1 movie" }));
-    await waitFor(() => expect(api.importTitle).toHaveBeenCalledWith("Arrival"));
     await waitFor(() =>
-      expect(screen.getByText("Import complete. 1 of 1 processed. 1 added.")).toBeTruthy(),
+      expect(api.importTitle).toHaveBeenCalledWith("Arrival"),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByText("Import complete. 1 of 1 processed. 1 added."),
+      ).toBeTruthy(),
     );
   });
 });

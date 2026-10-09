@@ -30,19 +30,15 @@ interface RoomContextValue {
 const RoomContext = createContext<RoomContextValue | null>(null);
 
 interface RoomProviderProps {
-  ownerId: string;
-  slug: string;
+  roomId: string;
   children: React.ReactNode;
 }
 
-export function RoomProvider({ ownerId, slug, children }: RoomProviderProps) {
-  const { data: detail, ...detailQuery } = useRoomDetail({ ownerId, slug });
+export function RoomProvider({ roomId, children }: RoomProviderProps) {
+  const { data: detail, ...detailQuery } = useRoomDetail({ id: roomId });
   const { data: rooms, ...roomsQuery } = useRooms();
-  const { data: noms, ...nomQuery } = useNominations({
-    ownerId,
-    slug,
-  });
-  const client = useMemo(() => api.room(ownerId, slug), [ownerId, slug]);
+  const { data: noms, ...nomQuery } = useNominations({ id: roomId });
+  const client = useMemo(() => api.room(roomId), [roomId]);
   const value = useMemo<RoomContextValue | null>(() => {
     if (!detail || !rooms || !noms) return null;
     return {

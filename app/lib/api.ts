@@ -8,7 +8,6 @@ import type {
 } from "@/src/db/schema";
 import type { SafeRoom } from "@/lib/auth/require-room";
 import type { Movie } from "@/src/db/schema";
-import { roomApiKey } from "@/lib/room-path";
 import type { MovieImportResult } from "./bulk-movie-import";
 import type { JustWatchAvailability } from "./justwatch-types";
 
@@ -70,9 +69,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export interface RoomSummary {
   id: string;
-  slug: string;
-  ownerId: string;
   name: string;
+  watchlistFor: string | null;
   role: RoomRole;
 }
 
@@ -105,8 +103,8 @@ export interface RoomDetail {
 }
 
 /**
- * Room-scoped calls bind the owner's handle and room slug once rather than
- * threading the canonical room identity through every call site.
+ * Room-scoped calls bind the room ID once rather than threading it through
+ * every call site.
  */
 export const api = {
   rooms: {
@@ -115,10 +113,7 @@ export const api = {
       request("/api/rooms?previews=true"),
     listForMovie: (movieId: number): Promise<RoomSummaryWithMovie[]> =>
       request(`/api/rooms?movieId=${movieId}`),
-    create: (input: {
-      name: string;
-      slug?: string;
-    }): Promise<SafeRoom> =>
+    create: (input: { name: string }): Promise<SafeRoom> =>
       request("/api/rooms", { method: "POST", body: JSON.stringify(input) }),
   },
   join: (code: string): Promise<{ path: string; name: string }> =>
@@ -133,8 +128,8 @@ export const api = {
         body: JSON.stringify(input),
       }),
   },
-  room: (ownerId: string, slug: string) => {
-    const base = `/api/rooms/${encodeURIComponent(roomApiKey({ ownerId, slug }))}`;
+  room: (roomId: string) => {
+    const base = `/api/rooms/${encodeURIComponent(roomId)}`;
     return {
       get: (): Promise<RoomDetail> => request(base),
       refreshJustWatch: (movieId: number): Promise<JustWatchAvailability> =>

@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { headers } from "next/headers";
 import { getDb } from "@/src/db/client";
+import { createWatchlist } from "./create-watchlist";
 import {
   authAccounts,
   authSessions,
@@ -25,6 +26,15 @@ export const auth = betterAuth({
     },
   }),
   emailAndPassword: { enabled: true },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          await createWatchlist(user.id);
+        },
+      },
+    },
+  },
   session: {
     // Browsers cap cookies at 400 days. Sessions roll forward daily, so anyone
     // who opens the app within that window stays signed in.

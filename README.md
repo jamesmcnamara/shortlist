@@ -46,12 +46,6 @@ Availability is stored independently of this filter so changing the configured
 services does not require refetching every movie. Movies checked before rentals
 were added need a refresh to pick them up.
 
-In a list's menu, choose **Bulk add JustWatch** to add or refresh availability
-for all its movies, including Watched. Requests run one at a time, update shared
-movie metadata, and refresh the list automatically. You can stop after the
-current movie, continue, or retry failures. Keep the page open while updating.
-Movies shared by other lists receive the same metadata update.
-
 Older movies remain usable without availability data. Lookup failures do not
 prevent creating a movie and are shown as unavailable, not as "no services."
 Bulk refresh failures preserve previous data. Movies are matched by their TMDB

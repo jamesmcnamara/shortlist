@@ -26,9 +26,7 @@ export async function POST(
     const [room] = await db
       .select({
         id: rooms.id,
-        slug: rooms.slug,
         name: rooms.name,
-        ownerId: rooms.createdBy,
         inviteCode: rooms.inviteCode,
         adminInviteCode: rooms.adminInviteCode,
       })

@@ -64,7 +64,7 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
       selectedRoomIds.map((id) => {
         const room = allRooms?.find((candidate) => candidate.id === id);
         if (!room) throw new Error("The selected room is no longer available.");
-        return api.room(room.ownerId, room.slug).nominations.create({
+        return api.room(room.id).nominations.create({
           movieId: movie.id,
           comment: comments[id] ?? "",
         });
@@ -157,28 +157,31 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
 
 type Results = PromiseSettledResult<unknown>[];
 
-const pending = (slugs: string[]): Record<string, RowStatus> =>
-  Object.fromEntries(slugs.map((slug) => [slug, "pending"]));
+const pending = (roomIds: string[]): Record<string, RowStatus> =>
+  Object.fromEntries(roomIds.map((roomId) => [roomId, "pending"]));
 
 const statusesFor = (
-  slugs: string[],
+  roomIds: string[],
   results: Results,
 ): Record<string, RowStatus> =>
   Object.fromEntries(
-    slugs.map((slug, index) => [
-      slug,
+    roomIds.map((roomId, index) => [
+      roomId,
       results[index].status === "fulfilled" ? "done" : "error",
     ]),
   );
 
-const errorsFor = (slugs: string[], results: Results): Record<string, string> =>
+const errorsFor = (
+  roomIds: string[],
+  results: Results,
+): Record<string, string> =>
   Object.fromEntries(
-    slugs.flatMap((slug, index) => {
+    roomIds.flatMap((roomId, index) => {
       const result = results[index];
       if (result.status === "fulfilled") return [];
       return [
         [
-          slug,
+          roomId,
           result.reason instanceof ApiError
             ? result.reason.message
             : "Something went wrong.",

@@ -1,7 +1,7 @@
 import type { RoomSummary, RoomSummaryWithPosterPreviews } from "@/app/lib/api";
 import {
   findMembership,
-  findRoomByPath,
+  findRoomById,
   type SafeRoom,
 } from "@/lib/auth/require-room";
 import { requireUserId } from "@/lib/auth/require-user";
@@ -28,9 +28,8 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
   const memberships = await getDb()
     .select({
       id: rooms.id,
-      slug: rooms.slug,
-      ownerId: rooms.createdBy,
       name: rooms.name,
+      watchlistFor: rooms.watchlistFor,
       role: roomMembers.role,
     })
     .from(roomMembers)
@@ -100,13 +99,12 @@ export type LoadRoomResult =
  * confirmed the viewer belongs to the room.
  */
 export async function loadRoom(
-  ownerId: string,
-  slug: string,
+  roomId: string,
 ): Promise<LoadRoomResult> {
   const userId = await requireUserId();
   if (!userId) return { status: "unauthenticated" };
 
-  const room = await findRoomByPath(ownerId, slug);
+  const room = await findRoomById(roomId);
   if (!room) return { status: "not-a-member" };
 
   const role = await findMembership(room.id, userId);

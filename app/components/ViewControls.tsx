@@ -169,40 +169,51 @@ export function ViewControls({
         </AnimatePresence>
       </div>
 
-      {expanded === "sort" && (
-        <div className={styles.options} role="group" aria-label="Sort by">
-          {SORTS.map((sort) => (
-            <button
-              key={sort.id}
-              type="button"
-              className={`${styles.option} ${sort.id === state.sort ? styles.optionActive : ""}`}
-              aria-pressed={sort.id === state.sort}
-              onClick={() => selectSort(sort.id)}
-            >
-              {sort.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {expanded === "filter" && (
-        <div className={styles.options} role="group" aria-label="Filters">
-          {FILTERS.map((filter) => {
-            const isActive = state.filters.includes(filter.id);
-            return (
-              <button
-                key={filter.id}
-                type="button"
-                className={`${styles.option} ${isActive ? styles.optionActive : ""}`}
-                aria-pressed={isActive}
-                onClick={() => toggleFilter(filter.id)}
-              >
-                {filter.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <AnimatePresence initial={false} mode="wait">
+        {expanded && (
+          <motion.div
+            key={expanded}
+            className={styles.optionsPanel}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={transition}
+          >
+            {expanded === "sort" ? (
+              <div className={styles.options} role="group" aria-label="Sort by">
+                {SORTS.map((sort) => (
+                  <button
+                    key={sort.id}
+                    type="button"
+                    className={`${styles.option} ${sort.id === state.sort ? styles.optionActive : ""}`}
+                    aria-pressed={sort.id === state.sort}
+                    onClick={() => selectSort(sort.id)}
+                  >
+                    {sort.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.options} role="group" aria-label="Filters">
+                {FILTERS.map((filter) => {
+                  const isActive = state.filters.includes(filter.id);
+                  return (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      className={`${styles.option} ${isActive ? styles.optionActive : ""}`}
+                      aria-pressed={isActive}
+                      onClick={() => toggleFilter(filter.id)}
+                    >
+                      {filter.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
       {notice && (
         <p className={styles.notice} role="alert">
           {notice}

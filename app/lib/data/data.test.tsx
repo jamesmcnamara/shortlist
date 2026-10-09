@@ -15,7 +15,7 @@ import { api, ApiError } from "../api";
 import { DataProvider } from "./DataProvider";
 import { DataBoundary } from "./DataBoundary";
 import { useNominations, useRooms, useRoomDetail } from "./queries";
-import { RoomProvider, useRoom } from "@/app/[ownerId]/[slug]/RoomContext";
+import { RoomProvider, useRoom } from "@/app/rooms/[roomId]/RoomContext";
 
 const auth = vi.hoisted(() => ({
   data: {
@@ -32,7 +32,7 @@ vi.mock("@/lib/auth/client", () => ({
 }));
 
 const navigation = vi.hoisted(() => ({
-  pathname: "/alice/watchlist",
+  pathname: "/rooms/11111111-1111-1111-1111-111111111111",
   redirect: vi.fn((path: string) => {
     throw new Error(`Redirect: ${path}`);
   }),
@@ -42,9 +42,9 @@ vi.mock("next/navigation", () => ({
   redirect: navigation.redirect,
 }));
 
-const room = { ownerId: "alice", slug: "watchlist" };
-const otherRoom = { ownerId: "alice", slug: "other" };
-const base = "/api/rooms/alice%3Awatchlist";
+const room = { id: "11111111-1111-1111-1111-111111111111" };
+const otherRoom = { id: "22222222-2222-2222-2222-222222222222" };
+const base = `/api/rooms/${room.id}`;
 const fetchMock = vi.fn<typeof fetch>();
 const json = (body: unknown, status = 200) => Response.json(body, { status });
 
@@ -77,7 +77,7 @@ beforeEach(() => {
   auth.data = { session: { id: "session-alice" }, user: { id: "alice" } };
   auth.isPending = false;
   auth.error = null;
-  navigation.pathname = "/alice/watchlist";
+  navigation.pathname = `/rooms/${room.id}`;
   vi.clearAllMocks();
   fetchMock.mockReset();
   vi.stubGlobal("fetch", fetchMock);
@@ -141,7 +141,7 @@ describe("shared data cache", () => {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data).toBeDefined());
-    navigation.pathname = "/alice/watchlist/settings";
+    navigation.pathname = `/rooms/${room.id}/settings`;
     rerender();
     expect(result.current.data?.[0].comment).toBe("Cached");
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
@@ -156,7 +156,7 @@ describe("shared data cache", () => {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
-    navigation.pathname = "/alice/watchlist/settings";
+    navigation.pathname = `/rooms/${room.id}/settings`;
     rerender();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     await act(async () => firstRead.resolve(json([{ id: 1 }])));
@@ -205,7 +205,7 @@ describe("shared data cache", () => {
       ),
     );
     await act(async () => {
-      await api.room(room.ownerId, room.slug).nominations.delete(1);
+      await api.room(room.id).nominations.delete(1);
     });
     expect(result.current.map((query) => query.data)).toEqual([[], []]);
     expect(fetchMock).toHaveBeenCalledTimes(5);
@@ -231,9 +231,7 @@ describe("shared data cache", () => {
     });
     await waitFor(() => expect(reads).toBe(2));
     await act(async () => {
-      await api
-        .room(room.ownerId, room.slug)
-        .nominations.updateComment(1, "New");
+      await api.room(room.id).nominations.updateComment(1, "New");
     });
     expect(result.current.data?.[0].comment).toBe("New");
     await act(async () => {
@@ -262,9 +260,7 @@ describe("shared data cache", () => {
     });
     await waitFor(() => expect(result.current.data).toEqual([]));
     await act(async () => {
-      const outcome = await api
-        .room(room.ownerId, room.slug)
-        .nominations.importTitle("Arrival");
+      const outcome = await api.room(room.id).nominations.importTitle("Arrival");
       expect(outcome).toEqual({
         status: "added",
         movie: { id: 1, title: "Arrival", year: 2016 },
@@ -315,7 +311,7 @@ describe("shared data cache", () => {
     });
     await waitFor(() => expect(result.current.data).toBeDefined());
     await expect(
-      api.room(room.ownerId, room.slug).nominations.delete(1),
+      api.room(room.id).nominations.delete(1),
     ).rejects.toThrow("Could not save");
     expect(result.current.data).toEqual([{ id: 1 }]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -336,7 +332,7 @@ describe("shared data cache", () => {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data).toHaveLength(2));
-    const client = api.room(room.ownerId, room.slug);
+    const client = api.room(room.id);
     const deletingFirst = client.nominations.delete(1);
     await act(async () => {
       await client.nominations.delete(2);
@@ -376,7 +372,7 @@ describe("shared data cache", () => {
     rerender({ current: otherRoom });
     await waitFor(() => expect(result.current.data?.[0].id).toBe(2));
     await act(async () => {
-      await api.room(room.ownerId, room.slug).delete();
+      await api.room(room.id).delete();
     });
     rerender({ current: room });
     expect(result.current.data).toBeUndefined();
@@ -435,7 +431,7 @@ describe("shared data cache", () => {
     });
     await waitFor(() => expect(result.current.data?.[0].comment).toBe("Alice"));
     const saving = api
-      .room(room.ownerId, room.slug)
+      .room(room.id)
       .nominations.updateComment(1, "Alice update");
     auth.data = { session: { id: "session-bob" }, user: { id: "bob" } };
     rerender();
@@ -508,7 +504,7 @@ describe("data boundary", () => {
       ),
     ).toThrow("Redirect:");
     expect(navigation.redirect).toHaveBeenCalledWith(
-      "/auth/sign-in?next=%2Falice%2Fwatchlist",
+      `/auth/sign-in?next=${encodeURIComponent(`/rooms/${room.id}`)}`,
     );
   });
 });
@@ -535,7 +531,7 @@ describe("room integration", () => {
       );
     }
     render(
-      <RoomProvider {...room}>
+      <RoomProvider roomId={room.id}>
         <Content />
       </RoomProvider>,
       { wrapper: Wrapper },

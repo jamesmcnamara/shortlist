@@ -2,7 +2,6 @@
 
 import useSWR from "swr";
 import { api } from "../api";
-import { roomApiKey } from "@/lib/room-path";
 import { isAccessError, useDataSession } from "./DataProvider";
 
 function useQuery<T>(key: string, fetcher: () => Promise<T>) {
@@ -26,21 +25,20 @@ export function useRoomsForMovie(movieId: number) {
   );
 }
 
-interface RoomPath {
-  ownerId: string;
-  slug: string;
+interface RoomReference {
+  id: string;
 }
 
-export function useRoomDetail(room: RoomPath) {
+export function useRoomDetail(room: RoomReference) {
   return useQuery(
-    `/api/rooms/${encodeURIComponent(roomApiKey(room))}`,
-    () => api.room(room.ownerId, room.slug).get(),
+    `/api/rooms/${encodeURIComponent(room.id)}`,
+    () => api.room(room.id).get(),
   );
 }
 
-export function useNominations(room: RoomPath) {
+export function useNominations(room: RoomReference) {
   return useQuery(
-    `/api/rooms/${encodeURIComponent(roomApiKey(room))}/nominations`,
-    () => api.room(room.ownerId, room.slug).nominations.list(),
+    `/api/rooms/${encodeURIComponent(room.id)}/nominations`,
+    () => api.room(room.id).nominations.list(),
   );
 }

@@ -1,5 +1,18 @@
 # Manual migration: single club → rooms
 
+## Default watchlists
+
+Migration `0020_loud_captain_flint.sql` adds `rooms.watchlist_for`, creates a
+new Watchlist room for each existing user, and adds that user as its admin.
+Ordinary rooms named Watchlist are left unchanged. Apply the migration before
+deploying the watchlist feature.
+
+New accounts get the same room through the auth user-creation hook. The menu
+finds it by `watchlist_for`, not its name, and links to `/rooms/<room-id>`.
+Watchlists otherwise behave like normal rooms, including renaming and sharing.
+
+## Historical single-club migration
+
 The schema in `src/db/schema.ts` is the target state. This file records the
 transformation required to get an existing database there. It is intentionally
 **not** wired into `npm run db:migrate` — run it yourself, against a backup.
@@ -27,19 +40,19 @@ carried-over cycle numbers stay meaningful.
 
 ```sql
 insert into rooms (
-  slug, name, created_by, invite_code,
+  id, name, created_by, invite_code,
   nominations_per_cycle, votes_per_cycle, cycle_length,
   allow_self_vote, allow_duplicate_nominations, created_at
 )
 values (
-  'movie-club', 'Movie Club', '<owner-user-id>', '<random-code>',
+  '<room-id>', 'Movie Club', '<owner-user-id>', '<random-code>',
   1, 5, 'month',
   false, false, '<epoch matching existing month values>'
 );
 ```
 
-Any slug works; existing members reach it through the room switcher. Users who
-belong to no rooms are sent to `/rooms/new` rather than to a default slug.
+Room URLs use the generated room ID. Existing members reach the room through
+the room switcher; users who belong to no rooms are sent to `/rooms/new`.
 
 ## 3. Backfill membership
 
@@ -55,7 +68,7 @@ cross join (
   union select user_id from nomcoms
   union select user_id from seen
 ) u
-where r.slug = 'movie-club'
+where r.id = '<room-id>'
 on conflict do nothing;
 ```
 

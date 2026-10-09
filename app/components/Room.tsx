@@ -2,6 +2,7 @@
 
 import { compareHref } from "@/app/compare/metrics";
 import { MovieCard } from "@/app/components/MovieCard";
+import { MovieGrid } from "./MovieGrid";
 import { BulkMovieImport } from "@/app/components/BulkMovieImport";
 import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
@@ -17,7 +18,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { all, filter, find, get, map, some } from "shades";
-import { useRoom } from "../[ownerId]/[slug]/RoomContext";
+import { useRoom } from "../rooms/[roomId]/RoomContext";
 import styles from "./Room.module.css";
 
 export interface RoomAPI {
@@ -184,10 +185,9 @@ export function Room({
               : "No movies match these filters."}
           </p>
         )}
-        <div className={styles.movieList}>
-          {visible.map((nom, index) => (
+        <MovieGrid nominees={visible}>
+          {(nom, index) => (
             <MovieCard
-              key={nom.id}
               rank={index + 1}
               nomination={nom}
               hasSeen={some({ id: userId })(nom.seenBy)}
@@ -195,8 +195,8 @@ export function Room({
               showMeta={showMeta}
               {...cardProps(nom)}
             />
-          ))}
-        </div>
+          )}
+        </MovieGrid>
       </section>
 
       {watched.length > 0 && (
@@ -212,10 +212,9 @@ export function Room({
           </button>
 
           {isWatchedOpen && (
-            <div className={styles.movieList}>
-              {watched.map((nom, index) => (
+            <MovieGrid nominees={watched}>
+              {(nom, index) => (
                 <MovieCard
-                  key={nom.id}
                   rank={index + 1}
                   nomination={nom}
                   hasSeen={some({ id: userId })(nom.seenBy)}
@@ -224,8 +223,8 @@ export function Room({
                   isCompleted
                   {...cardProps(nom)}
                 />
-              ))}
-            </div>
+              )}
+            </MovieGrid>
           )}
         </section>
       )}

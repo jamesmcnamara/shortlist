@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/app/lib/api";
-import { slugify } from "@/app/lib/rooms";
 import { withTargetValue } from "@/app/lib/utils";
 import styles from "@/app/components/FormPage.module.css";
 
@@ -12,8 +11,6 @@ export default function NewRoomPage() {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const slug = slugify(name);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -54,9 +51,6 @@ export default function NewRoomPage() {
               placeholder="Friday Night Movies"
               required
             />
-            {slug && (
-              <span className={styles.hint}>shortlist.app/…/{slug}</span>
-            )}
           </div>
 
           {error && <p className={styles.error}>{error}</p>}

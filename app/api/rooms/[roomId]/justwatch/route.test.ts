@@ -14,8 +14,8 @@ vi.mock("@/lib/auth/server", () => ({
 const OWNER = "11111111-1111-1111-1111-111111111111";
 const MEMBER = "22222222-2222-2222-2222-222222222222";
 const OUTSIDER = "33333333-3333-3333-3333-333333333333";
-const context = (slug = "watchlist") => ({
-  params: Promise.resolve({ slug: `${OWNER}:${slug}` }),
+const context = (roomId = "44444444-4444-4444-4444-444444444444") => ({
+  params: Promise.resolve({ roomId }),
 });
 const request = (body: unknown) => new Request("http://test/justwatch", {
   method: "POST", body: JSON.stringify(body),
@@ -51,8 +51,8 @@ beforeEach(async () => {
     { id: OUTSIDER, name: "Outsider", email: "outsider@example.com" },
   ]);
   const [room, other] = await db.insert(rooms).values([
-    { slug: "watchlist", name: "Watchlist", createdBy: OWNER, inviteCode: "a", adminInviteCode: "aa" },
-    { slug: "other", name: "Other", createdBy: OWNER, inviteCode: "b", adminInviteCode: "bb" },
+    { id: "44444444-4444-4444-4444-444444444444", name: "Watchlist", createdBy: OWNER, inviteCode: "a", adminInviteCode: "aa" },
+    { id: "55555555-5555-5555-5555-555555555555", name: "Other", createdBy: OWNER, inviteCode: "b", adminInviteCode: "bb" },
   ]).returning();
   roomId = room.id;
   await db.insert(roomMembers).values([
@@ -94,13 +94,13 @@ describe("list-scoped JustWatch refresh", () => {
   });
 
   it.each([
-    ["anonymous", "", "watchlist", 401],
-    ["nonmember", OUTSIDER, "watchlist", 404],
-    ["other room", MEMBER, "other", 404],
-    ["missing room", MEMBER, "missing", 404],
-  ])("rejects %s before external lookup", async (_name, userId, slug, status) => {
+    ["anonymous", "", "44444444-4444-4444-4444-444444444444", 401],
+    ["nonmember", OUTSIDER, "44444444-4444-4444-4444-444444444444", 404],
+    ["other room", MEMBER, "55555555-5555-5555-5555-555555555555", 404],
+    ["missing room", MEMBER, "66666666-6666-6666-6666-666666666666", 404],
+  ])("rejects %s before external lookup", async (_name, userId, roomId, status) => {
     auth.userId = userId;
-    expect((await POST(request({ movieId }), context(slug))).status).toBe(status);
+    expect((await POST(request({ movieId }), context(roomId))).status).toBe(status);
     expect(fetch).not.toHaveBeenCalled();
   });
 

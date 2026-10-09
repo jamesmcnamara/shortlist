@@ -33,21 +33,18 @@ describe("listRoomsWithPosterPreviewsForUser", () => {
       .insert(rooms)
       .values([
         {
-          slug: "first",
           name: "First",
           createdBy: USER_ID,
           inviteCode: "first-member",
           adminInviteCode: "first-admin",
         },
         {
-          slug: "second",
           name: "Second",
           createdBy: USER_ID,
           inviteCode: "second-member",
           adminInviteCode: "second-admin",
         },
         {
-          slug: "other",
           name: "Other",
           createdBy: OTHER_USER_ID,
           inviteCode: "other-member",
@@ -100,13 +97,13 @@ describe("listRoomsWithPosterPreviewsForUser", () => {
     ]);
 
     const result = await listRoomsWithPosterPreviewsForUser(USER_ID);
-    const bySlug = Object.fromEntries(
-      result.map(({ slug, posterUrls }) => [slug, posterUrls]),
+    const postersByRoomId = Object.fromEntries(
+      result.map(({ id, posterUrls }) => [id, posterUrls]),
     );
 
-    expect(bySlug).toEqual({
-      second: [],
-      first: Array.from(
+    expect(postersByRoomId).toEqual({
+      [secondRoom.id]: [],
+      [firstRoom.id]: Array.from(
         { length: MAX_POSTER_PREVIEWS },
         (_, i) => `/${posterCount - 1 - i}.jpg`,
       ),

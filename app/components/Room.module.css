@@ -148,9 +148,33 @@
 }
 
 .movieList {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 2.125rem 1.125rem;
+}
+
+.movieSlot {
+  min-width: 0;
+}
+
+.animationControl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-soft);
+  font-size: 0.8125rem;
+}
+
+.animationControl select {
+  min-height: 2.75rem;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
 }
 
 @media (max-width: 40rem) {

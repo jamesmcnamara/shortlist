@@ -10,7 +10,7 @@ import styles from "./page.module.css";
 
 /**
  * Lists every room the user belongs to. Anyone without one starts by
- * creating it, since a slug they cannot access would 404.
+ * creating it, since a room they cannot access would 404.
  */
 export default function Rooms() {
   const { data: rooms, error, retry } = useRooms();

@@ -16,11 +16,11 @@ import { loadRoom } from "@/app/lib/load-room";
 // handler keeps its real export name (GET/POST/PATCH/DELETE) without
 // colliding across the many routes a single test file exercises.
 import * as roomsRoute from "./rooms/route";
-import * as roomRoute from "./rooms/[slug]/route";
-import * as nominationsRoute from "./rooms/[slug]/nominations/route";
-import * as nomcomsRoute from "./rooms/[slug]/nomcoms/route";
-import * as seenRoute from "./rooms/[slug]/seen/route";
-import * as rotateInviteRoute from "./rooms/[slug]/invite/rotate/route";
+import * as roomRoute from "./rooms/[roomId]/route";
+import * as nominationsRoute from "./rooms/[roomId]/nominations/route";
+import * as nomcomsRoute from "./rooms/[roomId]/nomcoms/route";
+import * as seenRoute from "./rooms/[roomId]/seen/route";
+import * as rotateInviteRoute from "./rooms/[roomId]/invite/rotate/route";
 import * as joinRoute from "./join/[code]/route";
 
 // Auth is the one thing stubbed; everything below it runs for real.
@@ -40,8 +40,8 @@ const asUser = (id: string) => {
 
 interface Fixture {
   db: DB;
-  roomA: { id: string; slug: string };
-  roomB: { id: string; slug: string };
+  roomA: { id: string };
+  roomB: { id: string };
   nominationInA: number;
   nominationInB: number;
   movieInA: number;
@@ -50,8 +50,10 @@ interface Fixture {
 
 let fixture: Fixture;
 
-const route = (slug: string, ownerId = ALICE) => ({
-  params: Promise.resolve({ slug: `${ownerId}:${slug}` }),
+const route = (room: "club" | "secret" = "club") => ({
+  params: Promise.resolve({
+    roomId: room === "club" ? fixture.roomA.id : fixture.roomB.id,
+  }),
 });
 const post = (body: unknown) =>
   new Request("http://test/api", {
@@ -72,7 +74,6 @@ beforeEach(async () => {
   const [roomA] = await db
     .insert(rooms)
     .values({
-      slug: "club",
       name: "Club",
       createdBy: ALICE,
       inviteCode: "invite-a",
@@ -83,8 +84,7 @@ beforeEach(async () => {
   const [roomB] = await db
     .insert(rooms)
     .values({
-      slug: "secret",
-      name: "Secret",
+      name: "Club",
       createdBy: MALLORY,
       inviteCode: "invite-b",
       adminInviteCode: "invite-b-admin",
@@ -149,34 +149,15 @@ beforeEach(async () => {
 });
 
 describe("room membership", () => {
-  it("resolves duplicate room slugs within their creator namespaces", async () => {
-    const [otherClub] = await fixture.db
-      .insert(rooms)
-      .values({
-        slug: "club",
-        name: "Another Club",
-        createdBy: MALLORY,
-        inviteCode: "invite-other-club",
-        adminInviteCode: "invite-other-club-admin",
-      })
-      .returning();
-    await fixture.db.insert(roomMembers).values({
-      roomId: otherClub.id,
-      userId: BOB,
-      role: "member",
-    });
-
+  it("resolves rooms by ID even when their names match", async () => {
     const { GET } = nominationsRoute;
     asUser(BOB);
 
     const aliceClub = await GET(new Request("http://test"), route("club"));
-    const malloryClub = await GET(
-      new Request("http://test"),
-      route("club", MALLORY),
-    );
+    const malloryClub = await GET(new Request("http://test"), route("secret"));
 
     expect(await aliceClub.json()).toHaveLength(1);
-    expect(await malloryClub.json()).toEqual([]);
+    expect(malloryClub.status).toBe(404);
   });
 
   it("returns only the caller's own room contents", async () => {
@@ -197,7 +178,7 @@ describe("room membership", () => {
 
     const response = await GET(new Request("http://test"), route("secret"));
 
-    // 404 rather than 403, so slugs cannot be probed for existence.
+    // 404 rather than 403, so room IDs cannot be probed for existence.
     expect(response.status).toBe(404);
   });
 
@@ -214,7 +195,9 @@ describe("room membership", () => {
     asUser(BOB);
 
     const body = await (await GET(new Request("http://test"))).json();
-    expect(body.map((room: { slug: string }) => room.slug)).toEqual(["club"]);
+    expect(body.map((room: { id: string }) => room.id)).toEqual([
+      fixture.roomA.id,
+    ]);
   });
 });
 
@@ -446,7 +429,7 @@ describe("admin-only routes", () => {
     const [room] = await fixture.db
       .select()
       .from(rooms)
-      .where(eq(rooms.slug, "club"));
+      .where(eq(rooms.id, fixture.roomA.id));
     expect(room.name).toBe("Club");
   });
 
@@ -487,7 +470,7 @@ describe("admin-only routes", () => {
   it("keeps the invite code out of the server-rendered room payload", async () => {
     asUser(BOB);
 
-    const result = await loadRoom(ALICE, "club");
+    const result = await loadRoom(fixture.roomA.id);
     expect(result.status).toBe("ok");
     if (result.status !== "ok") return;
     // This object is serialized into the RSC payload for every member.
@@ -541,7 +524,9 @@ describe("invites", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ path: `/${MALLORY}/secret` });
+    expect(await response.json()).toMatchObject({
+      path: `/rooms/${fixture.roomB.id}`,
+    });
   });
 
   it("treats re-joining as a no-op", async () => {
@@ -580,7 +565,9 @@ describe("invites", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ path: `/${MALLORY}/secret` });
+    expect(await response.json()).toMatchObject({
+      path: `/rooms/${fixture.roomB.id}`,
+    });
 
     const [membership] = await fixture.db
       .select()
@@ -594,7 +581,7 @@ describe("invites", () => {
               await fixture.db
                 .select({ id: rooms.id })
                 .from(rooms)
-                .where(eq(rooms.slug, "secret"))
+                .where(eq(rooms.id, fixture.roomB.id))
             )[0].id,
           ),
         ),

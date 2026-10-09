@@ -5,10 +5,10 @@ import { movies, nominations, rooms, roomMembers } from "@/src/db/schema";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import { eq } from "drizzle-orm";
 import * as roomsRoute from "./rooms/route";
-import * as roomRoute from "./rooms/[slug]/route";
-import * as nominationsRoute from "./rooms/[slug]/nominations/route";
-import * as rotateInviteRoute from "./rooms/[slug]/invite/rotate/route";
-import * as membersRoute from "./rooms/[slug]/members/[userId]/route";
+import * as roomRoute from "./rooms/[roomId]/route";
+import * as nominationsRoute from "./rooms/[roomId]/nominations/route";
+import * as rotateInviteRoute from "./rooms/[roomId]/invite/rotate/route";
+import * as membersRoute from "./rooms/[roomId]/members/[userId]/route";
 import { setMovieProviderForTesting } from "../lib/movie-metadata";
 
 const currentUserId = vi.hoisted(() => ({ value: "" }));
@@ -24,8 +24,9 @@ const asUser = (id: string) => {
   currentUserId.value = id;
 };
 
-const route = (slug = "room") => ({
-  params: Promise.resolve({ slug: `${ALICE}:${slug}` }),
+let roomId: string;
+const route = () => ({
+  params: Promise.resolve({ roomId }),
 });
 const post = (body: unknown) =>
   new Request("http://test/api", {
@@ -40,13 +41,13 @@ async function setup() {
   const [room] = await db
     .insert(rooms)
     .values({
-      slug: "room",
       name: "Room",
       createdBy: ALICE,
       inviteCode: "code",
       adminInviteCode: "code-admin",
     })
     .returning();
+  roomId = room.id;
 
   await db.insert(roomMembers).values([
     { roomId: room.id, userId: ALICE, role: "admin" },
@@ -184,30 +185,21 @@ describe("room creation", () => {
     expect(membership.userId).toBe(ALICE);
   });
 
-  it("refuses a duplicate slug", async () => {
+  it("allows duplicate names and gives rooms distinct ID URLs", async () => {
     const { POST } = roomsRoute;
     asUser(ALICE);
-
-    await POST(post({ name: "Movie Club" }));
+    const first = await POST(post({ name: "Movie Club" }));
     const second = await POST(post({ name: "Movie Club" }));
+    const [firstRoom, secondRoom] = await Promise.all([
+      first.json(),
+      second.json(),
+    ]);
 
-    expect(second.status).toBe(409);
-  });
-
-  it("allows another creator to use the same slug", async () => {
-    const { POST } = roomsRoute;
-    asUser(ALICE);
-    await POST(post({ name: "Movie Club" }));
-
-    asUser(BOB);
-    const response = await POST(post({ name: "Movie Club" }));
-
-    expect(response.status).toBe(201);
-    expect(await response.json()).toMatchObject({
-      slug: "movie-club",
-      ownerId: BOB,
-      path: `/${BOB}/movie-club`,
-    });
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+    expect(firstRoom.id).not.toBe(secondRoom.id);
+    expect(firstRoom.path).toBe(`/rooms/${firstRoom.id}`);
+    expect(secondRoom.path).toBe(`/rooms/${secondRoom.id}`);
   });
 });
 
@@ -219,7 +211,7 @@ describe("member management", () => {
 
     const response = await DELETE(
       new Request("http://test", { method: "DELETE" }),
-      { params: Promise.resolve({ slug: `${ALICE}:room`, userId: BOB }) },
+      { params: Promise.resolve({ roomId: room.id, userId: BOB }) },
     );
 
     // Bob is not an admin, so removing him is fine; the guard is about admins.
@@ -248,7 +240,7 @@ describe("member management", () => {
     asUser(ALICE);
 
     await DELETE(new Request("http://test", { method: "DELETE" }), {
-      params: Promise.resolve({ slug: `${ALICE}:room`, userId: BOB }),
+      params: Promise.resolve({ roomId: room.id, userId: BOB }),
     });
 
     const remaining = await db
@@ -265,7 +257,7 @@ describe("member management", () => {
 
     const response = await DELETE(
       new Request("http://test", { method: "DELETE" }),
-      { params: Promise.resolve({ slug: `${ALICE}:room`, userId: ALICE }) },
+      { params: Promise.resolve({ roomId, userId: ALICE }) },
     );
     expect(response.status).toBe(409);
   });
@@ -276,7 +268,7 @@ describe("member management", () => {
     asUser(ALICE);
 
     const response = await PATCH(post({ role: "member" }), {
-      params: Promise.resolve({ slug: `${ALICE}:room`, userId: ALICE }),
+      params: Promise.resolve({ roomId, userId: ALICE }),
     });
     expect(response.status).toBe(409);
   });

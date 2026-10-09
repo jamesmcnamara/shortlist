@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { parseRoomApiKey } from "@/lib/room-path";
+import { isUuid, roomPath } from "@/lib/room-path";
 import { getDb } from "@/src/db/client";
 import { roomMembers, rooms, type Room, type RoomRole } from "@/src/db/schema";
 import { requireUserId, unauthorized } from "./require-user";
@@ -10,18 +10,16 @@ import { requireUserId, unauthorized } from "./require-user";
  * explicitly via `findInviteCode`.
  */
 export type SafeRoom = Omit<Room, "inviteCode" | "adminInviteCode"> & {
-  ownerId: string;
   path: string;
 };
 
 const ROOM_COLUMNS = {
   id: rooms.id,
-  slug: rooms.slug,
   name: rooms.name,
+  watchlistFor: rooms.watchlistFor,
   createdBy: rooms.createdBy,
   description: rooms.description,
   createdAt: rooms.createdAt,
-  ownerId: rooms.createdBy,
 };
 
 export interface RoomContext {
@@ -49,16 +47,13 @@ export const notFound = () =>
 export const forbidden = (message = "You are not a member of this room.") =>
   Response.json({ error: message }, { status: 403 });
 
-export async function findRoomByPath(
-  ownerId: string,
-  slug: string,
-): Promise<SafeRoom | null> {
+export async function findRoomById(roomId: string): Promise<SafeRoom | null> {
   const [room] = await getDb()
     .select(ROOM_COLUMNS)
     .from(rooms)
-    .where(and(eq(rooms.createdBy, ownerId), eq(rooms.slug, slug)))
+    .where(eq(rooms.id, roomId))
     .limit(1);
-  return (room as SafeRoom) ?? null;
+  return room ? { ...room, path: roomPath(room) } : null;
 }
 
 /** Read separately, and only where an admin has been established. */
@@ -96,7 +91,7 @@ export async function findMembership(
 }
 
 /**
- * Resolves the room from the route slug and asserts membership before the
+ * Resolves the room from its ID and asserts membership before the
  * handler runs. Every room-scoped route goes through here, so a handler can
  * never see a room the caller does not belong to.
  */
@@ -125,11 +120,10 @@ const withResolvedRoom =
 
     try {
       const params = await routeContext.params;
-      const roomPath = parseRoomApiKey(params.slug);
-      if (!roomPath) return notFound();
-      const room = await findRoomByPath(roomPath.ownerId, roomPath.slug);
-      // Non-members get the same 404 as a nonexistent room, so room slugs
-      // cannot be probed for existence.
+      const roomId = params.roomId;
+      if (!roomId || !isUuid(roomId)) return notFound();
+      const room = await findRoomById(roomId);
+      // Non-members get the same 404 as nonexistent rooms, so IDs cannot be probed.
       if (!room) return notFound();
 
       const role = await findMembership(room.id, userId);

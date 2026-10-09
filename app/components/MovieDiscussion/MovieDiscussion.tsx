@@ -133,10 +133,10 @@ export function MovieDiscussion({
               aria-label={
                 nomination.completed
                   ? `Move ${details.title} out of Watched`
-                  : `Mark ${details.title} completed`
+                  : `Mark ${details.title} as Watched`
               }
             >
-              {nomination.completed ? "Completed ✓" : "Mark completed"}
+              {nomination.completed ? "Completed ✓" : "Watched"}
             </button>
           </div>
         )}

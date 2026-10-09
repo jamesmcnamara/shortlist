@@ -1,6 +1,6 @@
 "use client";
 
-import { useRoom } from "@/app/[ownerId]/[slug]/RoomContext";
+import { useRoom } from "@/app/rooms/[roomId]/RoomContext";
 import { AppMenu } from "./AppMenu";
 import styles from "./ShortlistHeader.module.css";
 import Link from "next/link";
@@ -15,8 +15,7 @@ export function ShortlistHeader() {
       </span>
       <AppMenu
         room={{
-          slug: room.slug,
-          ownerId: room.ownerId,
+          id: room.id,
           isAdmin,
         }}
         showMyRooms={rooms.length > 1}
