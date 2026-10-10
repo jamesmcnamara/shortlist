@@ -256,6 +256,8 @@ describe("streaming service row", () => {
         hasSeen={false}
         currentUserId="user"
         onUpdateComment={vi.fn()}
+        onAddNomCom={vi.fn()}
+        onUpdateNomCom={vi.fn()}
         onClose={vi.fn()}
       />,
     );

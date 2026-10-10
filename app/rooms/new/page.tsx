@@ -19,7 +19,7 @@ export default function NewRoomPage() {
     setIsSubmitting(true);
     try {
       const room = await api.rooms.create({ name: name.trim() });
-      router.push(room.path);
+      router.replace(room.path);
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Unable to create the room.",

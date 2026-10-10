@@ -19,6 +19,12 @@ export function useRoomActions(client: RoomApi, noms: Nomination[]): RoomAPI {
     updateNomRec: async (id, comment) => {
       await client.nominations.updateComment(id, comment);
     },
+    addNomCom: async (nominationId, comment) => {
+      await client.nomcoms.create(nominationId, comment);
+    },
+    updateNomCom: async (nomcomId, comment) => {
+      await client.nomcoms.update(nomcomId, comment);
+    },
     toggleWatched: async (movieId) => {
       const nomination = noms.find((item) => item.movieId === movieId);
       const hasSeen = nomination?.seenBy.some((user) => user.id === userId);

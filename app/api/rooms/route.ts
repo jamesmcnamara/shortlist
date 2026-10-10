@@ -1,10 +1,13 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { withUser } from "@/lib/auth/require-user";
 import { generateInviteCode } from "@/app/lib/rooms";
 import { roomPath } from "@/lib/room-path";
 import { getDb } from "@/src/db/client";
 import { nominations, roomMembers, rooms } from "@/src/db/schema";
-import { listRoomsWithPosterPreviewsForUser } from "@/app/lib/load-room";
+import {
+  listRoomsWithPosterPreviewsForUser,
+  recentActivityOrder,
+} from "@/app/lib/load-room";
 
 export const runtime = "nodejs";
 
@@ -44,7 +47,7 @@ export const GET = withUser({ error: "Unable to load your rooms." })(async (
       ),
     )
     .where(eq(roomMembers.userId, userId))
-    .orderBy(desc(roomMembers.joinedAt));
+    .orderBy(...recentActivityOrder);
 
   if (!hasValidMovieId) {
     return Response.json(memberships.map(({ hasMovie, ...room }) => room));

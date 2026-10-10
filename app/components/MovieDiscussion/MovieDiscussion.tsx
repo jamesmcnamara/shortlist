@@ -6,12 +6,15 @@ import { MovieRatings } from "@/app/components/MovieRatings";
 import { EditableComment } from "./EditableComment";
 import { useClickOutside } from "@/app/lib/useClickOutside";
 import { MovieStreaming } from "@/app/components/MovieStreaming";
+import { NomComs } from "./NomComs";
 
 interface MovieDiscussionProps {
   nomination: Nomination;
   hasSeen: boolean;
   currentUserId: string | null;
   onUpdateComment: (comment: string) => Promise<boolean>;
+  onAddNomCom: (comment: string) => Promise<boolean>;
+  onUpdateNomCom: (nomcomId: number, comment: string) => Promise<boolean>;
   onMarkWatched?: () => void;
   onDelete?: () => void;
   onToggleCompleted?: () => void;
@@ -24,6 +27,8 @@ export function MovieDiscussion({
   hasSeen,
   currentUserId,
   onUpdateComment,
+  onAddNomCom,
+  onUpdateNomCom,
   onMarkWatched,
   onDelete,
   onToggleCompleted,
@@ -123,6 +128,13 @@ export function MovieDiscussion({
           </div>
         </div>
         <SeenByList seenBy={seenBy} />
+        <NomComs
+          nominationId={nomination.id}
+          nomcoms={nomination.nomcoms}
+          currentUserId={currentUserId}
+          onAddComment={onAddNomCom}
+          onUpdateComment={onUpdateNomCom}
+        />
         {onToggleCompleted && (
           <div className={styles.adminActions}>
             <button

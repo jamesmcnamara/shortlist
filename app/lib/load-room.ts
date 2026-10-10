@@ -23,7 +23,13 @@ export interface LoadedRoom {
   userId: string;
 }
 
-/** Rooms the user belongs to, newest membership first. */
+/** Latest nomination first; rooms with none fall back to newest membership. */
+export const recentActivityOrder = [
+  sql`(select max(${nominations.createdAt}) from ${nominations} where ${nominations.roomId} = ${rooms.id}) desc nulls last`,
+  desc(roomMembers.joinedAt),
+];
+
+/** Rooms the user belongs to, most recently added-to first. */
 export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
   const memberships = await getDb()
     .select({
@@ -35,7 +41,7 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
     .from(roomMembers)
     .innerJoin(rooms, eq(rooms.id, roomMembers.roomId))
     .where(eq(roomMembers.userId, userId))
-    .orderBy(desc(roomMembers.joinedAt));
+    .orderBy(...recentActivityOrder);
 
   return memberships as RoomSummary[];
 }

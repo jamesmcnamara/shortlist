@@ -27,6 +27,8 @@ export interface RoomAPI {
   delete: (nominationId: number) => Promise<void>;
   nominate: (candidate: Movie, comment: string) => Promise<void>;
   updateNomRec: (nominationId: number, comment: string) => Promise<void>;
+  addNomCom: (nominationId: number, comment: string) => Promise<void>;
+  updateNomCom: (nomcomId: number, comment: string) => Promise<void>;
   toggleWatched: (movieId: number) => Promise<void>;
   toggleCompleted: (nominationId: number) => Promise<void>;
 }
@@ -112,6 +114,14 @@ export function Room({
     updateNomRec: {
       api: api.updateNomRec,
       action: "update your recommendation",
+    },
+    addNomCom: {
+      api: api.addNomCom,
+      action: "add your comment",
+    },
+    updateNomCom: {
+      api: api.updateNomCom,
+      action: "update your comment",
     },
     toggleCompleted: {
       api: api.toggleCompleted,
@@ -285,6 +295,10 @@ export function Room({
             onUpdateComment={(comment) =>
               actions.updateNomRec(focused.id, comment)
             }
+            onAddNomCom={(comment) =>
+              actions.addNomCom(focused.id, comment)
+            }
+            onUpdateNomCom={actions.updateNomCom}
             onMarkWatched={() => actions.toggleWatched(focused.movieId)}
             onRefreshJustWatch={() => api.refreshJustWatch(focused.movieId)}
             onDelete={isAdmin ? () => actions.delete(focused.id) : undefined}

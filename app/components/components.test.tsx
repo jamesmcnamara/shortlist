@@ -349,6 +349,8 @@ describe("high-churn component smoke tests", () => {
         hasSeen={false}
         currentUserId="user"
         onUpdateComment={onUpdateComment}
+        onAddNomCom={vi.fn()}
+        onUpdateNomCom={vi.fn()}
         onMarkWatched={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -370,6 +372,58 @@ describe("high-churn component smoke tests", () => {
 
     await waitFor(() =>
       expect(onUpdateComment).toHaveBeenCalledWith("A sharper pitch"),
+    );
+  });
+
+  it("renders NomComs and supports adding and editing them", async () => {
+    const onAddNomCom = vi.fn().mockResolvedValue(true);
+    const onUpdateNomCom = vi.fn().mockResolvedValue(true);
+    render(
+      <MovieDiscussion
+        nomination={{
+          ...nomination,
+          nomcoms: [
+            {
+              id: 7,
+              roomId: "room",
+              userId: "user",
+              nominationId: nomination.id,
+              comment: "I agree",
+              createdAt: new Date(),
+              commenter: {
+                id: "user",
+                name: "Alice",
+                email: "alice@example.com",
+              },
+            },
+          ],
+        }}
+        hasSeen={false}
+        currentUserId="user"
+        onUpdateComment={vi.fn()}
+        onAddNomCom={onAddNomCom}
+        onUpdateNomCom={onUpdateNomCom}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Nom Coms")).toBeTruthy();
+    expect(screen.getByText("I agree")).toBeTruthy();
+    fireEvent.change(screen.getByRole("textbox", { name: "Add a comment" }), {
+      target: { value: "Count me in" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Post comment" }));
+    await waitFor(() => expect(onAddNomCom).toHaveBeenCalledWith("Count me in"));
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit Alice's comment" }),
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Comment from Alice" }), {
+      target: { value: "I still agree" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() =>
+      expect(onUpdateNomCom).toHaveBeenCalledWith(7, "I still agree"),
     );
   });
 });

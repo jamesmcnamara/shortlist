@@ -60,6 +60,8 @@ const createApi = (): RoomAPI => ({
   delete: vi.fn(),
   nominate: vi.fn(),
   updateNomRec: vi.fn(),
+  addNomCom: vi.fn(),
+  updateNomCom: vi.fn(),
   toggleWatched: vi.fn(),
   toggleCompleted: vi.fn(),
 });
