@@ -1,8 +1,14 @@
+import { z } from "zod";
+
 const CACHE_KEY = "shortlist:swr-cache";
 // Search results are only useful for the current visit.
 const EPHEMERAL_PREFIX = "/api/tmdb/";
 
-type CacheEntry = { data?: unknown; _k?: unknown };
+const savedCache = z.array(
+  z.tuple([z.string(), z.object({ data: z.unknown().optional(), _k: z.unknown().optional() })]),
+);
+
+type CacheEntry = z.infer<typeof savedCache>[number][1];
 
 class LocalStorageCache extends Map<string, CacheEntry> {
   constructor(private readonly storageKey?: string) {
@@ -13,11 +19,8 @@ class LocalStorageCache extends Map<string, CacheEntry> {
       const serialized = window.localStorage.getItem(storageKey);
       if (!serialized) return;
 
-      const entries: unknown = JSON.parse(serialized);
-      if (!Array.isArray(entries)) throw new Error("Invalid cache format.");
-
-      entries.forEach(([key, value]) => {
-        super.set(key, value as CacheEntry);
+      savedCache.parse(JSON.parse(serialized)).forEach(([key, value]) => {
+        super.set(key, value);
       });
     } catch (error) {
       console.error("Unable to read the saved SWR cache.", error);

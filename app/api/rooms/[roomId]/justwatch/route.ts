@@ -1,25 +1,22 @@
 import { and, eq, exists, sql } from "drizzle-orm";
+import { z } from "zod";
 import * as justwatch from "@/app/lib/justwatch";
 import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
 import { withRoomMember } from "@/lib/auth/require-room";
+import { badRequest, dbId, parseJson } from "@/lib/validation";
 import { getDb } from "@/src/db/client";
 import { movies, nominations, type MovieDetails } from "@/src/db/schema";
 
 export const runtime = "nodejs";
 
+const refreshBody = z.object({ movieId: dbId("A movie id is required.") });
+
 export const POST = withRoomMember({
   error: "Unable to save JustWatch availability.",
 })(async (request, { room }) => {
-  const body: unknown = await request.json().catch(() => null);
-  const movieId =
-    body && typeof body === "object" && "movieId" in body ? body.movieId : null;
-  if (
-    typeof movieId !== "number" ||
-    !Number.isSafeInteger(movieId) ||
-    movieId < 1
-  ) {
-    return Response.json({ error: "A movie id is required." }, { status: 400 });
-  }
+  const parsed = await parseJson(request, refreshBody);
+  if (!parsed.success) return badRequest(parsed.error);
+  const { movieId } = parsed.data;
 
   const db = getDb();
   const belongsToRoom = exists(

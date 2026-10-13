@@ -1,4 +1,5 @@
 import { get } from "shades";
+import { z } from "zod";
 import type {
   Feedback,
   FeedbackCategory,
@@ -10,6 +11,8 @@ import type { SafeRoom } from "@/lib/auth/require-room";
 import type { Movie } from "@/src/db/schema";
 import type { MovieImportResult } from "./bulk-movie-import";
 import type { JustWatchAvailability } from "./justwatch-types";
+
+export const errorResponse = z.object({ error: z.string() });
 
 export class ApiError extends Error {
   constructor(
@@ -61,7 +64,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if ([401, 403, 404].includes(response.status)) {
       await Promise.all(listeners.map((listener) => listener(path, method)));
     }
-    throw new ApiError(data?.error ?? "Request failed.", response.status);
+    throw new ApiError(
+      errorResponse.safeParse(data).data?.error ?? "Request failed.",
+      response.status,
+    );
   }
   await Promise.all(listeners.map((listener) => listener(path, method)));
   return data as T;
@@ -107,6 +113,12 @@ export interface RoomDetail {
  * every call site.
  */
 export const api = {
+  push: {
+    subscribe: (subscription: PushSubscriptionJSON): Promise<void> =>
+      request("/api/push", { method: "POST", body: JSON.stringify(subscription) }),
+    disconnect: (endpoint: string): Promise<void> =>
+      request("/api/push", { method: "DELETE", body: JSON.stringify({ endpoint }) }),
+  },
   rooms: {
     list: (): Promise<RoomSummary[]> => request("/api/rooms"),
     listWithPosters: (): Promise<RoomSummaryWithPosterPreviews[]> =>
@@ -131,6 +143,12 @@ export const api = {
   room: (roomId: string) => {
     const base = `/api/rooms/${encodeURIComponent(roomId)}`;
     return {
+      notifications: {
+        get: (): Promise<{ enabled: boolean; configured: boolean }> =>
+          request(`${base}/notifications`),
+        set: (enabled: boolean): Promise<{ enabled: boolean; configured: boolean }> =>
+          request(`${base}/notifications`, { method: "PUT", body: JSON.stringify({ enabled }) }),
+      },
       get: (): Promise<RoomDetail> => request(base),
       refreshJustWatch: (movieId: number): Promise<JustWatchAvailability> =>
         request(`${base}/justwatch`, {

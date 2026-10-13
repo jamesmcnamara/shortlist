@@ -1,0 +1,49 @@
+.section {
+  margin-top: 1.5rem;
+  color: var(--text);
+  font-size: 0.9375rem;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 2.75rem;
+  cursor: pointer;
+}
+
+.toggle input {
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--accent);
+}
+
+.hint {
+  margin: 0.25rem 0 0.75rem;
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+
+.button {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.button:hover {
+  background: var(--surface-muted);
+}
+
+.button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.error {
+  color: var(--danger);
+  line-height: 1.5;
+}

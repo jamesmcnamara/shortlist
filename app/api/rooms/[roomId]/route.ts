@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 import {
   findInviteCode,
   findAdminInviteCode,
@@ -9,8 +10,11 @@ import {
 import { getDb } from "@/src/db/client";
 import { roomMembers, rooms } from "@/src/db/schema";
 import { authUsers } from "@/src/db/neon-auth-schema";
+import { badRequest, parseJson, requiredText } from "@/lib/validation";
 
 export const runtime = "nodejs";
+
+const updateBody = z.object({ name: requiredText("Nothing to update.") });
 
 export const GET = withRoomMember({ error: "Unable to load the room." })(async (
   _request: Request,
@@ -42,11 +46,9 @@ export const GET = withRoomMember({ error: "Unable to load the room." })(async (
 
 export const PATCH = withRoomAdmin({ error: "Unable to update the room." })(
   async (request: Request, { room }: RoomContext) => {
-    const body = await request.json().catch(() => null);
-    const name = typeof body?.name === "string" ? body.name.trim() : "";
-    if (!name) {
-      return Response.json({ error: "Nothing to update." }, { status: 400 });
-    }
+    const parsed = await parseJson(request, updateBody);
+    if (!parsed.success) return badRequest(parsed.error);
+    const { name } = parsed.data;
 
     const [updated] = await getDb()
       .update(rooms)

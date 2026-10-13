@@ -42,3 +42,8 @@ export function useNominations(room: RoomReference) {
     () => api.room(room.id).nominations.list(),
   );
 }
+
+export function useNotificationSettings(roomId: string) {
+  return useQuery(`/api/rooms/${encodeURIComponent(roomId)}/notifications`,
+    () => api.room(roomId).notifications.get());
+}

@@ -1,4 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
+import { z } from "zod";
 import { withUser } from "@/lib/auth/require-user";
 import { generateInviteCode } from "@/app/lib/rooms";
 import { roomPath } from "@/lib/room-path";
@@ -8,8 +9,16 @@ import {
   listRoomsWithPosterPreviewsForUser,
   recentActivityOrder,
 } from "@/app/lib/load-room";
+import {
+  badRequest,
+  dbIdParam,
+  parseJson,
+  requiredText,
+} from "@/lib/validation";
 
 export const runtime = "nodejs";
+
+const createBody = z.object({ name: requiredText("A room name is required.") });
 
 /**
  * Rooms the caller belongs to, for the switcher, the landing redirect, and
@@ -24,9 +33,9 @@ export const GET = withUser({ error: "Unable to load your rooms." })(async (
   if (params.get("previews") === "true") {
     return Response.json(await listRoomsWithPosterPreviewsForUser(userId));
   }
-  const rawMovieId = params.get("movieId");
-  const movieId = rawMovieId === null ? null : Number(rawMovieId);
-  const hasValidMovieId = movieId !== null && Number.isInteger(movieId);
+  const movieId = dbIdParam("Invalid movie id.").safeParse(
+    params.get("movieId"),
+  ).data;
 
   const memberships = await getDb()
     .select({
@@ -43,13 +52,13 @@ export const GET = withUser({ error: "Unable to load your rooms." })(async (
       nominations,
       and(
         eq(nominations.roomId, rooms.id),
-        eq(nominations.movieId, hasValidMovieId ? movieId : -1),
+        eq(nominations.movieId, movieId ?? -1),
       ),
     )
     .where(eq(roomMembers.userId, userId))
     .orderBy(...recentActivityOrder);
 
-  if (!hasValidMovieId) {
+  if (!movieId) {
     return Response.json(memberships.map(({ hasMovie, ...room }) => room));
   }
 
@@ -60,14 +69,9 @@ export const POST = withUser({ error: "Unable to create the room." })(async (
   request: Request,
   userId: string,
 ) => {
-  const body = await request.json().catch(() => null);
-  const name = typeof body?.name === "string" ? body.name.trim() : "";
-  if (!name) {
-    return Response.json(
-      { error: "A room name is required." },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJson(request, createBody);
+  if (!parsed.success) return badRequest(parsed.error);
+  const { name } = parsed.data;
 
   const db = getDb();
   const [room] = await db
@@ -91,8 +95,5 @@ export const POST = withUser({ error: "Unable to create the room." })(async (
     adminInviteCode: _withheldAdmin,
     ...safe
   } = room;
-  return Response.json(
-    { ...safe, path: roomPath(room) },
-    { status: 201 },
-  );
+  return Response.json({ ...safe, path: roomPath(room) }, { status: 201 });
 });

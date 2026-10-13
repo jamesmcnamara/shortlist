@@ -13,13 +13,74 @@ vi.mock("serwist", () => ({
 
 const addEventListener = vi.fn();
 const deleteCache = vi.fn().mockResolvedValue(true);
+const showNotification = vi.fn().mockResolvedValue(undefined);
+const openWindow = vi.fn().mockResolvedValue(undefined);
+const focus = vi.fn().mockResolvedValue(undefined);
+const matchAll = vi.fn().mockResolvedValue([]);
 
 beforeEach(async () => {
   vi.resetModules();
   vi.clearAllMocks();
-  vi.stubGlobal("self", { __SW_MANIFEST: [], addEventListener });
+  vi.stubGlobal("self", {
+    __SW_MANIFEST: [], addEventListener,
+    registration: { showNotification },
+    location: { origin: "https://shortlist.test" },
+    clients: { matchAll, openWindow },
+  });
+  matchAll.mockResolvedValue([]);
   vi.stubGlobal("caches", { delete: deleteCache });
   await import("./sw");
+});
+
+describe("push notifications", () => {
+  const path = "/rooms/44444444-4444-4444-4444-444444444444";
+  function listener(name: string) {
+    const handler = addEventListener.mock.calls.find(([event]) => event === name)?.[1];
+    if (!handler) throw new Error(`Missing ${name} listener`);
+    return handler;
+  }
+
+  it("displays the supplied movie notification", async () => {
+    const waitUntil = vi.fn();
+    listener("push")({
+      data: { json: () => ({ title: "Movies", body: "Arrival was added.", url: path, tag: "nomination-1" }) },
+      waitUntil,
+    });
+    await waitUntil.mock.calls[0][0];
+    expect(showNotification).toHaveBeenCalledWith("Movies", {
+      body: "Arrival was added.", icon: "/icons/icon-192.svg",
+      tag: "nomination-1", data: { url: path },
+    });
+  });
+
+  it("shows a visible fallback for invalid push data", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const waitUntil = vi.fn();
+    listener("push")({ data: { json: () => { throw new Error("Invalid JSON"); } }, waitUntil });
+    await waitUntil.mock.calls[0][0];
+    expect(showNotification).toHaveBeenCalledWith("Shortlist", expect.objectContaining({
+      data: { url: "/" },
+    }));
+    log.mockRestore();
+  });
+
+  it.each([path, "https://evil.test", "//evil.test"])("opens only a same-origin destination for %s", async (url) => {
+    const waitUntil = vi.fn();
+    const close = vi.fn();
+    listener("notificationclick")({ notification: { close, data: { url } }, waitUntil });
+    await waitUntil.mock.calls[0][0];
+    expect(close).toHaveBeenCalledOnce();
+    expect(openWindow).toHaveBeenCalledWith(`https://shortlist.test${url === path ? path : "/"}`);
+  });
+
+  it("focuses an already-open list", async () => {
+    matchAll.mockResolvedValue([{ url: `https://shortlist.test${path}`, focus }]);
+    const waitUntil = vi.fn();
+    listener("notificationclick")({ notification: { close: vi.fn(), data: { url: path } }, waitUntil });
+    await waitUntil.mock.calls[0][0];
+    expect(focus).toHaveBeenCalledOnce();
+    expect(openWindow).not.toHaveBeenCalled();
+  });
 });
 
 afterEach(() => vi.unstubAllGlobals());

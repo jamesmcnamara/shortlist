@@ -26,6 +26,41 @@ current movie before pausing; use **Continue import** for remaining titles or
 Keep the page open while importing; navigating away stops further requests but
 does not undo movies already added.
 
+### Movie notifications
+
+Each list has a **Notify me when someone adds a movie** checkbox above the
+movie import control. Notifications are off by default. Enabling them requests
+browser permission and registers the current device; the list preference applies
+to all devices you have enabled. On another device, choose **Enable on this
+device** for a list you already follow. Turning off the checkbox stops alerts
+for that list on all your devices. Signing out disconnects the current browser.
+
+New nominations, including successful bulk imports, notify opted-in members
+other than the person adding the movie. Duplicate imports do not send alerts.
+Tapping a notification opens its list. Android Chrome supports this without
+installing the PWA; iOS requires a Home Screen install. HTTPS is required, except
+for local development on localhost. The production service worker is generated
+during the build; the development server does not enable it.
+
+To configure delivery:
+
+1. Run `npx web-push generate-vapid-keys` once.
+2. Set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT`
+   (a contact URL or `mailto:` address) in `.env.local` and Vercel's production
+   environment. Keep the private key secret and retain the same key pair across
+   deployments. The public key is embedded at build time, so redeploy after
+   configuring it.
+3. Apply the new Drizzle migration with `npm run db:migrate` against the intended
+   database before deploying.
+
+The existing Node.js routes send Web Push using Next.js `after()`, so delivery
+does not hold up the movie-add response. Each send has a five-second timeout and
+a one-hour push-service expiry. Failed sends are logged without private endpoint
+details; expired subscriptions (404/410) are removed. There is no durable queue
+or automatic retry, and browser/OS settings can delay or prevent notifications.
+Without the VAPID configuration, movie additions work normally and the
+notification control explains that setup is still needed.
+
 ### JustWatch streaming availability
 
 New movies fetch US availability from JustWatch's unofficial GraphQL endpoint

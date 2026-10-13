@@ -1,8 +1,10 @@
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 import { withRoomMember, type RoomContext } from "@/lib/auth/require-room";
 import { getDb } from "@/src/db/client";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import { nominations, roomMembers, seen, type User } from "@/src/db/schema";
+import { badRequest, dbId, dbIdParam, parseJson } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -45,20 +47,16 @@ const isNominatedInRoom = async (roomId: string, movieId: number) => {
   return Boolean(row);
 };
 
-const parseMovieId = (value: unknown) => {
-  const movieId = Number(value);
-  return Number.isInteger(movieId) ? movieId : null;
-};
+const MOVIE_ID = "A movie id is required.";
 
-const badMovieId = () =>
-  Response.json({ error: "A movie id is required." }, { status: 400 });
+const markBody = z.object({ movieId: dbId(MOVIE_ID) });
 
 /** Marking a movie seen is personal, and follows the user between rooms. */
 export const POST = withRoomMember({ error: "Unable to mark that watched." })(
   async (request: Request, { room, userId }: RoomContext) => {
-    const body = await request.json().catch(() => null);
-    const movieId = parseMovieId(body?.movieId);
-    if (movieId === null) return badMovieId();
+    const parsed = await parseJson(request, markBody);
+    if (!parsed.success) return badRequest(parsed.error);
+    const { movieId } = parsed.data;
 
     if (!(await isNominatedInRoom(room.id, movieId))) {
       return Response.json(
@@ -81,10 +79,11 @@ export const POST = withRoomMember({ error: "Unable to mark that watched." })(
 
 export const DELETE = withRoomMember({ error: "Unable to update that movie." })(
   async (request: Request, { room, userId }: RoomContext) => {
-    const movieId = parseMovieId(
+    const parsed = dbIdParam(MOVIE_ID).safeParse(
       new URL(request.url).searchParams.get("movieId"),
     );
-    if (movieId === null) return badMovieId();
+    if (!parsed.success) return badRequest(parsed.error);
+    const movieId = parsed.data;
 
     await getDb()
       .delete(seen)

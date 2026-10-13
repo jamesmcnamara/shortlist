@@ -8,6 +8,7 @@ import { useClickOutside } from "@/app/lib/useClickOutside";
 import { FilmReelIcon } from "./FilmReelIcon";
 import { roomPath } from "@/lib/room-path";
 import { useRooms } from "@/app/lib/data/queries";
+import { disconnectDeviceNotifications } from "@/app/lib/push";
 import styles from "./AppMenu.module.css";
 
 interface AppMenuProps {
@@ -25,6 +26,7 @@ export function AppMenu({ room, showMyRooms = true }: AppMenuProps) {
   );
   const [isOpen, setIsOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const menuRef = useClickOutside<HTMLDivElement>(
     () => setIsOpen(false),
@@ -35,10 +37,13 @@ export function AppMenu({ room, showMyRooms = true }: AppMenuProps) {
 
   async function signOut() {
     setIsSigningOut(true);
+    setSignOutError("");
     try {
+      await disconnectDeviceNotifications();
       await authClient.signOut();
       router.replace("/auth/sign-in");
     } catch {
+      setSignOutError("Unable to sign out safely. Check your connection and try again.");
       setIsSigningOut(false);
     }
   }
@@ -61,6 +66,7 @@ export function AppMenu({ room, showMyRooms = true }: AppMenuProps) {
       </button>
       {isOpen && (
         <div className={styles.menuPanel} role="menu">
+          {signOutError && <p className={styles.error} role="alert">{signOutError}</p>}
           {watchlist && (
             <MenuLink href={roomPath(watchlist)} onNavigate={close}>
               Watchlist

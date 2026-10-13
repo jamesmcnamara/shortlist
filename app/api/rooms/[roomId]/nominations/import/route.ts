@@ -1,28 +1,26 @@
 import { getMovieProvider } from "@/app/lib/movie-metadata";
 import type { MovieImportResult } from "@/app/lib/bulk-movie-import";
+import { z } from "zod";
 import { withRoomMember } from "@/lib/auth/require-room";
+import { badRequest, parseJson, requiredText } from "@/lib/validation";
 import { getDb } from "@/src/db/client";
 import { nominations, type Movie } from "@/src/db/schema";
 
 export const runtime = "nodejs";
 
+const ONE_TITLE = "Enter one movie title, up to 300 characters.";
+
+const importBody = z.object({
+  title: requiredText(ONE_TITLE)
+    .max(300, ONE_TITLE)
+    .regex(/^[^\r\n]*$/, ONE_TITLE),
+});
+
 export const POST = withRoomMember({ error: "Unable to import this movie." })(
   async (request, { room, userId }) => {
-    const body: unknown = await request.json().catch(() => null);
-    const title =
-      body &&
-      typeof body === "object" &&
-      "title" in body &&
-      typeof body.title === "string"
-        ? body.title.trim()
-        : "";
-
-    if (!title || title.length > 300 || /[\r\n]/.test(title)) {
-      return Response.json(
-        { error: "Enter one movie title, up to 300 characters." },
-        { status: 400 },
-      );
-    }
+    const parsed = await parseJson(request, importBody);
+    if (!parsed.success) return badRequest(parsed.error);
+    const { title } = parsed.data;
 
     const provider = getMovieProvider();
     if (!provider.hasCredentials()) {

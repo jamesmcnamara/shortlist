@@ -1,9 +1,15 @@
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 import { withRoomAdmin, type RoomContext } from "@/lib/auth/require-room";
 import { getDb } from "@/src/db/client";
 import { roomMembers } from "@/src/db/schema";
+import { badRequest, parseJson } from "@/lib/validation";
 
 export const runtime = "nodejs";
+
+const roleBody = z.object({
+  role: z.enum(["admin", "member"], "Role must be admin or member."),
+});
 
 /**
  * Removing a member deliberately leaves their movies in place —
@@ -50,15 +56,9 @@ export const DELETE = withRoomAdmin({ error: "Unable to remove that member." })(
 export const PATCH = withRoomAdmin({ error: "Unable to update that member." })(
   async (request: Request, { room, params, userId }: RoomContext) => {
     const targetId = params.userId;
-    const body = await request.json().catch(() => null);
-    const role = body?.role;
-
-    if (role !== "admin" && role !== "member") {
-      return Response.json(
-        { error: "Role must be admin or member." },
-        { status: 400 },
-      );
-    }
+    const parsed = await parseJson(request, roleBody);
+    if (!parsed.success) return badRequest(parsed.error);
+    const { role } = parsed.data;
 
     if (targetId === userId && role === "member") {
       return Response.json(

@@ -3,6 +3,7 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry } from "serwist";
 import { NetworkOnly, Serwist } from "serwist";
+import { notificationPayload, roomUrl } from "@/lib/notifications/payload";
 
 declare const self: ServiceWorkerGlobalScope & {
   __SW_MANIFEST: (string | PrecacheEntry)[];
@@ -36,4 +37,38 @@ self.addEventListener("activate", (event) => {
         .map((name) => caches.delete(name)),
     ),
   );
+});
+
+self.addEventListener("push", (event) => {
+  event.waitUntil((async () => {
+    try {
+      const data = notificationPayload.parse(event.data?.json());
+      await self.registration.showNotification(data.title, {
+        body: data.body,
+        icon: "/icons/icon-192.svg",
+        tag: data.tag,
+        data: { url: data.url },
+      });
+    } catch {
+      console.error("Unable to display movie notification");
+      await self.registration.showNotification("Shortlist", {
+        body: "There is new activity on your lists.",
+        data: { url: "/" },
+      });
+    }
+  })());
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL(
+    roomUrl.safeParse(event.notification.data?.url).data ?? "/",
+    self.location.origin,
+  ).href;
+  event.waitUntil((async () => {
+    const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    const existing = clients.find((client) => client.url === url);
+    if (existing) await existing.focus();
+    else await self.clients.openWindow(url);
+  })());
 });

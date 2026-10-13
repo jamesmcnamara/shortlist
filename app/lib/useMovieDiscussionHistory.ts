@@ -1,20 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { set } from "shades";
+import { z } from "zod";
 
 const HISTORY_KEY = "__shortlistMovieDiscussionId";
 
-const getDiscussionId = (state: unknown) => {
-  if (!state || typeof state !== "object") return null;
-  const id = (state as Record<string, unknown>)[HISTORY_KEY];
-  return typeof id === "number" ? id : null;
-};
+const discussionState = z.object({ [HISTORY_KEY]: z.number() });
 
-const getHistoryState = () => {
-  const state = window.history.state;
-  return state && typeof state === "object"
-    ? (state as Record<string, unknown>)
-    : {};
-};
+const historyState = z.record(z.string(), z.unknown()).catch({});
+
+const getDiscussionId = (state: unknown) =>
+  discussionState.safeParse(state).data?.[HISTORY_KEY] ?? null;
+
+const getHistoryState = () => historyState.parse(window.history.state);
 
 export function useMovieDiscussionHistory() {
   const [focusedId, setFocusedId] = useState<number | null>(null);

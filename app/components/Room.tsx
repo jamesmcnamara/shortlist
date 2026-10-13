@@ -295,9 +295,7 @@ export function Room({
             onUpdateComment={(comment) =>
               actions.updateNomRec(focused.id, comment)
             }
-            onAddNomCom={(comment) =>
-              actions.addNomCom(focused.id, comment)
-            }
+            onAddNomCom={(comment) => actions.addNomCom(focused.id, comment)}
             onUpdateNomCom={actions.updateNomCom}
             onMarkWatched={() => actions.toggleWatched(focused.movieId)}
             onRefreshJustWatch={() => api.refreshJustWatch(focused.movieId)}

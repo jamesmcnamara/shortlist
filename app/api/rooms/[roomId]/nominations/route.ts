@@ -1,10 +1,33 @@
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 import { getNomination, listNominations } from "@/app/lib/queries";
 import { withRoomMember, type RoomContext } from "@/lib/auth/require-room";
 import { getDb } from "@/src/db/client";
 import { movies, nominations } from "@/src/db/schema";
+import { scheduleNomNotys } from "@/lib/notifications/push";
+import { badRequest, dbId, dbIdParam, parseJson } from "@/lib/validation";
 
 export const runtime = "nodejs";
+
+const NOMINATION_ID = "A nomination id is required.";
+
+const comment = z.string("A comment must be text.").trim().nullish();
+
+const createBody = z.object({
+  movieId: dbId("A movie id is required."),
+  comment: comment.transform((text) => text || null),
+});
+
+const updateBody = z
+  .object({
+    id: dbId(NOMINATION_ID),
+    comment,
+    completed: z.boolean("Completed must be true or false.").nullish(),
+  })
+  .refine(
+    (body) => body.comment != null || body.completed != null,
+    "A comment is required.",
+  );
 
 export const GET = withRoomMember({ error: "Unable to load nominations" })(
   async (_request: Request, { room }: RoomContext) =>
@@ -13,18 +36,9 @@ export const GET = withRoomMember({ error: "Unable to load nominations" })(
 
 export const POST = withRoomMember({ error: "Unable to create nomination." })(
   async (request: Request, { room, userId }: RoomContext) => {
-    const body = await request.json().catch(() => null);
-    const movieId = Number(body?.movieId);
-    if (!Number.isInteger(movieId)) {
-      return Response.json(
-        { error: "A movie id is required." },
-        { status: 400 },
-      );
-    }
-    const comment =
-      typeof body?.comment === "string" && body.comment.trim()
-        ? body.comment.trim()
-        : null;
+    const parsed = await parseJson(request, createBody);
+    if (!parsed.success) return badRequest(parsed.error);
+    const { movieId, comment } = parsed.data;
 
     const db = getDb();
 
@@ -45,7 +59,9 @@ export const POST = withRoomMember({ error: "Unable to create nomination." })(
       .values({ roomId: room.id, userId, movieId, comment })
       .returning({ id: nominations.id });
 
-    return Response.json(await getNomination(room.id, inserted.id), {
+    const nomination = await getNomination(room.id, inserted.id);
+    scheduleNomNotys(room.id, inserted.id);
+    return Response.json(nomination, {
       status: 201,
     });
   },
@@ -54,28 +70,14 @@ export const POST = withRoomMember({ error: "Unable to create nomination." })(
 export const PATCH = withRoomMember({
   error: "Unable to update the nomination.",
 })(async (request: Request, { room, userId, role }: RoomContext) => {
-  const body = await request.json().catch(() => null);
-  const id = Number(body?.id);
-  const comment: string | null =
-    typeof body?.comment === "string" ? body.comment.trim() : null;
-  const completed: boolean | null =
-    typeof body?.completed === "boolean" ? body.completed : null;
-
-  if (!Number.isInteger(id)) {
-    return Response.json(
-      { error: "A nomination id is required." },
-      { status: 400 },
-    );
-  }
-
-  if (comment === null && completed === null) {
-    return Response.json({ error: "A comment is required." }, { status: 400 });
-  }
+  const parsed = await parseJson(request, updateBody);
+  if (!parsed.success) return badRequest(parsed.error);
+  const { id, comment, completed } = parsed.data;
 
   // Marking a nomination completed moves it into the room's Watched section
   // for everyone, so only an admin may flip that flag. A comment edit is
   // still scoped to the nominator, as before.
-  if (completed !== null && role !== "admin") {
+  if (completed != null && role !== "admin") {
     return Response.json(
       { error: "Only an admin can mark a movie completed." },
       { status: 403 },
@@ -83,11 +85,11 @@ export const PATCH = withRoomMember({
   }
 
   const values: Partial<typeof nominations.$inferInsert> = {};
-  if (comment !== null) values.comment = comment || null;
-  if (completed !== null) values.completed = completed;
+  if (comment != null) values.comment = comment || null;
+  if (completed != null) values.completed = completed;
 
   const ownershipCondition =
-    completed !== null ? undefined : eq(nominations.userId, userId);
+    completed != null ? undefined : eq(nominations.userId, userId);
 
   const updated = await getDb()
     .update(nominations)
@@ -114,13 +116,11 @@ export const PATCH = withRoomMember({
 export const DELETE = withRoomMember({
   error: "Unable to delete the nomination.",
 })(async (request: Request, { room, userId, role }: RoomContext) => {
-  const id = Number(new URL(request.url).searchParams.get("id"));
-  if (!Number.isInteger(id)) {
-    return Response.json(
-      { error: "A nomination id is required." },
-      { status: 400 },
-    );
-  }
+  const parsed = dbIdParam(NOMINATION_ID).safeParse(
+    new URL(request.url).searchParams.get("id"),
+  );
+  if (!parsed.success) return badRequest(parsed.error);
+  const id = parsed.data;
 
   // Admins can remove any nomination; everyone else can only rescind their own.
   const ownershipCondition =

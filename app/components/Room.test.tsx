@@ -86,8 +86,11 @@ describe("room movie animations", () => {
     expect(cards).toHaveLength(1);
     expect(cards[0].textContent).toBe("Watched movie");
     expect(cards[0].parentElement?.style.opacity).toBe("1");
-    expect(screen.getByRole("button", { name: /Watched/ }).getAttribute("aria-expanded"))
-      .toBe("false");
+    expect(
+      screen
+        .getByRole("button", { name: /Watched/ })
+        .getAttribute("aria-expanded"),
+    ).toBe("false");
   });
 });
 

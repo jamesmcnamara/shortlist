@@ -56,6 +56,15 @@
   cursor: progress;
 }
 
+.error {
+  max-width: min(16rem, calc(100vw - 4rem));
+  margin: 0;
+  padding: 0.5625rem 0.75rem;
+  color: var(--danger);
+  font-size: 0.8625rem;
+  line-height: 1.5;
+}
+
 .divider {
   border: none;
   height: 2px;

@@ -1,5 +1,6 @@
 import {
   boolean,
+  foreignKey,
   index,
   integer,
   pgTable,
@@ -16,26 +17,23 @@ import type { MovieDetails as _MovieDetails } from "@lorenzopant/tmdb";
 import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
 
 /** A room is a shared watch list for a group. */
-export const rooms = pgTable(
-  "rooms",
-  {
-    id: uuid().primaryKey().defaultRandom(),
-    name: text().notNull(),
-    watchlistFor: uuid("watchlist_for")
-      .unique()
-      .references(() => authUsers.id),
-    createdBy: uuid("created_by")
-      .notNull()
-      .references(() => authUsers.id),
-    inviteCode: text("invite_code").notNull().unique(),
-    // A separate link that grants the "admin" role on join instead of "member".
-    adminInviteCode: text("admin_invite_code").notNull().unique(),
-    description: text(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-  },
-);
+export const rooms = pgTable("rooms", {
+  id: uuid().primaryKey().defaultRandom(),
+  name: text().notNull(),
+  watchlistFor: uuid("watchlist_for")
+    .unique()
+    .references(() => authUsers.id),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => authUsers.id),
+  inviteCode: text("invite_code").notNull().unique(),
+  // A separate link that grants the "admin" role on join instead of "member".
+  adminInviteCode: text("admin_invite_code").notNull().unique(),
+  description: text(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
 
 export const roomMembers = pgTable(
   "room_members",
@@ -66,6 +64,34 @@ export const movies = pgTable("movies", {
     .defaultNow()
     .notNull(),
 });
+
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    endpoint: text().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    p256dh: text().notNull(),
+    auth: text().notNull(),
+  },
+  (table) => [index("subscriptions_user_idx").on(table.userId)],
+);
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    roomId: uuid("room_id").notNull(),
+    userId: uuid("user_id").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.roomId, table.userId] }),
+    foreignKey({
+      columns: [table.roomId, table.userId],
+      foreignColumns: [roomMembers.roomId, roomMembers.userId],
+    }).onDelete("cascade"),
+  ],
+);
 
 export const nominations = pgTable(
   "nominations",
@@ -260,7 +286,12 @@ export interface MDBRating {
 }
 
 export type RatingSource =
-  "imdb" | "letterboxd" | "tomatoes" | "popcorn" | "metacritic" | "rogerebert";
+  | "imdb"
+  | "letterboxd"
+  | "tomatoes"
+  | "popcorn"
+  | "metacritic"
+  | "rogerebert";
 
 export interface MovieRatings {
   services: MDBRating[];

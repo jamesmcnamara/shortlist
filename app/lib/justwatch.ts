@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type {
   JustWatchAvailability,
   StreamingOffer,
@@ -34,19 +35,44 @@ const QUERY = `
   }
 `;
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
+// Missing or odd links are skipped rather than failing the whole lookup.
+const link = z.string().nullish().catch(null);
 
-const isStreamingType = (value: unknown): value is StreamingType =>
-  value === "FREE" ||
-  value === "ADS" ||
-  value === "FLATRATE" ||
-  value === "RENT";
+const offerSchema = z.object({
+  monetizationType: z.enum(["FREE", "ADS", "FLATRATE", "RENT"] satisfies StreamingType[]),
+  standardWebURL: link,
+  package: z.object({
+    packageId: z.int(),
+    clearName: z.string(),
+    icon: link,
+  }),
+});
+
+const responseSchema = z.object({
+  errors: z.array(z.unknown()).max(0).nullish(),
+  data: z.object({
+    popularTitles: z.object({
+      edges: z.array(
+        z.object({
+          node: z.object({
+            content: z.object({
+              fullPath: link,
+              externalIds: z.object({ tmdbId: z.unknown() }),
+            }),
+            // Only the matching movie's offers are validated.
+            offers: z.unknown(),
+          }),
+        }),
+      ),
+    }),
+  }),
+});
 
 export function httpsUrl(value: unknown, base?: string): string | null {
-  if (typeof value !== "string" || !value.trim()) return null;
+  const text = z.string().trim().min(1).safeParse(value);
+  if (!text.success) return null;
   try {
-    const url = new URL(value, base);
+    const url = new URL(text.data, base);
     return url.protocol === "https:" && !url.username && !url.password
       ? url.href
       : null;
@@ -55,19 +81,10 @@ export function httpsUrl(value: unknown, base?: string): string | null {
   }
 }
 
-function parseOffer(value: unknown): StreamingOffer | null {
-  if (!isRecord(value) || !isStreamingType(value.monetizationType)) {
-    throw new Error("JustWatch returned an invalid streaming offer.");
-  }
+function toOffer(
+  value: z.infer<typeof offerSchema>,
+): StreamingOffer | null {
   const provider = value.package;
-  if (
-    !isRecord(provider) ||
-    typeof provider.packageId !== "number" ||
-    !Number.isInteger(provider.packageId) ||
-    typeof provider.clearName !== "string"
-  ) {
-    throw new Error("JustWatch returned an invalid service.");
-  }
   // Some offers have no usable web link; never turn them into clickable URLs.
   const url = httpsUrl(value.standardWebURL);
   if (!url) return null;
@@ -105,43 +122,25 @@ export async function getAvailability(
   if (!response.ok) {
     throw new Error(`JustWatch returned ${response.status}.`);
   }
-  const body: unknown = await response.json();
-  if (
-    !isRecord(body) ||
-    (Array.isArray(body.errors) && body.errors.length > 0) ||
-    !isRecord(body.data) ||
-    !isRecord(body.data.popularTitles) ||
-    !Array.isArray(body.data.popularTitles.edges)
-  ) {
-    throw new Error("JustWatch returned an invalid response.");
+  const body = responseSchema.safeParse(await response.json());
+  if (!body.success) {
+    throw new Error("JustWatch returned an invalid response.", {
+      cause: body.error,
+    });
   }
 
-  const nodes = body.data.popularTitles.edges.map((edge: unknown) => {
-    if (
-      !isRecord(edge) ||
-      !isRecord(edge.node) ||
-      !isRecord(edge.node.content) ||
-      !isRecord(edge.node.content.externalIds)
-    ) {
-      throw new Error("JustWatch returned an invalid movie.");
-    }
-    return {
-      tmdbId: edge.node.content.externalIds.tmdbId,
-      fullPath: edge.node.content.fullPath,
-      offers: edge.node.offers,
-    };
-  });
   // Remakes and similarly named titles must never supply another movie's offers.
-  const movie = nodes.find((node) => String(node.tmdbId) === String(tmdbId));
-  const rawOffers: unknown = movie ? movie.offers : [];
-  if (!Array.isArray(rawOffers)) {
-    throw new Error("JustWatch returned an invalid offer list.");
+  const movie = body.data.data.popularTitles.edges
+    .map((edge) => edge.node)
+    .find((node) => String(node.content.externalIds.tmdbId) === String(tmdbId));
+  const rawOffers = z.array(offerSchema).safeParse(movie ? movie.offers : []);
+  if (!rawOffers.success) {
+    throw new Error("JustWatch returned an invalid offer list.", {
+      cause: rawOffers.error,
+    });
   }
-  const offers = rawOffers.flatMap((offer: unknown) => {
-    const parsed = parseOffer(offer);
-    return parsed ? [parsed] : [];
-  });
-  const url = httpsUrl(movie?.fullPath, "https://www.justwatch.com");
+  const offers = rawOffers.data.flatMap((offer) => toOffer(offer) ?? []);
+  const url = httpsUrl(movie?.content.fullPath, "https://www.justwatch.com");
   return {
     country: "US",
     checkedAt: new Date().toISOString(),
