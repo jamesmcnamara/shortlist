@@ -13,7 +13,7 @@ import styles from "./AppMenu.module.css";
 
 interface AppMenuProps {
   /** Omitted outside a room, which hides the room-scoped items. */
-  room?: { id: string; isAdmin: boolean };
+  room?: { id: string };
   showMyRooms?: boolean;
 }
 
@@ -80,7 +80,7 @@ export function AppMenu({ room, showMyRooms = true }: AppMenuProps) {
           <MenuLink href="/rooms/new" onNavigate={close}>
             New room
           </MenuLink>
-          {room?.isAdmin && (
+          {room && (
             <MenuLink href={`${roomPath(room)}/settings`} onNavigate={close}>
               Settings
             </MenuLink>

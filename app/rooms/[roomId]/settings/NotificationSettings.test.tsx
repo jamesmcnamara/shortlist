@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ListNotifications } from "./ListNotifications";
+import { NotificationSettings } from "./NotificationSettings";
 
 const state = vi.hoisted(() => ({
   data: { enabled: false, configured: true },
@@ -42,9 +42,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("list notification control", () => {
+describe("room notification settings", () => {
   it("enables the device before saving list opt-in", async () => {
-    render(<ListNotifications roomId="club" />);
+    render(<NotificationSettings roomId="club" />);
     fireEvent.click(screen.getByRole("checkbox"));
     await waitFor(() => expect(state.set).toHaveBeenCalledWith(true));
     expect(state.enable).toHaveBeenCalledOnce();
@@ -53,7 +53,7 @@ describe("list notification control", () => {
 
   it("shows permission errors without saving opt-in", async () => {
     state.enable.mockRejectedValue(new Error("Allow notifications in site settings."));
-    render(<ListNotifications roomId="club" />);
+    render(<NotificationSettings roomId="club" />);
     fireEvent.click(screen.getByRole("checkbox"));
     expect((await screen.findByRole("alert")).textContent).toBe("Allow notifications in site settings.");
     expect(state.set).not.toHaveBeenCalled();
@@ -61,14 +61,14 @@ describe("list notification control", () => {
 
   it("lets an already-followed list enable another device", async () => {
     state.data.enabled = true;
-    render(<ListNotifications roomId="club" />);
+    render(<NotificationSettings roomId="club" />);
     fireEvent.click(screen.getByRole("button", { name: "Enable on this device" }));
     await waitFor(() => expect(state.enable).toHaveBeenCalledOnce());
   });
 
   it("disables a list without requesting browser permission", async () => {
     state.data.enabled = true;
-    render(<ListNotifications roomId="club" />);
+    render(<NotificationSettings roomId="club" />);
     fireEvent.click(screen.getByRole("checkbox"));
     await waitFor(() => expect(state.set).toHaveBeenCalledWith(false));
     expect(state.enable).not.toHaveBeenCalled();
@@ -77,7 +77,7 @@ describe("list notification control", () => {
   it.each(["unsupported", "unconfigured"])("explains %s notifications", (reason) => {
     if (reason === "unsupported") state.supported = false;
     else state.data.configured = false;
-    render(<ListNotifications roomId="club" />);
+    render(<NotificationSettings roomId="club" />);
     expect((screen.getByRole("checkbox") as HTMLInputElement).disabled).toBe(true);
     expect(screen.getByText(reason === "unsupported"
       ? "Push notifications need a supported browser and a secure connection."
@@ -87,7 +87,7 @@ describe("list notification control", () => {
   it("allows opting out even when the current browser is unsupported", async () => {
     state.data.enabled = true;
     state.supported = false;
-    render(<ListNotifications roomId="club" />);
+    render(<NotificationSettings roomId="club" />);
     fireEvent.click(screen.getByRole("checkbox"));
     await waitFor(() => expect(state.set).toHaveBeenCalledWith(false));
   });

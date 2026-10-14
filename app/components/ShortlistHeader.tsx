@@ -6,7 +6,7 @@ import styles from "./ShortlistHeader.module.css";
 import Link from "next/link";
 
 export function ShortlistHeader() {
-  const { room, rooms, isAdmin } = useRoom();
+  const { room, rooms } = useRoom();
 
   return (
     <header className={styles.header}>
@@ -14,10 +14,7 @@ export function ShortlistHeader() {
         <Link href="/">Shortlist</Link>
       </span>
       <AppMenu
-        room={{
-          id: room.id,
-          isAdmin,
-        }}
+        room={{ id: room.id }}
         showMyRooms={rooms.length > 1}
       />
     </header>
