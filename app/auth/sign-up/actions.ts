@@ -1,11 +1,9 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth/server";
 import { getSafeRedirect } from "@/lib/auth/redirect";
-
-export type AuthFormState = { error: string } | null;
+import type { AuthFormState } from "@/lib/auth/use-auth-action";
 
 export async function signUpWithEmail(
   _prevState: AuthFormState,
@@ -31,5 +29,5 @@ export async function signUpWithEmail(
     return { error: error.message || "Could not create that account." };
   }
 
-  redirect(next);
+  return { redirectTo: next };
 }

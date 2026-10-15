@@ -1,13 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getSafeRedirect } from "@/lib/auth/redirect";
+import { useAuthAction } from "@/lib/auth/use-auth-action";
 import styles from "@/app/components/FormPage.module.css";
 import { signInWithEmail } from "./actions";
 
 export function SignInForm() {
-  const [state, formAction, isPending] = useActionState(signInWithEmail, null);
+  const [state, formAction, isPending] = useAuthAction(signInWithEmail);
   const searchParams = useSearchParams();
   const next = getSafeRedirect(searchParams.get("next"));
 

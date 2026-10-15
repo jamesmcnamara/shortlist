@@ -1,11 +1,9 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth/server";
 import { getSafeRedirect } from "@/lib/auth/redirect";
-
-export type AuthFormState = { error: string } | null;
+import type { AuthFormState } from "@/lib/auth/use-auth-action";
 
 export async function signInWithEmail(
   _prevState: AuthFormState,
@@ -31,5 +29,5 @@ export async function signInWithEmail(
     };
   }
 
-  redirect(next);
+  return { redirectTo: next };
 }
