@@ -11,7 +11,7 @@ import { useTheatres } from "@/app/lib/data/queries";
 import { disconnectDeviceNotifications } from "@/app/lib/push";
 import styles from "./AppMenu.module.css";
 
-interface AppMenuProps {
+export interface AppMenuProps {
   /** Omitted outside a theatre, which hides the theatre-scoped items. */
   theatre?: { id: string };
   showMyTheatres?: boolean;

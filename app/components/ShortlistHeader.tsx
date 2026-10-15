@@ -1,22 +1,14 @@
-"use client";
-
-import { useTheatre } from "@/app/theatres/[theatreId]/TheatreContext";
-import { AppMenu } from "./AppMenu";
-import styles from "./ShortlistHeader.module.css";
 import Link from "next/link";
+import { AppMenu, type AppMenuProps } from "./AppMenu";
+import styles from "./ShortlistHeader.module.css";
 
-export function ShortlistHeader() {
-  const { theatre, theatres } = useTheatre();
-
+export function ShortlistHeader(menuProps: AppMenuProps) {
   return (
     <header className={styles.header}>
-      <span className={styles.theatreName}>
-        <Link href="/">Shortlist</Link>
-      </span>
-      <AppMenu
-        theatre={{ id: theatre.id }}
-        showMyTheatres={theatres.length > 1}
-      />
+      <Link className={styles.brand} href="/">
+        Shortlist
+      </Link>
+      <AppMenu {...menuProps} />
     </header>
   );
 }

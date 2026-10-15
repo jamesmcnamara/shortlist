@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AppMenu } from "@/app/components/AppMenu";
+import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import { getMovieProvider } from "@/app/lib/movie-metadata";
 import { requireUserId } from "@/lib/auth/require-user";
 import type { Movie } from "@/src/db/schema";
@@ -38,12 +37,7 @@ export default async function ComparePage({ searchParams }: ComparePageProps) {
 
   return (
     <main className={styles.shell}>
-      <header className={styles.header}>
-        <Link className={styles.brand} href="/">
-          Shortlist
-        </Link>
-        <AppMenu />
-      </header>
+      <ShortlistHeader />
       <MovieCompare initialMovies={initialMovies} />
     </main>
   );

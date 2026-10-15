@@ -2,7 +2,7 @@
   display: grid;
   place-items: start center;
   min-height: 100dvh;
-  padding: 3rem 1.25rem;
+  padding: 1.5rem 1.25rem;
 }
 
 .card {
@@ -10,16 +10,7 @@
   max-width: 28rem;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-}
-
 .title {
-  margin: 0;
   font-size: 1.5812rem;
   letter-spacing: -0.03em;
 }
@@ -103,7 +94,8 @@
   min-width: 0;
   height: calc(var(--poster-height) + var(--shadow-theatre) * 2);
   margin-block: calc(var(--shadow-theatre) * -1);
-  padding: var(--shadow-theatre) 0.25rem var(--shadow-theatre) var(--poster-gutter);
+  padding: var(--shadow-theatre) 0.25rem var(--shadow-theatre)
+    var(--poster-gutter);
   overflow: hidden;
   isolation: isolate;
 }
@@ -121,6 +113,16 @@
 
 .poster + .poster {
   margin-left: calc(var(--poster-overlap) * -1);
+}
+
+@media (max-width: 40rem) {
+  .shell {
+    padding: 1.125rem 0.875rem 2.375rem;
+  }
+
+  .card {
+    max-width: none;
+  }
 }
 
 @media (max-width: 24rem) {

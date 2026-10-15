@@ -1,11 +1,12 @@
 "use client";
 
-import { useTheatres } from "@/app/lib/data/queries";
 import { DataBoundary } from "@/app/lib/data/DataBoundary";
+import { useTheatres } from "@/app/lib/data/queries";
 import { theatrePath } from "@/lib/theatre-path";
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import { redirect } from "next/navigation";
+import type { CSSProperties } from "react";
+import { ShortlistHeader } from "../components/ShortlistHeader";
 import styles from "./page.module.css";
 
 /**
@@ -21,17 +22,17 @@ export default function Theatres() {
     <DataBoundary pending={!theatres} error={error} retry={retry}>
       <main className={styles.shell}>
         <div className={styles.card}>
-          <div className={styles.header}>
-            <h1 className={styles.title}>Theatres Near You</h1>
-            <Link className={styles.newTheatre} href="/theatres/new">
-              New theatre
-            </Link>
-          </div>
+          <ShortlistHeader />
+          <h1 className={styles.title}>Theatres Near You</h1>
 
           <ul className={styles.list}>
             {theatres?.map((theatre) => (
               <li key={theatre.id}>
-                <Link className={styles.theatreCard} href={theatrePath(theatre)} prefetch>
+                <Link
+                  className={styles.theatreCard}
+                  href={theatrePath(theatre)}
+                  prefetch
+                >
                   <span className={styles.theatreDetails}>
                     <span className={styles.theatreName}>{theatre.name}</span>
                   </span>

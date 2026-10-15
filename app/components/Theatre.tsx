@@ -50,7 +50,7 @@ export function Theatre({
   viewContext,
   nominees,
 }: TheatreProps) {
-  const { theatre, isAdmin } = useTheatre();
+  const { theatre, theatres, isAdmin } = useTheatre();
   const { focusedId, closeDiscussion, openDiscussion } =
     useMovieDiscussionHistory();
   const [isWatchedOpen, setIsWatchedOpen] = useState(false);
@@ -164,7 +164,10 @@ export function Theatre({
         [styles.shellComparing]: isComparing,
       })}
     >
-      <ShortlistHeader />
+      <ShortlistHeader
+        theatre={{ id: theatre.id }}
+        showMyTheatres={theatres.length > 1}
+      />
 
       <section
         className={styles.nominations}

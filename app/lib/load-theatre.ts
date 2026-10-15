@@ -1,4 +1,7 @@
-import type { TheatreSummary, TheatreSummaryWithPosterPreviews } from "@/app/lib/api";
+import type {
+  TheatreSummary,
+  TheatreSummaryWithPosterPreviews,
+} from "@/app/lib/api";
 import {
   findMembership,
   findTheatreById,
@@ -13,7 +16,7 @@ import {
   theatres,
   type TheatreRole,
 } from "@/src/db/schema";
-import { and, desc, eq, inArray, lte, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, lte, not, sql } from "drizzle-orm";
 
 export interface LoadedTheatre {
   /** Never the raw row: the invite code must not reach the client. */
@@ -30,7 +33,9 @@ export const recentActivityOrder = [
 ];
 
 /** Theatres the user belongs to, most recently added-to first. */
-export async function listTheatresForUser(userId: string): Promise<TheatreSummary[]> {
+export async function listTheatresForUser(
+  userId: string,
+): Promise<TheatreSummary[]> {
   const memberships = await getDb()
     .select({
       id: theatres.id,
@@ -69,6 +74,7 @@ export async function listTheatresWithPosterPreviewsForUser(
     .innerJoin(movies, eq(movies.id, nominations.movieId))
     .where(
       and(
+        not(nominations.completed),
         inArray(
           nominations.theatreId,
           memberships.map(({ id }) => id),

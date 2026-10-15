@@ -15,7 +15,11 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 vi.mock("@/app/theatres/[theatreId]/TheatreContext", () => ({
-  useTheatre: () => ({ theatre: { id: "theatre", name: "Watchlist" }, isAdmin: true }),
+  useTheatre: () => ({
+    theatre: { id: "theatre", name: "Watchlist" },
+    theatres: [{ id: "theatre", name: "Watchlist" }],
+    isAdmin: true,
+  }),
 }));
 vi.mock("./ShortlistHeader", () => ({
   ShortlistHeader: () => <header>Shortlist</header>,

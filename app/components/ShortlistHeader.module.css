@@ -6,7 +6,7 @@
   padding-bottom: 1.25rem;
 }
 
-.theatreName {
+.brand {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -14,9 +14,6 @@
   font-size: 1.0781rem;
   font-weight: 800;
   letter-spacing: -0.03em;
-}
-
-.theatreName a {
   text-decoration: none;
   color: var(--text);
 }
