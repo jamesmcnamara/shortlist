@@ -1,7 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import { isUuid, theatrePath } from "@/lib/theatre-path";
 import { getDb } from "@/src/db/client";
-import { theatreMembers, theatres, type Theatre, type TheatreRole } from "@/src/db/schema";
+import {
+  theatreMembers,
+  theatres,
+  type Theatre,
+  type TheatreRole,
+} from "@/src/db/schema";
 import { requireUserId, unauthorized } from "./require-user";
 
 /**
@@ -47,7 +52,9 @@ export const notFound = () =>
 export const forbidden = (message = "You are not a member of this theatre.") =>
   Response.json({ error: message }, { status: 403 });
 
-export async function findTheatreById(theatreId: string): Promise<SafeTheatre | null> {
+export async function findTheatreById(
+  theatreId: string,
+): Promise<SafeTheatre | null> {
   const [theatre] = await getDb()
     .select(THEATRE_COLUMNS)
     .from(theatres)
@@ -57,7 +64,9 @@ export async function findTheatreById(theatreId: string): Promise<SafeTheatre | 
 }
 
 /** Read separately, and only where an admin has been established. */
-export async function findInviteCode(theatreId: string): Promise<string | null> {
+export async function findInviteCode(
+  theatreId: string,
+): Promise<string | null> {
   const [row] = await getDb()
     .select({ inviteCode: theatres.inviteCode })
     .from(theatres)
@@ -85,7 +94,12 @@ export async function findMembership(
   const [membership] = await getDb()
     .select({ role: theatreMembers.role })
     .from(theatreMembers)
-    .where(and(eq(theatreMembers.theatreId, theatreId), eq(theatreMembers.userId, userId)))
+    .where(
+      and(
+        eq(theatreMembers.theatreId, theatreId),
+        eq(theatreMembers.userId, userId),
+      ),
+    )
     .limit(1);
   return (membership?.role as TheatreRole) ?? null;
 }
@@ -95,13 +109,13 @@ export async function findMembership(
  * handler runs. Every theatre-scoped route goes through here, so a handler can
  * never see a theatre the caller does not belong to.
  */
-export function withTheatreMember(config?: WithTheatreConfig) {
+export function withTheatreMember(config: WithTheatreConfig) {
   return (handler: TheatreHandler) =>
     withResolvedTheatre(config, handler, () => null);
 }
 
 /** As `withTheatreMember`, but additionally requires the `admin` role. */
-export function withTheatreAdmin(config?: WithTheatreConfig) {
+export function withTheatreAdmin(config: WithTheatreConfig) {
   return (handler: TheatreHandler) =>
     withResolvedTheatre(config, handler, (role) =>
       role === "admin" ? null : forbidden("Only theatre admins can do that."),
@@ -110,7 +124,7 @@ export function withTheatreAdmin(config?: WithTheatreConfig) {
 
 const withResolvedTheatre =
   (
-    config: WithTheatreConfig | undefined,
+    config: WithTheatreConfig,
     handler: TheatreHandler,
     check: (role: TheatreRole) => Response | null,
   ) =>

@@ -98,7 +98,10 @@ export async function sendNomNotys(theatreId: string, nominationId: number) {
     .innerJoin(movies, eq(movies.id, nominations.movieId))
     .innerJoin(theatres, eq(theatres.id, nominations.theatreId))
     .where(
-      and(eq(nominations.theatreId, theatreId), eq(nominations.id, nominationId)),
+      and(
+        eq(nominations.theatreId, theatreId),
+        eq(nominations.id, nominationId),
+      ),
     );
   if (!nomination) return;
   const title = titled.safeParse(nomination.title).data?.title ?? "A movie";

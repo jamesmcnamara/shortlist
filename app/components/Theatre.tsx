@@ -59,15 +59,6 @@ export function Theatre({
   const router = useRouter();
   const isComparing = comparing !== null;
 
-  useEffect(() => {
-    if (!isComparing) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setComparing(null);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isComparing]);
-
   const togglePick = (tmdbId: number) =>
     setComparing((current) =>
       !current
