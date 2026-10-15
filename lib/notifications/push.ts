@@ -9,10 +9,10 @@ import {
   nominations,
   notifications,
   subscriptions,
-  roomMembers,
-  rooms,
+  theatreMembers,
+  theatres,
 } from "@/src/db/schema";
-import { roomPath } from "@/lib/room-path";
+import { theatrePath } from "@/lib/theatre-path";
 import type { NotificationPayload } from "./payload";
 
 interface PushConfiguration {
@@ -84,7 +84,7 @@ export const pushSubscription = z.object(
 
 const titled = z.object({ title: z.string() });
 
-export async function sendNomNotys(roomId: string, nominationId: number) {
+export async function sendNomNotys(theatreId: string, nominationId: number) {
   const config = pushConfiguration();
   if (!config) return;
   const db = getDb();
@@ -92,13 +92,13 @@ export async function sendNomNotys(roomId: string, nominationId: number) {
     .select({
       userId: nominations.userId,
       title: movies.details,
-      roomName: rooms.name,
+      theatreName: theatres.name,
     })
     .from(nominations)
     .innerJoin(movies, eq(movies.id, nominations.movieId))
-    .innerJoin(rooms, eq(rooms.id, nominations.roomId))
+    .innerJoin(theatres, eq(theatres.id, nominations.theatreId))
     .where(
-      and(eq(nominations.roomId, roomId), eq(nominations.id, nominationId)),
+      and(eq(nominations.theatreId, theatreId), eq(nominations.id, nominationId)),
     );
   if (!nomination) return;
   const title = titled.safeParse(nomination.title).data?.title ?? "A movie";
@@ -112,22 +112,22 @@ export async function sendNomNotys(roomId: string, nominationId: number) {
     .from(subscriptions)
     .innerJoin(notifications, eq(notifications.userId, subscriptions.userId))
     .innerJoin(
-      roomMembers,
+      theatreMembers,
       and(
-        eq(roomMembers.roomId, notifications.roomId),
-        eq(roomMembers.userId, notifications.userId),
+        eq(theatreMembers.theatreId, notifications.theatreId),
+        eq(theatreMembers.userId, notifications.userId),
       ),
     )
     .where(
       and(
-        eq(notifications.roomId, roomId),
+        eq(notifications.theatreId, theatreId),
         ne(subscriptions.userId, nomination.userId),
       ),
     );
   const payload = JSON.stringify({
-    title: nomination.roomName.slice(0, 100),
+    title: nomination.theatreName.slice(0, 100),
     body: `${title.slice(0, 200)} was added to the list.`,
-    url: roomPath({ id: roomId }),
+    url: theatrePath({ id: theatreId }),
     tag: `nomination-${nominationId}`,
   } satisfies NotificationPayload);
   await Promise.all(
@@ -168,11 +168,11 @@ export async function sendNomNotys(roomId: string, nominationId: number) {
   );
 }
 
-export function scheduleNomNotys(roomId: string, nominationId: number) {
+export function scheduleNomNotys(theatreId: string, nominationId: number) {
   if (!pushConfiguration()) return;
   after(async () => {
     try {
-      await sendNomNotys(roomId, nominationId);
+      await sendNomNotys(theatreId, nominationId);
     } catch {
       console.error("Unable to prepare movie notifications");
     }

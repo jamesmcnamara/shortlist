@@ -1,0 +1,69 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { api } from "@/app/lib/api";
+import { withTargetValue } from "@/app/lib/utils";
+import styles from "@/app/components/FormPage.module.css";
+
+export default function NewTheatrePage() {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (isSubmitting) return;
+    setError("");
+    setIsSubmitting(true);
+    try {
+      const theatre = await api.theatres.create({ name: name.trim() });
+      router.replace(theatre.path);
+    } catch (error) {
+      setError(
+        error instanceof Error ? error.message : "Unable to create the theatre.",
+      );
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <main className={styles.shell}>
+      <div className={styles.card}>
+        <div className={styles.brand}>
+          <span>Shortlist</span>
+        </div>
+
+        <h1 className={styles.title}>Start something</h1>
+        <p className={styles.subtitle}>You can change any of this later.</p>
+
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="name">
+              Name
+            </label>
+            <input
+              className={styles.input}
+              id="name"
+              value={name}
+              onChange={withTargetValue(setName)}
+              placeholder="Friday Night Movies"
+              required
+            />
+          </div>
+
+          {error && <p className={styles.error}>{error}</p>}
+
+          <button
+            className={styles.submit}
+            type="submit"
+            disabled={isSubmitting || !name.trim()}
+          >
+            {isSubmitting ? "Creating…" : "Create"}
+          </button>
+        </form>
+      </div>
+    </main>
+  );
+}

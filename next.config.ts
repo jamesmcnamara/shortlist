@@ -14,5 +14,29 @@ export default function nextConfig(phase: string): NextConfig {
 
   return withSerwist({
     turbopack: {},
+    async redirects() {
+      return [
+        {
+          source: "/rooms",
+          destination: "/theatres",
+          permanent: false,
+        },
+        {
+          source: "/rooms/:path*",
+          destination: "/theatres/:path*",
+          permanent: false,
+        },
+        {
+          source: "/api/rooms",
+          destination: "/api/theatres",
+          permanent: false,
+        },
+        {
+          source: "/api/rooms/:path*",
+          destination: "/api/theatres/:path*",
+          permanent: false,
+        },
+      ];
+    },
   });
 }

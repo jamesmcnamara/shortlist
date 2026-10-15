@@ -20,7 +20,7 @@ import type { MovieDetails, Nomination } from "@/src/db/schema";
 
 const nomination: Nomination = {
   id: 1,
-  roomId: "room",
+  theatreId: "theatre",
   userId: "user",
   movieId: 1,
   comment: "A recommendation",
@@ -385,7 +385,7 @@ describe("high-churn component smoke tests", () => {
           nomcoms: [
             {
               id: 7,
-              roomId: "room",
+              theatreId: "theatre",
               userId: "user",
               nominationId: nomination.id,
               comment: "I agree",

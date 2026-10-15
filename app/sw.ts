@@ -3,7 +3,7 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry } from "serwist";
 import { NetworkOnly, Serwist } from "serwist";
-import { notificationPayload, roomUrl } from "@/lib/notifications/payload";
+import { notificationPayload, theatreUrl } from "@/lib/notifications/payload";
 
 declare const self: ServiceWorkerGlobalScope & {
   __SW_MANIFEST: (string | PrecacheEntry)[];
@@ -62,7 +62,7 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const url = new URL(
-    roomUrl.safeParse(event.notification.data?.url).data ?? "/",
+    theatreUrl.safeParse(event.notification.data?.url).data ?? "/",
     self.location.origin,
   ).href;
   event.waitUntil((async () => {

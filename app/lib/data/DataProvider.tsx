@@ -84,8 +84,8 @@ function SessionCache({
   );
 }
 
-const isRoomQuery = (key: unknown): key is string =>
-  typeof key === "string" && key.startsWith("/api/rooms");
+const isTheatreQuery = (key: unknown): key is string =>
+  typeof key === "string" && key.startsWith("/api/theatres");
 
 function CacheSync() {
   const { cache, mutate } = useSWRConfig();
@@ -96,13 +96,13 @@ function CacheSync() {
     if (previousPathname.current === pathname) return;
     previousPathname.current = pathname;
     // Shared layouts stay mounted when navigating between a list and settings.
-    void mutate((key) => isRoomQuery(key) && !cache.get(key)?.isValidating);
+    void mutate((key) => isTheatreQuery(key) && !cache.get(key)?.isValidating);
   }, [pathname, cache, mutate]);
 
   useEffect(
     () =>
       subscribeToMutations(async (path, method) => {
-        if (method === "DELETE" && /^\/api\/rooms\/[^/?]+$/.test(path)) {
+        if (method === "DELETE" && /^\/api\/theatres\/[^/?]+$/.test(path)) {
           await mutate(
             (key) =>
               typeof key === "string" &&
@@ -111,8 +111,8 @@ function CacheSync() {
             { revalidate: false },
           );
         }
-        // Seen status and membership changes can affect more than one room.
-        await mutate(isRoomQuery);
+        // Seen status and membership changes can affect more than one theatre.
+        await mutate(isTheatreQuery);
       }),
     [mutate],
   );

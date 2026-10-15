@@ -16,8 +16,8 @@ import { authUsers } from "./neon-auth-schema";
 import type { MovieDetails as _MovieDetails } from "@lorenzopant/tmdb";
 import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
 
-/** A room is a shared watch list for a group. */
-export const rooms = pgTable("rooms", {
+/** A theatre is a shared watch list for a group. */
+export const theatres = pgTable("theatres", {
   id: uuid().primaryKey().defaultRandom(),
   name: text().notNull(),
   watchlistFor: uuid("watchlist_for")
@@ -35,12 +35,12 @@ export const rooms = pgTable("rooms", {
     .notNull(),
 });
 
-export const roomMembers = pgTable(
-  "room_members",
+export const theatreMembers = pgTable(
+  "theatre_members",
   {
-    roomId: uuid("room_id")
+    theatreId: uuid("theatre_id")
       .notNull()
-      .references(() => rooms.id, { onDelete: "cascade" }),
+      .references(() => theatres.id, { onDelete: "cascade" }),
     userId: uuid("user_id")
       .notNull()
       .references(() => authUsers.id),
@@ -50,8 +50,8 @@ export const roomMembers = pgTable(
       .notNull(),
   },
   (table) => [
-    primaryKey({ columns: [table.roomId, table.userId] }),
-    index("room_members_user_idx").on(table.userId),
+    primaryKey({ columns: [table.theatreId, table.userId] }),
+    index("theatre_members_user_idx").on(table.userId),
   ],
 );
 
@@ -81,14 +81,15 @@ export const subscriptions = pgTable(
 export const notifications = pgTable(
   "notifications",
   {
-    roomId: uuid("room_id").notNull(),
+    theatreId: uuid("theatre_id").notNull(),
     userId: uuid("user_id").notNull(),
   },
   (table) => [
-    primaryKey({ columns: [table.roomId, table.userId] }),
+    primaryKey({ columns: [table.theatreId, table.userId] }),
     foreignKey({
-      columns: [table.roomId, table.userId],
-      foreignColumns: [roomMembers.roomId, roomMembers.userId],
+      name: "notifications_theatre_members_fk",
+      columns: [table.theatreId, table.userId],
+      foreignColumns: [theatreMembers.theatreId, theatreMembers.userId],
     }).onDelete("cascade"),
   ],
 );
@@ -97,9 +98,9 @@ export const nominations = pgTable(
   "nominations",
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    roomId: uuid("room_id")
+    theatreId: uuid("theatre_id")
       .notNull()
-      .references(() => rooms.id, { onDelete: "cascade" }),
+      .references(() => theatres.id, { onDelete: "cascade" }),
     userId: uuid("user_id")
       .notNull()
       .references(() => authUsers.id),
@@ -113,7 +114,10 @@ export const nominations = pgTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("nominations_room_movie_idx").on(table.roomId, table.movieId),
+    uniqueIndex("nominations_theatre_movie_idx").on(
+      table.theatreId,
+      table.movieId,
+    ),
   ],
 );
 
@@ -122,9 +126,9 @@ export const nomcoms = pgTable(
   "nomcoms",
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    roomId: uuid("room_id")
+    theatreId: uuid("theatre_id")
       .notNull()
-      .references(() => rooms.id, { onDelete: "cascade" }),
+      .references(() => theatres.id, { onDelete: "cascade" }),
     userId: uuid("user_id")
       .notNull()
       .references(() => authUsers.id),
@@ -141,7 +145,7 @@ export const nomcoms = pgTable(
 
 /**
  * "This person watched this movie" — a user-level fact that follows them into
- * every room, rather than something each room records separately.
+ * every theatre, rather than something each theatre records separately.
  */
 export const seen = pgTable(
   "seen",
@@ -184,25 +188,31 @@ export const feedbackRelations = relations(feedback, ({ one }) => ({
   }),
 }));
 
-export const roomsRelations = relations(rooms, ({ many, one }) => ({
-  members: many(roomMembers),
+export const theatresRelations = relations(theatres, ({ many, one }) => ({
+  members: many(theatreMembers),
   nominations: many(nominations),
   owner: one(authUsers, {
-    fields: [rooms.createdBy],
+    fields: [theatres.createdBy],
     references: [authUsers.id],
   }),
 }));
 
-export const roomMembersRelations = relations(roomMembers, ({ one }) => ({
-  room: one(rooms, { fields: [roomMembers.roomId], references: [rooms.id] }),
+export const theatreMembersRelations = relations(theatreMembers, ({ one }) => ({
+  theatre: one(theatres, {
+    fields: [theatreMembers.theatreId],
+    references: [theatres.id],
+  }),
   user: one(authUsers, {
-    fields: [roomMembers.userId],
+    fields: [theatreMembers.userId],
     references: [authUsers.id],
   }),
 }));
 
 export const nominationsRelations = relations(nominations, ({ one, many }) => ({
-  room: one(rooms, { fields: [nominations.roomId], references: [rooms.id] }),
+  theatre: one(theatres, {
+    fields: [nominations.theatreId],
+    references: [theatres.id],
+  }),
   movie: one(movies, {
     fields: [nominations.movieId],
     references: [movies.id],
@@ -230,11 +240,11 @@ export const seenRelations = relations(seen, ({ one }) => ({
   movie: one(movies, { fields: [seen.movieId], references: [movies.id] }),
 }));
 
-export type RoomRole = "admin" | "member";
+export type TheatreRole = "admin" | "member";
 
-export type Room = typeof rooms.$inferSelect;
-export type RoomMember = Omit<typeof roomMembers.$inferSelect, "role"> & {
-  role: RoomRole;
+export type Theatre = typeof theatres.$inferSelect;
+export type TheatreMember = Omit<typeof theatreMembers.$inferSelect, "role"> & {
+  role: TheatreRole;
 };
 export type Movie = Exclude<
   typeof movies.$inferSelect,
@@ -248,7 +258,7 @@ export type Nomination = RawNomination & {
   movie: Movie;
   nomcoms: NomCom[];
   nominator: User;
-  /** Members of this nomination's room who have marked the movie seen. */
+  /** Members of this nomination's theatre who have marked the movie seen. */
   seenBy: User[];
 };
 export type NomCom = typeof nomcoms.$inferSelect & { commenter: User };

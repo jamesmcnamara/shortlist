@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { api, ApiError, type RoomSummaryWithMovie } from "@/app/lib/api";
-import { useRoomsForMovie } from "@/app/lib/data/queries";
+import { api, ApiError, type TheatreSummaryWithMovie } from "@/app/lib/api";
+import { useTheatresForMovie } from "@/app/lib/data/queries";
 import type { Movie } from "@/src/db/schema";
 import { EmptyState } from "./EmptyState";
-import { RoomRow } from "./RoomRow";
-import { RoomSkeleton } from "./RoomSkeleton";
+import { TheatreRow } from "./TheatreRow";
+import { TheatreSkeleton } from "./TheatreSkeleton";
 import { NewListForm } from "./NewListForm";
 import { SheetFooter } from "./SheetFooter";
 import { SheetHeader } from "./SheetHeader";
@@ -25,7 +25,7 @@ interface AddToListsProps {
  * each with its own optional note.
  */
 export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
-  const { data: allRooms, error, retry } = useRoomsForMovie(movie.id);
+  const { data: allTheatres, error, retry } = useTheatresForMovie(movie.id);
   const loadError = error?.message;
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [comments, setComments] = useState<Record<string, string>>({});
@@ -41,7 +41,7 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
-  const selectedRoomIds = useMemo(
+  const selectedTheatreIds = useMemo(
     () => Object.keys(selected).filter((id) => selected[id]),
     [selected],
   );
@@ -51,20 +51,22 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
     setRowErrors((prev) => ({ ...prev, [id]: "" }));
   }
 
-  function addRoom(room: RoomSummaryWithMovie) {
-    setSelected((prev) => ({ ...prev, [room.id]: true }));
+  function addTheatre(theatre: TheatreSummaryWithMovie) {
+    setSelected((prev) => ({ ...prev, [theatre.id]: true }));
   }
 
   async function submit() {
-    if (selectedRoomIds.length === 0 || isSubmitting) return;
+    if (selectedTheatreIds.length === 0 || isSubmitting) return;
     setIsSubmitting(true);
-    setStatus((prev) => ({ ...prev, ...pending(selectedRoomIds) }));
+    setStatus((prev) => ({ ...prev, ...pending(selectedTheatreIds) }));
 
     const results = await Promise.allSettled(
-      selectedRoomIds.map((id) => {
-        const room = allRooms?.find((candidate) => candidate.id === id);
-        if (!room) throw new Error("The selected room is no longer available.");
-        return api.room(room.id).nominations.create({
+      selectedTheatreIds.map((id) => {
+        const theatre = allTheatres?.find((candidate) => candidate.id === id);
+        if (!theatre) {
+          throw new Error("The selected theatre is no longer available.");
+        }
+        return api.theatre(theatre.id).nominations.create({
           movieId: movie.id,
           comment: comments[id] ?? "",
         });
@@ -73,11 +75,11 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
 
     setStatus((prev) => ({
       ...prev,
-      ...statusesFor(selectedRoomIds, results),
+      ...statusesFor(selectedTheatreIds, results),
     }));
     setRowErrors((prev) => ({
       ...prev,
-      ...errorsFor(selectedRoomIds, results),
+      ...errorsFor(selectedTheatreIds, results),
     }));
     setIsSubmitting(false);
 
@@ -112,8 +114,8 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
             submit();
           }}
         >
-          <div className={styles.rooms}>
-            {!allRooms && !loadError && <RoomSkeleton />}
+          <div className={styles.theatres}>
+            {!allTheatres && !loadError && <TheatreSkeleton />}
             {loadError && (
               <p className={styles.status} role="alert">
                 {loadError}
@@ -123,29 +125,29 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
                 </button>
               </p>
             )}
-            {allRooms?.length === 0 && <EmptyState />}
-            {(allRooms ?? []).map((room) => (
-              <RoomRow
-                key={room.id}
-                room={room}
-                checked={Boolean(selected[room.id])}
-                comment={comments[room.id] ?? ""}
-                status={status[room.id] ?? "idle"}
-                error={rowErrors[room.id] ?? ""}
-                onToggle={() => toggle(room.id)}
+            {allTheatres?.length === 0 && <EmptyState />}
+            {(allTheatres ?? []).map((theatre) => (
+              <TheatreRow
+                key={theatre.id}
+                theatre={theatre}
+                checked={Boolean(selected[theatre.id])}
+                comment={comments[theatre.id] ?? ""}
+                status={status[theatre.id] ?? "idle"}
+                error={rowErrors[theatre.id] ?? ""}
+                onToggle={() => toggle(theatre.id)}
                 onCommentChange={(value) =>
-                  setComments((prev) => ({ ...prev, [room.id]: value }))
+                  setComments((prev) => ({ ...prev, [theatre.id]: value }))
                 }
               />
             ))}
-            {allRooms && !loadError && (
-              <NewListForm onCreated={addRoom} />
+            {allTheatres && !loadError && (
+              <NewListForm onCreated={addTheatre} />
             )}
           </div>
 
-          {(allRooms ?? []).length > 0 && (
+          {(allTheatres ?? []).length > 0 && (
             <SheetFooter
-              count={selectedRoomIds.length}
+              count={selectedTheatreIds.length}
               isSubmitting={isSubmitting}
             />
           )}
@@ -157,31 +159,31 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
 
 type Results = PromiseSettledResult<unknown>[];
 
-const pending = (roomIds: string[]): Record<string, RowStatus> =>
-  Object.fromEntries(roomIds.map((roomId) => [roomId, "pending"]));
+const pending = (theatreIds: string[]): Record<string, RowStatus> =>
+  Object.fromEntries(theatreIds.map((theatreId) => [theatreId, "pending"]));
 
 const statusesFor = (
-  roomIds: string[],
+  theatreIds: string[],
   results: Results,
 ): Record<string, RowStatus> =>
   Object.fromEntries(
-    roomIds.map((roomId, index) => [
-      roomId,
+    theatreIds.map((theatreId, index) => [
+      theatreId,
       results[index].status === "fulfilled" ? "done" : "error",
     ]),
   );
 
 const errorsFor = (
-  roomIds: string[],
+  theatreIds: string[],
   results: Results,
 ): Record<string, string> =>
   Object.fromEntries(
-    roomIds.flatMap((roomId, index) => {
+    theatreIds.flatMap((theatreId, index) => {
       const result = results[index];
       if (result.status === "fulfilled") return [];
       return [
         [
-          roomId,
+          theatreId,
           result.reason instanceof ApiError
             ? result.reason.message
             : "Something went wrong.",

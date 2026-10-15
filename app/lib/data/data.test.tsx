@@ -14,8 +14,8 @@ import { SWRConfig } from "swr";
 import { api, ApiError } from "../api";
 import { DataProvider } from "./DataProvider";
 import { DataBoundary } from "./DataBoundary";
-import { useNominations, useRooms, useRoomDetail } from "./queries";
-import { RoomProvider, useRoom } from "@/app/rooms/[roomId]/RoomContext";
+import { useNominations, useTheatres, useTheatreDetail } from "./queries";
+import { TheatreProvider, useTheatre } from "@/app/theatres/[theatreId]/TheatreContext";
 
 const auth = vi.hoisted(() => ({
   data: {
@@ -32,7 +32,7 @@ vi.mock("@/lib/auth/client", () => ({
 }));
 
 const navigation = vi.hoisted(() => ({
-  pathname: "/rooms/11111111-1111-1111-1111-111111111111",
+  pathname: "/theatres/11111111-1111-1111-1111-111111111111",
   redirect: vi.fn((path: string) => {
     throw new Error(`Redirect: ${path}`);
   }),
@@ -42,9 +42,9 @@ vi.mock("next/navigation", () => ({
   redirect: navigation.redirect,
 }));
 
-const room = { id: "11111111-1111-1111-1111-111111111111" };
-const otherRoom = { id: "22222222-2222-2222-2222-222222222222" };
-const base = `/api/rooms/${room.id}`;
+const theatre = { id: "11111111-1111-1111-1111-111111111111" };
+const otherTheatre = { id: "22222222-2222-2222-2222-222222222222" };
+const base = `/api/theatres/${theatre.id}`;
 const fetchMock = vi.fn<typeof fetch>();
 const json = (body: unknown, status = 200) => Response.json(body, { status });
 
@@ -77,7 +77,7 @@ beforeEach(() => {
   auth.data = { session: { id: "session-alice" }, user: { id: "alice" } };
   auth.isPending = false;
   auth.error = null;
-  navigation.pathname = `/rooms/${room.id}`;
+  navigation.pathname = `/theatres/${theatre.id}`;
   vi.clearAllMocks();
   fetchMock.mockReset();
   vi.stubGlobal("fetch", fetchMock);
@@ -89,24 +89,24 @@ afterEach(() => {
 });
 
 describe("shared data cache", () => {
-  it("shows a revisited room before its pending refresh finishes", async () => {
+  it("shows a revisited theatre before its pending refresh finishes", async () => {
     const refreshed = deferred<Response>();
     fetchMock
       .mockResolvedValueOnce(json([{ id: 1, comment: "Cached" }]))
-      .mockResolvedValueOnce(json([{ id: 2, comment: "Other room" }]))
+      .mockResolvedValueOnce(json([{ id: 2, comment: "Other theatre" }]))
       .mockReturnValueOnce(refreshed.promise);
     const { result, rerender } = renderHook(
       ({ current }) => useNominations(current),
-      { wrapper: Wrapper, initialProps: { current: room } },
+      { wrapper: Wrapper, initialProps: { current: theatre } },
     );
     await waitFor(() =>
       expect(result.current.data?.[0].comment).toBe("Cached"),
     );
-    rerender({ current: otherRoom });
+    rerender({ current: otherTheatre });
     expect(result.current.data).toBeUndefined();
     await waitFor(() => expect(result.current.data?.[0].id).toBe(2));
 
-    rerender({ current: room });
+    rerender({ current: theatre });
     expect(result.current.data?.[0].comment).toBe("Cached");
     expect(result.current.isLoading).toBe(false);
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
@@ -119,7 +119,7 @@ describe("shared data cache", () => {
   it("deduplicates simultaneous readers", async () => {
     fetchMock.mockResolvedValue(json([]));
     const { result } = renderHook(
-      () => [useNominations(room), useNominations(room)],
+      () => [useNominations(theatre), useNominations(theatre)],
       { wrapper: Wrapper },
     );
     await waitFor(() =>
@@ -132,16 +132,16 @@ describe("shared data cache", () => {
     });
   });
 
-  it("refreshes shared layout queries when navigating between a room and settings", async () => {
+  it("refreshes shared layout queries when navigating between a theatre and settings", async () => {
     const refresh = deferred<Response>();
     fetchMock
       .mockResolvedValueOnce(json([{ id: 1, comment: "Cached" }]))
       .mockReturnValueOnce(refresh.promise);
-    const { result, rerender } = renderHook(() => useNominations(room), {
+    const { result, rerender } = renderHook(() => useNominations(theatre), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data).toBeDefined());
-    navigation.pathname = `/rooms/${room.id}/settings`;
+    navigation.pathname = `/theatres/${theatre.id}/settings`;
     rerender();
     expect(result.current.data?.[0].comment).toBe("Cached");
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
@@ -152,11 +152,11 @@ describe("shared data cache", () => {
   it("does not duplicate an in-progress fetch on navigation", async () => {
     const firstRead = deferred<Response>();
     fetchMock.mockReturnValue(firstRead.promise);
-    const { result, rerender } = renderHook(() => useNominations(room), {
+    const { result, rerender } = renderHook(() => useNominations(theatre), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
-    navigation.pathname = `/rooms/${room.id}/settings`;
+    navigation.pathname = `/theatres/${theatre.id}/settings`;
     rerender();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     await act(async () => firstRead.resolve(json([{ id: 1 }])));
@@ -170,7 +170,7 @@ describe("shared data cache", () => {
       fetchMock
         .mockResolvedValueOnce(json([{ id: 1, comment: "Cached" }]))
         .mockReturnValueOnce(refresh.promise);
-      const { result } = renderHook(() => useNominations(room), {
+      const { result } = renderHook(() => useNominations(theatre), {
         wrapper: Wrapper,
       });
       await waitFor(() => expect(result.current.data).toBeDefined());
@@ -186,7 +186,7 @@ describe("shared data cache", () => {
     },
   );
 
-  it("refreshes all mounted room reads after writes, including 204 responses", async () => {
+  it("refreshes all mounted theatre reads after writes, including 204 responses", async () => {
     let deleted = false;
     fetchMock.mockImplementation(async (_input, init) => {
       if (init?.method === "DELETE") {
@@ -196,7 +196,7 @@ describe("shared data cache", () => {
       return json(deleted ? [] : [{ id: 1 }]);
     });
     const { result } = renderHook(
-      () => [useNominations(room), useNominations(otherRoom)],
+      () => [useNominations(theatre), useNominations(otherTheatre)],
       { wrapper: Wrapper },
     );
     await waitFor(() =>
@@ -205,7 +205,7 @@ describe("shared data cache", () => {
       ),
     );
     await act(async () => {
-      await api.room(room.id).nominations.delete(1);
+      await api.theatre(theatre.id).nominations.delete(1);
     });
     expect(result.current.map((query) => query.data)).toEqual([[], []]);
     expect(fetchMock).toHaveBeenCalledTimes(5);
@@ -221,7 +221,7 @@ describe("shared data cache", () => {
       return json([{ id: 1, comment: reads === 1 ? "Old" : "New" }]);
     });
 
-    const { result } = renderHook(() => useNominations(room), {
+    const { result } = renderHook(() => useNominations(theatre), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data?.[0].comment).toBe("Old"));
@@ -231,7 +231,7 @@ describe("shared data cache", () => {
     });
     await waitFor(() => expect(reads).toBe(2));
     await act(async () => {
-      await api.room(room.id).nominations.updateComment(1, "New");
+      await api.theatre(theatre.id).nominations.updateComment(1, "New");
     });
     expect(result.current.data?.[0].comment).toBe("New");
     await act(async () => {
@@ -241,7 +241,7 @@ describe("shared data cache", () => {
     expect(result.current.data?.[0].comment).toBe("New");
   });
 
-  it("refreshes room nominations after a per-title import write", async () => {
+  it("refreshes theatre nominations after a per-title import write", async () => {
     let imported = false;
     fetchMock.mockImplementation(async (input, init) => {
       if (init?.method === "POST") {
@@ -255,12 +255,12 @@ describe("shared data cache", () => {
       }
       return json(imported ? [{ id: 1 }] : []);
     });
-    const { result } = renderHook(() => useNominations(room), {
+    const { result } = renderHook(() => useNominations(theatre), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data).toEqual([]));
     await act(async () => {
-      const outcome = await api.room(room.id).nominations.importTitle("Arrival");
+      const outcome = await api.theatre(theatre.id).nominations.importTitle("Arrival");
       expect(outcome).toEqual({
         status: "added",
         movie: { id: 1, title: "Arrival", year: 2016 },
@@ -273,7 +273,7 @@ describe("shared data cache", () => {
     fetchMock
       .mockResolvedValueOnce(json([{ id: 1 }]))
       .mockResolvedValueOnce(json({ error: "Temporarily unavailable" }, 503));
-    const { result } = renderHook(() => useNominations(room), {
+    const { result } = renderHook(() => useNominations(theatre), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data).toBeDefined());
@@ -290,7 +290,7 @@ describe("shared data cache", () => {
       fetchMock
         .mockResolvedValueOnce(json([{ id: 1 }]))
         .mockResolvedValueOnce(json({ error: "Access denied" }, status));
-      const { result } = renderHook(() => useNominations(room), {
+      const { result } = renderHook(() => useNominations(theatre), {
         wrapper: Wrapper,
       });
       await waitFor(() => expect(result.current.data).toBeDefined());
@@ -306,12 +306,12 @@ describe("shared data cache", () => {
     fetchMock
       .mockResolvedValueOnce(json([{ id: 1 }]))
       .mockResolvedValueOnce(json({ error: "Could not save" }, 500));
-    const { result } = renderHook(() => useNominations(room), {
+    const { result } = renderHook(() => useNominations(theatre), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data).toBeDefined());
     await expect(
-      api.room(room.id).nominations.delete(1),
+      api.theatre(theatre.id).nominations.delete(1),
     ).rejects.toThrow("Could not save");
     expect(result.current.data).toEqual([{ id: 1 }]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -328,11 +328,11 @@ describe("shared data cache", () => {
       }
       return json(nominations);
     });
-    const { result } = renderHook(() => useNominations(room), {
+    const { result } = renderHook(() => useNominations(theatre), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data).toHaveLength(2));
-    const client = api.room(room.id);
+    const client = api.theatre(theatre.id);
     const deletingFirst = client.nominations.delete(1);
     await act(async () => {
       await client.nominations.delete(2);
@@ -348,7 +348,7 @@ describe("shared data cache", () => {
 
   it("reports malformed responses instead of leaving the page loading forever", async () => {
     fetchMock.mockResolvedValue(new Response("not JSON"));
-    const { result } = renderHook(() => useRooms(), { wrapper: Wrapper });
+    const { result } = renderHook(() => useTheatres(), { wrapper: Wrapper });
     await waitFor(() =>
       expect(result.current.error?.message).toBe(
         "The server returned an invalid response.",
@@ -357,7 +357,7 @@ describe("shared data cache", () => {
     expect(result.current.isLoading).toBe(false);
   });
 
-  it("drops a deleted room's inactive cached data", async () => {
+  it("drops a deleted theatre's inactive cached data", async () => {
     fetchMock
       .mockResolvedValueOnce(json([{ id: 1 }]))
       .mockResolvedValueOnce(json([{ id: 2 }]))
@@ -366,15 +366,15 @@ describe("shared data cache", () => {
       .mockResolvedValueOnce(json({ error: "Gone" }, 404));
     const { result, rerender } = renderHook(
       ({ current }) => useNominations(current),
-      { wrapper: Wrapper, initialProps: { current: room } },
+      { wrapper: Wrapper, initialProps: { current: theatre } },
     );
     await waitFor(() => expect(result.current.data?.[0].id).toBe(1));
-    rerender({ current: otherRoom });
+    rerender({ current: otherTheatre });
     await waitFor(() => expect(result.current.data?.[0].id).toBe(2));
     await act(async () => {
-      await api.room(room.id).delete();
+      await api.theatre(theatre.id).delete();
     });
-    rerender({ current: room });
+    rerender({ current: theatre });
     expect(result.current.data).toBeUndefined();
     await waitFor(() => expect(result.current.error?.message).toBe("Gone"));
   });
@@ -383,7 +383,7 @@ describe("shared data cache", () => {
     auth.data = null;
     auth.isPending = true;
     fetchMock.mockResolvedValue(json([]));
-    const { result, rerender } = renderHook(() => useRooms(), {
+    const { result, rerender } = renderHook(() => useTheatres(), {
       wrapper: Wrapper,
     });
     expect(fetchMock).not.toHaveBeenCalled();
@@ -398,7 +398,7 @@ describe("shared data cache", () => {
     fetchMock
       .mockResolvedValueOnce(json([{ id: 1, comment: "Private" }]))
       .mockReturnValueOnce(secondLogin.promise);
-    const { result, rerender } = renderHook(() => useNominations(room), {
+    const { result, rerender } = renderHook(() => useNominations(theatre), {
       wrapper: Wrapper,
     });
     await waitFor(() =>
@@ -426,12 +426,12 @@ describe("shared data cache", () => {
       .mockResolvedValueOnce(json([{ id: 1, comment: "Alice" }]))
       .mockReturnValueOnce(write.promise)
       .mockResolvedValueOnce(json([{ id: 1, comment: "Bob" }]));
-    const { result, rerender } = renderHook(() => useNominations(room), {
+    const { result, rerender } = renderHook(() => useNominations(theatre), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data?.[0].comment).toBe("Alice"));
     const saving = api
-      .room(room.id)
+      .theatre(theatre.id)
       .nominations.updateComment(1, "Alice update");
     auth.data = { session: { id: "session-bob" }, user: { id: "bob" } };
     rerender();
@@ -488,9 +488,9 @@ describe("data boundary", () => {
     expect(screen.queryByText("Private content")).toBeNull();
     expect(
       screen
-        .getByRole("link", { name: "Back to your rooms" })
+        .getByRole("link", { name: "Back to Theatres Near You" })
         .getAttribute("href"),
-    ).toBe("/rooms");
+    ).toBe("/theatres");
   });
 
   it("redirects to sign-in with the return path", () => {
@@ -504,48 +504,48 @@ describe("data boundary", () => {
       ),
     ).toThrow("Redirect:");
     expect(navigation.redirect).toHaveBeenCalledWith(
-      `/auth/sign-in?next=${encodeURIComponent(`/rooms/${room.id}`)}`,
+      `/auth/sign-in?next=${encodeURIComponent(`/theatres/${theatre.id}`)}`,
     );
   });
 });
 
-describe("room integration", () => {
-  it("loads independent room resources in parallel and shares detail with settings", async () => {
+describe("theatre integration", () => {
+  it("loads independent theatre resources in parallel and shares detail with settings", async () => {
     const detail = deferred<Response>();
-    const rooms = deferred<Response>();
+    const theatres = deferred<Response>();
     const nominations = deferred<Response>();
     fetchMock.mockImplementation(async (input) => {
       if (input === base) return detail.promise;
-      if (input === "/api/rooms?previews=true") return rooms.promise;
+      if (input === "/api/theatres?previews=true") return theatres.promise;
       if (input === `${base}/nominations`) return nominations.promise;
       throw new Error(`Unexpected request: ${input}`);
     });
 
     function Content() {
-      const { room, noms } = useRoom();
-      const { data } = useRoomDetail(room);
+      const { theatre, noms } = useTheatre();
+      const { data } = useTheatreDetail(theatre);
       return (
         <p>
-          {data?.room.name}: {noms.length} movies
+          {data?.theatre.name}: {noms.length} movies
         </p>
       );
     }
     render(
-      <RoomProvider roomId={room.id}>
+      <TheatreProvider theatreId={theatre.id}>
         <Content />
-      </RoomProvider>,
+      </TheatreProvider>,
       { wrapper: Wrapper },
     );
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
     await act(async () => {
       detail.resolve(
         json({
-          room: { ...room, name: "Watchlist" },
+          theatre: { ...theatre, name: "Watchlist" },
           membership: { role: "admin" },
           members: [],
         }),
       );
-      rooms.resolve(json([{ ...room, posterUrls: [] }]));
+      theatres.resolve(json([{ ...theatre, posterUrls: [] }]));
       nominations.resolve(json([{ id: 1 }]));
     });
     expect(await screen.findByText("Watchlist: 1 movies")).toBeTruthy();

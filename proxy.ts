@@ -18,5 +18,5 @@ export default function proxy(request: NextRequest) {
 // itself and redirects to sign-up with a `next` back to the invite link on
 // 401, which the middleware would short-circuit before that logic runs.
 export const config = {
-  matcher: ["/", "/r/:path*", "/rooms/:path*"],
+  matcher: ["/", "/r/:path*", "/rooms/:path*", "/theatres/:path*"],
 };

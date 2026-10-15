@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createTestDb } from "@/src/db/test-db";
 import { setDbForTesting, type DB } from "@/src/db/client";
-import { movies, nominations, rooms, roomMembers } from "@/src/db/schema";
+import { movies, nominations, theatres, theatreMembers } from "@/src/db/schema";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import { eq } from "drizzle-orm";
-import * as roomsRoute from "./rooms/route";
-import * as roomRoute from "./rooms/[roomId]/route";
-import * as nominationsRoute from "./rooms/[roomId]/nominations/route";
-import * as rotateInviteRoute from "./rooms/[roomId]/invite/rotate/route";
-import * as membersRoute from "./rooms/[roomId]/members/[userId]/route";
+import * as theatresRoute from "./theatres/route";
+import * as theatreRoute from "./theatres/[theatreId]/route";
+import * as nominationsRoute from "./theatres/[theatreId]/nominations/route";
+import * as rotateInviteRoute from "./theatres/[theatreId]/invite/rotate/route";
+import * as membersRoute from "./theatres/[theatreId]/members/[userId]/route";
 import { setMovieProviderForTesting } from "../lib/movie-metadata";
 
 const currentUserId = vi.hoisted(() => ({ value: "" }));
@@ -24,9 +24,9 @@ const asUser = (id: string) => {
   currentUserId.value = id;
 };
 
-let roomId: string;
+let theatreId: string;
 const route = () => ({
-  params: Promise.resolve({ roomId }),
+  params: Promise.resolve({ theatreId }),
 });
 const post = (body: unknown) =>
   new Request("http://test/api", {
@@ -36,22 +36,22 @@ const post = (body: unknown) =>
 
 let db: DB;
 
-/** Builds a room with two members and one nomination by Alice. */
+/** Builds a theatre with two members and one nomination by Alice. */
 async function setup() {
-  const [room] = await db
-    .insert(rooms)
+  const [theatre] = await db
+    .insert(theatres)
     .values({
-      name: "Room",
+      name: "Theatre",
       createdBy: ALICE,
       inviteCode: "code",
       adminInviteCode: "code-admin",
     })
     .returning();
-  roomId = room.id;
+  theatreId = theatre.id;
 
-  await db.insert(roomMembers).values([
-    { roomId: room.id, userId: ALICE, role: "admin" },
-    { roomId: room.id, userId: BOB, role: "member" },
+  await db.insert(theatreMembers).values([
+    { theatreId: theatre.id, userId: ALICE, role: "admin" },
+    { theatreId: theatre.id, userId: BOB, role: "member" },
   ]);
 
   const [movie] = await db
@@ -65,10 +65,10 @@ async function setup() {
 
   const [nomination] = await db
     .insert(nominations)
-    .values({ roomId: room.id, userId: ALICE, movieId: movie.id })
+    .values({ theatreId: theatre.id, userId: ALICE, movieId: movie.id })
     .returning();
 
-  return { room, movie, nomination };
+  return { theatre, movie, nomination };
 }
 
 async function cacheMovie(tmdbId = 999) {
@@ -130,10 +130,10 @@ describe("nominations", () => {
   });
 });
 
-describe("room settings", () => {
-  it("renames the room", async () => {
-    const { PATCH } = roomRoute;
-    const { room } = await setup();
+describe("theatre settings", () => {
+  it("renames the theatre", async () => {
+    const { PATCH } = theatreRoute;
+    const { theatre } = await setup();
     asUser(ALICE);
 
     const response = await PATCH(post({ name: "New Name" }), route());
@@ -141,13 +141,13 @@ describe("room settings", () => {
 
     const [updated] = await db
       .select()
-      .from(rooms)
-      .where(eq(rooms.id, room.id));
+      .from(theatres)
+      .where(eq(theatres.id, theatre.id));
     expect(updated.name).toBe("New Name");
   });
 
   it("rejects an update with no name", async () => {
-    const { PATCH } = roomRoute;
+    const { PATCH } = theatreRoute;
     await setup();
     asUser(ALICE);
 
@@ -157,7 +157,7 @@ describe("room settings", () => {
 
   it("invalidates the old invite code when rotated", async () => {
     const { POST } = rotateInviteRoute;
-    const { room } = await setup();
+    const { theatre } = await setup();
     asUser(ALICE);
 
     const body = await (
@@ -167,65 +167,65 @@ describe("room settings", () => {
     expect(body.inviteCode).not.toBe("code");
     const [updated] = await db
       .select()
-      .from(rooms)
-      .where(eq(rooms.id, room.id));
+      .from(theatres)
+      .where(eq(theatres.id, theatre.id));
     expect(updated.inviteCode).toBe(body.inviteCode);
   });
 });
 
-describe("room creation", () => {
+describe("theatre creation", () => {
   it("makes the creator an admin", async () => {
-    const { POST } = roomsRoute;
+    const { POST } = theatresRoute;
     asUser(ALICE);
 
     await POST(post({ name: "Movie Club" }));
 
-    const [membership] = await db.select().from(roomMembers);
+    const [membership] = await db.select().from(theatreMembers);
     expect(membership.role).toBe("admin");
     expect(membership.userId).toBe(ALICE);
   });
 
-  it("allows duplicate names and gives rooms distinct ID URLs", async () => {
-    const { POST } = roomsRoute;
+  it("allows duplicate names and gives theatres distinct ID URLs", async () => {
+    const { POST } = theatresRoute;
     asUser(ALICE);
     const first = await POST(post({ name: "Movie Club" }));
     const second = await POST(post({ name: "Movie Club" }));
-    const [firstRoom, secondRoom] = await Promise.all([
+    const [firstTheatre, secondTheatre] = await Promise.all([
       first.json(),
       second.json(),
     ]);
 
     expect(first.status).toBe(201);
     expect(second.status).toBe(201);
-    expect(firstRoom.id).not.toBe(secondRoom.id);
-    expect(firstRoom.path).toBe(`/rooms/${firstRoom.id}`);
-    expect(secondRoom.path).toBe(`/rooms/${secondRoom.id}`);
+    expect(firstTheatre.id).not.toBe(secondTheatre.id);
+    expect(firstTheatre.path).toBe(`/theatres/${firstTheatre.id}`);
+    expect(secondTheatre.path).toBe(`/theatres/${secondTheatre.id}`);
   });
 });
 
 describe("member management", () => {
-  it("will not leave a room without an admin", async () => {
+  it("will not leave a theatre without an admin", async () => {
     const { DELETE } = membersRoute;
-    const { room } = await setup();
+    const { theatre } = await setup();
     asUser(ALICE);
 
     const response = await DELETE(
       new Request("http://test", { method: "DELETE" }),
-      { params: Promise.resolve({ roomId: room.id, userId: BOB }) },
+      { params: Promise.resolve({ theatreId: theatre.id, userId: BOB }) },
     );
 
     // Bob is not an admin, so removing him is fine; the guard is about admins.
     expect(response.status).toBe(204);
     const remaining = await db
       .select()
-      .from(roomMembers)
-      .where(eq(roomMembers.roomId, room.id));
+      .from(theatreMembers)
+      .where(eq(theatreMembers.theatreId, theatre.id));
     expect(remaining).toHaveLength(1);
   });
 
   it("leaves a removed member's nominations in place", async () => {
     const { DELETE } = membersRoute;
-    const { room } = await setup();
+    const { theatre } = await setup();
     const [movie] = await db
       .insert(movies)
       .values({
@@ -236,11 +236,11 @@ describe("member management", () => {
       .returning();
     await db
       .insert(nominations)
-      .values({ roomId: room.id, userId: BOB, movieId: movie.id });
+      .values({ theatreId: theatre.id, userId: BOB, movieId: movie.id });
     asUser(ALICE);
 
     await DELETE(new Request("http://test", { method: "DELETE" }), {
-      params: Promise.resolve({ roomId: room.id, userId: BOB }),
+      params: Promise.resolve({ theatreId: theatre.id, userId: BOB }),
     });
 
     const remaining = await db
@@ -250,14 +250,14 @@ describe("member management", () => {
     expect(remaining).toHaveLength(1);
   });
 
-  it("refuses self-removal, which is what keeps an admin in the room", async () => {
+  it("refuses self-removal, which is what keeps an admin in the theatre", async () => {
     const { DELETE } = membersRoute;
     await setup();
     asUser(ALICE);
 
     const response = await DELETE(
       new Request("http://test", { method: "DELETE" }),
-      { params: Promise.resolve({ roomId, userId: ALICE }) },
+      { params: Promise.resolve({ theatreId, userId: ALICE }) },
     );
     expect(response.status).toBe(409);
   });
@@ -268,7 +268,7 @@ describe("member management", () => {
     asUser(ALICE);
 
     const response = await PATCH(post({ role: "member" }), {
-      params: Promise.resolve({ roomId, userId: ALICE }),
+      params: Promise.resolve({ theatreId, userId: ALICE }),
     });
     expect(response.status).toBe(409);
   });

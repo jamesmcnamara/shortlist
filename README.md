@@ -2,12 +2,12 @@
 
 A tiny Next.js + Vercel + Neon app for deciding what to watch, built on Drizzle ORM.
 
-## Rooms
+## Theatres
 
-All content lives in a **room**, which is a shared watch list. Every movie,
-comment and watched marking is scoped to one. Members only ever see the rooms
-they belong to; rooms are joined through a shareable invite link. Admins can
-rename a room, manage its members and rotate its invite links from its settings
+All content lives in a **theatre**, which is a shared watch list. Every movie,
+comment and watched marking is scoped to one. Members only ever see the theatres
+they belong to; theatres are joined through a shareable invite link. Admins can
+rename a theatre, manage its members and rotate its invite links from its settings
 page.
 
 ### Bulk movie import
@@ -90,26 +90,26 @@ change or stop working, and cached availability can become outdated.
 
 ## Client data caching
 
-The home page, room pages, settings, and the room picker share an SWR cache
+The home page, theatre pages, settings, and the theatre picker share an SWR cache
 backed by `localStorage`. Previously loaded content appears immediately after
 revisiting or reloading while SWR refreshes it in the background. It also
 refreshes on navigation, window focus, and reconnect. This is not offline
 storage: the app still needs the server to fetch current data.
 
-`app/lib/data/` owns the provider, query hooks, loading/error boundary, and room
+`app/lib/data/` owns the provider, query hooks, loading/error boundary, and theatre
 actions. Components use these hooks and the existing API client, not SWR cache
 keys or invalidation calls. The provider survives navigation and creates a new
 cache on login, logout, or a session change. Access-denied responses hide cached
 content; temporary refresh failures retain it with an error and retry control.
 The saved cache is namespaced by user ID and stores only successful query data.
 
-Successful API writes refresh the shared room queries automatically. This is
+Successful API writes refresh the shared theatre queries automatically. This is
 deliberately broad: watched status and membership changes can affect multiple
-rooms. Reads are deduplicated, and inactive queries refresh on their next mount.
+theatres. Reads are deduplicated, and inactive queries refresh on their next mount.
 New reads belong in `app/lib/data/queries.ts`; writes should keep using
 `app/lib/api.ts` so cache invalidation stays centralized.
 
-Room HTML is a data-free shell; the existing authenticated API routes enforce
+Theatre HTML is a data-free shell; the existing authenticated API routes enforce
 membership for every read and write. The service worker caches assets, but
 authenticated API responses and page navigations use the network, leaving SWR
 as the only cache for private data.
@@ -185,10 +185,10 @@ Neon Auth's trusted domains.
 ## Tests
 
 `npm test` runs Vitest. The API tests execute the real route handlers against an
-in-process Postgres ([PGlite](https://pglite.dev)), so cross-room isolation is
+in-process Postgres ([PGlite](https://pglite.dev)), so cross-theatre isolation is
 proven against actual SQL rather than a mock: `app/api/isolation.test.ts` asserts
-per route that a member of one room cannot read or mutate another's content, so a
-missing `roomId` predicate fails the suite.
+per route that a member of one theatre cannot read or mutate another's content, so a
+missing `theatreId` predicate fails the suite.
 
 ## GitHub and Vercel
 

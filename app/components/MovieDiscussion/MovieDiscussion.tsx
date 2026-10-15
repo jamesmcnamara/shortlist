@@ -161,7 +161,7 @@ interface SeenByListProps {
   seenBy: User[];
 }
 
-/** Room members who have marked this movie seen; empty is the common case. */
+/** Theatre members who have marked this movie seen; empty is the common case. */
 function SeenByList({ seenBy }: SeenByListProps) {
   if (seenBy.length === 0) return null;
   return (

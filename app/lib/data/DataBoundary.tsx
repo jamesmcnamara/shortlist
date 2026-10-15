@@ -32,7 +32,7 @@ export function DataBoundary({
     return (
       <main className={styles.message} role="alert">
         <p>{error.message}</p>
-        <Link href="/rooms">Back to your rooms</Link>
+        <Link href="/theatres">Back to Theatres Near You</Link>
       </main>
     );
   }

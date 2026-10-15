@@ -10,12 +10,12 @@ import {
   nominations,
   notifications,
   subscriptions,
-  roomMembers,
-  rooms,
+  theatreMembers,
+  theatres,
 } from "@/src/db/schema";
 import * as subscriptionsRoute from "@/app/api/push/route";
-import * as preferencesRoute from "@/app/api/rooms/[roomId]/notifications/route";
-import { POST as nominate } from "@/app/api/rooms/[roomId]/nominations/route";
+import * as preferencesRoute from "@/app/api/theatres/[theatreId]/notifications/route";
+import { POST as nominate } from "@/app/api/theatres/[theatreId]/nominations/route";
 import { pushSubscription, sendNomNotys } from "./push";
 
 const state = vi.hoisted(() => ({
@@ -37,9 +37,9 @@ vi.mock("web-push", async (importOriginal) => {
 const ALICE = "11111111-1111-1111-1111-111111111111";
 const BOB = "22222222-2222-2222-2222-222222222222";
 const OUTSIDER = "33333333-3333-3333-3333-333333333333";
-const ROOM = "44444444-4444-4444-4444-444444444444";
-const OTHER_ROOM = "55555555-5555-5555-5555-555555555555";
-const context = (roomId = ROOM) => ({ params: Promise.resolve({ roomId }) });
+const THEATRE = "44444444-4444-4444-4444-444444444444";
+const OTHER_THEATRE = "55555555-5555-5555-5555-555555555555";
+const context = (theatreId = THEATRE) => ({ params: Promise.resolve({ theatreId }) });
 const request = (body: unknown, method = "POST") =>
   new Request("https://shortlist.test/api", {
     method,
@@ -77,26 +77,26 @@ beforeEach(async () => {
     { id: BOB, name: "Bob", email: "bob@example.com" },
     { id: OUTSIDER, name: "Outsider", email: "outsider@example.com" },
   ]);
-  await db.insert(rooms).values([
+  await db.insert(theatres).values([
     {
-      id: ROOM,
+      id: THEATRE,
       name: "Movie club",
       createdBy: ALICE,
       inviteCode: "a",
       adminInviteCode: "aa",
     },
     {
-      id: OTHER_ROOM,
+      id: OTHER_THEATRE,
       name: "Secret",
       createdBy: OUTSIDER,
       inviteCode: "b",
       adminInviteCode: "bb",
     },
   ]);
-  await db.insert(roomMembers).values([
-    { roomId: ROOM, userId: ALICE, role: "admin" },
-    { roomId: ROOM, userId: BOB },
-    { roomId: OTHER_ROOM, userId: OUTSIDER },
+  await db.insert(theatreMembers).values([
+    { theatreId: THEATRE, userId: ALICE, role: "admin" },
+    { theatreId: THEATRE, userId: BOB },
+    { theatreId: OTHER_THEATRE, userId: OUTSIDER },
   ]);
   const [movie] = await db
     .insert(movies)
@@ -148,7 +148,7 @@ describe("push subscriptions and preferences", () => {
     expect(await db.select().from(notifications)).toHaveLength(0);
   });
 
-  it("rejects unauthenticated subscriptions and cross-room preferences", async () => {
+  it("rejects unauthenticated subscriptions and cross-theatre preferences", async () => {
     state.userId = "";
     expect((await subscriptionsRoute.POST(request(subscription))).status).toBe(
       401,
@@ -158,7 +158,7 @@ describe("push subscriptions and preferences", () => {
       (
         await preferencesRoute.GET(
           new Request("https://test"),
-          context(OTHER_ROOM),
+          context(OTHER_THEATRE),
         )
       ).status,
     ).toBe(404);
@@ -166,7 +166,7 @@ describe("push subscriptions and preferences", () => {
       (
         await preferencesRoute.PUT(
           request({ enabled: true }, "PUT"),
-          context(OTHER_ROOM),
+          context(OTHER_THEATRE),
         )
       ).status,
     ).toBe(404);
@@ -192,9 +192,9 @@ describe("push subscriptions and preferences", () => {
 
   it("cascades preferences on removal and does not restore opt-in when rejoining", async () => {
     await register();
-    await db.delete(roomMembers).where(eq(roomMembers.userId, BOB));
+    await db.delete(theatreMembers).where(eq(theatreMembers.userId, BOB));
     expect(await db.select().from(notifications)).toHaveLength(0);
-    await db.insert(roomMembers).values({ roomId: ROOM, userId: BOB });
+    await db.insert(theatreMembers).values({ theatreId: THEATRE, userId: BOB });
     expect(await db.select().from(notifications)).toHaveLength(0);
   });
 
@@ -269,7 +269,7 @@ describe("best-effort delivery", () => {
     expect(JSON.parse(payload as string)).toMatchObject({
       title: "Movie club",
       body: "Arrival was added to the list.",
-      url: `/rooms/${ROOM}`,
+      url: `/theatres/${THEATRE}`,
     });
     expect(options).toMatchObject({ timeout: 5000, TTL: 3600 });
   });
@@ -281,17 +281,17 @@ describe("best-effort delivery", () => {
       await addMovie();
       if (change === "opt-out") await db.delete(notifications);
       if (change === "removed-member")
-        await db.delete(roomMembers).where(eq(roomMembers.userId, BOB));
+        await db.delete(theatreMembers).where(eq(theatreMembers.userId, BOB));
       if (change === "removed-device") await db.delete(subscriptions);
       await state.tasks[0]();
       expect(webpush.sendNotification).not.toHaveBeenCalled();
     },
   );
 
-  it("does not send a nomination from a different room", async () => {
+  it("does not send a nomination from a different theatre", async () => {
     await register();
     const added = await addMovie();
-    await sendNomNotys(OTHER_ROOM, added.id);
+    await sendNomNotys(OTHER_THEATRE, added.id);
     expect(webpush.sendNotification).not.toHaveBeenCalled();
   });
 

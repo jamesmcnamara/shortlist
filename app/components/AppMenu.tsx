@@ -6,22 +6,22 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth/client";
 import { useClickOutside } from "@/app/lib/useClickOutside";
 import { FilmReelIcon } from "./FilmReelIcon";
-import { roomPath } from "@/lib/room-path";
-import { useRooms } from "@/app/lib/data/queries";
+import { theatrePath } from "@/lib/theatre-path";
+import { useTheatres } from "@/app/lib/data/queries";
 import { disconnectDeviceNotifications } from "@/app/lib/push";
 import styles from "./AppMenu.module.css";
 
 interface AppMenuProps {
-  /** Omitted outside a room, which hides the room-scoped items. */
-  room?: { id: string };
-  showMyRooms?: boolean;
+  /** Omitted outside a theatre, which hides the theatre-scoped items. */
+  theatre?: { id: string };
+  showMyTheatres?: boolean;
 }
 
 /** The account and navigation menu, shared by every header. */
-export function AppMenu({ room, showMyRooms = true }: AppMenuProps) {
+export function AppMenu({ theatre, showMyTheatres = true }: AppMenuProps) {
   const { data: session } = authClient.useSession();
-  const { data: rooms } = useRooms();
-  const watchlist = rooms?.find(
+  const { data: theatres } = useTheatres();
+  const watchlist = theatres?.find(
     (candidate) => candidate.watchlistFor === session?.user.id,
   );
   const [isOpen, setIsOpen] = useState(false);
@@ -43,7 +43,9 @@ export function AppMenu({ room, showMyRooms = true }: AppMenuProps) {
       await authClient.signOut();
       router.replace("/auth/sign-in");
     } catch {
-      setSignOutError("Unable to sign out safely. Check your connection and try again.");
+      setSignOutError(
+        "Unable to sign out safely. Check your connection and try again.",
+      );
       setIsSigningOut(false);
     }
   }
@@ -66,22 +68,29 @@ export function AppMenu({ room, showMyRooms = true }: AppMenuProps) {
       </button>
       {isOpen && (
         <div className={styles.menuPanel} role="menu">
-          {signOutError && <p className={styles.error} role="alert">{signOutError}</p>}
+          {signOutError && (
+            <p className={styles.error} role="alert">
+              {signOutError}
+            </p>
+          )}
           {watchlist && (
-            <MenuLink href={roomPath(watchlist)} onNavigate={close}>
-              Watchlist
+            <MenuLink href={theatrePath(watchlist)} onNavigate={close}>
+              Home Theatre
             </MenuLink>
           )}
-          {showMyRooms && (
-            <MenuLink href="/rooms" onNavigate={close}>
-              My rooms
+          {showMyTheatres && (
+            <MenuLink href="/theatres" onNavigate={close}>
+              Theatres Near You
             </MenuLink>
           )}
-          <MenuLink href="/rooms/new" onNavigate={close}>
-            New room
+          <MenuLink href="/theatres/new" onNavigate={close}>
+            New Theatre
           </MenuLink>
-          {room && (
-            <MenuLink href={`${roomPath(room)}/settings`} onNavigate={close}>
+          {theatre && (
+            <MenuLink
+              href={`${theatrePath(theatre)}/settings`}
+              onNavigate={close}
+            >
               Settings
             </MenuLink>
           )}

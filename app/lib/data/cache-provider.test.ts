@@ -11,23 +11,23 @@ describe("persistent SWR cache provider", () => {
 
   it("restores cached data after creating a new provider", () => {
     const firstCache = createCacheProvider("alice");
-    firstCache.set("/api/rooms", { data: [{ id: "room-1" }] });
+    firstCache.set("/api/theatres", { data: [{ id: "theatre-1" }] });
 
     const nextCache = createCacheProvider("alice");
 
-    expect(nextCache.get("/api/rooms")?.data).toEqual([{ id: "room-1" }]);
+    expect(nextCache.get("/api/theatres")?.data).toEqual([{ id: "theatre-1" }]);
   });
 
   it("persists only entries with data and removes cleared entries", () => {
     const cache = createCacheProvider("alice");
-    cache.set("/api/rooms", { data: [{ id: "room-1" }] });
-    cache.set("/api/rooms/pending", {});
+    cache.set("/api/theatres", { data: [{ id: "theatre-1" }] });
+    cache.set("/api/theatres/pending", {});
 
     expect(JSON.parse(localStorage.getItem(aliceKey) ?? "[]")).toEqual([
-      ["/api/rooms", { data: [{ id: "room-1" }] }],
+      ["/api/theatres", { data: [{ id: "theatre-1" }] }],
     ]);
 
-    cache.delete("/api/rooms");
+    cache.delete("/api/theatres");
     expect(JSON.parse(localStorage.getItem(aliceKey) ?? "[]")).toEqual([]);
   });
 
@@ -42,13 +42,13 @@ describe("persistent SWR cache provider", () => {
   });
 
   it("keeps each user's cache separate", () => {
-    createCacheProvider("alice").set("/api/rooms", { data: ["Alice"] });
-    createCacheProvider("bob").set("/api/rooms", { data: ["Bob"] });
+    createCacheProvider("alice").set("/api/theatres", { data: ["Alice"] });
+    createCacheProvider("bob").set("/api/theatres", { data: ["Bob"] });
 
-    expect(createCacheProvider("alice").get("/api/rooms")?.data).toEqual([
+    expect(createCacheProvider("alice").get("/api/theatres")?.data).toEqual([
       "Alice",
     ]);
-    expect(createCacheProvider("bob").get("/api/rooms")?.data).toEqual([
+    expect(createCacheProvider("bob").get("/api/theatres")?.data).toEqual([
       "Bob",
     ]);
   });

@@ -1,21 +1,21 @@
 "use client";
 
-import { useRoom } from "@/app/rooms/[roomId]/RoomContext";
+import { useTheatre } from "@/app/theatres/[theatreId]/TheatreContext";
 import { AppMenu } from "./AppMenu";
 import styles from "./ShortlistHeader.module.css";
 import Link from "next/link";
 
 export function ShortlistHeader() {
-  const { room, rooms } = useRoom();
+  const { theatre, theatres } = useTheatre();
 
   return (
     <header className={styles.header}>
-      <span className={styles.roomName}>
+      <span className={styles.theatreName}>
         <Link href="/">Shortlist</Link>
       </span>
       <AppMenu
-        room={{ id: room.id }}
-        showMyRooms={rooms.length > 1}
+        theatre={{ id: theatre.id }}
+        showMyTheatres={theatres.length > 1}
       />
     </header>
   );

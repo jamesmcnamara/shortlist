@@ -10,7 +10,7 @@ import {
 } from "motion/react";
 import { forwardRef, useEffect, useRef, type ReactNode } from "react";
 import { map } from "shades";
-import styles from "./Room.module.css";
+import styles from "./Theatre.module.css";
 
 export type MovieAnimation = "glide" | "spring" | "fade" | "off";
 

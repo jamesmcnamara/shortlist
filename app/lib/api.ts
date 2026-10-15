@@ -4,10 +4,10 @@ import type {
   Feedback,
   FeedbackCategory,
   Nomination,
-  RoomRole,
+  TheatreRole,
   User,
 } from "@/src/db/schema";
-import type { SafeRoom } from "@/lib/auth/require-room";
+import type { SafeTheatre } from "@/lib/auth/require-theatre";
 import type { Movie } from "@/src/db/schema";
 import type { MovieImportResult } from "./bulk-movie-import";
 import type { JustWatchAvailability } from "./justwatch-types";
@@ -73,43 +73,43 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export interface RoomSummary {
+export interface TheatreSummary {
   id: string;
   name: string;
   watchlistFor: string | null;
-  role: RoomRole;
+  role: TheatreRole;
 }
 
-export interface RoomSummaryWithPosterPreviews extends RoomSummary {
+export interface TheatreSummaryWithPosterPreviews extends TheatreSummary {
   posterUrls: string[];
 }
 
-/** As `RoomSummary`, but scoped to a specific movie via `?movieId=`. */
-export interface RoomSummaryWithMovie extends RoomSummary {
+/** As `TheatreSummary`, but scoped to a specific movie via `?movieId=`. */
+export interface TheatreSummaryWithMovie extends TheatreSummary {
   hasMovie: boolean;
 }
 
-export interface RoomMemberSummary extends User {
-  role: RoomRole;
+export interface TheatreMemberSummary extends User {
+  role: TheatreRole;
   joinedAt: string;
 }
 
-/** What a seen toggle reports back: the room's viewers for that movie. */
+/** What a seen toggle reports back: the theatre's viewers for that movie. */
 export interface SeenUpdate {
   movieId: number;
   seenBy: User[];
 }
 
-export interface RoomDetail {
-  room: SafeRoom;
+export interface TheatreDetail {
+  theatre: SafeTheatre;
   inviteCode?: string;
   adminInviteCode?: string;
-  membership: { userId: string; role: RoomRole };
-  members: RoomMemberSummary[];
+  membership: { userId: string; role: TheatreRole };
+  members: TheatreMemberSummary[];
 }
 
 /**
- * Room-scoped calls bind the room ID once rather than threading it through
+ * Theatre-scoped calls bind the theatre ID once rather than threading it through
  * every call site.
  */
 export const api = {
@@ -119,14 +119,14 @@ export const api = {
     disconnect: (endpoint: string): Promise<void> =>
       request("/api/push", { method: "DELETE", body: JSON.stringify({ endpoint }) }),
   },
-  rooms: {
-    list: (): Promise<RoomSummary[]> => request("/api/rooms"),
-    listWithPosters: (): Promise<RoomSummaryWithPosterPreviews[]> =>
-      request("/api/rooms?previews=true"),
-    listForMovie: (movieId: number): Promise<RoomSummaryWithMovie[]> =>
-      request(`/api/rooms?movieId=${movieId}`),
-    create: (input: { name: string }): Promise<SafeRoom> =>
-      request("/api/rooms", { method: "POST", body: JSON.stringify(input) }),
+  theatres: {
+    list: (): Promise<TheatreSummary[]> => request("/api/theatres"),
+    listWithPosters: (): Promise<TheatreSummaryWithPosterPreviews[]> =>
+      request("/api/theatres?previews=true"),
+    listForMovie: (movieId: number): Promise<TheatreSummaryWithMovie[]> =>
+      request(`/api/theatres?movieId=${movieId}`),
+    create: (input: { name: string }): Promise<SafeTheatre> =>
+      request("/api/theatres", { method: "POST", body: JSON.stringify(input) }),
   },
   join: (code: string): Promise<{ path: string; name: string }> =>
     request(`/api/join/${encodeURIComponent(code)}`, { method: "POST" }),
@@ -140,8 +140,8 @@ export const api = {
         body: JSON.stringify(input),
       }),
   },
-  room: (roomId: string) => {
-    const base = `/api/rooms/${encodeURIComponent(roomId)}`;
+  theatre: (theatreId: string) => {
+    const base = `/api/theatres/${encodeURIComponent(theatreId)}`;
     return {
       notifications: {
         get: (): Promise<{ enabled: boolean; configured: boolean }> =>
@@ -149,13 +149,13 @@ export const api = {
         set: (enabled: boolean): Promise<{ enabled: boolean; configured: boolean }> =>
           request(`${base}/notifications`, { method: "PUT", body: JSON.stringify({ enabled }) }),
       },
-      get: (): Promise<RoomDetail> => request(base),
+      get: (): Promise<TheatreDetail> => request(base),
       refreshJustWatch: (movieId: number): Promise<JustWatchAvailability> =>
         request(`${base}/justwatch`, {
           method: "POST",
           body: JSON.stringify({ movieId }),
         }),
-      update: (input: { name?: string }): Promise<SafeRoom> =>
+      update: (input: { name?: string }): Promise<SafeTheatre> =>
         request(base, { method: "PATCH", body: JSON.stringify(input) }),
       delete: (): Promise<void> => request(base, { method: "DELETE" }),
       rotateInvite: (
@@ -173,7 +173,7 @@ export const api = {
           request(`${base}/members/${encodeURIComponent(userId)}`, {
             method: "DELETE",
           }),
-        setRole: (userId: string, role: RoomRole): Promise<void> =>
+        setRole: (userId: string, role: TheatreRole): Promise<void> =>
           request(`${base}/members/${encodeURIComponent(userId)}`, {
             method: "PATCH",
             body: JSON.stringify({ role }),
@@ -247,4 +247,4 @@ export const api = {
   },
 };
 
-export type RoomApi = ReturnType<typeof api.room>;
+export type TheatreApi = ReturnType<typeof api.theatre>;

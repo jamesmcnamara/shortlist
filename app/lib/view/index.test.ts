@@ -36,7 +36,7 @@ const nomination = ({
 }: NominationOverrides): Nomination =>
   ({
     id,
-    roomId: "room-1",
+    theatreId: "theatre-1",
     userId,
     movieId,
     comment: null,
@@ -173,7 +173,7 @@ describe("applyView filtering", () => {
     ).toEqual([3, 1]);
   });
 
-  it("filters to movies nobody in the room has seen", () => {
+  it("filters to movies nobody in the theatre has seen", () => {
     const seen = [
       nomination({ id: 1 }),
       nomination({ id: 2, seenBy: ["bob"] }),

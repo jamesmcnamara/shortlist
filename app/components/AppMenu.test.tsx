@@ -7,7 +7,7 @@ const data = vi.hoisted(() => ({
   disconnect: vi.fn(),
   signOut: vi.fn(),
   userId: "alice",
-  rooms: [
+  theatres: [
     { id: "ordinary", name: "Watchlist", watchlistFor: null },
     { id: "bobs", name: "Watchlist", watchlistFor: "bob" },
     { id: "alices", name: "Renamed movies", watchlistFor: "alice" },
@@ -24,7 +24,7 @@ vi.mock("@/app/lib/push", () => ({
   disconnectDeviceNotifications: data.disconnect,
 }));
 vi.mock("@/app/lib/data/queries", () => ({
-  useRooms: () => ({ data: data.rooms }),
+  useTheatres: () => ({ data: data.theatres }),
 }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn() }),
@@ -35,11 +35,19 @@ afterEach(() => {
 });
 
 describe("watchlist menu link", () => {
-  it("links to the current user's designated room even when renamed", () => {
+  it("links to the user's theatres", () => {
+    render(<AppMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+    expect(
+      screen.getByRole("menuitem", { name: "Theatres Near You" }).getAttribute("href"),
+    ).toBe("/theatres");
+  });
+
+  it("links to the current user's designated theatre even when renamed", () => {
     render(<AppMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     expect(screen.getByRole("menuitem", { name: "Watchlist" }).getAttribute("href"))
-      .toBe("/rooms/alices");
+      .toBe("/theatres/alices");
     const link = screen.getByRole("menuitem", { name: "Watchlist" });
     link.addEventListener("click", (event) => event.preventDefault());
     fireEvent.click(link);

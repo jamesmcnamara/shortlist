@@ -6,21 +6,21 @@ import {
   movies,
   nominations,
   nomcoms,
-  rooms,
-  roomMembers,
+  theatres,
+  theatreMembers,
   seen,
 } from "@/src/db/schema";
 import { authUsers } from "@/src/db/neon-auth-schema";
-import { loadRoom } from "@/app/lib/load-room";
+import { loadTheatre } from "@/app/lib/load-theatre";
 // One namespace import per route module, aliased `<name>Route`, so every
 // handler keeps its real export name (GET/POST/PATCH/DELETE) without
 // colliding across the many routes a single test file exercises.
-import * as roomsRoute from "./rooms/route";
-import * as roomRoute from "./rooms/[roomId]/route";
-import * as nominationsRoute from "./rooms/[roomId]/nominations/route";
-import * as nomcomsRoute from "./rooms/[roomId]/nomcoms/route";
-import * as seenRoute from "./rooms/[roomId]/seen/route";
-import * as rotateInviteRoute from "./rooms/[roomId]/invite/rotate/route";
+import * as theatresRoute from "./theatres/route";
+import * as theatreRoute from "./theatres/[theatreId]/route";
+import * as nominationsRoute from "./theatres/[theatreId]/nominations/route";
+import * as nomcomsRoute from "./theatres/[theatreId]/nomcoms/route";
+import * as seenRoute from "./theatres/[theatreId]/seen/route";
+import * as rotateInviteRoute from "./theatres/[theatreId]/invite/rotate/route";
 import * as joinRoute from "./join/[code]/route";
 
 // Auth is the one thing stubbed; everything below it runs for real.
@@ -40,8 +40,8 @@ const asUser = (id: string) => {
 
 interface Fixture {
   db: DB;
-  roomA: { id: string };
-  roomB: { id: string };
+  theatreA: { id: string };
+  theatreB: { id: string };
   nominationInA: number;
   nominationInB: number;
   movieInA: number;
@@ -50,9 +50,9 @@ interface Fixture {
 
 let fixture: Fixture;
 
-const route = (room: "club" | "secret" = "club") => ({
+const route = (theatre: "club" | "secret" = "club") => ({
   params: Promise.resolve({
-    roomId: room === "club" ? fixture.roomA.id : fixture.roomB.id,
+    theatreId: theatre === "club" ? fixture.theatreA.id : fixture.theatreB.id,
   }),
 });
 const post = (body: unknown) =>
@@ -71,8 +71,8 @@ beforeEach(async () => {
     { id: MALLORY, name: "Mallory", email: "mallory@example.com" },
   ]);
 
-  const [roomA] = await db
-    .insert(rooms)
+  const [theatreA] = await db
+    .insert(theatres)
     .values({
       name: "Club",
       createdBy: ALICE,
@@ -81,8 +81,8 @@ beforeEach(async () => {
     })
     .returning();
 
-  const [roomB] = await db
-    .insert(rooms)
+  const [theatreB] = await db
+    .insert(theatres)
     .values({
       name: "Club",
       createdBy: MALLORY,
@@ -91,10 +91,10 @@ beforeEach(async () => {
     })
     .returning();
 
-  await db.insert(roomMembers).values([
-    { roomId: roomA.id, userId: ALICE, role: "admin" },
-    { roomId: roomA.id, userId: BOB, role: "member" },
-    { roomId: roomB.id, userId: MALLORY, role: "admin" },
+  await db.insert(theatreMembers).values([
+    { theatreId: theatreA.id, userId: ALICE, role: "admin" },
+    { theatreId: theatreA.id, userId: BOB, role: "member" },
+    { theatreId: theatreB.id, userId: MALLORY, role: "admin" },
   ]);
 
   const insertedMovies = await db
@@ -116,7 +116,7 @@ beforeEach(async () => {
   const [nomA] = await db
     .insert(nominations)
     .values({
-      roomId: roomA.id,
+      theatreId: theatreA.id,
       userId: ALICE,
       movieId: insertedMovies[0].id,
     })
@@ -125,7 +125,7 @@ beforeEach(async () => {
   const [nomB] = await db
     .insert(nominations)
     .values({
-      roomId: roomB.id,
+      theatreId: theatreB.id,
       userId: MALLORY,
       movieId: insertedMovies[1].id,
     })
@@ -133,14 +133,14 @@ beforeEach(async () => {
 
   await db.insert(seen).values([
     { movieId: insertedMovies[1].id, userId: MALLORY },
-    // Mallory is not in room A, so this must never surface on its nomination.
+    // Mallory is not in theatre A, so this must never surface on its nomination.
     { movieId: insertedMovies[0].id, userId: MALLORY },
   ]);
 
   fixture = {
     db: db as unknown as DB,
-    roomA,
-    roomB,
+    theatreA,
+    theatreB,
     nominationInA: nomA.id,
     nominationInB: nomB.id,
     movieInA: insertedMovies[0].id,
@@ -148,8 +148,8 @@ beforeEach(async () => {
   };
 });
 
-describe("room membership", () => {
-  it("resolves rooms by ID even when their names match", async () => {
+describe("theatre membership", () => {
+  it("resolves theatres by ID even when their names match", async () => {
     const { GET } = nominationsRoute;
     asUser(BOB);
 
@@ -160,7 +160,7 @@ describe("room membership", () => {
     expect(malloryClub.status).toBe(404);
   });
 
-  it("returns only the caller's own room contents", async () => {
+  it("returns only the caller's own theatre contents", async () => {
     const { GET } = nominationsRoute;
     asUser(BOB);
 
@@ -172,13 +172,13 @@ describe("room membership", () => {
     expect(body[0].movie.details.title).toBe("Public Movie");
   });
 
-  it("hides a room the caller does not belong to", async () => {
+  it("hides a theatre the caller does not belong to", async () => {
     const { GET } = nominationsRoute;
     asUser(BOB);
 
     const response = await GET(new Request("http://test"), route("secret"));
 
-    // 404 rather than 403, so room IDs cannot be probed for existence.
+    // 404 rather than 403, so theatre IDs cannot be probed for existence.
     expect(response.status).toBe(404);
   });
 
@@ -190,19 +190,19 @@ describe("room membership", () => {
     expect(response.status).toBe(401);
   });
 
-  it("lists only rooms the caller belongs to", async () => {
-    const { GET } = roomsRoute;
+  it("lists only theatres the caller belongs to", async () => {
+    const { GET } = theatresRoute;
     asUser(BOB);
 
     const body = await (await GET(new Request("http://test"))).json();
-    expect(body.map((room: { id: string }) => room.id)).toEqual([
-      fixture.roomA.id,
+    expect(body.map((theatre: { id: string }) => theatre.id)).toEqual([
+      fixture.theatreA.id,
     ]);
   });
 });
 
-describe("cross-room writes", () => {
-  it("cannot comment on another room's nomination", async () => {
+describe("cross-theatre writes", () => {
+  it("cannot comment on another theatre's nomination", async () => {
     const { POST } = nomcomsRoute;
     asUser(BOB);
 
@@ -215,7 +215,7 @@ describe("cross-room writes", () => {
     expect(await fixture.db.select().from(nomcoms)).toHaveLength(0);
   });
 
-  it("cannot delete another room's nomination", async () => {
+  it("cannot delete another theatre's nomination", async () => {
     const { DELETE } = nominationsRoute;
     asUser(BOB);
 
@@ -230,7 +230,7 @@ describe("cross-room writes", () => {
     expect(await fixture.db.select().from(nominations)).toHaveLength(2);
   });
 
-  it("cannot delete someone else's nomination in its own room", async () => {
+  it("cannot delete someone else's nomination in its own theatre", async () => {
     const { DELETE } = nominationsRoute;
     asUser(BOB);
 
@@ -268,7 +268,7 @@ describe("cross-room writes", () => {
     expect(row.comment).toBeNull();
   });
 
-  it("cannot update someone else's nomination in its own room", async () => {
+  it("cannot update someone else's nomination in its own theatre", async () => {
     const { PATCH } = nominationsRoute;
     asUser(BOB);
 
@@ -285,7 +285,7 @@ describe("cross-room writes", () => {
     expect(row.comment).toBeNull();
   });
 
-  it("cannot update another room's nomination through its own room", async () => {
+  it("cannot update another theatre's nomination through its own theatre", async () => {
     const { PATCH } = nominationsRoute;
     asUser(BOB);
 
@@ -302,7 +302,7 @@ describe("cross-room writes", () => {
     const [comment] = await fixture.db
       .insert(nomcoms)
       .values({
-        roomId: fixture.roomA.id,
+        theatreId: fixture.theatreA.id,
         userId: BOB,
         nominationId: fixture.nominationInA,
         comment: "old take",
@@ -325,7 +325,7 @@ describe("cross-room writes", () => {
     const [comment] = await fixture.db
       .insert(nomcoms)
       .values({
-        roomId: fixture.roomA.id,
+        theatreId: fixture.theatreA.id,
         userId: BOB,
         nominationId: fixture.nominationInA,
         comment: "old take",
@@ -346,12 +346,12 @@ describe("cross-room writes", () => {
     expect(row.comment).toBe("old take");
   });
 
-  it("cannot update another room's discussion comment", async () => {
+  it("cannot update another theatre's discussion comment", async () => {
     const { PATCH } = nomcomsRoute;
     const [comment] = await fixture.db
       .insert(nomcoms)
       .values({
-        roomId: fixture.roomB.id,
+        theatreId: fixture.theatreB.id,
         userId: MALLORY,
         nominationId: fixture.nominationInB,
         comment: "secret take",
@@ -379,11 +379,11 @@ describe("cross-room writes", () => {
     const body = await (
       await GET(new Request("http://test"), route("club"))
     ).json();
-    // Mallory has seen this movie, but is not in room A.
+    // Mallory has seen this movie, but is not in theatre A.
     expect(body[0].seenBy).toEqual([]);
   });
 
-  it("shows a room member's own viewing on the nomination", async () => {
+  it("shows a theatre member's own viewing on the nomination", async () => {
     const { POST } = seenRoute;
     const { GET } = nominationsRoute;
     asUser(BOB);
@@ -402,7 +402,7 @@ describe("cross-room writes", () => {
     ]);
   });
 
-  it("refuses to mark a movie that is not on the acting room's list", async () => {
+  it("refuses to mark a movie that is not on the acting theatre's list", async () => {
     const { POST } = seenRoute;
     asUser(BOB);
 
@@ -412,7 +412,7 @@ describe("cross-room writes", () => {
     );
 
     expect(response.status).toBe(404);
-    // Room B's own marking is untouched, and nothing was recorded for Bob.
+    // Theatre B's own marking is untouched, and nothing was recorded for Bob.
     const rows = await fixture.db.select().from(seen);
     expect(rows.filter((row) => row.userId === BOB)).toHaveLength(0);
   });
@@ -420,21 +420,21 @@ describe("cross-room writes", () => {
 
 describe("admin-only routes", () => {
   it("refuses a rename from a non-admin member", async () => {
-    const { PATCH } = roomRoute;
+    const { PATCH } = theatreRoute;
     asUser(BOB);
 
     const response = await PATCH(post({ name: "Hijacked" }), route("club"));
     expect(response.status).toBe(403);
 
-    const [room] = await fixture.db
+    const [theatre] = await fixture.db
       .select()
-      .from(rooms)
-      .where(eq(rooms.id, fixture.roomA.id));
-    expect(room.name).toBe("Club");
+      .from(theatres)
+      .where(eq(theatres.id, fixture.theatreA.id));
+    expect(theatre.name).toBe("Club");
   });
 
-  it("allows an admin to rename the room", async () => {
-    const { PATCH } = roomRoute;
+  it("allows an admin to rename the theatre", async () => {
+    const { PATCH } = theatreRoute;
     asUser(ALICE);
 
     const response = await PATCH(post({ name: "Renamed" }), route("club"));
@@ -442,7 +442,7 @@ describe("admin-only routes", () => {
   });
 
   it("refuses a non-member entirely", async () => {
-    const { PATCH } = roomRoute;
+    const { PATCH } = theatreRoute;
     asUser(MALLORY);
 
     const response = await PATCH(post({ name: "Hijacked" }), route("club"));
@@ -450,14 +450,14 @@ describe("admin-only routes", () => {
   });
 
   it("withholds the invite code from non-admins", async () => {
-    const { GET } = roomRoute;
+    const { GET } = theatreRoute;
     asUser(BOB);
     const asMember = await (
       await GET(new Request("http://test"), route("club"))
     ).json();
     expect(asMember.inviteCode).toBeUndefined();
-    // The embedded room object must not smuggle it through either.
-    expect(asMember.room.inviteCode).toBeUndefined();
+    // The embedded theatre object must not smuggle it through either.
+    expect(asMember.theatre.inviteCode).toBeUndefined();
     expect(JSON.stringify(asMember)).not.toContain("invite-a");
 
     asUser(ALICE);
@@ -467,18 +467,18 @@ describe("admin-only routes", () => {
     expect(asAdmin.inviteCode).toBe("invite-a");
   });
 
-  it("keeps the invite code out of the server-rendered room payload", async () => {
+  it("keeps the invite code out of the server-rendered theatre payload", async () => {
     asUser(BOB);
 
-    const result = await loadRoom(fixture.roomA.id);
+    const result = await loadTheatre(fixture.theatreA.id);
     expect(result.status).toBe("ok");
     if (result.status !== "ok") return;
     // This object is serialized into the RSC payload for every member.
-    expect(JSON.stringify(result.data.room)).not.toContain("invite-a");
+    expect(JSON.stringify(result.data.theatre)).not.toContain("invite-a");
   });
 
   it("does not leak the invite code through a rename", async () => {
-    const { PATCH } = roomRoute;
+    const { PATCH } = theatreRoute;
     asUser(ALICE);
 
     const body = await (
@@ -512,7 +512,7 @@ describe("invites", () => {
     ).toBe(404);
   });
 
-  it("adds the caller to the room behind the code", async () => {
+  it("adds the caller to the theatre behind the code", async () => {
     const { POST } = joinRoute;
     asUser(BOB);
 
@@ -525,7 +525,7 @@ describe("invites", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
-      path: `/rooms/${fixture.roomB.id}`,
+      path: `/theatres/${fixture.theatreB.id}`,
     });
   });
 
@@ -540,7 +540,7 @@ describe("invites", () => {
     expect((await request()).status).toBe(200);
     expect((await request()).status).toBe(200);
 
-    const members = await fixture.db.select().from(roomMembers);
+    const members = await fixture.db.select().from(theatreMembers);
     expect(members.filter((m) => m.userId === BOB)).toHaveLength(1);
   });
 
@@ -555,7 +555,7 @@ describe("invites", () => {
     expect(response.status).toBe(404);
   });
 
-  it("adds the caller to the room as an admin via the admin invite code", async () => {
+  it("adds the caller to the theatre as an admin via the admin invite code", async () => {
     const { POST } = joinRoute;
     asUser(BOB);
 
@@ -566,22 +566,22 @@ describe("invites", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
-      path: `/rooms/${fixture.roomB.id}`,
+      path: `/theatres/${fixture.theatreB.id}`,
     });
 
     const [membership] = await fixture.db
       .select()
-      .from(roomMembers)
+      .from(theatreMembers)
       .where(
         and(
-          eq(roomMembers.userId, BOB),
+          eq(theatreMembers.userId, BOB),
           eq(
-            roomMembers.roomId,
+            theatreMembers.theatreId,
             (
               await fixture.db
-                .select({ id: rooms.id })
-                .from(rooms)
-                .where(eq(rooms.id, fixture.roomB.id))
+                .select({ id: theatres.id })
+                .from(theatres)
+                .where(eq(theatres.id, fixture.theatreB.id))
             )[0].id,
           ),
         ),

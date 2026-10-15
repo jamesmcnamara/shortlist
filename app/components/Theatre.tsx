@@ -1,0 +1,318 @@
+"use client";
+
+import { compareHref } from "@/app/compare/metrics";
+import { MovieCard } from "@/app/components/MovieCard";
+import { MovieGrid } from "./MovieGrid";
+import { BulkMovieImport } from "@/app/components/BulkMovieImport";
+import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
+import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
+import { ShortlistHeader } from "@/app/components/ShortlistHeader";
+import { ViewControls } from "@/app/components/ViewControls";
+import { useAPIActions } from "@/app/lib/useAPIActions";
+import { useMovieDiscussionHistory } from "@/app/lib/useMovieDiscussionHistory";
+import { applyView, ViewContext, ViewState } from "@/app/lib/view";
+import type { Movie, Nomination } from "@/src/db/schema";
+import type { MovieImportResult } from "@/app/lib/bulk-movie-import";
+import classnames from "classnames";
+import { AnimatePresence, motion } from "motion/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { all, filter, find, get, map, some } from "shades";
+import { useTheatre } from "../theatres/[theatreId]/TheatreContext";
+import styles from "./Theatre.module.css";
+
+export interface TheatreAPI {
+  importTitle: (title: string) => Promise<MovieImportResult>;
+  refreshJustWatch: (movieId: number) => Promise<JustWatchAvailability>;
+  delete: (nominationId: number) => Promise<void>;
+  nominate: (candidate: Movie, comment: string) => Promise<void>;
+  updateNomRec: (nominationId: number, comment: string) => Promise<void>;
+  addNomCom: (nominationId: number, comment: string) => Promise<void>;
+  updateNomCom: (nomcomId: number, comment: string) => Promise<void>;
+  toggleWatched: (movieId: number) => Promise<void>;
+  toggleCompleted: (nominationId: number) => Promise<void>;
+}
+
+interface TheatreProps {
+  nominees: Nomination[];
+  viewState: ViewState;
+  setViewState: (next: ViewState) => void;
+  viewContext: ViewContext;
+  userId: string | undefined;
+  api: TheatreAPI;
+}
+
+export function Theatre({
+  userId,
+  api,
+  viewState,
+  setViewState,
+  viewContext,
+  nominees,
+}: TheatreProps) {
+  const { theatre, isAdmin } = useTheatre();
+  const { focusedId, closeDiscussion, openDiscussion } =
+    useMovieDiscussionHistory();
+  const [isWatchedOpen, setIsWatchedOpen] = useState(false);
+  // TMDB ids picked for comparison, or null when not picking.
+  const [comparing, setComparing] = useState<number[] | null>(null);
+  const router = useRouter();
+  const isComparing = comparing !== null;
+
+  useEffect(() => {
+    if (!isComparing) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setComparing(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isComparing]);
+
+  const togglePick = (tmdbId: number) =>
+    setComparing((current) =>
+      !current
+        ? [tmdbId]
+        : current.includes(tmdbId)
+          ? current.filter((id) => id !== tmdbId)
+          : [...current, tmdbId],
+    );
+
+  const cardProps = (nom: Nomination) => {
+    const { tmdbId } = nom.movie;
+    return {
+      isSelected: comparing
+        ? tmdbId !== null && comparing.includes(tmdbId)
+        : undefined,
+      onClick: () => {
+        if (!comparing) openDiscussion(nom.id);
+        else if (tmdbId !== null) togglePick(tmdbId);
+      },
+      onLongPress: () => {
+        if (tmdbId !== null) togglePick(tmdbId);
+      },
+    };
+  };
+
+  const focused = focusedId
+    ? (find({ id: focusedId })(nominees) ?? null)
+    : null;
+
+  const { actions, message, isSubmitting } = useAPIActions({
+    nominate: {
+      api: api.nominate,
+      action: "submit your nomination",
+    },
+    delete: {
+      api: api.delete,
+      onSuccess: closeDiscussion,
+      action: "rescind your nomination",
+    },
+    toggleWatched: {
+      api: api.toggleWatched,
+      action: "update your watched status",
+    },
+    updateNomRec: {
+      api: api.updateNomRec,
+      action: "update your recommendation",
+    },
+    addNomCom: {
+      api: api.addNomCom,
+      action: "add your comment",
+    },
+    updateNomCom: {
+      api: api.updateNomCom,
+      action: "update your comment",
+    },
+    toggleCompleted: {
+      api: api.toggleCompleted,
+      action: "update the completed status",
+    },
+  });
+
+  const visible = useMemo(
+    () =>
+      applyView(
+        nominees.filter((nom) => !nom.completed),
+        viewState,
+        viewContext,
+      ),
+    [nominees, viewState, viewContext],
+  );
+
+  const visibleIds = filter(Boolean)(
+    get(all(), "movie", "tmdbId")(visible),
+  ) as number[];
+
+  const watched = useMemo(
+    () => nominees.filter((nom) => nom.completed),
+    [nominees],
+  );
+
+  const existing = useMemo(
+    () =>
+      new Set(
+        nominees.map((nom) => nom.movie.tmdbId).filter(Boolean) as number[],
+      ),
+    [nominees],
+  );
+
+  const showMeta = new Set(map("userId")(nominees)).size > 2;
+
+  return (
+    <main
+      className={classnames(styles.shell, {
+        [styles.shellComparing]: isComparing,
+      })}
+    >
+      <ShortlistHeader />
+
+      <section
+        className={styles.nominations}
+        aria-labelledby="nominations-title"
+      >
+        <h1 id="nominations-title" className={styles.sectionHeader}>
+          {theatre.name}
+        </h1>
+
+        <ViewControls
+          key={theatre.id}
+          state={viewState}
+          onChange={setViewState}
+          existing={existing}
+          isSubmitting={isSubmitting}
+          onNominate={actions.nominate}
+        />
+
+        {message && (
+          <div className={styles.message} role="status">
+            {message}
+          </div>
+        )}
+        {visible.length === 0 && (
+          <p className={styles.message} role="status">
+            {nominees.length === 0
+              ? "Nothing here yet. Add the first movie."
+              : "No movies match these filters."}
+          </p>
+        )}
+        <MovieGrid nominees={visible}>
+          {(nom, index) => (
+            <MovieCard
+              rank={index + 1}
+              nomination={nom}
+              hasSeen={some({ id: userId })(nom.seenBy)}
+              isExpanded={focused === nom}
+              showMeta={showMeta}
+              {...cardProps(nom)}
+            />
+          )}
+        </MovieGrid>
+      </section>
+
+      {watched.length > 0 && (
+        <section className={styles.nominations} aria-labelledby="watched-title">
+          <button
+            type="button"
+            className={styles.watchedToggle}
+            id="watched-title"
+            aria-expanded={isWatchedOpen}
+            onClick={() => setIsWatchedOpen((open) => !open)}
+          >
+            {isWatchedOpen ? "▾" : "▸"} Watched
+          </button>
+
+          {isWatchedOpen && (
+            <MovieGrid nominees={watched}>
+              {(nom, index) => (
+                <MovieCard
+                  rank={index + 1}
+                  nomination={nom}
+                  hasSeen={some({ id: userId })(nom.seenBy)}
+                  showMeta={true}
+                  isExpanded={focused === nom}
+                  isCompleted
+                  {...cardProps(nom)}
+                />
+              )}
+            </MovieGrid>
+          )}
+        </section>
+      )}
+
+      <div className={styles.bulkImport}>
+        <BulkMovieImport
+          key={theatre.id}
+          onImport={api.importTitle}
+          isDisabled={isSubmitting}
+        />
+      </div>
+
+      <AnimatePresence>
+        {comparing && (
+          <motion.div
+            className={styles.compareBar}
+            role="region"
+            aria-label="Compare movies"
+            initial={{ y: "120%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "120%" }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <span aria-live="polite">{comparing.length} picked</span>
+            <button
+              type="button"
+              className={styles.compareAll}
+              onClick={() => setComparing(visibleIds)}
+            >
+              Select All
+            </button>
+            <button
+              type="button"
+              className={styles.compareCancel}
+              onClick={() => setComparing(null)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={styles.compareGo}
+              disabled={comparing.length < 2}
+              onClick={() => router.push(compareHref(comparing))}
+            >
+              Compare
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {focused && (
+          <MovieDiscussion
+            key={focused.id}
+            nomination={focused}
+            hasSeen={some({ id: userId })(focused.seenBy)}
+            currentUserId={userId ?? null}
+            onUpdateComment={(comment) =>
+              actions.updateNomRec(focused.id, comment)
+            }
+            onAddNomCom={(comment) => actions.addNomCom(focused.id, comment)}
+            onUpdateNomCom={actions.updateNomCom}
+            onMarkWatched={() => actions.toggleWatched(focused.movieId)}
+            onRefreshJustWatch={() => api.refreshJustWatch(focused.movieId)}
+            onDelete={isAdmin ? () => actions.delete(focused.id) : undefined}
+            onToggleCompleted={when(isAdmin)(() => {
+              actions.toggleCompleted(focused.id);
+              closeDiscussion();
+            })}
+            onClose={closeDiscussion}
+          />
+        )}
+      </AnimatePresence>
+    </main>
+  );
+}
+
+const when =
+  (condition: boolean) =>
+  <T extends any>(arg: T) =>
+    condition ? arg : undefined;

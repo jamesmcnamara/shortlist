@@ -37,7 +37,7 @@ const availability = (offers: StreamingOffer[]): JustWatchAvailability => ({
 });
 const nomination: Nomination = {
   id: 1,
-  roomId: "room",
+  theatreId: "theatre",
   userId: "user",
   movieId: 1,
   comment: null,

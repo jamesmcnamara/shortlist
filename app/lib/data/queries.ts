@@ -15,35 +15,35 @@ function useQuery<T>(key: string, fetcher: () => Promise<T>) {
   };
 }
 
-export function useRooms() {
-  return useQuery("/api/rooms?previews=true", api.rooms.listWithPosters);
+export function useTheatres() {
+  return useQuery("/api/theatres?previews=true", api.theatres.listWithPosters);
 }
 
-export function useRoomsForMovie(movieId: number) {
-  return useQuery(`/api/rooms?movieId=${movieId}`, () =>
-    api.rooms.listForMovie(movieId),
+export function useTheatresForMovie(movieId: number) {
+  return useQuery(`/api/theatres?movieId=${movieId}`, () =>
+    api.theatres.listForMovie(movieId),
   );
 }
 
-interface RoomReference {
+interface TheatreReference {
   id: string;
 }
 
-export function useRoomDetail(room: RoomReference) {
+export function useTheatreDetail(theatre: TheatreReference) {
   return useQuery(
-    `/api/rooms/${encodeURIComponent(room.id)}`,
-    () => api.room(room.id).get(),
+    `/api/theatres/${encodeURIComponent(theatre.id)}`,
+    () => api.theatre(theatre.id).get(),
   );
 }
 
-export function useNominations(room: RoomReference) {
+export function useNominations(theatre: TheatreReference) {
   return useQuery(
-    `/api/rooms/${encodeURIComponent(room.id)}/nominations`,
-    () => api.room(room.id).nominations.list(),
+    `/api/theatres/${encodeURIComponent(theatre.id)}/nominations`,
+    () => api.theatre(theatre.id).nominations.list(),
   );
 }
 
-export function useNotificationSettings(roomId: string) {
-  return useQuery(`/api/rooms/${encodeURIComponent(roomId)}/notifications`,
-    () => api.room(roomId).notifications.get());
+export function useNotificationSettings(theatreId: string) {
+  return useQuery(`/api/theatres/${encodeURIComponent(theatreId)}/notifications`,
+    () => api.theatre(theatreId).notifications.get());
 }

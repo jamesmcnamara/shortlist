@@ -3,7 +3,7 @@ import { getDb } from "@/src/db/client";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import {
   nominations,
-  roomMembers,
+  theatreMembers,
   seen,
   type Nomination,
   type User,
@@ -18,12 +18,12 @@ const nominationRelations = {
 } as const;
 
 /**
- * Seen is a user-level fact, so it is joined against the room's membership
- * here: a nomination only reports the people in *this* room who have seen it,
- * never someone's viewing history from a room you do not share.
+ * Seen is a user-level fact, so it is joined against the theatre's membership
+ * here: a nomination only reports the people in *this* theatre who have seen it,
+ * never someone's viewing history from a theatre you do not share.
  */
-async function seenByRoomMembers(
-  roomId: string,
+async function seenByTheatreMembers(
+  theatreId: string,
   movieIds: number[],
 ): Promise<Map<number, User[]>> {
   const byMovie = new Map<number, User[]>();
@@ -39,8 +39,8 @@ async function seenByRoomMembers(
     .from(seen)
     .innerJoin(authUsers, eq(authUsers.id, seen.userId))
     .innerJoin(
-      roomMembers,
-      and(eq(roomMembers.userId, seen.userId), eq(roomMembers.roomId, roomId)),
+      theatreMembers,
+      and(eq(theatreMembers.userId, seen.userId), eq(theatreMembers.theatreId, theatreId)),
     )
     .where(inArray(seen.movieId, movieIds));
 
@@ -53,11 +53,11 @@ async function seenByRoomMembers(
 }
 
 const withSeenBy = async <T extends { movieId: number }>(
-  roomId: string,
+  theatreId: string,
   rows: T[],
 ): Promise<(T & { seenBy: User[] })[]> => {
-  const byMovie = await seenByRoomMembers(
-    roomId,
+  const byMovie = await seenByTheatreMembers(
+    theatreId,
     rows.map((row) => row.movieId),
   );
   return rows.map((row) => ({
@@ -67,50 +67,50 @@ const withSeenBy = async <T extends { movieId: number }>(
 };
 
 /**
- * Every read is scoped by room. Passing the room id explicitly, rather than
+ * Every read is scoped by theatre. Passing the theatre id explicitly, rather than
  * inferring it from the nomination, means a caller cannot accidentally return
- * another room's content by id.
+ * another theatre's content by id.
  */
-export async function listNominations(roomId: string): Promise<Nomination[]> {
+export async function listNominations(theatreId: string): Promise<Nomination[]> {
   const rows = (await getDb().query.nominations.findMany({
-    where: (n, { eq }) => eq(n.roomId, roomId),
+    where: (n, { eq }) => eq(n.theatreId, theatreId),
     with: nominationRelations,
     orderBy: (n, { desc }) => desc(n.createdAt),
   })) as Omit<Nomination, "seenBy">[];
 
-  return withSeenBy(roomId, rows);
+  return withSeenBy(theatreId, rows);
 }
 
-export async function listNominationsByRoomId(
-  roomId: string,
+export async function listNominationsByTheatreId(
+  theatreId: string,
 ): Promise<Nomination[]> {
-  return listNominations(roomId);
+  return listNominations(theatreId);
 }
 
 export async function getNomination(
-  roomId: string,
+  theatreId: string,
   nominationId: number,
 ): Promise<Nomination | undefined> {
   const row = (await getDb().query.nominations.findFirst({
     where: (n, { and, eq }) =>
-      and(eq(n.id, nominationId), eq(n.roomId, roomId)),
+      and(eq(n.id, nominationId), eq(n.theatreId, theatreId)),
     with: nominationRelations,
   })) as Omit<Nomination, "seenBy"> | undefined;
 
   if (!row) return undefined;
-  return (await withSeenBy(roomId, [row]))[0];
+  return (await withSeenBy(theatreId, [row]))[0];
 }
 
-/** Bare existence check that respects room scoping. */
-export async function nominationExistsInRoom(
-  roomId: string,
+/** Bare existence check that respects theatre scoping. */
+export async function nominationExistsInTheatre(
+  theatreId: string,
   nominationId: number,
 ) {
   const [row] = await getDb()
     .select({ id: nominations.id, userId: nominations.userId })
     .from(nominations)
     .where(
-      and(eq(nominations.id, nominationId), eq(nominations.roomId, roomId)),
+      and(eq(nominations.id, nominationId), eq(nominations.theatreId, theatreId)),
     )
     .limit(1);
   return row ?? null;

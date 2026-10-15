@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { api, ApiError, type RoomSummaryWithMovie } from "@/app/lib/api";
+import { api, ApiError, type TheatreSummaryWithMovie } from "@/app/lib/api";
 import { withTargetValue } from "@/app/lib/utils";
 import styles from "./AddToLists.module.css";
 
 interface NewListFormProps {
-  onCreated: (room: RoomSummaryWithMovie) => void;
+  onCreated: (theatre: TheatreSummaryWithMovie) => void;
 }
 
 /** Inline watch list creation, so a missing list never interrupts adding a movie. */
@@ -22,8 +22,8 @@ export function NewListForm({ onCreated }: NewListFormProps) {
     setError("");
     setIsSubmitting(true);
     try {
-      const room = await api.rooms.create({ name: trimmed });
-      onCreated({ ...room, role: "admin", hasMovie: false });
+      const theatre = await api.theatres.create({ name: trimmed });
+      onCreated({ ...theatre, role: "admin", hasMovie: false });
       setName("");
       setIsOpen(false);
     } catch (error) {

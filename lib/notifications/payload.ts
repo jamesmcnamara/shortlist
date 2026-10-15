@@ -1,19 +1,25 @@
 import { z } from "zod";
-import { isUuid } from "@/lib/room-path";
+import { isUuid } from "@/lib/theatre-path";
 
-const ROOM_PREFIX = "/rooms/";
+const THEATRE_PREFIX = "/theatres/";
+const LEGACY_THEATRE_PREFIX = "/rooms/";
 
-/** Only a room link may be opened from a notification. */
-export const roomUrl = z
+/** Accept old room URLs for notifications created before the rename. */
+export const theatreUrl = z
   .string()
-  .refine(
-    (path) => path.startsWith(ROOM_PREFIX) && isUuid(path.slice(ROOM_PREFIX.length)),
-  );
+  .refine((path) => {
+    const prefix = path.startsWith(THEATRE_PREFIX)
+      ? THEATRE_PREFIX
+      : path.startsWith(LEGACY_THEATRE_PREFIX)
+        ? LEGACY_THEATRE_PREFIX
+        : null;
+    return prefix !== null && isUuid(path.slice(prefix.length));
+  });
 
 export const notificationPayload = z.object({
   title: z.string(),
   body: z.string(),
-  url: roomUrl,
+  url: theatreUrl,
   tag: z.string().optional(),
 });
 

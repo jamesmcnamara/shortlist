@@ -33,7 +33,7 @@ beforeEach(async () => {
 });
 
 describe("push notifications", () => {
-  const path = "/rooms/44444444-4444-4444-4444-444444444444";
+  const path = "/theatres/44444444-4444-4444-4444-444444444444";
   function listener(name: string) {
     const handler = addEventListener.mock.calls.find(([event]) => event === name)?.[1];
     if (!handler) throw new Error(`Missing ${name} listener`);
@@ -87,7 +87,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("service worker cache ownership", () => {
   it.each([
-    ["/api/rooms", {}],
+    ["/api/theatres", {}],
     ["/api/auth/get-session", {}],
     ["/alice/watchlist?_rsc=123", { headers: { RSC: "1" } }],
     ["/_next/data/build/alice/watchlist.json", {}],
