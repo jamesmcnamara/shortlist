@@ -14,6 +14,9 @@ export default function nextConfig(phase: string): NextConfig {
 
   return withSerwist({
     turbopack: {},
+    experimental: {
+      turbopackFileSystemCacheForDev: false,
+    },
     allowedDevOrigins: ["p0wd43vp2t.local"],
     async redirects() {
       return [

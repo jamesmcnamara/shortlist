@@ -15,3 +15,12 @@ This repository uses the Knowledge Base at [https://github.com/jamesmcnamara/sho
 
 Generated knowledge tracks the code. When the knowledge and code disagree, trust the code.
 <!-- github-knowledge-base-end -->
+
+## Development login
+
+Local browser testing uses the normal sign-in page and the test credentials in
+git-ignored `.dev-user.json`. Never print, commit, or copy those credentials into
+documentation or memory. If the file or account is missing, run `npm run dev:seed`.
+Do not run `dev:sync` just to log in: it replaces the dev database with production
+data. The test user is an admin of shared dev theatres and has its own Watchlist;
+other users' personal Watchlists remain private.

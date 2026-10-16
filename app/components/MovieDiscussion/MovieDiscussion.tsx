@@ -55,28 +55,50 @@ export function MovieDiscussion({
         aria-label={`Discussion about ${details.title}`}
       >
         <div className={styles.expandedHeader}>
-          <div className={styles.discussionHeading}>
-            <div className={styles.discussionTitleRow}>
+          <div className={styles.discussionTitleRow}>
+            {details.posterUrl ? (
+              <img src={details.posterUrl} alt="" className={styles.poster} />
+            ) : (
+              <div className={styles.poster} aria-hidden="true" />
+            )}
+            <div className={styles.discussionHeading}>
               <h2>{details.title}</h2>
-              <button
-                className={styles.closeDiscussion}
-                type="button"
-                onClick={onClose}
-                aria-label="Close discussion"
-              >
-                ✕
-              </button>
+              <span className={styles.discussionMeta}>
+                Nominated by {nominator.name}
+              </span>
             </div>
-            <span className={styles.discussionMeta}>
-              Nominated by {nominator.name}
-            </span>
-            {details.overview && (
-              <p className={styles.recommendation}>{details.overview}</p>
+            <button
+              className={styles.closeDiscussion}
+              type="button"
+              onClick={onClose}
+              aria-label="Close discussion"
+            >
+              ✕
+            </button>
+          </div>
+          {details.overview && (
+            <p className={styles.recommendation}>{details.overview}</p>
+          )}
+          <div className={styles.runtimeRow}>
+            <p className={styles.runtime}>
+              {details.year ?? "Unknown"} • {toHrs(details.runtime)}
+            </p>
+            {onToggleCompleted && (
+              <button
+                className={`${styles.completeToggle} ${nomination.completed ? styles.completeToggleActive : ""}`}
+                type="button"
+                onClick={onToggleCompleted}
+                aria-pressed={nomination.completed}
+                aria-label={
+                  nomination.completed
+                    ? `Move ${details.title} out of Watched`
+                    : `Mark ${details.title} as Watched`
+                }
+              >
+                {nomination.completed ? "Completed ✓" : "Watched"}
+              </button>
             )}
           </div>
-          <p className={styles.runtime}>
-            {details.year ?? "Unknown"} • {toHrs(details.runtime)}
-          </p>
           <MovieRatings services={ratings.services} />
           <MovieStreaming
             availability={details.justWatch}
@@ -136,23 +158,6 @@ export function MovieDiscussion({
           onAddComment={onAddNomCom}
           onUpdateComment={onUpdateNomCom}
         />
-        {onToggleCompleted && (
-          <div className={styles.adminActions}>
-            <button
-              className={`${styles.completeToggle} ${nomination.completed ? styles.completeToggleActive : ""}`}
-              type="button"
-              onClick={onToggleCompleted}
-              aria-pressed={nomination.completed}
-              aria-label={
-                nomination.completed
-                  ? `Move ${details.title} out of Watched`
-                  : `Mark ${details.title} as Watched`
-              }
-            >
-              {nomination.completed ? "Completed ✓" : "Watched"}
-            </button>
-          </div>
-        )}
       </section>
     </motion.div>
   );

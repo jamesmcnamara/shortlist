@@ -8,7 +8,6 @@ import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussio
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import { ViewControls } from "@/app/components/ViewControls";
 import type { MovieImportResult } from "@/app/lib/bulk-movie-import";
-import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
 import { useAPIActions } from "@/app/lib/useAPIActions";
 import { useMovieDiscussionHistory } from "@/app/lib/useMovieDiscussionHistory";
 import { applyView, ViewContext, ViewState } from "@/app/lib/view";
@@ -24,7 +23,7 @@ import styles from "./Theatre.module.css";
 
 interface TheatreProps {
   name: string;
-  header: AppMenuProps;
+  header?: AppMenuProps;
   isAdmin?: boolean;
   nominees: Nomination[];
   viewState: ViewState;

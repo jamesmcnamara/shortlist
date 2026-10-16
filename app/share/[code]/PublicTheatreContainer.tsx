@@ -7,7 +7,13 @@ import { useDataSession } from "@/app/lib/data/DataProvider";
 import { usePublicTheatre } from "@/app/lib/data/queries";
 import { useUrlViewState } from "@/app/lib/view/useUrlViewState";
 
-export function PublicTheatreContainer({ shareCode }: { shareCode: string }) {
+interface PublicTheatreContainerProps {
+  shareCode: string;
+}
+
+export function PublicTheatreContainer({
+  shareCode,
+}: PublicTheatreContainerProps) {
   const { data, error, retry } = usePublicTheatre(shareCode);
   const { userId } = useDataSession();
   const viewContext = useMemo(() => ({ userId }), [userId]);
@@ -23,7 +29,6 @@ export function PublicTheatreContainer({ shareCode }: { shareCode: string }) {
       {data && (
         <Theatre
           name={data.theatre.name}
-          header={{}}
           userId={userId}
           viewState={viewState}
           viewContext={viewContext}

@@ -7,6 +7,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MovieCard } from "@/app/components/MovieCard";
@@ -338,6 +339,116 @@ describe("high-churn component smoke tests", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /Add movie/ }));
     expect(onSubmit).toHaveBeenCalledWith("So good");
+  });
+
+  it.each([nomination.movie.details.posterUrl, null])(
+    "renders the discussion title beside the poster or placeholder (%s)",
+    (posterUrl) => {
+      const title = "A Very Long Movie Title That Needs Room to Wrap";
+      render(
+        <MovieDiscussion
+          nomination={{
+            ...nomination,
+            movie: {
+              ...nomination.movie,
+              details: { ...nomination.movie.details, title, posterUrl },
+            },
+          }}
+          hasSeen={false}
+          currentUserId="user"
+          onClose={vi.fn()}
+        />,
+      );
+
+      const heading = screen.getByRole("heading", { name: title });
+      const poster = heading.parentElement?.previousElementSibling;
+      expect(poster).toBeTruthy();
+      if (posterUrl) {
+        expect(poster?.getAttribute("src")).toBe(posterUrl);
+        expect(poster?.getAttribute("alt")).toBe("");
+      } else {
+        expect(poster?.tagName).toBe("DIV");
+        expect(poster?.getAttribute("aria-hidden")).toBe("true");
+      }
+      expect(screen.getByText("Nominated by Alice").parentElement).toBe(
+        heading.parentElement,
+      );
+      expect(screen.getByText("A description").parentElement).not.toBe(
+        heading.parentElement,
+      );
+    },
+  );
+
+  it.each([false, true])(
+    "keeps the admin completion toggle beside runtime when completed=%s",
+    (completed) => {
+      const onToggleCompleted = vi.fn();
+      const onMarkWatched = vi.fn();
+      const onDelete = vi.fn();
+      const onClose = vi.fn();
+      render(
+        <MovieDiscussion
+          nomination={{
+            ...nomination,
+            completed,
+            movie: {
+              ...nomination.movie,
+              details: { ...nomination.movie.details, runtime: 123 },
+            },
+          }}
+          hasSeen={false}
+          currentUserId="user"
+          onToggleCompleted={onToggleCompleted}
+          onMarkWatched={onMarkWatched}
+          onDelete={onDelete}
+          onClose={onClose}
+        />,
+      );
+
+      const runtimeRow = screen.getByText("2025 • 2h 3m").parentElement!;
+      const toggle = within(runtimeRow).getByRole("button", {
+        name: completed
+          ? "Move A Movie out of Watched"
+          : "Mark A Movie as Watched",
+      });
+      expect(toggle.textContent).toBe(completed ? "Completed ✓" : "Watched");
+      expect(toggle.getAttribute("aria-pressed")).toBe(String(completed));
+      fireEvent.click(toggle);
+      expect(onToggleCompleted).toHaveBeenCalledTimes(1);
+      expect(onMarkWatched).not.toHaveBeenCalled();
+
+      if (!completed) {
+        const seen = screen.getByRole("button", { name: "Mark A Movie as seen" });
+        expect(runtimeRow.contains(seen)).toBe(false);
+        fireEvent.click(seen);
+        expect(onMarkWatched).toHaveBeenCalledTimes(1);
+        fireEvent.click(
+          screen.getByRole("button", {
+            name: "Delete A Movie from the watchlist",
+          }),
+        );
+        expect(onDelete).toHaveBeenCalledTimes(1);
+      } else {
+        expect(screen.queryByRole("button", { name: /as seen/ })).toBeNull();
+        expect(screen.queryByRole("button", { name: /Delete A Movie/ })).toBeNull();
+      }
+      fireEvent.click(screen.getByRole("button", { name: "Close discussion" }));
+      expect(onClose).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it("omits the admin completion toggle without its callback", () => {
+    render(
+      <MovieDiscussion
+        nomination={nomination}
+        hasSeen={false}
+        currentUserId="user"
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /as Watched/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /out of Watched/ })).toBeNull();
   });
 
   it("lets the current user edit their nomination comment", async () => {

@@ -122,8 +122,41 @@ as the only cache for private data.
 4. Start the app: `npm run dev`
 5. Open <http://localhost:3030>.
 
+Dev mode turns off the service worker so the browser never serves stale code.
+That means push notifications only work in a production build
+(`npm run build && npm start`). If you still see stale code, run `npm run dev:clean`.
+
 Useful checks are `npm test`, `npm run typecheck` and `npm run build`. To create a
 new Drizzle migration after changing `src/db/schema.ts`, run `npm run db:generate`.
+
+### Refreshing dev and the browser test account
+
+Run `npm run dev:sync` to **replace the dev Neon branch's schema and data with
+the latest production state**, apply local migrations, and recreate the browser
+test account. Dev-only data and schema changes are discarded; production is not
+modified. Restart any running dev server afterward and sign in again.
+
+This helper requires Node.js 24 or newer. The command is pinned to this project's
+existing `dev` and `production` branch IDs. Before any writes, it verifies their
+relationship and that `.env.local`'s
+`DATABASE_URL` matches dev, including credentials. It refuses to run on Vercel
+or with `NODE_ENV=production`. Run `npm run neon:dev` first if your local
+environment is targeting another branch. The Neon CLI must be authenticated.
+Use `npm run dev:sync -- --dry-run` to check the target without changing anything.
+
+The first run generates a unique password in git-ignored `.dev-user.json`
+(readable only by your local user). Later runs reuse that file. The account uses
+normal Better Auth sign-in, owns a Watchlist, and is an admin of copied **shared**
+theatres so browser testing can exercise admin controls. It does not join other
+users' personal Watchlists. There is no production login bypass or special
+sign-in logic; the account is created only in dev.
+
+After refreshing dev through the Neon UI, use `npm run dev:seed` to reapply
+migrations and restore the account without resetting the branch. This is also
+safe to rerun: it preserves the existing user and Watchlist. If an existing
+account's password doesn't match the local file, the command fails rather than
+overwriting its credentials. Keep `.dev-user.json` out of commits, logs, and
+agent memories; agents can discover its location through `AGENTS.md`.
 
 ## CSS
 

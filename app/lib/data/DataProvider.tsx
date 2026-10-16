@@ -13,6 +13,7 @@ import { SWRConfig, useSWRConfig } from "swr";
 import { authClient } from "@/lib/auth/client";
 import { ApiError, subscribeToMutations } from "../api";
 import { createCacheProvider } from "./cache-provider";
+import { useDevServiceWorkerReset } from "../useDevServiceWorkerReset";
 
 interface DataSession {
   userId?: string;
@@ -35,6 +36,7 @@ export const isAccessError = (error: unknown): error is ApiError =>
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const { data: session, isPending, error, refetch } = authClient.useSession();
   const [cacheReady, setCacheReady] = useState(false);
+  useDevServiceWorkerReset();
 
   // Wait for hydration before enabling queries that can read localStorage.
   // prevents accessing localStorage on the server

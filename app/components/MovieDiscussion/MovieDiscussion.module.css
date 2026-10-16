@@ -27,17 +27,32 @@
 }
 
 .discussionHeading {
+  flex: 1;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .discussionTitleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
   padding-right: 2.75rem;
+}
+
+.poster {
+  flex: none;
+  width: 4rem;
+  height: 6rem;
+  border-radius: 0.25rem;
+  object-fit: cover;
+  background: var(--surface-muted);
 }
 
 .discussionHeading h2 {
   min-width: 0;
   margin: 0.3125rem 0 0.25rem;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
   font-size: 1.725rem;
   letter-spacing: -0.07em;
 }
@@ -118,15 +133,18 @@
   opacity: 0.45;
 }
 
-.adminActions {
+.runtimeRow {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 0.5rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .completeToggle {
+  flex: none;
+  margin-left: auto;
   padding: 0.5rem 0.875rem;
   border: 1px solid var(--border-strong);
   border-radius: 0.5rem;
