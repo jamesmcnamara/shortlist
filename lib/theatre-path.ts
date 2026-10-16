@@ -5,7 +5,5 @@ export const isUuid = (value: string): boolean =>
 
 export const theatrePath = ({ id }: { id: string }): string => `/theatres/${id}`;
 
-export const isShareCode = (value: string): boolean =>
-  /^[0-9a-f]{32}$/.test(value);
-
-export const sharePath = (shareCode: string): string => `/share/${shareCode}`;
+export const joinPath = (inviteCode: string): string =>
+  `/join/${encodeURIComponent(inviteCode)}`;

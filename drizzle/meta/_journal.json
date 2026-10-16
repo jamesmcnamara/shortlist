@@ -169,6 +169,13 @@
       "when": 1792101398446,
       "tag": "0023_theatre_share_code",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792192634262,
+      "tag": "0024_sticky_stardust",
+      "breakpoints": true
     }
   ]
 }

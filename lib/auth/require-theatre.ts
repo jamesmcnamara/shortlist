@@ -1,5 +1,5 @@
-import { and, eq } from "drizzle-orm";
-import { isShareCode, isUuid, theatrePath } from "@/lib/theatre-path";
+import { and, eq, or } from "drizzle-orm";
+import { isUuid, theatrePath } from "@/lib/theatre-path";
 import { getDb } from "@/src/db/client";
 import {
   theatreMembers,
@@ -11,12 +11,12 @@ import { requireUserId, unauthorized } from "./require-user";
 
 /**
  * The invite code is a capability, so it is never part of the theatre object that
- * gets handed to members or serialized into a page. Admin routes read it
- * explicitly via `findInviteCode`.
+ * gets handed to members or serialized into a page. Routes read codes
+ * explicitly after checking membership or admin access.
  */
 export type SafeTheatre = Omit<
   Theatre,
-  "inviteCode" | "adminInviteCode" | "shareCode"
+  "inviteCode" | "adminInviteCode"
 > & {
   path: string;
 };
@@ -66,28 +66,23 @@ export async function findTheatreById(
   return theatre ? { ...theatre, path: theatrePath(theatre) } : null;
 }
 
-export async function findTheatreByShareCode(
-  shareCode: string,
-): Promise<SafeTheatre | null> {
-  const [theatre] = await getDb()
-    .select(THEATRE_COLUMNS)
+export async function findTheatreByInviteCode(
+  code: string,
+): Promise<{ theatre: SafeTheatre; role: TheatreRole } | null> {
+  const [row] = await getDb()
+    .select({ ...THEATRE_COLUMNS, adminInviteCode: theatres.adminInviteCode })
     .from(theatres)
-    .where(eq(theatres.shareCode, shareCode))
+    .where(or(eq(theatres.inviteCode, code), eq(theatres.adminInviteCode, code)))
     .limit(1);
-  return theatre ? { ...theatre, path: theatrePath(theatre) } : null;
+  if (!row) return null;
+  const { adminInviteCode, ...theatre } = row;
+  return {
+    theatre: { ...theatre, path: theatrePath(theatre) },
+    role: adminInviteCode === code ? "admin" : "member",
+  };
 }
 
 /** Read separately, and only where membership has been established. */
-export async function findShareCode(theatreId: string): Promise<string | null> {
-  const [row] = await getDb()
-    .select({ shareCode: theatres.shareCode })
-    .from(theatres)
-    .where(eq(theatres.id, theatreId))
-    .limit(1);
-  return row?.shareCode ?? null;
-}
-
-/** Read separately, and only where an admin has been established. */
 export async function findInviteCode(
   theatreId: string,
 ): Promise<string | null> {
@@ -152,7 +147,7 @@ export interface PublicTheatreContext {
 }
 
 /**
- * Resolves the theatre from a share code, with no sign-in required. Handlers
+ * Resolves the theatre from an invite code, with no sign-in required. Handlers
  * behind this must only ever read.
  */
 export function withPublicTheatre(config: WithTheatreConfig) {
@@ -166,10 +161,10 @@ export function withPublicTheatre(config: WithTheatreConfig) {
       catchErrors(config, async () => {
         const params = await routeContext.params;
         const code = params.code;
-        if (!code || !isShareCode(code)) return notFound();
-        const theatre = await findTheatreByShareCode(code);
-        if (!theatre) return notFound();
-        return handler(request, { theatre, params });
+        if (!code) return notFound();
+        const resolved = await findTheatreByInviteCode(code);
+        if (!resolved) return notFound();
+        return handler(request, { theatre: resolved.theatre, params });
       });
 }
 

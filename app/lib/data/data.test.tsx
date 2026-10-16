@@ -14,7 +14,7 @@ import { SWRConfig } from "swr";
 import { api, ApiError } from "../api";
 import { DataProvider } from "./DataProvider";
 import { DataBoundary } from "./DataBoundary";
-import { useNominations, useTheatres, useTheatreDetail } from "./queries";
+import { useNominations, usePublicTheatre, useTheatres, useTheatreDetail } from "./queries";
 import { TheatreProvider, useTheatre } from "@/app/theatres/[theatreId]/TheatreContext";
 
 const auth = vi.hoisted(() => ({
@@ -89,6 +89,20 @@ afterEach(() => {
 });
 
 describe("shared data cache", () => {
+  it("loads public theatre previews through the invite GET without a session", async () => {
+    auth.data = null;
+    fetchMock.mockResolvedValue(json({ theatre: { name: "Club" }, nominations: [] }));
+    const { result } = renderHook(() => usePublicTheatre("member-link"), {
+      wrapper: Wrapper,
+    });
+    await waitFor(() => expect(result.current.data?.theatre.name).toBe("Club"));
+    expect(fetchMock).toHaveBeenCalledWith("/api/join/member-link", {
+      cache: "no-store",
+      headers: undefined,
+    });
+    expect(localStorage.length).toBe(0);
+  });
+
   it("shows a revisited theatre before its pending refresh finishes", async () => {
     const refreshed = deferred<Response>();
     fetchMock

@@ -52,7 +52,7 @@ export function TheatreContainer() {
       key={theatre.id}
       name={theatre.name}
       header={{
-        theatre: { id: theatre.id, shareCode: detail.shareCode },
+        theatre: { id: theatre.id, inviteCode: detail.inviteCode },
         showMyTheatres: theatres.length > 1,
       }}
       isAdmin={isAdmin}

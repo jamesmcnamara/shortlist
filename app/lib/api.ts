@@ -106,12 +106,11 @@ export interface TheatreDetail {
   theatre: SafeTheatre;
   inviteCode?: string;
   adminInviteCode?: string;
-  shareCode: string;
   membership: { userId: string; role: TheatreRole };
   members: TheatreMemberSummary[];
 }
 
-/** What anyone with a share link can see: read-only, and no member details. */
+/** What anyone with an invite link can see: read-only, and no member details. */
 export interface PublicTheatre {
   theatre: { name: string };
   nominations: Nomination[];
@@ -265,10 +264,8 @@ export const api = {
       },
     };
   },
-  share: (shareCode: string) => ({
-    get: (): Promise<PublicTheatre> =>
-      request(`/api/share/${encodeURIComponent(shareCode)}`),
-  }),
+  publicTheatre: (code: string): Promise<PublicTheatre> =>
+    request(`/api/join/${encodeURIComponent(code)}`),
   tmdb: {
     search: (query: string, signal?: AbortSignal): Promise<Movie[]> =>
       request<{ results: Movie[] }>(

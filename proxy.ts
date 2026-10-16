@@ -14,10 +14,9 @@ export default function proxy(request: NextRequest) {
 
 // Only page routes are matched. API routes enforce auth themselves via
 // requireUserId() so they return 401 JSON instead of an HTML redirect.
-// /join/[code] is excluded: it's a client component that calls the join API
-// itself and redirects to sign-up with a `next` back to the invite link on
-// 401, which the middleware would short-circuit before that logic runs.
-// /share and /compare are public on purpose and must stay out of the matcher.
+// /join/[code] is public: signed-out visitors preview the theatre, while
+// signed-in visitors join through the authenticated API.
+// /compare is public too and must stay out of the matcher.
 export const config = {
   matcher: ["/", "/r/:path*", "/rooms/:path*", "/theatres/:path*"],
 };

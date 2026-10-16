@@ -76,7 +76,7 @@ describe("watchlist menu link", () => {
 });
 
 describe("share menu item", () => {
-  const code = "a".repeat(32);
+  const code = "member-link";
   const writeText = vi.fn();
   Object.assign(navigator, { clipboard: { writeText } });
 
@@ -86,18 +86,18 @@ describe("share menu item", () => {
     expect(screen.queryByRole("button", { name: "Share" })).toBeNull();
   });
 
-  it("copies the share link", async () => {
+  it("copies the member join link", async () => {
     writeText.mockResolvedValue(undefined);
-    render(<AppMenu theatre={{ id: "ordinary", shareCode: code }} />);
+    render(<AppMenu theatre={{ id: "ordinary", inviteCode: code }} />);
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
-    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/share/${code}`);
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/join/${code}`);
     await screen.findByRole("button", { name: "Link copied ✓" });
   });
 
   it("says so when copying fails", async () => {
     writeText.mockRejectedValue(new Error("denied"));
-    render(<AppMenu theatre={{ id: "ordinary", shareCode: code }} />);
+    render(<AppMenu theatre={{ id: "ordinary", inviteCode: code }} />);
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     await screen.findByRole("button", { name: "Couldn't copy link" });

@@ -8,13 +8,13 @@ import { usePublicTheatre } from "@/app/lib/data/queries";
 import { useUrlViewState } from "@/app/lib/view/useUrlViewState";
 
 interface PublicTheatreContainerProps {
-  shareCode: string;
+  inviteCode: string;
 }
 
 export function PublicTheatreContainer({
-  shareCode,
+  inviteCode,
 }: PublicTheatreContainerProps) {
-  const { data, error, retry } = usePublicTheatre(shareCode);
+  const { data, error, retry } = usePublicTheatre(inviteCode);
   const { userId } = useDataSession();
   const viewContext = useMemo(() => ({ userId }), [userId]);
   const [viewState, setViewState] = useUrlViewState();

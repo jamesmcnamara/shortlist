@@ -11,7 +11,7 @@ import {
   uuid,
   jsonb,
 } from "drizzle-orm/pg-core";
-import { relations, sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import { authUsers } from "./neon-auth-schema";
 import type { MovieDetails as _MovieDetails } from "@lorenzopant/tmdb";
 import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
@@ -30,11 +30,6 @@ export const theatres = pgTable("theatres", {
   inviteCode: text("invite_code").notNull().unique(),
   // A separate link that grants the "admin" role on join instead of "member".
   adminInviteCode: text("admin_invite_code").notNull().unique(),
-  // Grants read-only access to anyone with the link, signed in or not.
-  shareCode: text("share_code")
-    .notNull()
-    .unique()
-    .default(sql`replace(gen_random_uuid()::text, '-', '')`),
   description: text(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth/client";
 import { useClickOutside } from "@/app/lib/useClickOutside";
 import { FilmReelIcon } from "./FilmReelIcon";
-import { sharePath, theatrePath } from "@/lib/theatre-path";
+import { joinPath, theatrePath } from "@/lib/theatre-path";
 import { useTheatres } from "@/app/lib/data/queries";
 import { disconnectDeviceNotifications } from "@/app/lib/push";
 import styles from "./AppMenu.module.css";
@@ -14,7 +14,7 @@ import { BulkBoxOfficeRefresh } from "./BulkBoxOfficeRefresh";
 
 export interface AppMenuProps {
   /** Omitted outside a theatre, which hides the theatre-scoped items. */
-  theatre?: { id: string; shareCode?: string };
+  theatre?: { id: string; inviteCode?: string };
   showMyTheatres?: boolean;
 }
 
@@ -38,7 +38,7 @@ export function AppMenu({ theatre, showMyTheatres = true }: AppMenuProps) {
   );
   const router = useRouter();
   const name = session?.user?.name || session?.user?.email || "";
-  const shareCode = theatre?.shareCode;
+  const inviteCode = theatre?.inviteCode;
 
   async function signOut() {
     setIsSigningOut(true);
@@ -55,10 +55,10 @@ export function AppMenu({ theatre, showMyTheatres = true }: AppMenuProps) {
     }
   }
 
-  async function copyShareLink(shareCode: string) {
+  async function copyShareLink(inviteCode: string) {
     try {
       await navigator.clipboard.writeText(
-        `${window.location.origin}${sharePath(shareCode)}`,
+        `${window.location.origin}${joinPath(inviteCode)}`,
       );
       setShareStatus("copied");
     } catch {
@@ -112,8 +112,8 @@ export function AppMenu({ theatre, showMyTheatres = true }: AppMenuProps) {
             Settings
           </MenuLink>
         )}
-        {shareCode && (
-          <MenuButton onClick={() => copyShareLink(shareCode)}>
+        {inviteCode && (
+          <MenuButton onClick={() => copyShareLink(inviteCode)}>
             {SHARE_LABELS[shareStatus]}
           </MenuButton>
         )}

@@ -60,10 +60,10 @@ export function useNotificationSettings(theatreId: string) {
   );
 }
 
-export function usePublicTheatre(shareCode: string) {
+export function usePublicTheatre(inviteCode: string) {
   return useQuery(
-    `/api/share/${encodeURIComponent(shareCode)}`,
-    () => api.share(shareCode).get(),
+    `/api/join/${encodeURIComponent(inviteCode)}`,
+    () => api.publicTheatre(inviteCode),
     { requiresUser: false },
   );
 }

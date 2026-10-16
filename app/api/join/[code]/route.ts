@@ -1,10 +1,23 @@
-import { eq, or } from "drizzle-orm";
+import { listNominations } from "@/app/lib/queries";
+import {
+  findTheatreByInviteCode,
+  withPublicTheatre,
+} from "@/lib/auth/require-theatre";
 import { theatrePath } from "@/lib/theatre-path";
 import { requireUserId, unauthorized } from "@/lib/auth/require-user";
 import { getDb } from "@/src/db/client";
-import { theatreMembers, theatres } from "@/src/db/schema";
+import { theatreMembers } from "@/src/db/schema";
 
 export const runtime = "nodejs";
+
+export const GET = withPublicTheatre({
+  error: "Unable to load the theatre.",
+})(async (_, { theatre }) =>
+  Response.json({
+    theatre: { name: theatre.name },
+    nominations: await listNominations(theatre.id),
+  }),
+);
 
 /**
  * Anyone holding a valid invite code may join. The member link grants
@@ -23,25 +36,16 @@ export async function POST(
     const { code } = await context.params;
     const db = getDb();
 
-    const [theatre] = await db
-      .select({
-        id: theatres.id,
-        name: theatres.name,
-        inviteCode: theatres.inviteCode,
-        adminInviteCode: theatres.adminInviteCode,
-      })
-      .from(theatres)
-      .where(or(eq(theatres.inviteCode, code), eq(theatres.adminInviteCode, code)))
-      .limit(1);
+    const resolved = await findTheatreByInviteCode(code);
 
-    if (!theatre) {
+    if (!resolved) {
       return Response.json(
         { error: "That invite link is no longer valid." },
         { status: 404 },
       );
     }
 
-    const role = theatre.adminInviteCode === code ? "admin" : "member";
+    const { theatre, role } = resolved;
 
     // Re-joining is a no-op rather than an error, so a shared link keeps
     // working for people who already accepted it. The admin link can upgrade

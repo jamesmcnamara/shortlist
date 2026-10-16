@@ -449,22 +449,25 @@ describe("admin-only routes", () => {
     expect(response.status).toBe(404);
   });
 
-  it("withholds the invite code from non-admins", async () => {
+  it("shares the member invite with members but keeps the admin invite private", async () => {
     const { GET } = theatreRoute;
     asUser(BOB);
     const asMember = await (
       await GET(new Request("http://test"), route("club"))
     ).json();
-    expect(asMember.inviteCode).toBeUndefined();
+    expect(asMember.inviteCode).toBe("invite-a");
+    expect(asMember.adminInviteCode).toBeUndefined();
     // The embedded theatre object must not smuggle it through either.
     expect(asMember.theatre.inviteCode).toBeUndefined();
-    expect(JSON.stringify(asMember)).not.toContain("invite-a");
+    expect(asMember.theatre.adminInviteCode).toBeUndefined();
+    expect(JSON.stringify(asMember)).not.toContain("invite-a-admin");
 
     asUser(ALICE);
     const asAdmin = await (
       await GET(new Request("http://test"), route("club"))
     ).json();
     expect(asAdmin.inviteCode).toBe("invite-a");
+    expect(asAdmin.adminInviteCode).toBe("invite-a-admin");
   });
 
   it("keeps the invite code out of the server-rendered theatre payload", async () => {

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { withTargetValue } from "@/app/lib/utils";
+import { joinPath } from "@/lib/theatre-path";
 import type { TheatreRole } from "@/src/db/schema";
 import { useTheatre } from "../TheatreContext";
 import styles from "./page.module.css";
@@ -85,11 +86,11 @@ export function AdminSettings() {
   }
 
   const inviteUrl = detail?.inviteCode
-    ? `${typeof window === "undefined" ? "" : window.location.origin}/join/${detail.inviteCode}`
+    ? `${typeof window === "undefined" ? "" : window.location.origin}${joinPath(detail.inviteCode)}`
     : "";
 
   const adminInviteUrl = detail?.adminInviteCode
-    ? `${typeof window === "undefined" ? "" : window.location.origin}/join/${detail.adminInviteCode}`
+    ? `${typeof window === "undefined" ? "" : window.location.origin}${joinPath(detail.adminInviteCode)}`
     : "";
 
   const activeInviteUrl = inviteKind === "admin" ? adminInviteUrl : inviteUrl;
@@ -124,8 +125,10 @@ export function AdminSettings() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Invite</h2>
         <p className={styles.hint}>
-          Anyone with this link can join. Rotating it locks out anyone who has
-          not used it yet.
+          Anyone with this link can view the theatre while signed out and join
+          after signing in. Members can share the member invite too. Rotating a
+          link stops it working for viewing or joining; existing members keep
+          their access.
         </p>
         <div
           className={styles.radioGroup}
@@ -155,8 +158,8 @@ export function AdminSettings() {
         </div>
         {inviteKind === "admin" && (
           <p className={styles.hint}>
-            Anyone who opens this link joins as an admin, with full access to
-            settings and members.
+            Anyone signed in who opens this link joins as an admin, with full
+            access to settings and members.
           </p>
         )}
         <div className={styles.inlineRow}>

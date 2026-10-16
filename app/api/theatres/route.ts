@@ -94,7 +94,6 @@ export const POST = withUser({
   const {
     inviteCode: _withheldMember,
     adminInviteCode: _withheldAdmin,
-    shareCode: _withheldShare,
     ...safe
   } = theatre;
   return Response.json({ ...safe, path: theatrePath(theatre) }, { status: 201 });

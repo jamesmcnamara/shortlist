@@ -10,6 +10,19 @@ they belong to; theatres are joined through a shareable invite link. Admins can
 rename a theatre, manage its members and rotate its invite links from its settings
 page.
 
+The **Share** menu item copies the member invite link, `/join/<code>`. Anyone
+with that link can view the theatre read-only while signed out. Signed-in
+visitors join as members and are taken to the normal theatre. Admin invite
+links show the same preview while signed out, but grant admin access when
+opened while signed in. All members can share the member link; only admins can
+access admin links or rotate either kind. Rotating a link revokes both preview
+and join access through it, without removing existing members.
+
+The separate `/share/...` links have been removed and no longer work. Deploy
+the updated app before applying migration `0024_sticky_stardust.sql`, which
+drops the unused `theatres.share_code` column. Existing invite links and
+memberships are preserved.
+
 ### Bulk movie import
 
 At the bottom of a list, below Watched, choose **Import movies**. Paste one movie
