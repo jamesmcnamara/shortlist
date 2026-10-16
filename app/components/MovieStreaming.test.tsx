@@ -54,7 +54,7 @@ const nomination: Nomination = {
     } as MovieDetails,
     ratings: { services: [], raw: {} },
   },
-  nominator: { id: "user", name: "User", email: "user@example.com" },
+  nominator: { id: "user", name: "User" },
   nomcoms: [],
   seenBy: [],
 };

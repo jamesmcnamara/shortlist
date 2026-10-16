@@ -14,13 +14,6 @@ import type { Nomination } from "@/src/db/schema";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
-vi.mock("@/app/theatres/[theatreId]/TheatreContext", () => ({
-  useTheatre: () => ({
-    theatre: { id: "theatre", name: "Watchlist" },
-    theatres: [{ id: "theatre", name: "Watchlist" }],
-    isAdmin: true,
-  }),
-}));
 vi.mock("./ShortlistHeader", () => ({
   ShortlistHeader: () => <header>Shortlist</header>,
 }));
@@ -51,7 +44,7 @@ const watched: Nomination = {
     ratings: { raw: {}, services: [] },
   },
   nomcoms: [],
-  nominator: { id: "user", name: "User", email: "user@example.com" },
+  nominator: { id: "user", name: "User" },
   seenBy: [],
 };
 
@@ -70,11 +63,14 @@ const createApi = (): TheatreAPI => ({
   toggleCompleted: vi.fn(),
 });
 
-function show(nominees: Nomination[], api = createApi()) {
+function show(nominees: Nomination[], api: TheatreAPI | null = createApi()) {
   return render(
     <Theatre
+      name="Watchlist"
+      header={{}}
+      isAdmin
       userId="user"
-      api={api}
+      api={api ?? undefined}
       nominees={nominees}
       viewState={{ sort: "newest", filters: [] }}
       setViewState={vi.fn()}
@@ -140,5 +136,14 @@ describe("theatre bulk import placement", () => {
         screen.getByText("Import complete. 1 of 1 processed. 1 added."),
       ).toBeTruthy(),
     );
+  });
+});
+
+describe("read-only theatre", () => {
+  it("shows the list but hides every way to change it", () => {
+    show([watched, { ...watched, id: 2, completed: false }], null);
+    expect(screen.getByText("Watchlist")).toBeTruthy();
+    expect(screen.getAllByRole("article")).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "Import movies" })).toBeNull();
   });
 });

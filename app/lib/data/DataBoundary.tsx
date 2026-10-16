@@ -10,6 +10,7 @@ interface DataBoundaryProps {
   pending: boolean;
   error?: Error;
   retry: () => unknown;
+  requiresUser?: boolean;
   children: React.ReactNode;
 }
 
@@ -17,13 +18,15 @@ export function DataBoundary({
   pending,
   error,
   retry,
+  requiresUser = true,
   children,
 }: DataBoundaryProps) {
   const session = useDataSession();
   const pathname = usePathname();
   if (
-    (!session.userId && !session.isPending && !session.error) ||
-    (isAccessError(error) && error.status === 401)
+    requiresUser &&
+    ((!session.userId && !session.isPending && !session.error) ||
+      (isAccessError(error) && error.status === 401))
   ) {
     redirect(`/auth/sign-in?next=${encodeURIComponent(pathname)}`);
   }
@@ -32,12 +35,16 @@ export function DataBoundary({
     return (
       <main className={styles.message} role="alert">
         <p>{error.message}</p>
-        <Link href="/theatres">Back to Theatres Near You</Link>
+        {session.userId && (
+          <Link href="/theatres">Back to Theatres Near You</Link>
+        )}
       </main>
     );
   }
 
-  const message = error?.message ?? session.error?.message;
+  // A signed-out viewer of public content doesn't care about session errors.
+  const sessionError = requiresUser ? session.error : null;
+  const message = error?.message ?? sessionError?.message;
   return (
     <>
       {message && (
@@ -48,13 +55,13 @@ export function DataBoundary({
           </p>
           <button
             type="button"
-            onClick={() => (session.error ? session.retry() : retry())}
+            onClick={() => (sessionError ? session.retry() : retry())}
           >
             Try again
           </button>
         </div>
       )}
-      {pending || !session.userId
+      {pending || (requiresUser && !session.userId)
         ? !message && <LoadingOverlay />
         : children}
     </>

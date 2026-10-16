@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { isUuid, theatrePath } from "@/lib/theatre-path";
+import { isShareCode, isUuid, theatrePath } from "@/lib/theatre-path";
 import { getDb } from "@/src/db/client";
 import {
   theatreMembers,
@@ -14,7 +14,10 @@ import { requireUserId, unauthorized } from "./require-user";
  * gets handed to members or serialized into a page. Admin routes read it
  * explicitly via `findInviteCode`.
  */
-export type SafeTheatre = Omit<Theatre, "inviteCode" | "adminInviteCode"> & {
+export type SafeTheatre = Omit<
+  Theatre,
+  "inviteCode" | "adminInviteCode" | "shareCode"
+> & {
   path: string;
 };
 
@@ -61,6 +64,27 @@ export async function findTheatreById(
     .where(eq(theatres.id, theatreId))
     .limit(1);
   return theatre ? { ...theatre, path: theatrePath(theatre) } : null;
+}
+
+export async function findTheatreByShareCode(
+  shareCode: string,
+): Promise<SafeTheatre | null> {
+  const [theatre] = await getDb()
+    .select(THEATRE_COLUMNS)
+    .from(theatres)
+    .where(eq(theatres.shareCode, shareCode))
+    .limit(1);
+  return theatre ? { ...theatre, path: theatrePath(theatre) } : null;
+}
+
+/** Read separately, and only where membership has been established. */
+export async function findShareCode(theatreId: string): Promise<string | null> {
+  const [row] = await getDb()
+    .select({ shareCode: theatres.shareCode })
+    .from(theatres)
+    .where(eq(theatres.id, theatreId))
+    .limit(1);
+  return row?.shareCode ?? null;
 }
 
 /** Read separately, and only where an admin has been established. */
@@ -122,6 +146,33 @@ export function withTheatreAdmin(config: WithTheatreConfig) {
     );
 }
 
+export interface PublicTheatreContext {
+  theatre: SafeTheatre;
+  params: Record<string, string>;
+}
+
+/**
+ * Resolves the theatre from a share code, with no sign-in required. Handlers
+ * behind this must only ever read.
+ */
+export function withPublicTheatre(config: WithTheatreConfig) {
+  return (
+      handler: (
+        request: Request,
+        context: PublicTheatreContext,
+      ) => Promise<Response>,
+    ) =>
+    (request: Request, routeContext: RouteContext): Promise<Response> =>
+      catchErrors(config, async () => {
+        const params = await routeContext.params;
+        const code = params.code;
+        if (!code || !isShareCode(code)) return notFound();
+        const theatre = await findTheatreByShareCode(code);
+        if (!theatre) return notFound();
+        return handler(request, { theatre, params });
+      });
+}
+
 const withResolvedTheatre =
   (
     config: WithTheatreConfig,
@@ -132,7 +183,7 @@ const withResolvedTheatre =
     const userId = await requireUserId();
     if (!userId) return unauthorized();
 
-    try {
+    return catchErrors(config, async () => {
       const params = await routeContext.params;
       const theatreId = params.theatreId;
       if (!theatreId || !isUuid(theatreId)) return notFound();
@@ -146,12 +197,21 @@ const withResolvedTheatre =
       const rejection = check(role);
       if (rejection) return rejection;
 
-      return await handler(request, { userId, theatre, role, params });
-    } catch (error) {
-      console.error(error);
-      return Response.json(
-        { error: config?.error ?? "An unexpected error occurred." },
-        { status: 500 },
-      );
-    }
+      return handler(request, { userId, theatre, role, params });
+    });
   };
+
+async function catchErrors(
+  config: WithTheatreConfig,
+  run: () => Promise<Response>,
+): Promise<Response> {
+  try {
+    return await run();
+  } catch (error) {
+    console.error(error);
+    return Response.json(
+      { error: config?.error ?? "An unexpected error occurred." },
+      { status: 500 },
+    );
+  }
+}

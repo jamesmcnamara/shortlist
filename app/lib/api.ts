@@ -4,6 +4,7 @@ import type {
   Feedback,
   FeedbackCategory,
   Nomination,
+  Person,
   TheatreRole,
   User,
 } from "@/src/db/schema";
@@ -97,15 +98,22 @@ export interface TheatreMemberSummary extends User {
 /** What a seen toggle reports back: the theatre's viewers for that movie. */
 export interface SeenUpdate {
   movieId: number;
-  seenBy: User[];
+  seenBy: Person[];
 }
 
 export interface TheatreDetail {
   theatre: SafeTheatre;
   inviteCode?: string;
   adminInviteCode?: string;
+  shareCode: string;
   membership: { userId: string; role: TheatreRole };
   members: TheatreMemberSummary[];
+}
+
+/** What anyone with a share link can see: read-only, and no member details. */
+export interface PublicTheatre {
+  theatre: { name: string };
+  nominations: Nomination[];
 }
 
 /**
@@ -115,9 +123,15 @@ export interface TheatreDetail {
 export const api = {
   push: {
     subscribe: (subscription: PushSubscriptionJSON): Promise<void> =>
-      request("/api/push", { method: "POST", body: JSON.stringify(subscription) }),
+      request("/api/push", {
+        method: "POST",
+        body: JSON.stringify(subscription),
+      }),
     disconnect: (endpoint: string): Promise<void> =>
-      request("/api/push", { method: "DELETE", body: JSON.stringify({ endpoint }) }),
+      request("/api/push", {
+        method: "DELETE",
+        body: JSON.stringify({ endpoint }),
+      }),
   },
   theatres: {
     list: (): Promise<TheatreSummary[]> => request("/api/theatres"),
@@ -146,8 +160,13 @@ export const api = {
       notifications: {
         get: (): Promise<{ enabled: boolean; configured: boolean }> =>
           request(`${base}/notifications`),
-        set: (enabled: boolean): Promise<{ enabled: boolean; configured: boolean }> =>
-          request(`${base}/notifications`, { method: "PUT", body: JSON.stringify({ enabled }) }),
+        set: (
+          enabled: boolean,
+        ): Promise<{ enabled: boolean; configured: boolean }> =>
+          request(`${base}/notifications`, {
+            method: "PUT",
+            body: JSON.stringify({ enabled }),
+          }),
       },
       get: (): Promise<TheatreDetail> => request(base),
       refreshJustWatch: (movieId: number): Promise<JustWatchAvailability> =>
@@ -238,6 +257,10 @@ export const api = {
       },
     };
   },
+  share: (shareCode: string) => ({
+    get: (): Promise<PublicTheatre> =>
+      request(`/api/share/${encodeURIComponent(shareCode)}`),
+  }),
   tmdb: {
     search: (query: string, signal?: AbortSignal): Promise<Movie[]> =>
       request<{ results: Movie[] }>(

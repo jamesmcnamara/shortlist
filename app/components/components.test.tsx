@@ -41,7 +41,7 @@ const nomination: Nomination = {
     ratings: { raw: {}, services: [] },
   },
   nomcoms: [],
-  nominator: { id: "user", name: "Alice", email: "alice@example.com" },
+  nominator: { id: "user", name: "Alice" },
   seenBy: [],
 };
 
@@ -393,7 +393,6 @@ describe("high-churn component smoke tests", () => {
               commenter: {
                 id: "user",
                 name: "Alice",
-                email: "alice@example.com",
               },
             },
           ],

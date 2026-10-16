@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import {
   findInviteCode,
+  findShareCode,
   findAdminInviteCode,
   withTheatreAdmin,
   withTheatreMember,
@@ -38,6 +39,8 @@ export const GET = withTheatreMember({
     inviteCode: role === "admin" ? await findInviteCode(theatre.id) : undefined,
     adminInviteCode:
       role === "admin" ? await findAdminInviteCode(theatre.id) : undefined,
+    // Any member may share a read-only link.
+    shareCode: await findShareCode(theatre.id),
     membership: { userId, role },
     members,
   });
@@ -58,6 +61,7 @@ export const PATCH = withTheatreAdmin({ error: "Unable to update the theatre." }
     const {
       inviteCode: _withheldMember,
       adminInviteCode: _withheldAdmin,
+      shareCode: _withheldShare,
       ...safe
     } = updated;
     return Response.json(safe);

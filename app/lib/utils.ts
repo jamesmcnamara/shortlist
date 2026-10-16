@@ -33,3 +33,8 @@ export const getColor = (text: string) => {
 
 export const capitalize = (text: string) =>
   text.charAt(0).toUpperCase() + text.slice(1);
+
+export const when =
+  (condition: any) =>
+  <T extends any>(arg: T) =>
+    condition ? arg : undefined;

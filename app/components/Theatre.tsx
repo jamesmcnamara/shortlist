@@ -1,56 +1,52 @@
 "use client";
 
 import { compareHref } from "@/app/compare/metrics";
-import { MovieCard } from "@/app/components/MovieCard";
-import { MovieGrid } from "./MovieGrid";
+import type { AppMenuProps } from "@/app/components/AppMenu";
 import { BulkMovieImport } from "@/app/components/BulkMovieImport";
-import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
+import { MovieCard } from "@/app/components/MovieCard";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import { ViewControls } from "@/app/components/ViewControls";
+import type { MovieImportResult } from "@/app/lib/bulk-movie-import";
+import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
 import { useAPIActions } from "@/app/lib/useAPIActions";
 import { useMovieDiscussionHistory } from "@/app/lib/useMovieDiscussionHistory";
 import { applyView, ViewContext, ViewState } from "@/app/lib/view";
 import type { Movie, Nomination } from "@/src/db/schema";
-import type { MovieImportResult } from "@/app/lib/bulk-movie-import";
 import classnames from "classnames";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { all, filter, find, get, map, some } from "shades";
-import { useTheatre } from "../theatres/[theatreId]/TheatreContext";
+import { when } from "../lib/utils";
+import { MovieGrid } from "./MovieGrid";
 import styles from "./Theatre.module.css";
 
-export interface TheatreAPI {
-  importTitle: (title: string) => Promise<MovieImportResult>;
-  refreshJustWatch: (movieId: number) => Promise<JustWatchAvailability>;
-  delete: (nominationId: number) => Promise<void>;
-  nominate: (candidate: Movie, comment: string) => Promise<void>;
-  updateNomRec: (nominationId: number, comment: string) => Promise<void>;
-  addNomCom: (nominationId: number, comment: string) => Promise<void>;
-  updateNomCom: (nomcomId: number, comment: string) => Promise<void>;
-  toggleWatched: (movieId: number) => Promise<void>;
-  toggleCompleted: (nominationId: number) => Promise<void>;
-}
-
 interface TheatreProps {
+  name: string;
+  header: AppMenuProps;
+  isAdmin?: boolean;
   nominees: Nomination[];
   viewState: ViewState;
   setViewState: (next: ViewState) => void;
   viewContext: ViewContext;
   userId: string | undefined;
-  api: TheatreAPI;
+  api?: TheatreAPI;
 }
 
 export function Theatre({
+  name,
+  header,
+  isAdmin = false,
   userId,
-  api,
+  api = READ_ONLY_API,
   viewState,
   setViewState,
   viewContext,
   nominees,
 }: TheatreProps) {
-  const { theatre, theatres, isAdmin } = useTheatre();
+  const isReadOnly = "isReadOnly" in api;
+  const canEdit = when(!isReadOnly);
   const { focusedId, closeDiscussion, openDiscussion } =
     useMovieDiscussionHistory();
   const [isWatchedOpen, setIsWatchedOpen] = useState(false);
@@ -118,6 +114,10 @@ export function Theatre({
       api: api.toggleCompleted,
       action: "update the completed status",
     },
+    refreshJustWatch: {
+      api: api.refreshJustWatch,
+      action: "refresh Just Watch data",
+    },
   });
 
   const visible = useMemo(
@@ -155,26 +155,22 @@ export function Theatre({
         [styles.shellComparing]: isComparing,
       })}
     >
-      <ShortlistHeader
-        theatre={{ id: theatre.id }}
-        showMyTheatres={theatres.length > 1}
-      />
+      <ShortlistHeader {...header} />
 
       <section
         className={styles.nominations}
         aria-labelledby="nominations-title"
       >
         <h1 id="nominations-title" className={styles.sectionHeader}>
-          {theatre.name}
+          {name}
         </h1>
 
         <ViewControls
-          key={theatre.id}
           state={viewState}
           onChange={setViewState}
           existing={existing}
           isSubmitting={isSubmitting}
-          onNominate={actions.nominate}
+          onNominate={canEdit(actions.nominate)}
         />
 
         {message && (
@@ -185,7 +181,7 @@ export function Theatre({
         {visible.length === 0 && (
           <p className={styles.message} role="status">
             {nominees.length === 0
-              ? "Nothing here yet. Add the first movie."
+              ? `Nothing here yet.${isReadOnly ? "" : " Add the first movie."}`
               : "No movies match these filters."}
           </p>
         )}
@@ -233,13 +229,14 @@ export function Theatre({
         </section>
       )}
 
-      <div className={styles.bulkImport}>
-        <BulkMovieImport
-          key={theatre.id}
-          onImport={api.importTitle}
-          isDisabled={isSubmitting}
-        />
-      </div>
+      {!isReadOnly && (
+        <div className={styles.bulkImport}>
+          <BulkMovieImport
+            onImport={api.importTitle}
+            isDisabled={isSubmitting}
+          />
+        </div>
+      )}
 
       <AnimatePresence>
         {comparing && (
@@ -286,14 +283,20 @@ export function Theatre({
             nomination={focused}
             hasSeen={some({ id: userId })(focused.seenBy)}
             currentUserId={userId ?? null}
-            onUpdateComment={(comment) =>
-              actions.updateNomRec(focused.id, comment)
-            }
-            onAddNomCom={(comment) => actions.addNomCom(focused.id, comment)}
-            onUpdateNomCom={actions.updateNomCom}
-            onMarkWatched={() => actions.toggleWatched(focused.movieId)}
-            onRefreshJustWatch={() => api.refreshJustWatch(focused.movieId)}
-            onDelete={isAdmin ? () => actions.delete(focused.id) : undefined}
+            onUpdateComment={canEdit((comment: string) =>
+              actions.updateNomRec(focused.id, comment),
+            )}
+            onAddNomCom={canEdit((comment: string) =>
+              actions.addNomCom(focused.id, comment),
+            )}
+            onUpdateNomCom={canEdit(actions.updateNomCom)}
+            onMarkWatched={canEdit(() =>
+              actions.toggleWatched(focused.movieId),
+            )}
+            onRefreshJustWatch={canEdit(() =>
+              api.refreshJustWatch(focused.movieId),
+            )}
+            onDelete={when(isAdmin)(() => actions.delete(focused.id))}
             onToggleCompleted={when(isAdmin)(() => {
               actions.toggleCompleted(focused.id);
               closeDiscussion();
@@ -306,7 +309,33 @@ export function Theatre({
   );
 }
 
-const when =
-  (condition: boolean) =>
-  <T extends any>(arg: T) =>
-    condition ? arg : undefined;
+export interface TheatreAPI {
+  importTitle: (title: string) => Promise<MovieImportResult>;
+  refreshJustWatch: (movieId: number) => Promise<void>;
+  delete: (nominationId: number) => Promise<void>;
+  nominate: (candidate: Movie, comment: string) => Promise<void>;
+  updateNomRec: (nominationId: number, comment: string) => Promise<void>;
+  addNomCom: (nominationId: number, comment: string) => Promise<void>;
+  updateNomCom: (nomcomId: number, comment: string) => Promise<void>;
+  toggleWatched: (movieId: number) => Promise<void>;
+  toggleCompleted: (nominationId: number) => Promise<void>;
+}
+
+interface ReadOnlyTheatreAPI extends TheatreAPI {
+  isReadOnly: true;
+}
+
+const readOnly = () => Promise.reject(new Error("This theatre is read-only."));
+
+const READ_ONLY_API: ReadOnlyTheatreAPI = {
+  importTitle: readOnly,
+  refreshJustWatch: readOnly,
+  delete: readOnly,
+  nominate: readOnly,
+  updateNomRec: readOnly,
+  addNomCom: readOnly,
+  updateNomCom: readOnly,
+  toggleWatched: readOnly,
+  toggleCompleted: readOnly,
+  isReadOnly: true,
+};

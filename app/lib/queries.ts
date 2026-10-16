@@ -6,15 +6,17 @@ import {
   theatreMembers,
   seen,
   type Nomination,
-  type User,
+  type Person,
 } from "@/src/db/schema";
+
+const person = { columns: { id: true, name: true } } as const;
 
 const nominationRelations = {
   movie: true,
   nomcoms: {
-    with: { commenter: true },
+    with: { commenter: person },
   },
-  nominator: true,
+  nominator: person,
 } as const;
 
 /**
@@ -25,8 +27,8 @@ const nominationRelations = {
 async function seenByTheatreMembers(
   theatreId: string,
   movieIds: number[],
-): Promise<Map<number, User[]>> {
-  const byMovie = new Map<number, User[]>();
+): Promise<Map<number, Person[]>> {
+  const byMovie = new Map<number, Person[]>();
   if (movieIds.length === 0) return byMovie;
 
   const rows = await getDb()
@@ -34,13 +36,15 @@ async function seenByTheatreMembers(
       movieId: seen.movieId,
       id: authUsers.id,
       name: authUsers.name,
-      email: authUsers.email,
     })
     .from(seen)
     .innerJoin(authUsers, eq(authUsers.id, seen.userId))
     .innerJoin(
       theatreMembers,
-      and(eq(theatreMembers.userId, seen.userId), eq(theatreMembers.theatreId, theatreId)),
+      and(
+        eq(theatreMembers.userId, seen.userId),
+        eq(theatreMembers.theatreId, theatreId),
+      ),
     )
     .where(inArray(seen.movieId, movieIds));
 
@@ -55,7 +59,7 @@ async function seenByTheatreMembers(
 const withSeenBy = async <T extends { movieId: number }>(
   theatreId: string,
   rows: T[],
-): Promise<(T & { seenBy: User[] })[]> => {
+): Promise<(T & { seenBy: Person[] })[]> => {
   const byMovie = await seenByTheatreMembers(
     theatreId,
     rows.map((row) => row.movieId),
@@ -71,7 +75,9 @@ const withSeenBy = async <T extends { movieId: number }>(
  * inferring it from the nomination, means a caller cannot accidentally return
  * another theatre's content by id.
  */
-export async function listNominations(theatreId: string): Promise<Nomination[]> {
+export async function listNominations(
+  theatreId: string,
+): Promise<Nomination[]> {
   const rows = (await getDb().query.nominations.findMany({
     where: (n, { eq }) => eq(n.theatreId, theatreId),
     with: nominationRelations,
@@ -110,7 +116,10 @@ export async function nominationExistsInTheatre(
     .select({ id: nominations.id, userId: nominations.userId })
     .from(nominations)
     .where(
-      and(eq(nominations.id, nominationId), eq(nominations.theatreId, theatreId)),
+      and(
+        eq(nominations.id, nominationId),
+        eq(nominations.theatreId, theatreId),
+      ),
     )
     .limit(1);
   return row ?? null;

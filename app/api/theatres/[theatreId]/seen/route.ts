@@ -3,7 +3,12 @@ import { z } from "zod";
 import { withTheatreMember, type TheatreContext } from "@/lib/auth/require-theatre";
 import { getDb } from "@/src/db/client";
 import { authUsers } from "@/src/db/neon-auth-schema";
-import { nominations, theatreMembers, seen, type User } from "@/src/db/schema";
+import {
+  nominations,
+  theatreMembers,
+  seen,
+  type Person,
+} from "@/src/db/schema";
 import { badRequest, dbId, dbIdParam, parseJson } from "@/lib/validation";
 
 export const runtime = "nodejs";
@@ -16,12 +21,11 @@ export const runtime = "nodejs";
 async function seenByInTheatre(
   theatreId: string,
   movieId: number,
-): Promise<User[]> {
+): Promise<Person[]> {
   return getDb()
     .select({
       id: authUsers.id,
       name: authUsers.name,
-      email: authUsers.email,
     })
     .from(seen)
     .innerJoin(authUsers, eq(authUsers.id, seen.userId))

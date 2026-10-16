@@ -46,9 +46,9 @@ describe("watchlist menu link", () => {
   it("links to the current user's designated theatre even when renamed", () => {
     render(<AppMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
-    expect(screen.getByRole("menuitem", { name: "Watchlist" }).getAttribute("href"))
+    expect(screen.getByRole("menuitem", { name: "Home Theatre" }).getAttribute("href"))
       .toBe("/theatres/alices");
-    const link = screen.getByRole("menuitem", { name: "Watchlist" });
+    const link = screen.getByRole("menuitem", { name: "Home Theatre" });
     link.addEventListener("click", (event) => event.preventDefault());
     fireEvent.click(link);
     expect(screen.queryByRole("menu")).toBeNull();
@@ -72,5 +72,34 @@ describe("watchlist menu link", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Sign out" }));
     expect((await screen.findByRole("alert")).textContent).toContain("Unable to sign out safely.");
     expect(data.signOut).not.toHaveBeenCalled();
+  });
+});
+
+describe("share menu item", () => {
+  const code = "a".repeat(32);
+  const writeText = vi.fn();
+  Object.assign(navigator, { clipboard: { writeText } });
+
+  it("only shows when there's a theatre to share", () => {
+    render(<AppMenu theatre={{ id: "ordinary" }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+    expect(screen.queryByRole("button", { name: "Share" })).toBeNull();
+  });
+
+  it("copies the share link", async () => {
+    writeText.mockResolvedValue(undefined);
+    render(<AppMenu theatre={{ id: "ordinary", shareCode: code }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/share/${code}`);
+    await screen.findByRole("button", { name: "Link copied ✓" });
+  });
+
+  it("says so when copying fails", async () => {
+    writeText.mockRejectedValue(new Error("denied"));
+    render(<AppMenu theatre={{ id: "ordinary", shareCode: code }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    await screen.findByRole("button", { name: "Couldn't copy link" });
   });
 });

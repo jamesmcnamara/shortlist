@@ -17,7 +17,7 @@ interface ViewControlsProps {
   onChange: (state: ViewState) => void;
   existing: Set<number>;
   isSubmitting: boolean;
-  onNominate: (movie: Movie, comment: string) => Promise<boolean>;
+  onNominate?: (movie: Movie, comment: string) => Promise<boolean>;
 }
 
 type Expanded = "sort" | "filter" | null;
@@ -85,7 +85,7 @@ export function ViewControls({
   };
 
   const submit = async (movie: Movie, comment: string) => {
-    if (await onNominate(movie, comment)) {
+    if (await onNominate?.(movie, comment)) {
       setCandidate(null);
     }
   };
@@ -95,42 +95,44 @@ export function ViewControls({
       setNotice("This movie is already on the list.");
       return;
     }
-    await onNominate(movie, "");
+    await onNominate?.(movie, "");
     closeSearch();
   };
 
   return (
     <div className={styles.controls}>
       <div className={styles.actions}>
-        <div className={styles.search}>
-          <span aria-hidden="true">⌕</span>
-          <input
-            ref={inputRef}
-            type="text"
-            aria-label="Search for a movie to add"
-            placeholder="Add a movie..."
-            value={query}
-            onChange={withTargetValue(changeQuery)}
-            onFocus={() => {
-              setIsFocused(true);
-              setExpanded(null);
-            }}
-            onBlur={() => setIsFocused(false)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") closeSearch();
-            }}
-          />
-          {isSearchOpen && (
-            <button
-              type="button"
-              className={styles.clearSearch}
-              aria-label="Close search"
-              onClick={closeSearch}
-            >
-              <CloseIcon />
-            </button>
-          )}
-        </div>
+        {onNominate && (
+          <div className={styles.search}>
+            <span aria-hidden="true">⌕</span>
+            <input
+              ref={inputRef}
+              type="text"
+              aria-label="Search for a movie to add"
+              placeholder="Add a movie..."
+              value={query}
+              onChange={withTargetValue(changeQuery)}
+              onFocus={() => {
+                setIsFocused(true);
+                setExpanded(null);
+              }}
+              onBlur={() => setIsFocused(false)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") closeSearch();
+              }}
+            />
+            {isSearchOpen && (
+              <button
+                type="button"
+                className={styles.clearSearch}
+                aria-label="Close search"
+                onClick={closeSearch}
+              >
+                <CloseIcon />
+              </button>
+            )}
+          </div>
+        )}
 
         <AnimatePresence initial={false}>
           {!isSearchOpen && (

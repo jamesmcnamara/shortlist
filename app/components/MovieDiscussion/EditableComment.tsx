@@ -3,17 +3,15 @@ import styles from "./MovieDiscussion.module.css";
 
 interface EditableCommentProps {
   value: string;
-  canEdit: boolean;
   allowBlank: boolean;
   emptyText: string;
   editLabel: string;
   inputLabel: string;
-  onSave: (comment: string) => Promise<boolean>;
+  onSave?: (comment: string) => Promise<boolean>;
 }
 
 export function EditableComment({
   value,
-  canEdit,
   allowBlank,
   emptyText,
   editLabel,
@@ -32,7 +30,7 @@ export function EditableComment({
   const submit: SubmitEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault();
     const next = draft.trim();
-    if ((!allowBlank && !next) || isSaving) return;
+    if ((!allowBlank && !next) || isSaving || !onSave) return;
 
     setIsSaving(true);
     try {
@@ -76,7 +74,7 @@ export function EditableComment({
       <span className={value ? styles.commentText : styles.emptyComment}>
         {value || emptyText}
       </span>
-      {canEdit && (
+      {onSave && (
         <button
           className={styles.editComment}
           type="button"

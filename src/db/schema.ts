@@ -11,7 +11,7 @@ import {
   uuid,
   jsonb,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { authUsers } from "./neon-auth-schema";
 import type { MovieDetails as _MovieDetails } from "@lorenzopant/tmdb";
 import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
@@ -29,6 +29,11 @@ export const theatres = pgTable("theatres", {
   inviteCode: text("invite_code").notNull().unique(),
   // A separate link that grants the "admin" role on join instead of "member".
   adminInviteCode: text("admin_invite_code").notNull().unique(),
+  // Grants read-only access to anyone with the link, signed in or not.
+  shareCode: text("share_code")
+    .notNull()
+    .unique()
+    .default(sql`replace(gen_random_uuid()::text, '-', '')`),
   description: text(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
@@ -257,11 +262,11 @@ export type RawNomination = typeof nominations.$inferSelect;
 export type Nomination = RawNomination & {
   movie: Movie;
   nomcoms: NomCom[];
-  nominator: User;
+  nominator: Person;
   /** Members of this nomination's theatre who have marked the movie seen. */
-  seenBy: User[];
+  seenBy: Person[];
 };
-export type NomCom = typeof nomcoms.$inferSelect & { commenter: User };
+export type NomCom = typeof nomcoms.$inferSelect & { commenter: Person };
 export type Seen = typeof seen.$inferSelect;
 export type Feedback = Omit<typeof feedback.$inferSelect, "category"> & {
   category: FeedbackCategory | null;
@@ -272,6 +277,8 @@ export interface User {
   name: string;
   email: string;
 }
+
+export type Person = Pick<User, "id" | "name">;
 
 export interface MovieDetails extends _MovieDetails {
   posterUrl?: string | null;

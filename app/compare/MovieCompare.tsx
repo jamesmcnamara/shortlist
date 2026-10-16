@@ -2,7 +2,7 @@
 
 import { MovieSearchResults } from "@/app/components/MovieSearchResults";
 import { useMovieSearch } from "@/app/lib/useMovieSearch";
-import { capitalize, withTargetValue } from "@/app/lib/utils";
+import { capitalize, when, withTargetValue } from "@/app/lib/utils";
 import type { Movie } from "@/src/db/schema";
 import { useEffect, useState } from "react";
 import { filter, find, not, some } from "shades";
@@ -42,7 +42,12 @@ const heat = (score: number) => {
   return `color-mix(in srgb, ${HEAT_STOPS[index + 1]} ${weight}%, ${HEAT_STOPS[index]})`;
 };
 
-export function MovieCompare({ initialMovies }: { initialMovies: Movie[] }) {
+interface MovieCompareProps {
+  initialMovies: Movie[];
+  userId?: string | null;
+}
+
+export function MovieCompare({ initialMovies, userId }: MovieCompareProps) {
   const [query, setQuery] = useState("");
   const [movies, setMovies] = useState<Movie[]>(initialMovies);
   const [scale, setScale] = useState<Scale>("relative");
@@ -213,33 +218,35 @@ export function MovieCompare({ initialMovies }: { initialMovies: Movie[] }) {
         </section>
       )}
 
-      <section className={styles.search} aria-label="Add a movie">
-        <div className={styles.searchInput}>
-          <span aria-hidden>⌕</span>
-          <input
-            type="text"
-            aria-label="Search for a movie to compare"
-            placeholder={
-              movies.length === 0
-                ? "Search for a contender..."
-                : "Add another contender..."
-            }
-            value={query}
-            onChange={withTargetValue(setQuery)}
+      {when(userId)(
+        <section className={styles.search} aria-label="Add a movie">
+          <div className={styles.searchInput}>
+            <span aria-hidden>⌕</span>
+            <input
+              type="text"
+              aria-label="Search for a movie to compare"
+              placeholder={
+                movies.length === 0
+                  ? "Search for a contender..."
+                  : "Add another contender..."
+              }
+              value={query}
+              onChange={withTargetValue(setQuery)}
+            />
+          </div>
+          {movies.length === 0 && query.trim().length < 2 && (
+            <p className={styles.hint}>
+              Pick a few movies to stack them side by side.
+            </p>
+          )}
+          <MovieSearchResults
+            results={freshResults}
+            isLoading={isLoading}
+            error={error}
+            onSelect={add}
           />
-        </div>
-        {movies.length === 0 && query.trim().length < 2 && (
-          <p className={styles.hint}>
-            Pick a few movies to stack them side by side.
-          </p>
-        )}
-        <MovieSearchResults
-          results={freshResults}
-          isLoading={isLoading}
-          error={error}
-          onSelect={add}
-        />
-      </section>
+        </section>,
+      )}
     </div>
   );
 }

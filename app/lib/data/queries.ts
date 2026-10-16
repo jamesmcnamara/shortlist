@@ -4,9 +4,20 @@ import useSWR from "swr";
 import { api } from "../api";
 import { isAccessError, useDataSession } from "./DataProvider";
 
-function useQuery<T>(key: string, fetcher: () => Promise<T>) {
+interface QueryOptions {
+  requiresUser?: boolean;
+}
+
+function useQuery<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  { requiresUser = true }: QueryOptions = {},
+) {
   const { userId, cacheReady } = useDataSession();
-  const query = useSWR<T, Error>(userId && cacheReady ? key : null, fetcher);
+  const query = useSWR<T, Error>(
+    cacheReady && (userId || !requiresUser) ? key : null,
+    fetcher,
+  );
   return {
     data: isAccessError(query.error) ? undefined : query.data,
     error: query.error,
@@ -30,9 +41,8 @@ interface TheatreReference {
 }
 
 export function useTheatreDetail(theatre: TheatreReference) {
-  return useQuery(
-    `/api/theatres/${encodeURIComponent(theatre.id)}`,
-    () => api.theatre(theatre.id).get(),
+  return useQuery(`/api/theatres/${encodeURIComponent(theatre.id)}`, () =>
+    api.theatre(theatre.id).get(),
   );
 }
 
@@ -44,6 +54,16 @@ export function useNominations(theatre: TheatreReference) {
 }
 
 export function useNotificationSettings(theatreId: string) {
-  return useQuery(`/api/theatres/${encodeURIComponent(theatreId)}/notifications`,
-    () => api.theatre(theatreId).notifications.get());
+  return useQuery(
+    `/api/theatres/${encodeURIComponent(theatreId)}/notifications`,
+    () => api.theatre(theatreId).notifications.get(),
+  );
+}
+
+export function usePublicTheatre(shareCode: string) {
+  return useQuery(
+    `/api/share/${encodeURIComponent(shareCode)}`,
+    () => api.share(shareCode).get(),
+    { requiresUser: false },
+  );
 }

@@ -1,5 +1,5 @@
-import { getColor, getInitials } from "@/app/lib/utils";
-import type { Nomination, User } from "@/src/db/schema";
+import { getColor, getInitials, when } from "@/app/lib/utils";
+import type { Nomination, Person } from "@/src/db/schema";
 import { motion } from "motion/react";
 import styles from "./MovieDiscussion.module.css";
 import { MovieRatings } from "@/app/components/MovieRatings";
@@ -12,9 +12,9 @@ interface MovieDiscussionProps {
   nomination: Nomination;
   hasSeen: boolean;
   currentUserId: string | null;
-  onUpdateComment: (comment: string) => Promise<boolean>;
-  onAddNomCom: (comment: string) => Promise<boolean>;
-  onUpdateNomCom: (nomcomId: number, comment: string) => Promise<boolean>;
+  onUpdateComment?: (comment: string) => Promise<boolean>;
+  onAddNomCom?: (comment: string) => Promise<boolean>;
+  onUpdateNomCom?: (nomcomId: number, comment: string) => Promise<boolean>;
   onMarkWatched?: () => void;
   onDelete?: () => void;
   onToggleCompleted?: () => void;
@@ -82,7 +82,7 @@ export function MovieDiscussion({
             availability={details.justWatch}
             onRefresh={onRefreshJustWatch}
           />
-          {!nomination.completed && (
+          {!nomination.completed && onMarkWatched && (
             <div className={styles.movieActions}>
               <button
                 className={styles.watched}
@@ -118,12 +118,13 @@ export function MovieDiscussion({
             <strong>{nominator.name}</strong>
             <EditableComment
               value={nomination.comment ?? ""}
-              canEdit={nomination.userId === currentUserId}
               allowBlank
               emptyText=""
               editLabel={`Edit ${details.title} nomination comment`}
               inputLabel={`Nomination comment for ${details.title}`}
-              onSave={onUpdateComment}
+              onSave={when(nomination.userId === currentUserId)(
+                onUpdateComment,
+              )}
             />
           </div>
         </div>
@@ -158,7 +159,7 @@ export function MovieDiscussion({
 }
 
 interface SeenByListProps {
-  seenBy: User[];
+  seenBy: Person[];
 }
 
 /** Theatre members who have marked this movie seen; empty is the common case. */

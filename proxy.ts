@@ -17,6 +17,7 @@ export default function proxy(request: NextRequest) {
 // /join/[code] is excluded: it's a client component that calls the join API
 // itself and redirects to sign-up with a `next` back to the invite link on
 // 401, which the middleware would short-circuit before that logic runs.
+// /share and /compare are public on purpose and must stay out of the matcher.
 export const config = {
   matcher: ["/", "/r/:path*", "/rooms/:path*", "/theatres/:path*"],
 };

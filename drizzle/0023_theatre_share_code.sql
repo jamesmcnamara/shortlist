@@ -1,0 +1,2 @@
+ALTER TABLE "theatres" ADD COLUMN "share_code" text DEFAULT replace(gen_random_uuid()::text, '-', '') NOT NULL;--> statement-breakpoint
+ALTER TABLE "theatres" ADD CONSTRAINT "theatres_share_code_unique" UNIQUE("share_code");

@@ -6,14 +6,14 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth/client";
 import { useClickOutside } from "@/app/lib/useClickOutside";
 import { FilmReelIcon } from "./FilmReelIcon";
-import { theatrePath } from "@/lib/theatre-path";
+import { sharePath, theatrePath } from "@/lib/theatre-path";
 import { useTheatres } from "@/app/lib/data/queries";
 import { disconnectDeviceNotifications } from "@/app/lib/push";
 import styles from "./AppMenu.module.css";
 
 export interface AppMenuProps {
   /** Omitted outside a theatre, which hides the theatre-scoped items. */
-  theatre?: { id: string };
+  theatre?: { id: string; shareCode?: string };
   showMyTheatres?: boolean;
 }
 
@@ -28,12 +28,16 @@ export function AppMenu({ theatre, showMyTheatres = true }: AppMenuProps) {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
+  const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "failed">(
+    "idle",
+  );
   const menuRef = useClickOutside<HTMLDivElement>(
     () => setIsOpen(false),
     isOpen,
   );
   const router = useRouter();
   const name = session?.user?.name || session?.user?.email || "";
+  const shareCode = theatre?.shareCode;
 
   async function signOut() {
     setIsSigningOut(true);
@@ -50,6 +54,17 @@ export function AppMenu({ theatre, showMyTheatres = true }: AppMenuProps) {
     }
   }
 
+  async function copyShareLink(shareCode: string) {
+    try {
+      await navigator.clipboard.writeText(
+        `${window.location.origin}${sharePath(shareCode)}`,
+      );
+      setShareStatus("copied");
+    } catch {
+      setShareStatus("failed");
+    }
+  }
+
   if (!name) return null;
 
   const close = () => setIsOpen(false);
@@ -62,7 +77,10 @@ export function AppMenu({ theatre, showMyTheatres = true }: AppMenuProps) {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-label="Menu"
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={() => {
+          setIsOpen((open) => !open);
+          setShareStatus("idle");
+        }}
       >
         <FilmReelIcon />
       </button>
@@ -94,6 +112,11 @@ export function AppMenu({ theatre, showMyTheatres = true }: AppMenuProps) {
               Settings
             </MenuLink>
           )}
+          {shareCode && (
+            <MenuButton onClick={() => copyShareLink(shareCode)}>
+              {SHARE_LABELS[shareStatus]}
+            </MenuButton>
+          )}
           <MenuLink href="/compare" onNavigate={close}>
             Compare
           </MenuLink>
@@ -122,6 +145,12 @@ export function AppMenu({ theatre, showMyTheatres = true }: AppMenuProps) {
     </div>
   );
 }
+
+const SHARE_LABELS = {
+  idle: "Share",
+  copied: "Link copied ✓",
+  failed: "Couldn't copy link",
+};
 
 interface MenuLinkProps {
   href: string;

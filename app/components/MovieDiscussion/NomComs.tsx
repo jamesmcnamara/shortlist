@@ -1,15 +1,15 @@
 import type { NomCom } from "@/src/db/schema";
 import { useState, type SubmitEventHandler } from "react";
 import styles from "./MovieDiscussion.module.css";
-import { getColor, getInitials } from "@/app/lib/utils";
+import { getColor, getInitials, when } from "@/app/lib/utils";
 import { EditableComment } from "./EditableComment";
 
 interface NomComsProps {
   nominationId: number;
   nomcoms: NomCom[];
   currentUserId: string | null;
-  onAddComment: (comment: string) => Promise<boolean>;
-  onUpdateComment: (commentId: number, comment: string) => Promise<boolean>;
+  onAddComment?: (comment: string) => Promise<boolean>;
+  onUpdateComment?: (commentId: number, comment: string) => Promise<boolean>;
 }
 
 export function NomComs({
@@ -25,7 +25,7 @@ export function NomComs({
   const submit: SubmitEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault();
     const value = comment.trim();
-    if (!value || isSubmitting) return;
+    if (!value || isSubmitting || !onAddComment) return;
 
     setIsSubmitting(true);
     try {
@@ -51,37 +51,40 @@ export function NomComs({
                 <strong>{nomcom.commenter.name}</strong>
                 <EditableComment
                   value={nomcom.comment ?? ""}
-                  canEdit={nomcom.userId === currentUserId}
                   allowBlank={false}
                   emptyText=""
                   editLabel={`Edit ${nomcom.commenter.name}'s comment`}
                   inputLabel={`Comment from ${nomcom.commenter.name}`}
-                  onSave={(comment) => onUpdateComment(nomcom.id, comment)}
+                  onSave={when(
+                    !!onUpdateComment && nomcom.userId === currentUserId,
+                  )((comment) => onUpdateComment!(nomcom.id, comment))}
                 />
               </div>
             </div>
           );
         })}
       </div>
-      <form className={styles.commentForm} onSubmit={submit}>
-        <label
-          className="srOnly"
-          htmlFor={`nomination-comment-${nominationId}`}
-        >
-          Add a comment
-        </label>
-        <textarea
-          id={`nomination-comment-${nominationId}`}
-          value={comment}
-          onChange={(event) => setComment(event.target.value)}
-          placeholder="Add to the discussion..."
-          rows={2}
-          required
-        />
-        <button type="submit" disabled={!comment.trim() || isSubmitting}>
-          {isSubmitting ? "Posting..." : "Post comment"}
-        </button>
-      </form>
+      {onAddComment && (
+        <form className={styles.commentForm} onSubmit={submit}>
+          <label
+            className="srOnly"
+            htmlFor={`nomination-comment-${nominationId}`}
+          >
+            Add a comment
+          </label>
+          <textarea
+            id={`nomination-comment-${nominationId}`}
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+            placeholder="Add to the discussion..."
+            rows={2}
+            required
+          />
+          <button type="submit" disabled={!comment.trim() || isSubmitting}>
+            {isSubmitting ? "Posting..." : "Post comment"}
+          </button>
+        </form>
+      )}
     </div>
   );
 }
