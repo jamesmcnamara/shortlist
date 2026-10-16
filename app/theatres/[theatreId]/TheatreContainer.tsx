@@ -18,6 +18,9 @@ export function TheatreContainer() {
     refreshJustWatch: async (movieId: number) => {
       await client.refreshJustWatch(movieId);
     },
+    refreshBoxOffice: async (movieId: number) => {
+      await client.refreshBoxOffice(movieId);
+    },
     nominate: async (candidate, comment) => {
       await client.nominations.create({ movieId: candidate.id, comment });
     },

@@ -10,6 +10,7 @@ import { sharePath, theatrePath } from "@/lib/theatre-path";
 import { useTheatres } from "@/app/lib/data/queries";
 import { disconnectDeviceNotifications } from "@/app/lib/push";
 import styles from "./AppMenu.module.css";
+import { BulkBoxOfficeRefresh } from "./BulkBoxOfficeRefresh";
 
 export interface AppMenuProps {
   /** Omitted outside a theatre, which hides the theatre-scoped items. */
@@ -84,64 +85,68 @@ export function AppMenu({ theatre, showMyTheatres = true }: AppMenuProps) {
       >
         <FilmReelIcon />
       </button>
-      {isOpen && (
-        <div className={styles.menuPanel} role="menu">
-          {signOutError && (
-            <p className={styles.error} role="alert">
-              {signOutError}
-            </p>
-          )}
-          {watchlist && (
-            <MenuLink href={theatrePath(watchlist)} onNavigate={close}>
-              Home Theatre
-            </MenuLink>
-          )}
-          {showMyTheatres && (
-            <MenuLink href="/theatres" onNavigate={close}>
-              Theatres Near You
-            </MenuLink>
-          )}
-          <MenuLink href="/theatres/new" onNavigate={close}>
-            New Theatre
+      <div className={styles.menuPanel} role="menu" hidden={!isOpen}>
+        {signOutError && (
+          <p className={styles.error} role="alert">
+            {signOutError}
+          </p>
+        )}
+        {watchlist && (
+          <MenuLink href={theatrePath(watchlist)} onNavigate={close}>
+            Home Theatre
           </MenuLink>
-          {theatre && (
-            <MenuLink
-              href={`${theatrePath(theatre)}/settings`}
-              onNavigate={close}
-            >
-              Settings
-            </MenuLink>
-          )}
-          {shareCode && (
-            <MenuButton onClick={() => copyShareLink(shareCode)}>
-              {SHARE_LABELS[shareStatus]}
-            </MenuButton>
-          )}
-          <MenuLink href="/compare" onNavigate={close}>
-            Compare
+        )}
+        {showMyTheatres && (
+          <MenuLink href="/theatres" onNavigate={close}>
+            Theatres Near You
           </MenuLink>
-          <MenuButton onClick={() => setIsExpanded(!isExpanded)}>
-            {isExpanded ? "Collapse" : "Extra Settings"}
+        )}
+        <MenuLink href="/theatres/new" onNavigate={close}>
+          New Theatre
+        </MenuLink>
+        {theatre && (
+          <MenuLink
+            href={`${theatrePath(theatre)}/settings`}
+            onNavigate={close}
+          >
+            Settings
+          </MenuLink>
+        )}
+        {shareCode && (
+          <MenuButton onClick={() => copyShareLink(shareCode)}>
+            {SHARE_LABELS[shareStatus]}
           </MenuButton>
-          <hr className={styles.divider} />
-          {isExpanded && (
-            <>
-              <MenuLink href="/feedback" onNavigate={close}>
-                Feedback
-              </MenuLink>
-              <button
-                className={styles.menuItem}
-                type="button"
-                role="menuitem"
-                disabled={isSigningOut}
-                onClick={signOut}
-              >
-                {isSigningOut ? "Signing out…" : "Sign out"}
-              </button>
-            </>
+        )}
+        <MenuLink href="/compare" onNavigate={close}>
+          Compare
+        </MenuLink>
+        <MenuButton onClick={() => setIsExpanded(!isExpanded)}>
+          {isExpanded ? "Collapse" : "Extra Settings"}
+        </MenuButton>
+        <hr className={styles.divider} />
+        <div className={styles.extraSettings} hidden={!isExpanded}>
+          {theatre && (
+            <BulkBoxOfficeRefresh
+              key={theatre.id}
+              theatreId={theatre.id}
+              buttonClassName={styles.menuItem}
+              onStart={close}
+            />
           )}
+          <MenuLink href="/feedback" onNavigate={close}>
+            Feedback
+          </MenuLink>
+          <button
+            className={styles.menuItem}
+            type="button"
+            role="menuitem"
+            disabled={isSigningOut}
+            onClick={signOut}
+          >
+            {isSigningOut ? "Signing out…" : "Sign out"}
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

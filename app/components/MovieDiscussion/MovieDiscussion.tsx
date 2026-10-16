@@ -7,6 +7,7 @@ import { EditableComment } from "./EditableComment";
 import { useClickOutside } from "@/app/lib/useClickOutside";
 import { MovieStreaming } from "@/app/components/MovieStreaming";
 import { NomComs } from "./NomComs";
+import { MovieBoxOffice } from "../MovieBoxOffice";
 
 interface MovieDiscussionProps {
   nomination: Nomination;
@@ -18,7 +19,8 @@ interface MovieDiscussionProps {
   onMarkWatched?: () => void;
   onDelete?: () => void;
   onToggleCompleted?: () => void;
-  onRefreshJustWatch?: () => Promise<unknown>;
+  onRefreshJustWatch?: () => Promise<void>;
+  onRefreshBoxOffice?: () => Promise<void>;
   onClose: () => void;
 }
 
@@ -33,6 +35,7 @@ export function MovieDiscussion({
   onDelete,
   onToggleCompleted,
   onRefreshJustWatch,
+  onRefreshBoxOffice,
   onClose,
 }: MovieDiscussionProps) {
   const {
@@ -100,6 +103,10 @@ export function MovieDiscussion({
             )}
           </div>
           <MovieRatings services={ratings.services} />
+          <MovieBoxOffice
+            data={details.boxOffice}
+            onRefresh={onRefreshBoxOffice}
+          />
           <MovieStreaming
             availability={details.justWatch}
             onRefresh={onRefreshJustWatch}

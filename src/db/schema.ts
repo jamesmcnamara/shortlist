@@ -15,6 +15,7 @@ import { relations, sql } from "drizzle-orm";
 import { authUsers } from "./neon-auth-schema";
 import type { MovieDetails as _MovieDetails } from "@lorenzopant/tmdb";
 import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
+import type { BoxOffice } from "@/app/lib/box-office";
 
 /** A theatre is a shared watch list for a group. */
 export const theatres = pgTable("theatres", {
@@ -285,6 +286,7 @@ export interface MovieDetails extends _MovieDetails {
   description?: string | null;
   year?: number | null;
   justWatch?: JustWatchAvailability;
+  boxOffice?: BoxOffice;
 }
 
 export interface MDBResponse {

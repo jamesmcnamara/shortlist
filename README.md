@@ -88,6 +88,66 @@ ID, never just their title; unmatched movies are reported separately.
 The row links to JustWatch for attribution. This undocumented endpoint may
 change or stop working, and cached availability can become outdated.
 
+### Box Office Mojo financial data
+
+Each new nomination, including a successful bulk import, looks up the movie's
+Box Office Mojo title page by IMDb ID. The request waits for this lookup, with
+a ten-second network timeout. Duplicate imports and movie searches do not scrape.
+No additional API key or database migration is needed.
+
+Successful lookups store `movie.details.boxOffice`: USD production budget,
+domestic, international and worldwide lifetime grosses, the source URL, and
+`fetchedAt`. The scraper reads the **All Releases** summary, including re-releases,
+not an individual release's totals. Missing amounts are `null`, not zero.
+When Mojo omits the budget, enrichment fills `boxOffice.budget` from the saved
+TMDB budget if it is a positive whole-dollar amount. Mojo budgets always take
+priority, including an explicit zero. Gross receipts still come only from Mojo;
+a failed scrape does not create or overwrite box office data.
+TMDB's `budget` and `revenue` are unchanged. Movie metadata is shared across
+theatres.
+
+Missing IMDb IDs are logged and skipped. HTTP errors, timeouts, blocked pages,
+and unexpected markup are logged without preventing the nomination. Failed
+lookups leave any previously saved Mojo figures untouched. There is no scheduled
+refresh or automatic retry; `fetchedAt` is when the page was read, not when Mojo
+last updated its numbers.
+
+Movie discussions show a compact financial sentence: "Made $15.9m (1.59x) on $10m"
+or "Lost $5m (-0.5x) on $10m", with inline colors on the figures. Unknown returns
+use a neutral "Net" label instead. Dollar amounts are rounded down to three
+significant digits (for example, `$15.9m` or `$100k`). Net is worldwide gross minus
+production budget; the return multiplier is net divided by budget (150% is 1.5x).
+Multipliers are clipped toward zero to at most two decimal places, one above 2x,
+and none above 10x.
+The comparison table includes sortable Total return and Return multiplier rows.
+Relative colors rank each row's raw values. Absolute Total return colors run
+from -$100m (red) through $0 (white) to +$100m (green); Return multiplier uses
+-1x through 0x to +1x, matching the discussion row.
+Neither represents
+studio profit: marketing, exhibitor shares, and other costs are not included.
+Missing values appear as dashes, and a missing or zero budget has no return multiplier.
+The heat map shares the comparison page's palette: budget uses only white to
+green, starting at white for `$0` and getting greener on a logarithmic scale up
+to `$1bn`. Net and multiplier use return on budget, with red at
+`-1x`, neutral at break-even, and green at `+1x` (clamped beyond those limits).
+
+Choose the circular-arrow refresh button on the row to update a single movie. The membership-protected
+`POST /api/theatres/:theatreId/box-office` endpoint accepts `{ movieId }`, rejects
+movies outside that theatre, and reports failures without clearing saved data.
+Successful refreshes update the shared client cache.
+
+In a theatre, **Menu > Extra Settings > Refresh box office** checks every movie
+in that theatre, including Watched, one at a time. The bottom drawer shows real
+completion progress using the heat map's green. Dismiss it without stopping the
+update; reopen it from the menu while running. Individual failures are counted
+and other movies continue; lost access stops the batch. Keep the page open:
+navigating away stops further requests. A finished run can be restarted from the
+menu, including to backfill older nominations. Errors appear in the drawer.
+
+This is an unofficial scraper of public pages and can break if Mojo changes its
+site. It does not bypass login, paywalls, or anti-bot challenges. Check Box Office
+Mojo's terms before using or redistributing its data.
+
 ## Client data caching
 
 The home page, theatre pages, settings, and the theatre picker share an SWR cache
@@ -227,4 +287,9 @@ missing `theatreId` predicate fails the suite.
 
 Push this directory to a new GitHub repository. In Vercel, choose **Add New Project**, import that repository, and keep the detected Next.js settings. Add `DATABASE_URL` under the project's Environment Variables for the environments you use.
 
-Run `npm run db:migrate` locally against the same Neon database before the first deployment. For subsequent schema changes, generate and review a migration, then run `npm run db:migrate` before or as part of your release process. Vercel only serves the app; database migrations are intentionally not run during a build.
+Production deployments use the build command in `vercel.json` to apply pending
+Drizzle migrations before building the app. A migration failure stops the build.
+Set Vercel's Production `DATABASE_URL` to the production database; the migration
+step reads that environment variable directly and does not load `.env.local` or
+switch Neon branches. Preview builds skip migrations. For schema changes,
+generate and review the migration before pushing.

@@ -295,6 +295,9 @@ export function Theatre({
             onRefreshJustWatch={canEdit(() =>
               api.refreshJustWatch(focused.movieId),
             )}
+            onRefreshBoxOffice={canEdit(() =>
+              api.refreshBoxOffice(focused.movieId),
+            )}
             onDelete={when(isAdmin)(() => actions.delete(focused.id))}
             onToggleCompleted={when(isAdmin)(() => {
               actions.toggleCompleted(focused.id);
@@ -311,6 +314,7 @@ export function Theatre({
 export interface TheatreAPI {
   importTitle: (title: string) => Promise<MovieImportResult>;
   refreshJustWatch: (movieId: number) => Promise<void>;
+  refreshBoxOffice: (movieId: number) => Promise<void>;
   delete: (nominationId: number) => Promise<void>;
   nominate: (candidate: Movie, comment: string) => Promise<void>;
   updateNomRec: (nominationId: number, comment: string) => Promise<void>;
@@ -329,6 +333,7 @@ const readOnly = () => Promise.reject(new Error("This theatre is read-only."));
 const READ_ONLY_API: ReadOnlyTheatreAPI = {
   importTitle: readOnly,
   refreshJustWatch: readOnly,
+  refreshBoxOffice: readOnly,
   delete: readOnly,
   nominate: readOnly,
   updateNomRec: readOnly,

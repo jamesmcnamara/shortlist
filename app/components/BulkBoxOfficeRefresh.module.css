@@ -1,0 +1,51 @@
+.drawer {
+  position: fixed;
+  z-index: 60;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem max(0.75rem, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 -0.5rem 1.5rem rgb(0 0 0 / 8%);
+}
+
+.track {
+  flex: 1;
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--surface-muted);
+}
+
+.fill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.dismiss {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 1.25rem;
+}
+
+.dismiss:hover {
+  background: var(--accent-wash);
+}
+
+.message {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.75rem;
+}

@@ -5,6 +5,7 @@ import { withTheatreMember } from "@/lib/auth/require-theatre";
 import { badRequest, parseJson, requiredText } from "@/lib/validation";
 import { getDb } from "@/src/db/client";
 import { nominations, type Movie } from "@/src/db/schema";
+import { enrichBoxOffice } from "@/app/lib/enrich-box-office";
 
 export const runtime = "nodejs";
 
@@ -51,6 +52,8 @@ export const POST = withTheatreMember({ error: "Unable to import this movie." })
         target: [nominations.theatreId, nominations.movieId],
       })
       .returning({ id: nominations.id });
+
+    if (inserted) await enrichBoxOffice(movie.id);
 
     return Response.json({
       status: inserted ? "added" : "already_on_list",

@@ -12,6 +12,7 @@ import type { SafeTheatre } from "@/lib/auth/require-theatre";
 import type { Movie } from "@/src/db/schema";
 import type { MovieImportResult } from "./bulk-movie-import";
 import type { JustWatchAvailability } from "./justwatch-types";
+import type { BoxOffice } from "./box-office";
 
 export const errorResponse = z.object({ error: z.string() });
 
@@ -174,6 +175,12 @@ export const api = {
           method: "POST",
           body: JSON.stringify({ movieId }),
         }),
+      refreshBoxOffice: (movieId: number, signal?: AbortSignal): Promise<BoxOffice> =>
+        request(`${base}/box-office`, {
+          method: "POST",
+          body: JSON.stringify({ movieId }),
+          signal,
+        }),
       update: (input: { name?: string }): Promise<SafeTheatre> =>
         request(base, { method: "PATCH", body: JSON.stringify(input) }),
       delete: (): Promise<void> => request(base, { method: "DELETE" }),
@@ -204,7 +211,8 @@ export const api = {
             method: "POST",
             body: JSON.stringify({ title }),
           }),
-        list: (): Promise<Nomination[]> => request(`${base}/nominations`),
+        list: (signal?: AbortSignal): Promise<Nomination[]> =>
+          request(`${base}/nominations`, { signal }),
         create: (input: {
           movieId: number;
           comment: string;

@@ -50,6 +50,7 @@ const watched: Nomination = {
 
 const createApi = (): TheatreAPI => ({
   refreshJustWatch: vi.fn(),
+  refreshBoxOffice: vi.fn(),
   importTitle: vi.fn().mockResolvedValue({
     status: "added",
     movie: { id: 2, title: "Arrival", year: 2016 },

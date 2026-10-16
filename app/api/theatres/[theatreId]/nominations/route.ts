@@ -6,6 +6,7 @@ import { getDb } from "@/src/db/client";
 import { movies, nominations } from "@/src/db/schema";
 import { scheduleNomNotys } from "@/lib/notifications/push";
 import { badRequest, dbId, dbIdParam, parseJson } from "@/lib/validation";
+import { enrichBoxOffice } from "@/app/lib/enrich-box-office";
 
 export const runtime = "nodejs";
 
@@ -59,6 +60,7 @@ export const POST = withTheatreMember({ error: "Unable to create nomination." })
       .values({ theatreId: theatre.id, userId, movieId, comment })
       .returning({ id: nominations.id });
 
+    await enrichBoxOffice(movieId);
     const nomination = await getNomination(theatre.id, inserted.id);
     scheduleNomNotys(theatre.id, inserted.id);
     return Response.json(nomination, {

@@ -28,6 +28,7 @@
     "@serwist/next": "^9.5.12",
     "@types/lodash": "^4.17.24",
     "better-auth": "~1.4.22",
+    "cheerio": "^1.2.0",
     "classnames": "^2.5.1",
     "drizzle-orm": "^0.44.2",
     "fp-ts": "^2.16.11",

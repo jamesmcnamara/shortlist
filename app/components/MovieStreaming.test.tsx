@@ -140,7 +140,7 @@ describe("streaming service row", () => {
   });
 
   it.each([
-    [undefined, "Streaming not checked yet."],
+    [undefined, ""],
     [
       { ...availability([]), status: "unavailable" as const },
       "Streaming availability is temporarily unavailable.",
@@ -216,9 +216,13 @@ describe("streaming service row", () => {
         }),
     );
     render(<MovieStreaming onRefresh={onRefresh} />);
+    const button = screen.getByRole("button", { name: "Check JustWatch" });
+    expect(button.textContent).toBe("");
+    expect(button.querySelector('svg[aria-hidden="true"]')).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Check JustWatch" }));
     const checking = await screen.findByRole("button", { name: "Checking…" });
     expect(checking.hasAttribute("disabled")).toBe(true);
+    expect(checking.getAttribute("aria-busy")).toBe("true");
     fireEvent.click(checking);
     expect(onRefresh).toHaveBeenCalledTimes(1);
     fail(new Error("Down"));

@@ -8,6 +8,7 @@ import type {
 } from "@/app/lib/justwatch-types";
 import { STREAMING_SERVICES } from "@/app/lib/streaming-services";
 import { useState } from "react";
+import { RefreshButton } from "./RefreshButton";
 import styles from "./MovieStreaming.module.css";
 
 const LABELS: Record<StreamingType, string> = {
@@ -89,33 +90,36 @@ export function MovieStreaming({
             {refreshFailed
               ? "Couldn't check JustWatch. Try again tomorrow."
               : !availability
-                ? "Streaming not checked yet."
+                ? ""
                 : availability.status === "unavailable"
                   ? "Streaming availability is temporarily unavailable."
                   : availability.status === "not_found"
                     ? "Couldn't find it, man."
                     : "It's fuckin' nowhere. Ghost town."}
           </p>
-          {onRefresh && (
-            <button
-              className={styles.refresh}
-              type="button"
-              onClick={refresh}
-              disabled={isRefreshing}
-            >
-              {isRefreshing ? "Checking…" : "Check JustWatch"}
-            </button>
-          )}
         </>
       )}
-      <a
-        className={styles.attribution}
-        href={attribution}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        JustWatch
-      </a>
+      <div className={styles.controls}>
+        {onRefresh &&
+          !(availability?.status === "matched" && offers.length > 0) && (
+            <RefreshButton
+              onClick={refresh}
+              busy={isRefreshing}
+              label={isRefreshing ? "Checking…" : "Check JustWatch"}
+              title={
+                isRefreshing ? "Checking JustWatch..." : "Refresh JustWatch"
+              }
+            />
+          )}
+        <a
+          className={styles.attribution}
+          href={attribution}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          JustWatch
+        </a>
+      </div>
     </div>
   );
 }

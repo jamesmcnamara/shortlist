@@ -176,6 +176,12 @@
   line-height: 1;
 }
 
+.metricLabel {
+  padding: 0.25rem;
+  font-size: 0.625rem;
+  white-space: nowrap;
+}
+
 .table tbody th img,
 .clock {
   display: block;

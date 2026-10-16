@@ -15,31 +15,12 @@ import {
   type SortDirection,
 } from "./metrics";
 import styles from "./page.module.css";
+import { heat } from "@/app/lib/heat";
 
 const SCALE_HINTS: Record<Scale, string> = {
   relative: "Colors rank these movies against each other.",
   absolute:
     "Colors use each service's full scale. Runtime runs from 1h 20m (great) to 3h (oof).",
-};
-
-// GitHub's diff backgrounds, extrapolated one step past each end for punch.
-const HEAT_STOPS = [
-  "#ff948f",
-  "#ffb1ad",
-  "#ffcecb",
-  "#ffebe9",
-  "#ffffff",
-  "#dafbe1",
-  "#aceebb",
-  "#7ee195",
-  "#50d46f",
-];
-
-const heat = (score: number) => {
-  const position = score * (HEAT_STOPS.length - 1);
-  const index = Math.min(Math.floor(position), HEAT_STOPS.length - 2);
-  const weight = Math.round((position - index) * 100);
-  return `color-mix(in srgb, ${HEAT_STOPS[index + 1]} ${weight}%, ${HEAT_STOPS[index]})`;
 };
 
 interface MovieCompareProps {
@@ -171,12 +152,17 @@ export function MovieCompare({ initialMovies, userId }: MovieCompareProps) {
                           type="button"
                           className={styles.sortButton}
                           title={`Sort by ${metric.name}`}
+                          aria-label={`Sort by ${metric.name}`}
                           onClick={() => toggleSort(metric.name)}
                         >
                           {metric.logo ? (
                             <img src={metric.logo} alt={metric.name} />
-                          ) : (
+                          ) : metric.name === "Runtime" ? (
                             <ClockIcon label={metric.name} />
+                          ) : (
+                            <span className={styles.metricLabel} aria-hidden>
+                              {metric.name === "Total return" ? "Net" : "x"}
+                            </span>
                           )}
                           <span className={styles.sortArrow} aria-hidden>
                             {direction === "desc"
