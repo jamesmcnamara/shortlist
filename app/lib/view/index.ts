@@ -1,5 +1,6 @@
 import type { Nomination, RatingSource } from "@/src/db/schema";
 import { STREAMING_SERVICES } from "../streaming-services";
+import { calculateReturns } from "../box-office-metrics";
 import { some } from "shades";
 
 /**
@@ -79,6 +80,24 @@ export const SORTS: SortOption[] = [
     id: "year",
     label: "Newest release",
     compare: (a, b) => byNumberDesc(a.movie.details.year, b.movie.details.year),
+  },
+  {
+    id: "box-office-net",
+    label: "Net return",
+    compare: (a, b) =>
+      byNumberDesc(
+        calculateReturns(a.movie.details.boxOffice)?.net,
+        calculateReturns(b.movie.details.boxOffice)?.net,
+      ),
+  },
+  {
+    id: "box-office-multiplier",
+    label: "Return multiplier",
+    compare: (a, b) =>
+      byNumberDesc(
+        calculateReturns(a.movie.details.boxOffice)?.multiplier,
+        calculateReturns(b.movie.details.boxOffice)?.multiplier,
+      ),
   },
 ];
 

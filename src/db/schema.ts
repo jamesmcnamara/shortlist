@@ -259,7 +259,6 @@ export type Nomination = RawNomination & {
   movie: Movie;
   nomcoms: NomCom[];
   nominator: Person;
-  /** Members of this nomination's theatre who have marked the movie seen. */
   seenBy: Person[];
 };
 export type NomCom = typeof nomcoms.$inferSelect & { commenter: Person };

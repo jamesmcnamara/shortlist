@@ -30,9 +30,10 @@ export function useTheatres() {
   return useQuery("/api/theatres?previews=true", api.theatres.listWithPosters);
 }
 
-export function useTheatresForMovie(movieId: number) {
-  return useQuery(`/api/theatres?movieId=${movieId}`, () =>
-    api.theatres.listForMovie(movieId),
+export function useTheatresForMovies(movieIds: number[]) {
+  const ids = [...new Set(movieIds)].sort((a, b) => a - b);
+  return useQuery(`/api/theatres?movieIds=${ids.join(",")}`, () =>
+    api.theatres.listForMovies(ids),
   );
 }
 

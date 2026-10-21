@@ -1,0 +1,39 @@
+.sectionTitle {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.film {
+  display: grid;
+  min-width: 0;
+}
+
+.filmHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.filmPoster {
+  flex: none;
+  width: 1.75rem;
+  height: 2.625rem;
+  border-radius: 0.25rem;
+  object-fit: cover;
+  background: var(--surface-muted);
+}
+
+.filmTitle {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.9344rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

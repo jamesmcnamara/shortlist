@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { withUser } from "@/lib/auth/require-user";
 import { generateInviteCode } from "@/app/lib/theatres";
@@ -6,26 +6,38 @@ import { theatrePath } from "@/lib/theatre-path";
 import { getDb } from "@/src/db/client";
 import { nominations, theatreMembers, theatres } from "@/src/db/schema";
 import {
+  listTheatresForUser,
   listTheatresWithPosterPreviewsForUser,
   recentActivityOrder,
 } from "@/app/lib/load-theatre";
 import {
   badRequest,
-  dbIdParam,
+  dbId,
   parseJson,
   requiredText,
 } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
+const MAX_MOVIE_IDS = 100;
+const movieIdsParam = z
+  .string()
+  .transform((value) => value.split(",").map(Number))
+  .pipe(
+    z
+      .array(dbId("Invalid movie id."))
+      .min(1, "Invalid movie id.")
+      .max(MAX_MOVIE_IDS, `Ask for at most ${MAX_MOVIE_IDS} movies.`),
+  )
+  .transform((ids) => [...new Set(ids)]);
+
 const createBody = z.object({
   name: requiredText("A theatre name is required."),
 });
 
 /**
- * Theatres the caller belongs to, for the switcher, the landing redirect, and
- * (with `?movieId=`) the "add to a list" picker, which needs to know which of
- * those theatres already carry the movie.
+ * Theatres the caller belongs to. With `?movieIds=1,2`, each also lists which
+ * of those movies it already carries, for the list pickers.
  */
 export const GET = withUser({ error: "Unable to load your theatres." })(async (
   request: Request,
@@ -35,37 +47,32 @@ export const GET = withUser({ error: "Unable to load your theatres." })(async (
   if (params.get("previews") === "true") {
     return Response.json(await listTheatresWithPosterPreviewsForUser(userId));
   }
-  const movieId = dbIdParam("Invalid movie id.").safeParse(
-    params.get("movieId"),
-  ).data;
+  if (params.has("movieIds")) {
+    const movieIds = movieIdsParam.safeParse(params.get("movieIds"));
+    if (!movieIds.success) return badRequest(movieIds.error);
+    return Response.json(await listTheatresWithMovies(userId, movieIds.data));
+  }
+  return Response.json(await listTheatresForUser(userId));
+});
 
-  const memberships = await getDb()
+const listTheatresWithMovies = (userId: string, movieIds: number[]) =>
+  getDb()
     .select({
       id: theatres.id,
       name: theatres.name,
       watchlistFor: theatres.watchlistFor,
       role: theatreMembers.role,
-      joinedAt: theatreMembers.joinedAt,
-      hasMovie: sql<boolean>`${nominations.id} is not null`,
+      movieIds: sql<number[]>`coalesce((
+        select array_agg(${nominations.movieId} order by ${nominations.movieId})
+        from ${nominations}
+        where ${nominations.theatreId} = ${theatres.id}
+          and ${inArray(nominations.movieId, movieIds)}
+      ), '{}')`,
     })
     .from(theatreMembers)
     .innerJoin(theatres, eq(theatres.id, theatreMembers.theatreId))
-    .leftJoin(
-      nominations,
-      and(
-        eq(nominations.theatreId, theatres.id),
-        eq(nominations.movieId, movieId ?? -1),
-      ),
-    )
     .where(eq(theatreMembers.userId, userId))
     .orderBy(...recentActivityOrder);
-
-  if (!movieId) {
-    return Response.json(memberships.map(({ hasMovie, ...theatre }) => theatre));
-  }
-
-  return Response.json(memberships);
-});
 
 export const POST = withUser({
   error: "Unable to create the theatre.",

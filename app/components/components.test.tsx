@@ -280,6 +280,29 @@ describe("high-churn component smoke tests", () => {
     );
   });
 
+  it.each([
+    ["Net return", "box-office-net"],
+    ["Return multiplier", "box-office-multiplier"],
+  ])("selects the %s box-office sort", (label, sort) => {
+    const onChange = vi.fn();
+    render(
+      <ViewControls
+        state={{ sort: "recent", filters: ["mine"] }}
+        onChange={onChange}
+        existing={new Set()}
+        isSubmitting={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Sort by" }));
+    fireEvent.click(screen.getByRole("button", { name: label }));
+
+    expect(onChange).toHaveBeenCalledWith({ sort, filters: ["mine"] });
+    expect(
+      screen.getByRole("button", { name: "Sort by" }).getAttribute("aria-expanded"),
+    ).toBe("false");
+  });
+
   it("opens and closes the sort and filter option panels", async () => {
     render(
       <ViewControls

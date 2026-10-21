@@ -11,8 +11,32 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Theatre, type TheatreAPI } from "./Theatre";
 import type { Nomination } from "@/src/db/schema";
 
+const { push } = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push }),
+}));
+vi.mock("@/app/components/CrossPost/CrossPost", () => ({
+  CrossPost: ({
+    films,
+    onPosted,
+    onClose,
+  }: {
+    films: Nomination[];
+    onPosted: (summary: { films: number; lists: number }) => void;
+    onClose: () => void;
+  }) => (
+    <div role="dialog" aria-label="Post to other lists">
+      {films.map((film) => film.movie.details.title).join(", ")}
+      <button
+        onClick={() => {
+          onPosted({ films: films.length, lists: 2 });
+          onClose();
+        }}
+      >
+        Fake post
+      </button>
+    </div>
+  ),
 }));
 vi.mock("./ShortlistHeader", () => ({
   ShortlistHeader: () => <header>Shortlist</header>,
@@ -21,12 +45,25 @@ vi.mock("./ViewControls", () => ({
   ViewControls: () => <div>List controls</div>,
 }));
 vi.mock("./MovieCard", () => ({
-  MovieCard: ({ nomination }: { nomination: Nomination }) => (
-    <article>{nomination.movie.details.title}</article>
+  MovieCard: ({
+    nomination,
+    onClick,
+    onLongPress,
+  }: {
+    nomination: Nomination;
+    onClick: () => void;
+    onLongPress: () => void;
+  }) => (
+    <article onClick={onClick} onContextMenu={onLongPress}>
+      {nomination.movie.details.title}
+    </article>
   ),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  push.mockClear();
+});
 
 const watched: Nomination = {
   id: 1,
@@ -61,12 +98,14 @@ const createApi = (): TheatreAPI => ({
   addNomCom: vi.fn(),
   updateNomCom: vi.fn(),
   toggleWatched: vi.fn(),
+  markWatched: vi.fn().mockResolvedValue(undefined),
   toggleCompleted: vi.fn(),
 });
 
 function show(nominees: Nomination[], api: TheatreAPI | null = createApi()) {
   return render(
     <Theatre
+      theatreId="theatre"
       name="Watchlist"
       header={{}}
       isAdmin
@@ -146,5 +185,95 @@ describe("read-only theatre", () => {
     expect(screen.getByText("Watchlist")).toBeTruthy();
     expect(screen.getAllByRole("article")).toHaveLength(1);
     expect(screen.queryByRole("button", { name: "Import movies" })).toBeNull();
+  });
+});
+
+describe("picked movie actions", () => {
+  const film = (id: number, title: string): Nomination => ({
+    ...watched,
+    id,
+    movieId: id,
+    completed: false,
+    movie: {
+      ...watched.movie,
+      id,
+      tmdbId: id * 100,
+      details: { title } as Nomination["movie"]["details"],
+    },
+  });
+  const arrival = film(10, "Arrival");
+  const heat = film(11, "Heat");
+  const compare = () => screen.getByRole("button", { name: "Compare" });
+  const more = () => screen.getByRole("button", { name: "More actions" });
+
+  it("opens the menu from the arrow with one film, but won't compare one", () => {
+    show([arrival, heat]);
+    fireEvent.contextMenu(screen.getByText("Arrival"));
+    expect(compare().getAttribute("aria-disabled")).toBe("true");
+    fireEvent.click(compare());
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.queryByRole("menu")).toBeNull();
+    fireEvent.click(more());
+    expect(more().getAttribute("aria-expanded")).toBe("true");
+    expect(
+      screen.getByRole("menuitem", { name: "Post to other lists…" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "Mark watched" })).toBeTruthy();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("opens the menu on a long press of Compare without comparing", () => {
+    show([arrival, heat]);
+    fireEvent.contextMenu(screen.getByText("Arrival"));
+    fireEvent.click(screen.getByText("Heat"));
+    fireEvent.contextMenu(compare());
+    fireEvent.click(compare());
+    expect(screen.getByRole("menu")).toBeTruthy();
+    expect(push).not.toHaveBeenCalled();
+    fireEvent.click(compare());
+    expect(push).toHaveBeenCalledTimes(1);
+  });
+
+  it("marks every picked film watched and stops picking", async () => {
+    const api = createApi();
+    show([arrival, heat], api);
+    fireEvent.contextMenu(screen.getByText("Arrival"));
+    fireEvent.click(screen.getByText("Heat"));
+    fireEvent.click(more());
+    fireEvent.click(screen.getByRole("menuitem", { name: "Mark watched" }));
+    await waitFor(() =>
+      expect(api.markWatched).toHaveBeenCalledWith([10, 11]),
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole("region", { name: "Compare movies" })).toBeNull(),
+    );
+  });
+
+  it("cross-posts the picked films and reports what was posted", async () => {
+    show([arrival, heat]);
+    fireEvent.contextMenu(screen.getByText("Heat"));
+    fireEvent.click(more());
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: "Post to other lists…" }),
+    );
+    const sheet = screen.getByRole("dialog", { name: "Post to other lists" });
+    expect(sheet.textContent).toContain("Heat");
+    expect(sheet.textContent).not.toContain("Arrival");
+    fireEvent.click(screen.getByRole("button", { name: "Fake post" }));
+    await waitFor(() =>
+      expect(screen.getByText("Posted 1 film to 2 lists.")).toBeTruthy(),
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole("region", { name: "Compare movies" })).toBeNull(),
+    );
+  });
+
+  it("keeps read-only theatres to a plain Compare", () => {
+    show([arrival, heat], null);
+    fireEvent.contextMenu(screen.getByText("Arrival"));
+    fireEvent.contextMenu(compare());
+    expect(screen.queryByRole("button", { name: "More actions" })).toBeNull();
+    expect(screen.queryByRole("menu")).toBeNull();
   });
 });

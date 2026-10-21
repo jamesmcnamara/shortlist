@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { api, ApiError, type TheatreSummaryWithMovie } from "@/app/lib/api";
+import { api, ApiError } from "@/app/lib/api";
 import { withTargetValue } from "@/app/lib/utils";
-import styles from "./AddToLists.module.css";
+import styles from "./ListPicker.module.css";
 
 interface NewListFormProps {
-  onCreated: (theatre: TheatreSummaryWithMovie) => void;
+  onCreated: (theatreId: string) => void;
 }
 
 /** Inline watch list creation, so a missing list never interrupts adding a movie. */
@@ -23,7 +23,7 @@ export function NewListForm({ onCreated }: NewListFormProps) {
     setIsSubmitting(true);
     try {
       const theatre = await api.theatres.create({ name: trimmed });
-      onCreated({ ...theatre, role: "admin", hasMovie: false });
+      onCreated(theatre.id);
       setName("");
       setIsOpen(false);
     } catch (error) {

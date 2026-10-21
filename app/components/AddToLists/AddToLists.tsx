@@ -1,18 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { motion } from "motion/react";
-import { api, ApiError, type TheatreSummaryWithMovie } from "@/app/lib/api";
-import { useTheatresForMovie } from "@/app/lib/data/queries";
+import { useMemo, useState } from "react";
+import { api, ApiError } from "@/app/lib/api";
+import { useTheatresForMovies } from "@/app/lib/data/queries";
 import type { Movie } from "@/src/db/schema";
-import { EmptyState } from "./EmptyState";
+import { ListPickerSheet } from "../ListPicker/ListPickerSheet";
+import type { RowStatus } from "../ListPicker/types";
 import { TheatreRow } from "./TheatreRow";
-import { TheatreSkeleton } from "./TheatreSkeleton";
-import { NewListForm } from "./NewListForm";
-import { SheetFooter } from "./SheetFooter";
-import { SheetHeader } from "./SheetHeader";
-import type { RowStatus } from "./types";
-import styles from "./AddToLists.module.css";
 
 interface AddToListsProps {
   movie: Movie;
@@ -25,21 +19,15 @@ interface AddToListsProps {
  * each with its own optional note.
  */
 export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
-  const { data: allTheatres, error, retry } = useTheatresForMovie(movie.id);
+  const { data: allTheatres, error, retry } = useTheatresForMovies([
+    movie.id,
+  ]);
   const loadError = error?.message;
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [comments, setComments] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<Record<string, RowStatus>>({});
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
 
   const selectedTheatreIds = useMemo(
     () => Object.keys(selected).filter((id) => selected[id]),
@@ -51,8 +39,8 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
     setRowErrors((prev) => ({ ...prev, [id]: "" }));
   }
 
-  function addTheatre(theatre: TheatreSummaryWithMovie) {
-    setSelected((prev) => ({ ...prev, [theatre.id]: true }));
+  function addTheatre(theatreId: string) {
+    setSelected((prev) => ({ ...prev, [theatreId]: true }));
   }
 
   async function submit() {
@@ -93,67 +81,35 @@ export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
   }
 
   return (
-    <div className={styles.scrim} onClick={onClose}>
-      <motion.div
-        className={styles.sheet}
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Add ${movie.details.title} to a list`}
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <SheetHeader movie={movie} onClose={onClose} />
-
-        <form
-          className={styles.form}
-          onSubmit={(event) => {
-            event.preventDefault();
-            submit();
-          }}
-        >
-          <div className={styles.theatres}>
-            {!allTheatres && !loadError && <TheatreSkeleton />}
-            {loadError && (
-              <p className={styles.status} role="alert">
-                {loadError}
-                {" "}
-                <button type="button" onClick={() => retry()}>
-                  Try again
-                </button>
-              </p>
-            )}
-            {allTheatres?.length === 0 && <EmptyState />}
-            {(allTheatres ?? []).map((theatre) => (
-              <TheatreRow
-                key={theatre.id}
-                theatre={theatre}
-                checked={Boolean(selected[theatre.id])}
-                comment={comments[theatre.id] ?? ""}
-                status={status[theatre.id] ?? "idle"}
-                error={rowErrors[theatre.id] ?? ""}
-                onToggle={() => toggle(theatre.id)}
-                onCommentChange={(value) =>
-                  setComments((prev) => ({ ...prev, [theatre.id]: value }))
-                }
-              />
-            ))}
-            {allTheatres && !loadError && (
-              <NewListForm onCreated={addTheatre} />
-            )}
-          </div>
-
-          {(allTheatres ?? []).length > 0 && (
-            <SheetFooter
-              count={selectedTheatreIds.length}
-              isSubmitting={isSubmitting}
-            />
-          )}
-        </form>
-      </motion.div>
-    </div>
+    <ListPickerSheet
+      label={`Add ${movie.details.title} to a list`}
+      title={movie.details.title}
+      subtitle="Pick the lists this belongs on."
+      posterUrl={movie.details.posterUrl ?? null}
+      theatres={allTheatres}
+      loadError={loadError}
+      onRetry={retry}
+      renderTheatre={(theatre) => (
+        <TheatreRow
+          key={theatre.id}
+          theatre={theatre}
+          hasMovie={theatre.movieIds.includes(movie.id)}
+          checked={Boolean(selected[theatre.id])}
+          comment={comments[theatre.id] ?? ""}
+          status={status[theatre.id] ?? "idle"}
+          error={rowErrors[theatre.id] ?? ""}
+          onToggle={() => toggle(theatre.id)}
+          onCommentChange={(value) =>
+            setComments((prev) => ({ ...prev, [theatre.id]: value }))
+          }
+        />
+      )}
+      onCreated={addTheatre}
+      selectedCount={selectedTheatreIds.length}
+      isSubmitting={isSubmitting}
+      onSubmit={submit}
+      onClose={onClose}
+    />
   );
 }
 

@@ -97,8 +97,8 @@ beforeEach(async () => {
   };
 });
 
-describe("GET /api/theatres?movieId=", () => {
-  it.each(["", "?previews=true", "?movieId=1"])(
+describe("GET /api/theatres", () => {
+  it.each(["", "?previews=true", "?movieIds=1"])(
     "includes the designated watchlist marker in theatre summaries (%s)",
     async (query) => {
       asUser(CASEY);
@@ -112,16 +112,20 @@ describe("GET /api/theatres?movieId=", () => {
     },
   );
 
-  it("reports hasMovie per theatre without it when the param is absent", async () => {
-    const { GET } = theatresRoute;
+  it("returns plain summaries without movie data when no movies are asked for", async () => {
     asUser(CASEY);
 
-    const body = await (await GET(new Request("http://test"))).json();
+    const body = await (
+      await theatresRoute.GET(new Request("http://test?movieId=1"))
+    ).json();
 
     expect(body).toHaveLength(3);
     expect(
-      body.every((theatre: Record<string, unknown>) => "hasMovie" in theatre),
-    ).toBe(false);
+      body.every(
+        (theatre: Record<string, unknown>) =>
+          Object.keys(theatre).sort().join() === "id,name,role,watchlistFor",
+      ),
+    ).toBe(true);
   });
 
   describe("GET /api/theatres?previews=true", () => {
@@ -172,25 +176,85 @@ describe("GET /api/theatres?movieId=", () => {
       expect(response.status).toBe(401);
     });
   });
+});
 
-  it("marks only the theatre that already nominated the movie", async () => {
-    const { GET } = theatresRoute;
+describe("GET /api/theatres?movieIds=", () => {
+  const get = async (query: string) =>
+    theatresRoute.GET(new Request(`http://test?movieIds=${query}`));
+
+  it("lists which of the movies each of the caller's theatres carries", async () => {
     asUser(CASEY);
-
-    const body = await (
-      await GET(new Request(`http://test?movieId=${fixture.movieId}`))
-    ).json();
-
-    const hasMovieByTheatreId = Object.fromEntries(
-      body.map((theatre: { id: string; hasMovie: boolean }) => [
-        theatre.id,
-        theatre.hasMovie,
-      ]),
-    );
-    expect(hasMovieByTheatreId).toEqual({
-      [fixture.club.id]: false,
-      [fixture.watchlist.id]: true,
-      [fixture.otherWatchlist.id]: false,
+    const [second] = await fixture.db
+      .insert(movies)
+      .values({
+        tmdbId: 3,
+        details: { title: "Second" },
+        ratings: { services: [], raw: {} },
+      })
+      .returning();
+    await fixture.db.insert(nominations).values([
+      { theatreId: fixture.club.id, userId: CASEY, movieId: second.id },
+      { theatreId: fixture.watchlist.id, userId: CASEY, movieId: second.id },
+    ]);
+    const otherUserId = "55555555-5555-5555-5555-555555555555";
+    await fixture.db.insert(authUsers).values({
+      id: otherUserId,
+      name: "Other",
+      email: "other@example.com",
     });
+    const [privateTheatre] = await fixture.db
+      .insert(theatres)
+      .values({
+        name: "Private",
+        createdBy: otherUserId,
+        inviteCode: "private-invite",
+        adminInviteCode: "private-admin-invite",
+      })
+      .returning();
+    await fixture.db.insert(nominations).values({
+      theatreId: privateTheatre.id,
+      userId: otherUserId,
+      movieId: fixture.movieId,
+    });
+
+    const response = await get(
+      `${second.id},${fixture.movieId},${second.id}`,
+    );
+    expect(response.status).toBe(200);
+    const body = await response.json();
+
+    expect(
+      Object.fromEntries(
+        body.map((theatre: { id: string; movieIds: number[] }) => [
+          theatre.id,
+          theatre.movieIds,
+        ]),
+      ),
+    ).toEqual({
+      [fixture.club.id]: [second.id],
+      [fixture.watchlist.id]: [fixture.movieId, second.id].sort((a, b) => a - b),
+      [fixture.otherWatchlist.id]: [],
+    });
+    expect(JSON.stringify(body)).not.toContain("invite");
+  });
+
+  it.each([
+    "",
+    "abc",
+    "1,,2",
+    "0",
+    "-1",
+    "1.5",
+    "2147483648",
+    Array.from({ length: 101 }, (_, index) => index + 1).join(","),
+  ])("rejects a bad movie id list (%s)", async (query) => {
+    asUser(CASEY);
+    const response = await get(query);
+    expect(response.status).toBe(400);
+  });
+
+  it("requires a signed-in user", async () => {
+    asUser("");
+    expect((await get(String(fixture.movieId))).status).toBe(401);
   });
 });

@@ -86,9 +86,9 @@ export interface TheatreSummaryWithPosterPreviews extends TheatreSummary {
   posterUrls: string[];
 }
 
-/** As `TheatreSummary`, but scoped to a specific movie via `?movieId=`. */
-export interface TheatreSummaryWithMovie extends TheatreSummary {
-  hasMovie: boolean;
+/** As `TheatreSummary`, listing which of the `?movieIds=` it already has. */
+export interface TheatreSummaryWithMovies extends TheatreSummary {
+  movieIds: number[];
 }
 
 export interface TheatreMemberSummary extends User {
@@ -134,11 +134,12 @@ export const api = {
       }),
   },
   theatres: {
-    list: (): Promise<TheatreSummary[]> => request("/api/theatres"),
     listWithPosters: (): Promise<TheatreSummaryWithPosterPreviews[]> =>
       request("/api/theatres?previews=true"),
-    listForMovie: (movieId: number): Promise<TheatreSummaryWithMovie[]> =>
-      request(`/api/theatres?movieId=${movieId}`),
+    listForMovies: (
+      movieIds: number[],
+    ): Promise<TheatreSummaryWithMovies[]> =>
+      request(`/api/theatres?movieIds=${movieIds.join(",")}`),
     create: (input: { name: string }): Promise<SafeTheatre> =>
       request("/api/theatres", { method: "POST", body: JSON.stringify(input) }),
   },

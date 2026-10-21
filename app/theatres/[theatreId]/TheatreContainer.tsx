@@ -1,10 +1,11 @@
 "use client";
 
+import type { TheatreAPI } from "@/app/components/Theatre";
 import { Theatre } from "@/app/components/Theatre";
-import { useMemo } from "react";
 import { useDataSession } from "@/app/lib/data/DataProvider";
 import { useUrlViewState } from "@/app/lib/view/useUrlViewState";
-import type { TheatreAPI } from "@/app/components/Theatre";
+import { useMemo } from "react";
+import { some } from "shades";
 import { useTheatre } from "./TheatreContext";
 
 export function TheatreContainer() {
@@ -38,8 +39,17 @@ export function TheatreContainer() {
     },
     toggleWatched: async (movieId) => {
       const nomination = noms.find((item) => item.movieId === movieId);
-      const hasSeen = nomination?.seenBy.some((user) => user.id === userId);
+      const hasSeen = some({ id: userId })(nomination?.seenBy ?? []);
       await (hasSeen ? client.seen.delete : client.seen.create)(movieId);
+    },
+    markWatched: async (movieIds) => {
+      const unseen = movieIds.filter(
+        (movieId) =>
+          !noms
+            .find((item) => item.movieId === movieId)
+            ?.seenBy.some((user) => user.id === userId),
+      );
+      await Promise.all(unseen.map((movieId) => client.seen.create(movieId)));
     },
     toggleCompleted: async (id) => {
       const nomination = noms.find((item) => item.id === id);
@@ -50,6 +60,7 @@ export function TheatreContainer() {
   return (
     <Theatre
       key={theatre.id}
+      theatreId={theatre.id}
       name={theatre.name}
       header={{
         theatre: { id: theatre.id, inviteCode: detail.inviteCode },

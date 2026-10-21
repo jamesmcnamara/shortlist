@@ -1,4 +1,4 @@
-import styles from "./AddToLists.module.css";
+import styles from "./ListPicker.module.css";
 
 export function TheatreSkeleton() {
   return (
