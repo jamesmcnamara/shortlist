@@ -5,6 +5,7 @@ tsconfig.tsbuildinfo
 .env
 .env.local
 .dev-user.json
+.local-user.json
 .DS_Store
 public/sw.js
 public/sw.js.map

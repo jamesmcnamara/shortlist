@@ -24,3 +24,27 @@ documentation or memory. If the file or account is missing, run `npm run dev:see
 Do not run `dev:sync` just to log in: it replaces the dev database with production
 data. The test user is an admin of shared dev theatres and has its own Watchlist;
 other users' personal Watchlists remain private.
+
+## Responsive design priorities
+
+This is a mostly personal app. Prioritize the owner's Samsung ZFold 8 while
+preserving a good responsive experience for the friends using other phones.
+For UI changes, consider all four reference viewports:
+
+| Fold state | Orientation | CSS viewport (width x height) |
+| --- | --- | --- |
+| Closed | Portrait | 476 x 752 |
+| Closed | Landscape | 752 x 476 |
+| Unfolded | Portrait | 704 x 933 |
+| Unfolded | Landscape | 933 x 704 |
+
+The portrait dimensions come from Chrome DevTools; landscape references swap
+those dimensions. The device pixel ratio is 2.625, but media queries use CSS
+pixels without multiplying or dividing by that ratio. Actual viewport height
+can vary with browser controls and the on-screen keyboard.
+
+Use content-driven media queries to adapt layouts at these sizes, including
+landscape, rather than exact width/height or device-model matching. These
+viewports are priority checks, not exclusive targets: keep layouts usable at
+intermediate widths and on other phones, and do not assume viewport size
+reliably identifies the physical fold state.

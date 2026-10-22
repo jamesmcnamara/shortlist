@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-22T19:58:55.983Z",
+  "title": "Design System: Shortlist",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Cinema Blue", "tonalRamp": ["oklch(15% 0.0699 231.67)", "oklch(26% 0.0699 231.67)", "oklch(38% 0.0699 231.67)", "oklch(49% 0.0699 231.67)", "oklch(61% 0.0699 231.67)", "oklch(72% 0.0699 231.67)", "oklch(84% 0.0699 231.67)", "oklch(95% 0.0699 231.67)"] },
+      "accent-light": { "role": "primary", "displayName": "Soft Cinema Blue", "tonalRamp": ["oklch(15% 0.0512 222.72)", "oklch(26% 0.0512 222.72)", "oklch(38% 0.0512 222.72)", "oklch(49% 0.0512 222.72)", "oklch(61% 0.0512 222.72)", "oklch(72% 0.0512 222.72)", "oklch(84% 0.0512 222.72)", "oklch(95% 0.0512 222.72)"] },
+      "accent-soft": { "role": "primary", "displayName": "Blue Mist", "tonalRamp": ["oklch(15% 0.0320 222.11)", "oklch(26% 0.0320 222.11)", "oklch(38% 0.0320 222.11)", "oklch(49% 0.0320 222.11)", "oklch(61% 0.0320 222.11)", "oklch(72% 0.0320 222.11)", "oklch(84% 0.0320 222.11)", "oklch(95% 0.0320 222.11)"] },
+      "accent-wash": { "role": "primary", "displayName": "Blue Wash", "tonalRamp": ["oklch(15% 0.0148 218.05)", "oklch(26% 0.0148 218.05)", "oklch(38% 0.0148 218.05)", "oklch(49% 0.0148 218.05)", "oklch(61% 0.0148 218.05)", "oklch(72% 0.0148 218.05)", "oklch(84% 0.0148 218.05)", "oklch(95% 0.0148 218.05)"] },
+      "page": { "role": "neutral", "displayName": "Warm Paper", "tonalRamp": ["oklch(15% 0.0119 79.78)", "oklch(26% 0.0119 79.78)", "oklch(38% 0.0119 79.78)", "oklch(49% 0.0119 79.78)", "oklch(61% 0.0119 79.78)", "oklch(72% 0.0119 79.78)", "oklch(84% 0.0119 79.78)", "oklch(95% 0.0119 79.78)"] },
+      "text": { "role": "neutral", "displayName": "Charcoal Ink", "tonalRamp": ["oklch(15% 0.0129 285.51)", "oklch(26% 0.0129 285.51)", "oklch(38% 0.0129 285.51)", "oklch(49% 0.0129 285.51)", "oklch(61% 0.0129 285.51)", "oklch(72% 0.0129 285.51)", "oklch(84% 0.0129 285.51)", "oklch(95% 0.0129 285.51)"] },
+      "text-soft": { "role": "neutral", "displayName": "Soft Ink", "tonalRamp": ["oklch(15% 0.0226 285.47)", "oklch(26% 0.0226 285.47)", "oklch(38% 0.0226 285.47)", "oklch(49% 0.0226 285.47)", "oklch(61% 0.0226 285.47)", "oklch(72% 0.0226 285.47)", "oklch(84% 0.0226 285.47)", "oklch(95% 0.0226 285.47)"] },
+      "muted": { "role": "neutral", "displayName": "Muted Ink", "tonalRamp": ["oklch(15% 0.0219 285.61)", "oklch(26% 0.0219 285.61)", "oklch(38% 0.0219 285.61)", "oklch(49% 0.0219 285.61)", "oklch(61% 0.0219 285.61)", "oklch(72% 0.0219 285.61)", "oklch(84% 0.0219 285.61)", "oklch(95% 0.0219 285.61)"] },
+      "muted-soft": { "role": "neutral", "displayName": "Muted Placeholder Ink", "tonalRamp": ["oklch(15% 0.0203 285.68)", "oklch(26% 0.0203 285.68)", "oklch(38% 0.0203 285.68)", "oklch(49% 0.0203 285.68)", "oklch(61% 0.0203 285.68)", "oklch(72% 0.0203 285.68)", "oklch(84% 0.0203 285.68)", "oklch(95% 0.0203 285.68)"] },
+      "border": { "role": "neutral", "displayName": "Quiet Border", "tonalRamp": ["oklch(15% 0.0081 286.24)", "oklch(26% 0.0081 286.24)", "oklch(38% 0.0081 286.24)", "oklch(49% 0.0081 286.24)", "oklch(61% 0.0081 286.24)", "oklch(72% 0.0081 286.24)", "oklch(84% 0.0081 286.24)", "oklch(95% 0.0081 286.24)"] },
+      "border-strong": { "role": "neutral", "displayName": "Control Border", "tonalRamp": ["oklch(15% 0.0150 286.08)", "oklch(26% 0.0150 286.08)", "oklch(38% 0.0150 286.08)", "oklch(49% 0.0150 286.08)", "oklch(61% 0.0150 286.08)", "oklch(72% 0.0150 286.08)", "oklch(84% 0.0150 286.08)", "oklch(95% 0.0150 286.08)"] },
+      "surface": { "role": "neutral", "displayName": "White Surface", "tonalRamp": ["oklch(15% 0 0)", "oklch(26% 0 0)", "oklch(38% 0 0)", "oklch(49% 0 0)", "oklch(61% 0 0)", "oklch(72% 0 0)", "oklch(84% 0 0)", "oklch(95% 0 0)"] },
+      "surface-muted": { "role": "neutral", "displayName": "Paper Shade", "tonalRamp": ["oklch(15% 0.0120 79.78)", "oklch(26% 0.0120 79.78)", "oklch(38% 0.0120 79.78)", "oklch(49% 0.0120 79.78)", "oklch(61% 0.0120 79.78)", "oklch(72% 0.0120 79.78)", "oklch(84% 0.0120 79.78)", "oklch(95% 0.0120 79.78)"] },
+      "success": { "role": "success", "displayName": "Evergreen", "tonalRamp": ["oklch(15% 0.0772 170.91)", "oklch(26% 0.0772 170.91)", "oklch(38% 0.0772 170.91)", "oklch(49% 0.0772 170.91)", "oklch(61% 0.0772 170.91)", "oklch(72% 0.0772 170.91)", "oklch(84% 0.0772 170.91)", "oklch(95% 0.0772 170.91)"] },
+      "success-wash": { "role": "success", "displayName": "Evergreen Wash", "tonalRamp": ["oklch(15% 0.0134 167.17)", "oklch(26% 0.0134 167.17)", "oklch(38% 0.0134 167.17)", "oklch(49% 0.0134 167.17)", "oklch(61% 0.0134 167.17)", "oklch(72% 0.0134 167.17)", "oklch(84% 0.0134 167.17)", "oklch(95% 0.0134 167.17)"] },
+      "danger": { "role": "error", "displayName": "Brick Red", "tonalRamp": ["oklch(15% 0.1545 25.38)", "oklch(26% 0.1545 25.38)", "oklch(38% 0.1545 25.38)", "oklch(49% 0.1545 25.38)", "oklch(61% 0.1545 25.38)", "oklch(72% 0.1545 25.38)", "oklch(84% 0.1545 25.38)", "oklch(95% 0.1545 25.38)"] },
+      "danger-wash": { "role": "error", "displayName": "Brick Wash", "tonalRamp": ["oklch(15% 0.0141 17.40)", "oklch(26% 0.0141 17.40)", "oklch(38% 0.0141 17.40)", "oklch(49% 0.0141 17.40)", "oklch(61% 0.0141 17.40)", "oklch(72% 0.0141 17.40)", "oklch(84% 0.0141 17.40)", "oklch(95% 0.0141 17.40)"] },
+      "danger-border": { "role": "error", "displayName": "Brick Border", "tonalRamp": ["oklch(15% 0.0512 18.26)", "oklch(26% 0.0512 18.26)", "oklch(38% 0.0512 18.26)", "oklch(49% 0.0512 18.26)", "oklch(61% 0.0512 18.26)", "oklch(72% 0.0512 18.26)", "oklch(84% 0.0512 18.26)", "oklch(95% 0.0512 18.26)"] }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Headline", "purpose": "Large theatre section headings." },
+      "movie-title": { "displayName": "Movie Title", "purpose": "Movie-detail heading over the backdrop." },
+      "title": { "displayName": "Title", "purpose": "Form and theatre-directory headings." },
+      "brand": { "displayName": "Brand", "purpose": "Compact heavy navigation branding." },
+      "body": { "displayName": "Body", "purpose": "Inherited base text and native controls." },
+      "synopsis": { "displayName": "Synopsis", "purpose": "Longer movie summaries." },
+      "label": { "displayName": "Label", "purpose": "Filters, field labels, and compact metadata." },
+      "section-label": { "displayName": "Section Label", "purpose": "Uppercase movie-detail section headings." },
+      "caption": { "displayName": "Caption", "purpose": "Compact poster metadata and hints." }
+    },
+    "shadows": [
+      { "name": "surface", "value": "0 0.75rem 1.75rem rgba(43, 43, 73, 0.08)", "purpose": "Root --shadow for form cards, discovery search, and theatre-directory cards." },
+      { "name": "poster", "value": "0 8px 20px rgba(43, 43, 73, 0.12)", "purpose": "Movie-grid poster at rest." },
+      { "name": "poster-hover", "value": "0 14px 28px rgba(43, 43, 73, 0.2)", "purpose": "Poster hover and keyboard focus." },
+      { "name": "poster-active", "value": "0 10px 0 var(--accent-light)", "purpose": "Solid offset under the active poster; hover/focus increases the offset to 14px." },
+      { "name": "menu", "value": "0 0.625rem 1.875rem rgba(0, 0, 0, 0.12)", "purpose": "Anchored application menu." },
+      { "name": "comparison", "value": "0 0.75rem 1.75rem rgba(20, 20, 32, 0.28)", "purpose": "Floating comparison toolbar and its menu." },
+      { "name": "sheet", "value": "0 -0.75rem 2rem rgba(0, 0, 0, 0.2)", "purpose": "List-picker sheet/dialog." }
+    ],
+    "motion": [
+      { "name": "poster-transition", "value": "transform 0.2s ease, box-shadow 0.2s ease", "purpose": "Poster hover/focus lift; removed with reduced motion." },
+      { "name": "grid-spring", "value": "spring(stiffness: 380, damping: 38)", "purpose": "Default Motion position-layout transition; descriptive Motion parameters, not CSS syntax." },
+      { "name": "grid-glide", "value": "0.28s cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Optional glide position-layout transition." },
+      { "name": "grid-fade", "value": "0.2s ease-out", "purpose": "Optional grid-order fade from opacity 0.55 to 1." },
+      { "name": "grid-presence", "value": "0.16s", "purpose": "Opacity and scale entry/exit; moving modes use scale 0.96. Off/reduced motion sets duration to zero." }
+    ],
+    "breakpoints": [
+      { "name": "directory-narrow", "value": "24rem" },
+      { "name": "comparison-bar-narrow", "value": "26rem" },
+      { "name": "comparison-page-narrow", "value": "32rem" },
+      { "name": "mobile-layout", "value": "40rem" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Submit",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Form submit action; source has no dedicated hover appearance.",
+      "html": "<button class=\"ds-submit\" type=\"button\">Sign in</button>",
+      "css": ".ds-submit { margin-top: .25rem; padding: .6875rem .75rem; border: 0; border-radius: .625rem; background: var(--accent, #386d87); color: var(--on-dark, #fff); font-family: Helvetica, Arial, sans-serif; font-size: 1.0062rem; font-weight: 700; cursor: pointer; } .ds-submit:focus-visible { outline: .1875rem solid var(--focus, #386d87); outline-offset: .125rem; } .ds-submit:disabled { opacity: .6; cursor: progress; }"
+    },
+    {
+      "name": "Add Action",
+      "kind": "button",
+      "refersTo": "button-add",
+      "description": "Compact movie-detail pill action.",
+      "html": "<button class=\"ds-add\" type=\"button\">Add to lists</button>",
+      "css": ".ds-add { border: 0; border-radius: var(--radius-pill, 62.4375rem); padding: .3125rem .8125rem; background: var(--accent, #386d87); color: var(--on-dark, #fff); font-family: Helvetica, Arial, sans-serif; font-size: .7906rem; font-weight: 800; cursor: pointer; } .ds-add:hover, .ds-add:focus-visible { background: var(--accent-wash, #e3f0f4); color: var(--accent, #386d87); } .ds-add:focus-visible { outline: .1875rem solid var(--focus, #386d87); outline-offset: .125rem; }"
+    },
+    {
+      "name": "Filter Pill",
+      "kind": "chip",
+      "refersTo": "filter",
+      "description": "Unselected and selected theatre filter states; static preview does not toggle application state.",
+      "html": "<div class=\"ds-filters\"><button class=\"ds-filter\" type=\"button\" aria-pressed=\"false\">All</button><button class=\"ds-filter\" type=\"button\" aria-pressed=\"true\">Unwatched</button></div>",
+      "css": ".ds-filters { display: flex; flex-wrap: wrap; gap: .375rem; } .ds-filter { padding: .375rem .625rem; border: 1px solid var(--border-strong, #d4d4df); border-radius: var(--radius-pill, 62.4375rem); background: var(--surface, #fff); color: var(--text-soft, #555563); font-family: Helvetica, Arial, sans-serif; font-size: .8625rem; font-weight: 700; white-space: nowrap; cursor: pointer; } .ds-filter:hover { border-color: var(--accent-soft, #bcd7e1); color: var(--accent, #386d87); } .ds-filter[aria-pressed=\"true\"] { border-color: var(--accent-soft, #bcd7e1); background: var(--accent-wash, #e3f0f4); color: var(--accent, #386d87); } .ds-filter:focus-visible { outline: .1875rem solid var(--focus, #386d87); outline-offset: .125rem; } @media (max-width: 40rem) { .ds-filter { min-height: 2.75rem; padding-inline: .875rem; } }"
+    },
+    {
+      "name": "Form Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "White, softly rounded field with the shared keyboard focus ring.",
+      "html": "<input class=\"ds-input\" type=\"text\" aria-label=\"Theatre name\" placeholder=\"Theatre name\">",
+      "css": ".ds-input { width: 100%; padding: .625rem .75rem; border: 1px solid var(--border-strong, #d4d4df); border-radius: .625rem; background: var(--surface, #fff); color: var(--text, #26262d); font-family: Helvetica, Arial, sans-serif; font-size: 1rem; } .ds-input:focus-visible { outline: .1875rem solid var(--focus, #386d87); outline-offset: .125rem; }"
+    },
+    {
+      "name": "Discovery Search",
+      "kind": "input",
+      "refersTo": "search",
+      "description": "Elevated discovery input with container-level keyboard focus.",
+      "html": "<div class=\"ds-search\"><span aria-hidden=\"true\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"10\" cy=\"10\" r=\"6\"></circle><path d=\"m15 15 5 5\"></path></svg></span><input aria-label=\"Search movies\" placeholder=\"Search movies\"></div>",
+      "css": ".ds-search { display: flex; align-items: center; gap: .75rem; padding: .875rem 1.125rem; border: 1px solid var(--border-strong, #d4d4df); border-radius: 1rem; background: var(--surface, #fff); box-shadow: var(--shadow, 0 .75rem 1.75rem rgba(43,43,73,.08)); } .ds-search span { color: var(--muted, #666674); } .ds-search input { flex: 1; min-width: 0; border: 0; background: none; color: var(--text, #26262d); font-family: Helvetica, Arial, sans-serif; font-size: 1.0781rem; } .ds-search:focus-within { outline: .1875rem solid var(--focus, #386d87); outline-offset: .125rem; } .ds-search input:focus { outline: none; }"
+    },
+    {
+      "name": "Application Menu",
+      "kind": "nav",
+      "refersTo": "menu-button",
+      "description": "Circular trigger and anchored panel shown open as a static visual sample; menu behavior is supplied by React in the app.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Sample application menu\"><button class=\"ds-menu-button\" type=\"button\" aria-label=\"Menu\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 6h14M5 12h14M5 18h14\"></path></svg></button><div class=\"ds-menu-panel\"><a class=\"ds-menu-item\" href=\"#theatres\">Theatres</a><a class=\"ds-menu-item\" href=\"#watchlist\">Watchlist</a></div></nav>",
+      "css": ".ds-nav { position: relative; width: 11rem; min-height: 9rem; display: flex; justify-content: flex-end; font-family: Helvetica, Arial, sans-serif; } .ds-menu-button { display: grid; place-items: center; width: 2.375rem; height: 2.375rem; border: 1px solid var(--border-strong, #d4d4df); border-radius: var(--radius-pill, 62.4375rem); background: var(--surface, #fff); color: var(--text-soft, #555563); cursor: pointer; } .ds-menu-button:hover { border-color: var(--accent-soft, #bcd7e1); color: var(--accent, #386d87); } .ds-menu-panel { position: absolute; top: 2.875rem; right: 0; display: grid; min-width: 10rem; padding: .375rem; border: 1px solid var(--border-strong, #d4d4df); border-radius: .875rem; background: var(--surface, #fff); box-shadow: 0 .625rem 1.875rem rgba(0,0,0,.12); } .ds-menu-item { padding: .5625rem .75rem; border-radius: .5rem; color: var(--text-soft, #555563); font-size: .8625rem; font-weight: 700; text-decoration: none; white-space: nowrap; } .ds-menu-item:hover { background: var(--accent-wash, #e3f0f4); color: var(--accent, #386d87); } .ds-menu-button:focus-visible, .ds-menu-item:focus-visible { outline: .1875rem solid var(--focus, #386d87); outline-offset: .125rem; }"
+    },
+    {
+      "name": "Theatre Directory Card",
+      "kind": "card",
+      "refersTo": "theatre-card",
+      "description": "The directory's text-only card variant; poster-stack rows add overlapping movie artwork.",
+      "html": "<a class=\"ds-theatre\" href=\"#theatre\"><span class=\"ds-theatre-name\">Movie night</span></a>",
+      "css": ".ds-theatre { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 1rem; min-height: 6.25rem; padding: .75rem 1rem; border: 1px solid var(--border, #e5e5eb); border-radius: .875rem; background: var(--surface, #fff); box-shadow: var(--shadow, 0 .75rem 1.75rem rgba(43,43,73,.08)); color: var(--text, #26262d); font-family: Helvetica, Arial, sans-serif; text-decoration: none; } .ds-theatre-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1.0781rem; font-weight: 700; } .ds-theatre:hover { border-color: var(--accent-soft, #bcd7e1); } .ds-theatre:focus-visible { outline: .1875rem solid var(--focus, #386d87); outline-offset: .125rem; }"
+    },
+    {
+      "name": "Movie Poster",
+      "kind": "card",
+      "refersTo": "movie-poster",
+      "description": "Image-free preview of the actual fallback surface, lower readability overlay, and poster hover/focus lift. Real cards use movie artwork.",
+      "html": "<button class=\"ds-poster-button\" type=\"button\"><span class=\"ds-poster\"><span class=\"ds-poster-shade\"></span><span class=\"ds-poster-label\"><strong>Movie title</strong><small>2026</small></span></span></button>",
+      "css": ".ds-poster-button { display: block; width: 100%; max-width: 11rem; padding: 0; border: 0; background: transparent; text-align: left; font-family: Helvetica, Arial, sans-serif; cursor: pointer; } .ds-poster { position: relative; display: grid; place-items: center; aspect-ratio: 2 / 3; overflow: hidden; border-radius: .625rem; background: #30354d; color: #d5d2ff; box-shadow: 0 8px 20px rgba(43,43,73,.12); transition: transform .2s ease, box-shadow .2s ease; } .ds-poster-button:hover .ds-poster, .ds-poster-button:focus-visible .ds-poster { transform: translateY(-.25rem); box-shadow: 0 14px 28px rgba(43,43,73,.2); } .ds-poster-button:focus-visible { outline: .1875rem solid var(--focus, #386d87); outline-offset: .125rem; } .ds-poster-shade { position: absolute; inset: 35% 0 0; background: linear-gradient(transparent, rgba(20,20,32,.9)); } .ds-poster-label { position: absolute; right: .75rem; bottom: .6875rem; left: .75rem; color: var(--on-dark, #fff); } .ds-poster-label strong, .ds-poster-label small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-poster-label strong { font-size: 1.0062rem; letter-spacing: -.03em; } .ds-poster-label small { margin-top: .1875rem; color: rgba(255,255,255,.72); font-size: .7188rem; } @media (prefers-reduced-motion: reduce) { .ds-poster { transition: none; } .ds-poster-button:hover .ds-poster, .ds-poster-button:focus-visible .ds-poster { transform: none; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Friends' Screening Room",
+    "overview": "Warm, sleek, and playful: a relaxed movie-club interface with confident typography, quiet controls, and expressive movie artwork. The surrounding UI stays refined and restrained so posters, movie titles, and the group's choices carry the personality.\n\nThe system is mostly flat, with soft shadows for raised controls and artwork. Warm paper grounds the light interface; compact white surfaces, Cinema Blue actions, and Charcoal Ink type provide structure without turning every content group into a decorated card.",
+    "keyCharacteristics": [
+      "Artwork first, with quiet framing and compact controls.",
+      "Bold, tightly tracked headings over a practical sans-serif body.",
+      "Warm neutral surfaces with a restrained blue interaction palette.",
+      "Pill-shaped filters, softly rounded media, and responsive movie grids."
+    ],
+    "rules": [
+      { "name": "The Artwork First Rule", "body": "Let movie imagery supply visual variety. Use the blue palette to express interaction and selection rather than introduce unrelated decorative accents.", "section": "colors" },
+      { "name": "The Role Before Scale Rule", "body": "Reuse the nearest implemented text role. Do not normalize the existing fractional rem values or add a contrasting font as part of ordinary feature work.", "section": "typography" },
+      { "name": "The Quiet Frame Rule", "body": "Preserve the open poster grid. Do not wrap every movie and metadata row in another white, bordered, elevated card.", "section": "elevation" }
+    ],
+    "dos": [
+      "**Do** reuse the root palette and contextual focus variable rather than hardcode new brand colors.",
+      "**Do** let movie artwork carry expression while surrounding controls remain compact and quiet.",
+      "**Do** reuse the existing text roles, rounded forms, container widths, and responsive grid behavior.",
+      "**Do** preserve distinct hover, focus, active, selected, watched, disabled, and loading states.",
+      "**Do** retain reduced-motion handling and safe-area clearance for fixed controls."
+    ],
+    "donts": [
+      "**Don't** turn the unboxed poster grid into nested elevated cards.",
+      "**Don't** replace the light paper canvas or Helvetica family during an ordinary feature change.",
+      "**Don't** use semantic success/danger colors as unrelated decorative accents.",
+      "**Don't** suppress visible keyboard focus or apply text truncation where content needs to wrap.",
+      "**Don't** treat synthesized sidecar tonal ramps or static preview snippets as new production tokens or React behavior."
+    ]
+  }
+}
