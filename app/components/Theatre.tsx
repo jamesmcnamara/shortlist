@@ -18,7 +18,7 @@ import type { Movie, Nomination } from "@/src/db/schema";
 import classnames from "classnames";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { all, filter, find, get, map, some } from "shades";
 import { when } from "../lib/utils";
 import { MovieGrid } from "./MovieGrid";
@@ -90,7 +90,7 @@ export function Theatre({
   const cardProps = (nom: Nomination) => {
     const { tmdbId } = nom.movie;
     return {
-      isSelected: when(picked && tmdbId)(picked!.includes(tmdbId!)),
+      isSelected: picked && tmdbId ? picked.includes(tmdbId) : undefined,
       onClick: () => {
         if (!picked) openDiscussion(nom.id);
         else if (tmdbId !== null) togglePick(tmdbId);

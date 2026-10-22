@@ -11,7 +11,6 @@ interface MovieCardProps {
   showMeta: boolean;
   isExpanded: boolean;
   isCompleted?: boolean;
-  /** Set while picking movies to compare; undefined otherwise. */
   isSelected?: boolean;
   onClick: () => void;
   onLongPress: () => void;
