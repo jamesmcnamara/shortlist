@@ -33,9 +33,7 @@ export default function Theatres() {
                   href={theatrePath(theatre)}
                   prefetch
                 >
-                  <span className={styles.theatreDetails}>
-                    <span className={styles.theatreName}>{theatre.name}</span>
-                  </span>
+                  <span className={styles.theatreName}>{theatre.name}</span>
                   {theatre.posterUrls.length > 0 ? (
                     <span className={styles.posters} aria-hidden="true">
                       {theatre.posterUrls.map((posterUrl, i) => (
@@ -45,8 +43,8 @@ export default function Theatres() {
                           style={{ "--i": i } as CSSProperties}
                           src={posterUrl}
                           alt=""
-                          width="48"
-                          height="72"
+                          width="72"
+                          height="108"
                           loading="lazy"
                         />
                       ))}
