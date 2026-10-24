@@ -4,12 +4,23 @@ import type { PointerEvent, SyntheticEvent } from "react";
 const DELAY_MS = 450;
 const MOVE_TOLERANCE_PX = 10;
 
+export interface LongPressHandlers {
+  onPointerDown(event: PointerEvent): void;
+  onPointerMove(event: PointerEvent): void;
+  onPointerUp(event: PointerEvent): void;
+  onPointerLeave(event: PointerEvent): void;
+  onPointerCancel(event: PointerEvent): void;
+  onKeyDown(event: SyntheticEvent): void;
+  onContextMenu(event: SyntheticEvent): void;
+  onClickCapture(event: SyntheticEvent): void;
+}
+
 /**
  * Fires `onLongPress` after holding a pointer still, or on the native context
  * menu (right-click, Android long-press, the keyboard menu key). Swallows the
  * click that follows a long press so it doesn't also count as a tap.
  */
-export function useLongPress(onLongPress: () => void) {
+export function useLongPress(onLongPress: () => void): LongPressHandlers {
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const origin = useRef<{ x: number; y: number } | null>(null);
   const didFire = useRef(false);
