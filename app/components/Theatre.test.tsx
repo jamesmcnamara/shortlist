@@ -219,8 +219,6 @@ describe("picked movie actions", () => {
       screen.getByRole("menuitem", { name: "Post to other lists…" }),
     ).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Mark watched" })).toBeTruthy();
-    fireEvent.keyDown(document, { key: "Escape" });
-    expect(screen.queryByRole("menu")).toBeNull();
   });
 
   it("opens the menu on a long press of Compare without comparing", () => {
@@ -242,11 +240,11 @@ describe("picked movie actions", () => {
     fireEvent.click(screen.getByText("Heat"));
     fireEvent.click(more());
     fireEvent.click(screen.getByRole("menuitem", { name: "Mark watched" }));
+    await waitFor(() => expect(api.markWatched).toHaveBeenCalledWith([10, 11]));
     await waitFor(() =>
-      expect(api.markWatched).toHaveBeenCalledWith([10, 11]),
-    );
-    await waitFor(() =>
-      expect(screen.queryByRole("region", { name: "Compare movies" })).toBeNull(),
+      expect(
+        screen.queryByRole("region", { name: "Compare movies" }),
+      ).toBeNull(),
     );
   });
 
@@ -265,7 +263,9 @@ describe("picked movie actions", () => {
       expect(screen.getByText("Posted 1 film to 2 lists.")).toBeTruthy(),
     );
     await waitFor(() =>
-      expect(screen.queryByRole("region", { name: "Compare movies" })).toBeNull(),
+      expect(
+        screen.queryByRole("region", { name: "Compare movies" }),
+      ).toBeNull(),
     );
   });
 

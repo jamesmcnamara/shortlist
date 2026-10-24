@@ -102,7 +102,9 @@ export function CrossPost({
             result.reason instanceof ApiError
               ? result.reason.message
               : "Something went wrong.";
-          return mod(film.movieId)(cons(`${theatre.name}: ${message}`))(errors);
+          return mod(film.movieId)(consOrNew(`${theatre.name}: ${message}`))(
+            errors,
+          );
         },
         {},
       ),
@@ -230,3 +232,8 @@ const hint = (has: number, total: number, justAdded: boolean) => {
   if (has === total) return justAdded ? "Added ✓" : "Already on this list";
   return `Has ${has} of ${total}`;
 };
+
+const consOrNew =
+  <T,>(elem: T) =>
+  (arr: T[] | undefined) =>
+    arr ? [...arr, elem] : [elem];
