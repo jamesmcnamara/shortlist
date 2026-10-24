@@ -158,7 +158,7 @@ describe("theatre movie animations", () => {
     ).toBe("false");
   });
 
-  it("celebrates marking a movie seen only after a successful save", async () => {
+  it("celebrates marking a movie seen immediately without waiting for the save", async () => {
     const api = createApi();
     const save = Promise.withResolvers<void>();
     vi.mocked(api.toggleWatched).mockReturnValue(save.promise);
@@ -169,10 +169,16 @@ describe("theatre movie animations", () => {
       screen.getByRole("button", { name: "Mark Watched movie as seen" }),
     );
     expect(api.toggleWatched).toHaveBeenCalledWith(watched.movieId);
-    expect(celebrate).not.toHaveBeenCalled();
+    expect(celebrate).toHaveBeenCalledOnce();
 
-    save.resolve();
-    await waitFor(() => expect(celebrate).toHaveBeenCalledOnce());
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mark Watched movie as seen" }),
+    );
+    expect(api.toggleWatched).toHaveBeenCalledOnce();
+    expect(celebrate).toHaveBeenCalledOnce();
+
+    await act(async () => save.resolve());
+    expect(celebrate).toHaveBeenCalledOnce();
   });
 
   it("does not celebrate unmarking a movie seen", async () => {
@@ -195,15 +201,19 @@ describe("theatre movie animations", () => {
     expect(celebrate).not.toHaveBeenCalled();
   });
 
-  it("celebrates moving a movie into Watched", async () => {
+  it("celebrates moving a movie into Watched before the save finishes", async () => {
     const api = createApi();
+    const save = Promise.withResolvers<void>();
+    vi.mocked(api.toggleCompleted).mockReturnValue(save.promise);
     show([{ ...watched, completed: false }], api);
     fireEvent.click(screen.getByText("Watched movie"));
     fireEvent.click(
       screen.getByRole("button", { name: "Mark Watched movie as Watched" }),
     );
-    await waitFor(() => expect(celebrate).toHaveBeenCalledOnce());
+    expect(celebrate).toHaveBeenCalledOnce();
     expect(api.toggleCompleted).toHaveBeenCalledWith(watched.id);
+    await act(async () => save.resolve());
+    expect(celebrate).toHaveBeenCalledOnce();
   });
 
   it("does not celebrate moving a movie out of Watched", async () => {
@@ -221,7 +231,7 @@ describe("theatre movie animations", () => {
   });
 
   it.each(["toggleWatched", "toggleCompleted"] as const)(
-    "does not celebrate a failed %s action",
+    "still reports a failed %s action after celebrating immediately",
     async (action) => {
       const api = createApi();
       vi.mocked(api[action]).mockRejectedValue(new Error("Save failed"));
@@ -235,8 +245,9 @@ describe("theatre movie animations", () => {
               : "Mark Watched movie as Watched",
         }),
       );
+      expect(celebrate).toHaveBeenCalledOnce();
       await waitFor(() => expect(screen.getByText("Save failed")).toBeTruthy());
-      expect(celebrate).not.toHaveBeenCalled();
+      expect(celebrate).toHaveBeenCalledOnce();
       expect(
         screen.getByRole("region", { name: "Discussion about Watched movie" }),
       ).toBeTruthy();
@@ -382,11 +393,16 @@ describe("picked movie actions", () => {
 
   it("marks every picked film watched and stops picking", async () => {
     const api = createApi();
+    const save = Promise.withResolvers<void>();
+    vi.mocked(api.markWatched).mockReturnValue(save.promise);
     show([arrival, heat], api);
     fireEvent.contextMenu(screen.getByText("Arrival"));
     fireEvent.click(screen.getByText("Heat"));
     fireEvent.click(more());
     fireEvent.click(screen.getByRole("menuitem", { name: "Mark watched" }));
+    expect(celebrate).toHaveBeenCalledOnce();
+    expect(screen.getByRole("region", { name: "Compare movies" })).toBeTruthy();
+    await act(async () => save.resolve());
     await waitFor(() => expect(api.markWatched).toHaveBeenCalledWith([10, 11]));
     await waitFor(() =>
       expect(
@@ -409,15 +425,16 @@ describe("picked movie actions", () => {
     expect(celebrate).not.toHaveBeenCalled();
   });
 
-  it("does not celebrate a failed bulk watched save", async () => {
+  it("still reports a failed bulk watched save after celebrating immediately", async () => {
     const api = createApi();
     vi.mocked(api.markWatched).mockRejectedValue(new Error("Save failed"));
     show([arrival], api);
     fireEvent.contextMenu(screen.getByText("Arrival"));
     fireEvent.click(more());
     fireEvent.click(screen.getByRole("menuitem", { name: "Mark watched" }));
+    expect(celebrate).toHaveBeenCalledOnce();
     await waitFor(() => expect(screen.getByText("Save failed")).toBeTruthy());
-    expect(celebrate).not.toHaveBeenCalled();
+    expect(celebrate).toHaveBeenCalledOnce();
     expect(screen.getByRole("region", { name: "Compare movies" })).toBeTruthy();
   });
 

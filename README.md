@@ -19,7 +19,8 @@ access admin links or rotate either kind. Rotating a link revokes both preview
 and join access through it, without removing existing members.
 
 Marking a movie seen, using bulk **Mark watched**, or moving a movie into
-**Watched** triggers a bold confetti celebration after the save succeeds.
+**Watched** triggers a bold confetti celebration immediately, while the save
+runs in the background. Save failures still show an error.
 Undoing a watched marking or bulk-marking movies already seen does not celebrate.
 The animation respects the system's reduced-motion preference.
 

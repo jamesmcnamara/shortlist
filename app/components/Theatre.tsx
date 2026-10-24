@@ -104,6 +104,10 @@ export function Theatre({
     ? (find({ id: focusedId })(nominees) ?? null)
     : null;
 
+  const pickedNoms = nominees.filter(
+    ({ movie }) => movie.tmdbId !== null && picked?.includes(movie.tmdbId),
+  );
+
   const { actions, message, isSubmitting } = useAPIActions({
     nominate: {
       api: api.nominate,
@@ -116,10 +120,18 @@ export function Theatre({
     },
     toggleWatched: {
       api: api.toggleWatched,
+      onStart: () => {
+        if (focused && !some({ id: userId })(focused.seenBy)) celebrate();
+      },
       action: "update your watched status",
     },
     markWatched: {
       api: api.markWatched,
+      onStart: () => {
+        if (pickedNoms.some((nom) => !some({ id: userId })(nom.seenBy))) {
+          celebrate();
+        }
+      },
       onSuccess: stopPicking,
       action: "mark those watched",
     },
@@ -137,6 +149,9 @@ export function Theatre({
     },
     toggleCompleted: {
       api: api.toggleCompleted,
+      onStart: () => {
+        if (focused && !focused.completed) celebrate();
+      },
       action: "update the completed status",
     },
     refreshJustWatch: {
@@ -173,10 +188,6 @@ export function Theatre({
   );
 
   const showMeta = new Set(map("userId")(nominees)).size > 2;
-
-  const pickedNoms = nominees.filter(
-    ({ movie }) => movie.tmdbId !== null && picked?.includes(movie.tmdbId),
-  );
 
   const additionalMenuItems = [
     {
@@ -294,17 +305,9 @@ export function Theatre({
             onClickCompare={() => {
               if (picked.length >= 2) router.push(compareHref(picked));
             }}
-            onClickMarkWatched={async () => {
-              const hasUnseen = pickedNoms.some(
-                (nom) => !some({ id: userId })(nom.seenBy),
-              );
-              if (
-                (await actions.markWatched(map("movieId")(pickedNoms))) &&
-                hasUnseen
-              ) {
-                celebrate();
-              }
-            }}
+            onClickMarkWatched={() =>
+              actions.markWatched(map("movieId")(pickedNoms))
+            }
             onClickCrossPost={() => {
               setIsMenuOpen(false);
               setCrossPosting(pickedNoms);
@@ -343,15 +346,9 @@ export function Theatre({
               actions.addNomCom(focused.id, comment),
             )}
             onUpdateNomCom={canEdit(actions.updateNomCom)}
-            onMarkWatched={canEdit(async () => {
-              const hasSeen = some({ id: userId })(focused.seenBy);
-              if (
-                (await actions.toggleWatched(focused.movieId)) &&
-                !hasSeen
-              ) {
-                celebrate();
-              }
-            })}
+            onMarkWatched={canEdit(() =>
+              actions.toggleWatched(focused.movieId),
+            )}
             onRefreshJustWatch={canEdit(() =>
               api.refreshJustWatch(focused.movieId),
             )}
@@ -361,7 +358,6 @@ export function Theatre({
             onDelete={when(isAdmin)(() => actions.delete(focused.id))}
             onToggleCompleted={when(isAdmin)(async () => {
               if (await actions.toggleCompleted(focused.id)) {
-                if (!focused.completed) celebrate();
                 closeDiscussion();
               }
             })}
