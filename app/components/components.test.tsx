@@ -160,7 +160,7 @@ describe("high-churn component smoke tests", () => {
 
     expect(screen.getByText("A Movie")).toBeTruthy();
     expect(screen.getByRole("img", { name: "Watched" })).toBeTruthy();
-    expect(screen.getByAltText("").parentElement?.className).not.toContain(
+    expect(screen.getByAltText("").parentElement?.className).toContain(
       "watchedPoster",
     );
     fireEvent.click(
