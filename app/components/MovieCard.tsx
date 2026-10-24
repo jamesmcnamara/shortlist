@@ -55,6 +55,7 @@ export function MovieCard({
           <div
             className={classnames(styles.poster, {
               [styles.selectedPoster]: isSelected,
+              [styles.watchedPoster]: hasSeen || isCompleted,
             })}
           >
             {details.posterUrl ? (
@@ -70,7 +71,9 @@ export function MovieCard({
                 role="img"
                 aria-label="Watched"
                 title="Watched"
-              />
+              >
+                WATCHED
+              </span>
             )}
             {isSelecting && (
               <span className={styles.selectMark} aria-hidden="true" />

@@ -1,17 +1,26 @@
 // @vitest-environment jsdom
 
 import {
+  act,
   cleanup,
   fireEvent,
   render,
   screen,
   waitFor,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Theatre, type TheatreAPI } from "./Theatre";
 import type { Nomination } from "@/src/db/schema";
+import type { AppMenuProps } from "./AppMenu";
+import type { MovieImportResult } from "@/app/lib/bulk-movie-import";
 
-const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+const { push, celebrate } = vi.hoisted(() => ({
+  push: vi.fn(),
+  celebrate: vi.fn(),
+}));
+vi.mock("@/app/lib/useConfetti", () => ({
+  useConfetti: () => celebrate,
+}));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
 }));
@@ -39,7 +48,18 @@ vi.mock("@/app/components/CrossPost/CrossPost", () => ({
   ),
 }));
 vi.mock("./ShortlistHeader", () => ({
-  ShortlistHeader: () => <header>Shortlist</header>,
+  ShortlistHeader: ({ additionalMenuItems = [] }: AppMenuProps) => (
+    <header>
+      Shortlist
+      {additionalMenuItems.map((item) =>
+        item.type === "button" ? (
+          <button key={item.label} onClick={item.onClick}>
+            {item.label}
+          </button>
+        ) : null,
+      )}
+    </header>
+  ),
 }));
 vi.mock("./ViewControls", () => ({
   ViewControls: () => <div>List controls</div>,
@@ -60,9 +80,14 @@ vi.mock("./MovieCard", () => ({
   ),
 }));
 
+beforeEach(() => {
+  window.history.replaceState(null, "", "/");
+});
+
 afterEach(() => {
   cleanup();
   push.mockClear();
+  celebrate.mockClear();
 });
 
 const watched: Nomination = {
@@ -132,38 +157,129 @@ describe("theatre movie animations", () => {
         .getAttribute("aria-expanded"),
     ).toBe("false");
   });
+
+  it("celebrates marking a movie seen only after a successful save", async () => {
+    const api = createApi();
+    const save = Promise.withResolvers<void>();
+    vi.mocked(api.toggleWatched).mockReturnValue(save.promise);
+    show([{ ...watched, completed: false }], api);
+
+    fireEvent.click(screen.getByText("Watched movie"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mark Watched movie as seen" }),
+    );
+    expect(api.toggleWatched).toHaveBeenCalledWith(watched.movieId);
+    expect(celebrate).not.toHaveBeenCalled();
+
+    save.resolve();
+    await waitFor(() => expect(celebrate).toHaveBeenCalledOnce());
+  });
+
+  it("does not celebrate unmarking a movie seen", async () => {
+    const api = createApi();
+    show(
+      [{
+        ...watched,
+        completed: false,
+        seenBy: [{ id: "user", name: "User" }],
+      }],
+      api,
+    );
+    fireEvent.click(screen.getByText("Watched movie"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Unmark Watched movie as seen" }),
+    );
+    await waitFor(() =>
+      expect(api.toggleWatched).toHaveBeenCalledWith(watched.movieId),
+    );
+    expect(celebrate).not.toHaveBeenCalled();
+  });
+
+  it("celebrates moving a movie into Watched", async () => {
+    const api = createApi();
+    show([{ ...watched, completed: false }], api);
+    fireEvent.click(screen.getByText("Watched movie"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mark Watched movie as Watched" }),
+    );
+    await waitFor(() => expect(celebrate).toHaveBeenCalledOnce());
+    expect(api.toggleCompleted).toHaveBeenCalledWith(watched.id);
+  });
+
+  it("does not celebrate moving a movie out of Watched", async () => {
+    const api = createApi();
+    show([watched], api);
+    fireEvent.click(screen.getByRole("button", { name: /Watched/ }));
+    fireEvent.click(screen.getByText("Watched movie"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Move Watched movie out of Watched" }),
+    );
+    await waitFor(() =>
+      expect(api.toggleCompleted).toHaveBeenCalledWith(watched.id),
+    );
+    expect(celebrate).not.toHaveBeenCalled();
+  });
+
+  it.each(["toggleWatched", "toggleCompleted"] as const)(
+    "does not celebrate a failed %s action",
+    async (action) => {
+      const api = createApi();
+      vi.mocked(api[action]).mockRejectedValue(new Error("Save failed"));
+      show([{ ...watched, completed: false }], api);
+      fireEvent.click(screen.getByText("Watched movie"));
+      fireEvent.click(
+        screen.getByRole("button", {
+          name:
+            action === "toggleWatched"
+              ? "Mark Watched movie as seen"
+              : "Mark Watched movie as Watched",
+        }),
+      );
+      await waitFor(() => expect(screen.getByText("Save failed")).toBeTruthy());
+      expect(celebrate).not.toHaveBeenCalled();
+      expect(
+        screen.getByRole("region", { name: "Discussion about Watched movie" }),
+      ).toBeTruthy();
+    },
+  );
 });
 
-describe("theatre bulk import placement", () => {
-  it("places import after Watched whether collapsed or expanded", () => {
+describe("theatre bulk import panel", () => {
+  const openImport = () =>
+    fireEvent.click(screen.getByRole("button", { name: "Import Movies" }));
+
+  it("opens from the menu and places the panel after Watched", () => {
     show([watched]);
-    const importButton = screen.getByRole("button", { name: "Import movies" });
+    expect(screen.queryByRole("textbox", { name: "Movie titles" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Import movies" })).toBeNull();
+    openImport();
+    const panel = screen.getByRole("region", { name: "Movie titles" });
     const watchedToggle = screen.getByRole("button", { name: /Watched/ });
     expect(
-      watchedToggle.compareDocumentPosition(importButton) &
+      watchedToggle.compareDocumentPosition(panel) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     fireEvent.click(watchedToggle);
     expect(
-      screen.getByText("Watched movie").compareDocumentPosition(importButton) &
+      screen.getByText("Watched movie").compareDocumentPosition(panel) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      importButton.closest("main")?.lastElementChild?.contains(importButton),
+      panel.closest("main")?.lastElementChild?.contains(panel),
     ).toBe(true);
   });
 
-  it("still imports from the bottom of an empty list", async () => {
+  it("opens and imports on an empty list", async () => {
     const api = createApi();
     show([], api);
-    const importButton = screen.getByRole("button", { name: "Import movies" });
+    openImport();
+    const panel = screen.getByRole("region", { name: "Movie titles" });
     expect(
       screen
         .getByText("Nothing here yet. Add the first movie.")
-        .compareDocumentPosition(importButton) &
+        .compareDocumentPosition(panel) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    fireEvent.click(importButton);
     fireEvent.change(screen.getByRole("textbox", { name: "Movie titles" }), {
       target: { value: "Arrival" },
     });
@@ -177,6 +293,36 @@ describe("theatre bulk import placement", () => {
       ).toBeTruthy(),
     );
   });
+
+  it("closes the panel and can reopen it from the menu", () => {
+    show([]);
+    openImport();
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("region", { name: "Movie titles" })).toBeNull();
+    openImport();
+    expect(screen.getByRole("textbox", { name: "Movie titles" })).toBeTruthy();
+  });
+
+  it("stops requesting more titles when the running panel is closed", async () => {
+    const api = createApi();
+    const first = Promise.withResolvers<MovieImportResult>();
+    vi.mocked(api.importTitle).mockReturnValue(first.promise);
+    show([], api);
+    openImport();
+    fireEvent.change(screen.getByRole("textbox", { name: "Movie titles" }), {
+      target: { value: "Arrival\nHeat" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Import 2 movies" }));
+    expect(api.importTitle).toHaveBeenCalledWith("Arrival");
+
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("region", { name: "Movie titles" })).toBeNull();
+    await act(async () => first.resolve({
+      status: "added",
+      movie: { id: 2, title: "Arrival", year: 2016 },
+    }));
+    expect(api.importTitle).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("read-only theatre", () => {
@@ -184,7 +330,8 @@ describe("read-only theatre", () => {
     show([watched, { ...watched, id: 2, completed: false }], null);
     expect(screen.getByText("Watchlist")).toBeTruthy();
     expect(screen.getAllByRole("article")).toHaveLength(1);
-    expect(screen.queryByRole("button", { name: "Import movies" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Import movies/i })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Movie titles" })).toBeNull();
   });
 });
 
@@ -246,6 +393,32 @@ describe("picked movie actions", () => {
         screen.queryByRole("region", { name: "Compare movies" }),
       ).toBeNull(),
     );
+    expect(celebrate).toHaveBeenCalledOnce();
+  });
+
+  it("does not celebrate bulk marking movies that were already seen", async () => {
+    const api = createApi();
+    show([{ ...arrival, seenBy: [{ id: "user", name: "User" }] }], api);
+    fireEvent.contextMenu(screen.getByText("Arrival"));
+    fireEvent.click(more());
+    fireEvent.click(screen.getByRole("menuitem", { name: "Mark watched" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("region", { name: "Compare movies" })).toBeNull(),
+    );
+    expect(api.markWatched).toHaveBeenCalledWith([10]);
+    expect(celebrate).not.toHaveBeenCalled();
+  });
+
+  it("does not celebrate a failed bulk watched save", async () => {
+    const api = createApi();
+    vi.mocked(api.markWatched).mockRejectedValue(new Error("Save failed"));
+    show([arrival], api);
+    fireEvent.contextMenu(screen.getByText("Arrival"));
+    fireEvent.click(more());
+    fireEvent.click(screen.getByRole("menuitem", { name: "Mark watched" }));
+    await waitFor(() => expect(screen.getByText("Save failed")).toBeTruthy());
+    expect(celebrate).not.toHaveBeenCalled();
+    expect(screen.getByRole("region", { name: "Compare movies" })).toBeTruthy();
   });
 
   it("cross-posts the picked films and reports what was posted", async () => {

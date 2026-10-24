@@ -9,22 +9,23 @@ import {
 import styles from "./BulkMovieImport.module.css";
 
 type Row = { title: string } & (
-    | MovieImportResult
-    | { status: "pending" }
-    | { status: "failed"; error: string }
-  );
+  | MovieImportResult
+  | { status: "pending" }
+  | { status: "failed"; error: string }
+);
 
 interface BulkMovieImportProps {
   onImport: (title: string) => Promise<MovieImportResult>;
+  onClose(): void;
   isDisabled?: boolean;
 }
 
 export function BulkMovieImport({
   onImport,
+  onClose,
   isDisabled = false,
 }: BulkMovieImportProps) {
   const id = useId();
-  const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [rows, setRows] = useState<Row[]>([]);
   const [isRunning, setIsRunning] = useState(false);
@@ -62,10 +63,11 @@ export function BulkMovieImport({
         )
         .map((row) => row.title),
     );
-    const queue = nextRows.map((row): Row =>
-      retry && row.status === "failed"
-        ? { title: row.title, status: "pending" }
-        : row,
+    const queue = nextRows.map(
+      (row): Row =>
+        retry && row.status === "failed"
+          ? { title: row.title, status: "pending" }
+          : row,
     );
     setRows(queue);
 
@@ -109,137 +111,132 @@ export function BulkMovieImport({
 
   return (
     <div className={styles.import}>
-      <button
-        type="button"
-        className={styles.toggle}
-        aria-expanded={isOpen}
-        aria-controls={`${id}-panel`}
-        disabled={isRunning}
-        onClick={() => setIsOpen((open) => !open)}
+      <section
+        id={`${id}-panel`}
+        className={styles.panel}
+        aria-labelledby={`${id}-label`}
       >
-        {isOpen ? "Close import" : "Import movies"}
-      </button>
-      {isOpen && (
-        <section
-          id={`${id}-panel`}
-          className={styles.panel}
-          aria-labelledby={`${id}-label`}
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (titles.length > 0) {
+              void run(titles.map((title) => ({ title, status: "pending" })));
+            }
+          }}
         >
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (titles.length > 0) {
-                void run(titles.map((title) => ({ title, status: "pending" })));
-              }
-            }}
+          <label id={`${id}-label`} htmlFor={`${id}-titles`}>
+            Movie titles
+          </label>
+          <button
+            type="button"
+            className={styles.close}
+            onClick={onClose}
           >
-            <label id={`${id}-label`} htmlFor={`${id}-titles`}>
-              Movie titles
-            </label>
-            <p id={`${id}-hint`} className={styles.hint}>
-              One title per line. We'll add the first TMDB match automatically
-              and skip movies already on this list, including Watched.
-            </p>
-            <textarea
-              id={`${id}-titles`}
-              aria-describedby={`${id}-hint`}
-              rows={6}
-              placeholder={"The Matrix\nSpirited Away\nArrival"}
-              value={input}
-              disabled={isRunning}
-              onChange={(event) => {
-                setInput(event.target.value);
-                setRows([]);
-                setBlockingError("");
-              }}
-            />
-            <div className={styles.actions}>
+            Close
+          </button>
+          <p id={`${id}-hint`} className={styles.hint}>
+            One title per line. We'll add the first TMDB match automatically and
+            skip movies already on this list, including Watched.
+          </p>
+          <textarea
+            id={`${id}-titles`}
+            aria-describedby={`${id}-hint`}
+            rows={6}
+            placeholder={"The Matrix\nSpirited Away\nArrival"}
+            value={input}
+            disabled={isRunning}
+            onChange={(event) => {
+              setInput(event.target.value);
+              setRows([]);
+              setBlockingError("");
+            }}
+          />
+          <div className={styles.actions}>
+            <button
+              className={styles.submit}
+              type="submit"
+              disabled={isRunning || isDisabled || titles.length === 0}
+            >
+              {titles.length === 0
+                ? "Import movies"
+                : `Import ${titles.length} ${titles.length === 1 ? "movie" : "movies"}`}
+            </button>
+            {isRunning && (
               <button
-                className={styles.submit}
-                type="submit"
-                disabled={isRunning || isDisabled || titles.length === 0}
+                type="button"
+                disabled={isStopping}
+                onClick={() => {
+                  stop.current = true;
+                  setIsStopping(true);
+                }}
               >
-                {titles.length === 0
-                  ? "Import movies"
-                  : `Import ${titles.length} ${titles.length === 1 ? "movie" : "movies"}`}
+                {isStopping ? "Stopping..." : "Stop"}
               </button>
-              {isRunning && (
-                <button
-                  type="button"
-                  disabled={isStopping}
-                  onClick={() => {
-                    stop.current = true;
-                    setIsStopping(true);
-                  }}
-                >
-                  {isStopping ? "Stopping..." : "Stop"}
-                </button>
-              )}
-              {!isRunning && pending && (
-                <button
-                  type="button"
-                  disabled={isDisabled}
-                  onClick={() => void run(rows)}
-                >
-                  Continue import
-                </button>
-              )}
-              {!isRunning && failed && (
-                <button
-                  type="button"
-                  disabled={isDisabled}
-                  onClick={() => void run(rows, true)}
-                >
-                  Retry failed titles
-                </button>
-              )}
-            </div>
-          </form>
-          {rows.length > 0 && (
-            <>
-              <p role="status" className={styles.summary}>
-                {isRunning
-                  ? `${isStopping ? "Stopping after this movie." : "Importing."} ${finished} of ${rows.length} processed.`
-                  : `${pending || blockingError ? "Import stopped." : "Import complete."} ${finished} of ${rows.length} processed.`}
-                {" "}{added} added.
-              </p>
-              {blockingError && (
-                <p role="alert" className={styles.error}>
-                  {blockingError} Import stopped.
-                </p>
-              )}
-              <ul
-                className={styles.results}
-                aria-label="Import results"
-                tabIndex={0}
+            )}
+            {!isRunning && pending && (
+              <button
+                type="button"
+                disabled={isDisabled}
+                onClick={() => void run(rows)}
               >
-                {rows.map((row) => (
-                  <li key={row.title}>
-                    <strong>{row.title}</strong>
-                    {"movie" in row && (
-                      <span>
-                        Matched: {row.movie.title}
-                        {row.movie.year ? ` (${row.movie.year})` : ""}
-                      </span>
-                    )}
-                    <span className={row.status === "failed" ? styles.error : ""}>
-                      {row.status === "pending"
-                        ? "Not processed yet"
-                        : row.status === "added"
-                          ? "Added"
-                          : row.status === "already_on_list"
-                            ? "Already on this list - skipped"
-                            : row.status === "not_found"
-                              ? "No match found - skipped"
-                              : row.error}
+                Continue import
+              </button>
+            )}
+            {!isRunning && failed && (
+              <button
+                type="button"
+                disabled={isDisabled}
+                onClick={() => void run(rows, true)}
+              >
+                Retry failed titles
+              </button>
+            )}
+          </div>
+        </form>
+        {rows.length > 0 && (
+          <>
+            <p role="status" className={styles.summary}>
+              {isRunning
+                ? `${isStopping ? "Stopping after this movie." : "Importing."} ${finished} of ${rows.length} processed.`
+                : `${pending || blockingError ? "Import stopped." : "Import complete."} ${finished} of ${rows.length} processed.`}{" "}
+              {added} added.
+            </p>
+            {blockingError && (
+              <p role="alert" className={styles.error}>
+                {blockingError} Import stopped.
+              </p>
+            )}
+            <ul
+              className={styles.results}
+              aria-label="Import results"
+              tabIndex={0}
+            >
+              {rows.map((row) => (
+                <li key={row.title}>
+                  <strong>{row.title}</strong>
+                  {"movie" in row && (
+                    <span>
+                      Matched: {row.movie.title}
+                      {row.movie.year ? ` (${row.movie.year})` : ""}
                     </span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </section>
-      )}
+                  )}
+                  <span className={row.status === "failed" ? styles.error : ""}>
+                    {row.status === "pending"
+                      ? "Not processed yet"
+                      : row.status === "added"
+                        ? "Added"
+                        : row.status === "already_on_list"
+                          ? "Already on this list - skipped"
+                          : row.status === "not_found"
+                            ? "No match found - skipped"
+                            : row.error}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </section>
     </div>
   );
 }

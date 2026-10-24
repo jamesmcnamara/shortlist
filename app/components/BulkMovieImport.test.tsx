@@ -16,8 +16,7 @@ const deferred = () => {
   const promise = new Promise<MovieImportResult>((done) => { resolve = done; });
   return { resolve, promise };
 };
-function open(input: string) {
-  fireEvent.click(screen.getByRole("button", { name: "Import movies" }));
+function enterTitles(input: string) {
   fireEvent.change(screen.getByRole("textbox", { name: "Movie titles" }), {
     target: { value: input },
   });
@@ -34,8 +33,8 @@ describe("bulk movie import", () => {
   });
 
   it("disables an empty import and uses real CSS Module classes", () => {
-    const { container } = render(<BulkMovieImport onImport={vi.fn()} />);
-    open("  \n ");
+    const { container } = render(<BulkMovieImport onImport={vi.fn()} onClose={vi.fn()} />);
+    enterTitles("  \n ");
     expect(screen.getByRole("button", { name: /Import.*movies/ }).hasAttribute("disabled")).toBe(true);
     expect(container.innerHTML).not.toContain('class="undefined"');
   });
@@ -43,15 +42,15 @@ describe("bulk movie import", () => {
   it("imports sequentially, prevents double submission, and shows matches/progress", async () => {
     const first = deferred();
     const onImport = vi.fn().mockReturnValueOnce(first.promise).mockResolvedValueOnce({ status: "not_found" });
-    render(<BulkMovieImport onImport={onImport} />);
-    open(" Arrival \nARRIVAL\nUnknown");
+    render(<BulkMovieImport onImport={onImport} onClose={vi.fn()} />);
+    enterTitles(" Arrival \nARRIVAL\nUnknown");
     submit();
     submit();
     expect(onImport).toHaveBeenCalledTimes(1);
     expect(onImport).toHaveBeenCalledWith("Arrival");
     expect(screen.getByRole("status").textContent).toContain("0 of 2 processed");
     expect(screen.getByRole("textbox").hasAttribute("disabled")).toBe(true);
-    expect(screen.getByRole("button", { name: "Close import" }).hasAttribute("disabled")).toBe(true);
+    expect(screen.getByRole("button", { name: "Close" }).hasAttribute("disabled")).toBe(false);
     await act(async () => first.resolve(added));
     await waitFor(() => expect(onImport).toHaveBeenCalledTimes(2));
     expect(onImport).toHaveBeenLastCalledWith("Unknown");
@@ -66,8 +65,8 @@ describe("bulk movie import", () => {
       .mockRejectedValueOnce(new ApiError("Lookup failed", 502))
       .mockResolvedValueOnce(added)
       .mockResolvedValueOnce(added);
-    render(<BulkMovieImport onImport={onImport} />);
-    open("Existing\nFailed\nArrival");
+    render(<BulkMovieImport onImport={onImport} onClose={vi.fn()} />);
+    enterTitles("Existing\nFailed\nArrival");
     submit();
     await waitFor(() => expect(screen.getByRole("button", { name: "Retry failed titles" })).toBeTruthy());
     expect(onImport).toHaveBeenCalledTimes(3);
@@ -83,8 +82,8 @@ describe("bulk movie import", () => {
   it("finishes the current title before stopping and can continue remaining titles", async () => {
     const first = deferred();
     const onImport = vi.fn().mockReturnValueOnce(first.promise).mockResolvedValueOnce(added);
-    render(<BulkMovieImport onImport={onImport} />);
-    open("Arrival\nNext");
+    render(<BulkMovieImport onImport={onImport} onClose={vi.fn()} />);
+    enterTitles("Arrival\nNext");
     submit();
     fireEvent.click(screen.getByRole("button", { name: "Stop" }));
     expect(screen.getByRole("button", { name: "Stopping..." }).hasAttribute("disabled")).toBe(true);
@@ -98,8 +97,8 @@ describe("bulk movie import", () => {
 
   it.each([401, 403, 404, 503])("stops on blocking error %s, leaving other titles pending", async (status) => {
     const onImport = vi.fn().mockRejectedValue(new ApiError("Access unavailable", status));
-    render(<BulkMovieImport onImport={onImport} />);
-    open("Arrival\nNext");
+    render(<BulkMovieImport onImport={onImport} onClose={vi.fn()} />);
+    enterTitles("Arrival\nNext");
     submit();
     await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("Import stopped"));
     expect(onImport).toHaveBeenCalledTimes(1);
@@ -110,8 +109,8 @@ describe("bulk movie import", () => {
     const onImport = vi.fn()
       .mockRejectedValueOnce(new ApiError("Credentials unavailable", 503))
       .mockResolvedValueOnce(added);
-    render(<BulkMovieImport onImport={onImport} />);
-    open("Failed\nPending");
+    render(<BulkMovieImport onImport={onImport} onClose={vi.fn()} />);
+    enterTitles("Failed\nPending");
     submit();
     await waitFor(() => expect(screen.getByRole("alert")).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: "Retry failed titles" }));
@@ -124,8 +123,8 @@ describe("bulk movie import", () => {
   it("does not start more requests after unmount", async () => {
     const first = deferred();
     const onImport = vi.fn().mockReturnValue(first.promise);
-    const { unmount } = render(<BulkMovieImport onImport={onImport} />);
-    open("Arrival\nNext");
+    const { unmount } = render(<BulkMovieImport onImport={onImport} onClose={vi.fn()} />);
+    enterTitles("Arrival\nNext");
     submit();
     unmount();
     await act(async () => first.resolve(added));
@@ -134,14 +133,24 @@ describe("bulk movie import", () => {
 
   it("clears old results when input changes and respects other submissions", async () => {
     const onImport = vi.fn().mockResolvedValue(added);
-    const { rerender } = render(<BulkMovieImport onImport={onImport} />);
-    open("Arrival");
+    const { rerender } = render(<BulkMovieImport onImport={onImport} onClose={vi.fn()} />);
+    enterTitles("Arrival");
     submit();
     await waitFor(() => expect(screen.getByRole("status").textContent).toContain("Import complete"));
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "Next" } });
     expect(screen.queryByRole("status")).toBeNull();
-    rerender(<BulkMovieImport onImport={onImport} isDisabled />);
+    rerender(<BulkMovieImport onImport={onImport} onClose={vi.fn()} isDisabled />);
     submit();
     expect(onImport).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onClose without submitting the form", () => {
+    const onImport = vi.fn();
+    const onClose = vi.fn();
+    render(<BulkMovieImport onImport={onImport} onClose={onClose} />);
+    enterTitles("Arrival");
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(onImport).not.toHaveBeenCalled();
   });
 });

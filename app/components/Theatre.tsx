@@ -12,6 +12,7 @@ import { ViewControls } from "@/app/components/ViewControls";
 import type { MovieImportResult } from "@/app/lib/bulk-movie-import";
 import { useAPIActions } from "@/app/lib/useAPIActions";
 import { useClickOutside } from "@/app/lib/useClickOutside";
+import { useConfetti } from "@/app/lib/useConfetti";
 import { useMovieDiscussionHistory } from "@/app/lib/useMovieDiscussionHistory";
 import { applyView, ViewContext, ViewState } from "@/app/lib/view";
 import type { Movie, Nomination } from "@/src/db/schema";
@@ -54,6 +55,7 @@ export function Theatre({
   const { focusedId, closeDiscussion, openDiscussion } =
     useMovieDiscussionHistory();
   const [isWatchedOpen, setIsWatchedOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   // TMDB ids picked for compare or other bulk actions, or null when not picking.
   const [picked, setPicked] = useState<number[] | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -65,6 +67,7 @@ export function Theatre({
     isMenuOpen,
   );
   const router = useRouter();
+  const celebrate = useConfetti();
   const isPicking = picked !== null;
 
   const stopPicking = () => {
@@ -175,13 +178,24 @@ export function Theatre({
     ({ movie }) => movie.tmdbId !== null && picked?.includes(movie.tmdbId),
   );
 
+  const additionalMenuItems = [
+    {
+      type: "button",
+      onClick: () => setIsImportOpen(true),
+      label: "Import Movies",
+    } as const,
+  ];
+
   return (
     <main
       className={classnames(styles.shell, {
         [styles.shellComparing]: isPicking,
       })}
     >
-      <ShortlistHeader {...header} />
+      <ShortlistHeader
+        {...header}
+        additionalMenuItems={isReadOnly ? [] : additionalMenuItems}
+      />
 
       <section
         className={styles.nominations}
@@ -255,10 +269,11 @@ export function Theatre({
         </section>
       )}
 
-      {!isReadOnly && (
+      {!isReadOnly && isImportOpen && (
         <div className={styles.bulkImport}>
           <BulkMovieImport
             onImport={api.importTitle}
+            onClose={() => setIsImportOpen(false)}
             isDisabled={isSubmitting}
           />
         </div>
@@ -279,9 +294,17 @@ export function Theatre({
             onClickCompare={() => {
               if (picked.length >= 2) router.push(compareHref(picked));
             }}
-            onClickMarkWatched={() =>
-              actions.markWatched(map("movieId")(pickedNoms))
-            }
+            onClickMarkWatched={async () => {
+              const hasUnseen = pickedNoms.some(
+                (nom) => !some({ id: userId })(nom.seenBy),
+              );
+              if (
+                (await actions.markWatched(map("movieId")(pickedNoms))) &&
+                hasUnseen
+              ) {
+                celebrate();
+              }
+            }}
             onClickCrossPost={() => {
               setIsMenuOpen(false);
               setCrossPosting(pickedNoms);
@@ -320,9 +343,15 @@ export function Theatre({
               actions.addNomCom(focused.id, comment),
             )}
             onUpdateNomCom={canEdit(actions.updateNomCom)}
-            onMarkWatched={canEdit(() =>
-              actions.toggleWatched(focused.movieId),
-            )}
+            onMarkWatched={canEdit(async () => {
+              const hasSeen = some({ id: userId })(focused.seenBy);
+              if (
+                (await actions.toggleWatched(focused.movieId)) &&
+                !hasSeen
+              ) {
+                celebrate();
+              }
+            })}
             onRefreshJustWatch={canEdit(() =>
               api.refreshJustWatch(focused.movieId),
             )}
@@ -330,9 +359,11 @@ export function Theatre({
               api.refreshBoxOffice(focused.movieId),
             )}
             onDelete={when(isAdmin)(() => actions.delete(focused.id))}
-            onToggleCompleted={when(isAdmin)(() => {
-              actions.toggleCompleted(focused.id);
-              closeDiscussion();
+            onToggleCompleted={when(isAdmin)(async () => {
+              if (await actions.toggleCompleted(focused.id)) {
+                if (!focused.completed) celebrate();
+                closeDiscussion();
+              }
             })}
             onClose={closeDiscussion}
           />

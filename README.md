@@ -18,6 +18,11 @@ opened while signed in. All members can share the member link; only admins can
 access admin links or rotate either kind. Rotating a link revokes both preview
 and join access through it, without removing existing members.
 
+Marking a movie seen, using bulk **Mark watched**, or moving a movie into
+**Watched** triggers a bold confetti celebration after the save succeeds.
+Undoing a watched marking or bulk-marking movies already seen does not celebrate.
+The animation respects the system's reduced-motion preference.
+
 The separate `/share/...` links have been removed and no longer work. Deploy
 the updated app before applying migration `0024_sticky_stardust.sql`, which
 drops the unused `theatres.share_code` column. Existing invite links and
@@ -25,7 +30,8 @@ memberships are preserved.
 
 ### Bulk movie import
 
-At the bottom of a list, below Watched, choose **Import movies**. Paste one movie
+Choose **Menu > Extra Settings > Import Movies** to open the import panel below
+Watched. Use **Close** in the panel to dismiss it. Paste one movie
 title per line, then start the import. Each title uses the first TMDB search match without a review
 step; the results show the matched movie and year so you can spot incorrect
 matches and remove them from the list. Each title can be up to 300 characters.
@@ -36,8 +42,8 @@ skipped without changing their notes or status. Missing matches and failures are
 reported separately, and other titles continue importing. **Stop** finishes the
 current movie before pausing; use **Continue import** for remaining titles or
 **Retry failed titles** for errors.
-Keep the page open while importing; navigating away stops further requests but
-does not undo movies already added.
+Keep the panel and page open while importing; closing the panel or navigating
+away stops further requests but does not undo movies already added.
 
 ### Movie notifications
 

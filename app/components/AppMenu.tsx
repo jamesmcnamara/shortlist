@@ -16,10 +16,28 @@ export interface AppMenuProps {
   /** Omitted outside a theatre, which hides the theatre-scoped items. */
   theatre?: { id: string; inviteCode?: string };
   showMyTheatres?: boolean;
+  additionalMenuItems?: AdditionalMenuItem[];
 }
 
+export type AdditionalMenuItem =
+  | {
+      type: "link";
+      href: string;
+      onNavigate: () => void;
+      label: string;
+    }
+  | {
+      type: "button";
+      onClick: () => void;
+      label: string;
+    };
+
 /** The account and navigation menu, shared by every header. */
-export function AppMenu({ theatre, showMyTheatres = true }: AppMenuProps) {
+export function AppMenu({
+  theatre,
+  showMyTheatres = true,
+  additionalMenuItems,
+}: AppMenuProps) {
   const { data: session } = authClient.useSession();
   const { data: theatres } = useTheatres();
   const watchlist = theatres?.find(
@@ -136,6 +154,21 @@ export function AppMenu({ theatre, showMyTheatres = true }: AppMenuProps) {
           <MenuLink href="/feedback" onNavigate={close}>
             Feedback
           </MenuLink>
+          {additionalMenuItems?.map((item, index) =>
+            item.type === "link" ? (
+              <MenuLink
+                key={index}
+                href={item.href}
+                onNavigate={item.onNavigate}
+              >
+                {item.label}
+              </MenuLink>
+            ) : (
+              <MenuButton key={index} onClick={item.onClick}>
+                {item.label}
+              </MenuButton>
+            ),
+          )}
           <button
             className={styles.menuItem}
             type="button"

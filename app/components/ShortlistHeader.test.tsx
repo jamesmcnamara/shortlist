@@ -33,5 +33,14 @@ describe("ShortlistHeader", () => {
       theatre,
       showMyTheatres,
     });
+
+  });
+
+  it("passes additional actions to the menu", () => {
+    const additionalMenuItems = [
+      { type: "button" as const, label: "Import Movies", onClick: vi.fn() },
+    ];
+    render(<ShortlistHeader additionalMenuItems={additionalMenuItems} />);
+    expect(vi.mocked(AppMenu).mock.calls[0][0]).toEqual({ additionalMenuItems });
   });
 });

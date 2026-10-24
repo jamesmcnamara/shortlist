@@ -22,7 +22,9 @@ export default function NewTheatrePage() {
       router.replace(theatre.path);
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : "Unable to create the theatre.",
+        error instanceof Error
+          ? error.message
+          : "Unable to create the theatre.",
       );
       setIsSubmitting(false);
     }
@@ -49,6 +51,7 @@ export default function NewTheatrePage() {
               value={name}
               onChange={withTargetValue(setName)}
               placeholder="Friday Night Movies"
+              autoCapitalize="words"
               required
             />
           </div>

@@ -86,6 +86,25 @@ describe("share menu item", () => {
     expect(screen.queryByRole("button", { name: "Share" })).toBeNull();
   });
 
+  describe("additional menu items", () => {
+    it("opens the import panel through Extra Settings", () => {
+      const onClick = vi.fn();
+      render(
+        <AppMenu
+          additionalMenuItems={[
+            { type: "button", label: "Import Movies", onClick },
+          ]}
+        />,
+      );
+      expect(screen.queryByRole("button", { name: "Import Movies" })).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+      expect(screen.queryByRole("button", { name: "Import Movies" })).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "Extra Settings" }));
+      fireEvent.click(screen.getByRole("button", { name: "Import Movies" }));
+      expect(onClick).toHaveBeenCalledOnce();
+    });
+  });
+
   it("copies the member join link", async () => {
     writeText.mockResolvedValue(undefined);
     render(<AppMenu theatre={{ id: "ordinary", inviteCode: code }} />);

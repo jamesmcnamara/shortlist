@@ -74,8 +74,26 @@
 }
 
 .watchedMark {
-  border-color: #16a34a;
-  background: #16a34a;
+  top: 0;
+  right: 0;
+  left: 0;
+  width: 100%;
+  min-height: 1.5rem;
+  padding: 0 0.5rem;
+  border: 0;
+  border-bottom: 2px solid var(--accent-light);
+  border-radius: 0;
+  background: rgba(20, 20, 32, 0.88);
+  color: var(--on-dark);
+  box-shadow: none;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.watchedPoster .rank {
+  top: 2rem;
 }
 
 .watchedMark ~ .selectMark {
@@ -87,8 +105,7 @@
   background: var(--text);
 }
 
-.selectedPoster .selectMark::after,
-.watchedMark::after {
+.selectedPoster .selectMark::after {
   width: 0.4375rem;
   height: 0.75rem;
   margin-top: -0.1875rem;
