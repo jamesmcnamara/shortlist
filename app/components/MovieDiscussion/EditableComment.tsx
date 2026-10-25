@@ -80,7 +80,7 @@ export function EditableComment({
           type="button"
           onClick={beginEdit}
           aria-label={editLabel}
-          title="Edit comment"
+          title={editLabel}
         >
           ✎
         </button>

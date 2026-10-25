@@ -15,6 +15,9 @@ export function TheatreContainer() {
   const [viewState, setViewState] = useUrlViewState();
 
   const api: TheatreAPI = {
+    updateDescription: async (description) => {
+      await client.update({ description });
+    },
     importTitle: client.nominations.importTitle,
     refreshJustWatch: async (movieId: number) => {
       await client.refreshJustWatch(movieId);
@@ -62,6 +65,7 @@ export function TheatreContainer() {
       key={theatre.id}
       theatreId={theatre.id}
       name={theatre.name}
+      description={theatre.description}
       header={{
         theatre: { id: theatre.id, isMember: Boolean(role) },
         showMyTheatres: true,

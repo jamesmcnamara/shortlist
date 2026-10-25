@@ -43,6 +43,33 @@ the updated app before applying migration `0024_sticky_stardust.sql`, which
 drops the unused `theatres.share_code` column. Existing invite links and
 memberships are preserved.
 
+### Descriptions and tags
+
+Admins can edit a list's description above its search controls. Descriptions
+are public, including in signed-out invite previews. Save keeps hashtags in the
+text and synchronizes the list's stored tags; Cancel leaves both unchanged.
+Removing a hashtag removes that list's association. Clearing the description
+removes all its associations, without changing other lists.
+
+Tags are case-insensitive: `#SciFi` and `#scifi` are the same tag. They allow
+Unicode letters and numbers, underscores, and hyphens, including `#2026`,
+`#sci-fi`, and `#date_night`. Start a hashtag at the beginning of the text or
+after whitespace or opening punctuation (parentheses, brackets, braces, or
+quotes). Spaces and other punctuation end a tag. Bare `#`, Markdown headings
+such as `# Heading`, URL fragments, and hashes embedded in words are not tags.
+Descriptions remain plain text, not Markdown.
+
+The canonical tag text (without `#`, normalized to Unicode NFC and lowercase)
+is its immutable primary key. The shared `tags` dictionary is insert-only in
+the application, and `theatre_tags` holds each list's associations with indexes
+in both directions for later filtering. Changing a hashtag changes associations,
+never renames a shared tag. Unused dictionary entries are retained.
+
+Apply migration `0025_petite_colossus.sql` before deploying this feature.
+Existing descriptions are preserved and get their tags extracted on their next
+save. Backfill any never-edited descriptions before introducing tag filtering.
+Autocomplete, tag filtering, and nomination tagging are not implemented yet.
+
 ### Bulk movie import
 
 Choose **Menu > Extra Settings > Import Movies** to open the import panel below

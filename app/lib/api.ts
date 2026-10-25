@@ -104,6 +104,7 @@ export interface SeenUpdate {
 
 export interface TheatreDetail {
   theatre: SafeTheatre;
+  tags: string[];
   inviteCode?: string;
   adminInviteCode?: string;
   membership: { userId: string; role: TheatreRole } | null;
@@ -112,7 +113,7 @@ export interface TheatreDetail {
 
 /** What anyone with an invite link can see: read-only, and no member details. */
 export interface PublicTheatre {
-  theatre: { name: string };
+  theatre: { name: string; description: string | null };
   nominations: Nomination[];
 }
 
@@ -181,7 +182,10 @@ export const api = {
           body: JSON.stringify({ movieId }),
           signal,
         }),
-      update: (input: { name?: string }): Promise<SafeTheatre> =>
+      update: (input: {
+        name?: string;
+        description?: string;
+      }): Promise<SafeTheatre> =>
         request(base, { method: "PATCH", body: JSON.stringify(input) }),
       delete: (): Promise<void> => request(base, { method: "DELETE" }),
       rotateInvite: (

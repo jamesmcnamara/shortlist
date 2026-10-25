@@ -108,11 +108,15 @@ describe("shared data cache", () => {
 
   it("loads public theatre previews through the invite GET without a session", async () => {
     auth.data = null;
-    fetchMock.mockResolvedValue(json({ theatre: { name: "Club" }, nominations: [] }));
+    fetchMock.mockResolvedValue(json({
+      theatre: { name: "Club", description: "Our #Horror films" },
+      nominations: [],
+    }));
     const { result } = renderHook(() => usePublicTheatre("member-link"), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data?.theatre.name).toBe("Club"));
+    expect(result.current.data?.theatre.description).toBe("Our #Horror films");
     expect(fetchMock).toHaveBeenCalledWith("/api/join/member-link", {
       cache: "no-store",
       headers: undefined,

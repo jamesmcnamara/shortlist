@@ -176,6 +176,13 @@
       "when": 1792192634262,
       "tag": "0024_sticky_stardust",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792963205956,
+      "tag": "0025_petite_colossus",
+      "breakpoints": true
     }
   ]
 }

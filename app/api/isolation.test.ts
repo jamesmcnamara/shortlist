@@ -213,6 +213,7 @@ describe("theatre membership", () => {
         watchlistFor: null,
       }),
       membership: null,
+      tags: [],
     });
     expect(JSON.stringify(body)).not.toContain("email");
     expect(JSON.stringify(body)).not.toContain("invite-a");

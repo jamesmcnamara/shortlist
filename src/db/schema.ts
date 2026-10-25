@@ -56,6 +56,26 @@ export const theatreMembers = pgTable(
   ],
 );
 
+export const tags = pgTable("tags", {
+  name: text().primaryKey(),
+});
+
+export const theatreTags = pgTable(
+  "theatre_tags",
+  {
+    theatreId: uuid("theatre_id")
+      .notNull()
+      .references(() => theatres.id, { onDelete: "cascade" }),
+    tag: text()
+      .notNull()
+      .references(() => tags.name, { onDelete: "restrict", onUpdate: "restrict" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.theatreId, table.tag] }),
+    index("theatre_tags_tag_theatre_idx").on(table.tag, table.theatreId),
+  ],
+);
+
 export const movies = pgTable("movies", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   tmdbId: integer("tmdb_id").unique(),
@@ -192,9 +212,25 @@ export const feedbackRelations = relations(feedback, ({ one }) => ({
 export const theatresRelations = relations(theatres, ({ many, one }) => ({
   members: many(theatreMembers),
   nominations: many(nominations),
+  tags: many(theatreTags),
   owner: one(authUsers, {
     fields: [theatres.createdBy],
     references: [authUsers.id],
+  }),
+}));
+
+export const tagsRelations = relations(tags, ({ many }) => ({
+  theatres: many(theatreTags),
+}));
+
+export const theatreTagsRelations = relations(theatreTags, ({ one }) => ({
+  theatre: one(theatres, {
+    fields: [theatreTags.theatreId],
+    references: [theatres.id],
+  }),
+  tagDefinition: one(tags, {
+    fields: [theatreTags.tag],
+    references: [tags.name],
   }),
 }));
 

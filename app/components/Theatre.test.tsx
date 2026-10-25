@@ -122,6 +122,7 @@ const watched: Nomination = {
 };
 
 const createApi = (): TheatreAPI => ({
+  updateDescription: vi.fn().mockResolvedValue(undefined),
   refreshJustWatch: vi.fn(),
   refreshBoxOffice: vi.fn(),
   importTitle: vi.fn().mockResolvedValue({
@@ -143,11 +144,13 @@ function show(
   api: TheatreAPI | null = createApi(),
   isAdmin = true,
   userId: string | null = "user",
+  description: string | null = null,
 ) {
   return render(
     <Theatre
       theatreId="theatre"
       name="Watchlist"
+      description={description}
       header={{}}
       isAdmin={isAdmin}
       userId={userId ?? undefined}
@@ -159,6 +162,77 @@ function show(
     />,
   );
 }
+
+describe("list descriptions", () => {
+  it("shows the description before the list controls with an admin edit action", () => {
+    show([], createApi(), true, "user", "Our #Horror movies");
+    const description = screen.getByText("Our #Horror movies");
+    expect(description.compareDocumentPosition(screen.getByText("List controls")) &
+      Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Edit list description" })).toBeTruthy();
+  });
+
+  it("lets admins save a trimmed description and closes the editor", async () => {
+    const api = createApi();
+    show([], api);
+    fireEvent.click(screen.getByRole("button", { name: "Edit list description" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "List description" }), {
+      target: { value: "  Our #Horror films  " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(api.updateDescription).toHaveBeenCalledWith("Our #Horror films"));
+    await waitFor(() => expect(screen.queryByRole("textbox")).toBeNull());
+  });
+
+  it("allows clearing a description", async () => {
+    const api = createApi();
+    show([], api, true, "user", "#Horror");
+    fireEvent.click(screen.getByRole("button", { name: "Edit list description" }));
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(api.updateDescription).toHaveBeenCalledWith(""));
+  });
+
+  it("cancels without saving and resets the draft on the next edit", () => {
+    const api = createApi();
+    show([], api, true, "user", "#Horror");
+    fireEvent.click(screen.getByRole("button", { name: "Edit list description" }));
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "#Comedy" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(api.updateDescription).not.toHaveBeenCalled();
+    expect(screen.getByText("#Horror")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Edit list description" }));
+    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("#Horror");
+  });
+
+  it("keeps failed drafts editable and shows the error for retry", async () => {
+    const api = createApi();
+    vi.mocked(api.updateDescription).mockRejectedValueOnce(new Error("Could not save description."));
+    show([], api);
+    fireEvent.click(screen.getByRole("button", { name: "Edit list description" }));
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "#Horror" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await screen.findByText("Could not save description.");
+    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("#Horror");
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(screen.queryByRole("textbox")).toBeNull());
+  });
+
+  it.each([["member", false], [null, false], [null, true]] as const)(
+    "lets %s read descriptions without editing (admin=%s)",
+    (userId, isAdmin) => {
+      show([], createApi(), isAdmin, userId, "Our #Horror movies");
+      expect(screen.getByText("Our #Horror movies")).toBeTruthy();
+      expect(screen.queryByRole("button", { name: "Edit list description" })).toBeNull();
+    },
+  );
+
+  it("hides empty descriptions from read-only viewers", () => {
+    show([], null, false, null);
+    expect(screen.queryByText("Add a description and #tags.")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Edit list description" })).toBeNull();
+  });
+});
 
 describe("theatre movie animations", () => {
   it("lets signed-in non-admins participate without showing curation controls", () => {

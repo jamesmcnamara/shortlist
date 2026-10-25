@@ -6,6 +6,7 @@ import { BulkMovieImport } from "@/app/components/BulkMovieImport";
 import { CrossPost } from "@/app/components/CrossPost/CrossPost";
 import { MovieCard } from "@/app/components/MovieCard";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
+import { EditableComment } from "@/app/components/MovieDiscussion/EditableComment";
 import { PickerBar } from "@/app/components/PickerBar";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import { ViewControls } from "@/app/components/ViewControls";
@@ -28,6 +29,7 @@ import styles from "./Theatre.module.css";
 interface TheatreProps {
   theatreId?: string;
   name: string;
+  description?: string | null;
   header?: AppMenuProps;
   isAdmin?: boolean;
   nominees: Nomination[];
@@ -41,6 +43,7 @@ interface TheatreProps {
 export function Theatre({
   theatreId,
   name,
+  description,
   header,
   isAdmin = false,
   userId,
@@ -110,6 +113,10 @@ export function Theatre({
   );
 
   const { actions, message, isSubmitting } = useAPIActions({
+    updateDescription: {
+      api: api.updateDescription,
+      action: "update the list description",
+    },
     nominate: {
       api: api.nominate,
       action: "submit your nomination",
@@ -216,6 +223,19 @@ export function Theatre({
         <h1 id="nominations-title" className={styles.sectionHeader}>
           {name}
         </h1>
+
+        {(description || canCurate) && (
+          <div className={styles.description}>
+            <EditableComment
+              value={description ?? ""}
+              allowBlank
+              emptyText="Add a description and #tags."
+              editLabel="Edit list description"
+              inputLabel="List description"
+              onSave={when(canCurate)(actions.updateDescription)}
+            />
+          </div>
+        )}
 
         <ViewControls
           state={viewState}
@@ -373,6 +393,7 @@ export function Theatre({
 }
 
 export interface TheatreAPI {
+  updateDescription: (description: string) => Promise<void>;
   importTitle: (title: string) => Promise<MovieImportResult>;
   refreshJustWatch: (movieId: number) => Promise<void>;
   refreshBoxOffice: (movieId: number) => Promise<void>;
@@ -393,6 +414,7 @@ interface ReadOnlyTheatreAPI extends TheatreAPI {
 const readOnly = () => Promise.reject(new Error("This theatre is read-only."));
 
 const READ_ONLY_API: ReadOnlyTheatreAPI = {
+  updateDescription: readOnly,
   importTitle: readOnly,
   refreshJustWatch: readOnly,
   refreshBoxOffice: readOnly,

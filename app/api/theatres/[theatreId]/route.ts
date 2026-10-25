@@ -3,6 +3,8 @@ import { z } from "zod";
 import {
   findInviteCode,
   findAdminInviteCode,
+  findTheatreById,
+  notFound,
   withTheatreAdmin,
   withTheatreViewer,
   type TheatreContext,
@@ -12,16 +14,26 @@ import { getDb } from "@/src/db/client";
 import { theatreMembers, theatres } from "@/src/db/schema";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import { badRequest, parseJson, requiredText } from "@/lib/validation";
+import { listTheatreTags, updateTheatre } from "@/app/lib/theatre-tags";
 
 export const runtime = "nodejs";
 
-const updateBody = z.object({ name: requiredText("Nothing to update.") });
+const updateBody = z
+  .object({
+    name: requiredText("A theatre name is required.").optional(),
+    description: z.string().trim().optional(),
+  })
+  .refine(
+    ({ name, description }) => name !== undefined || description !== undefined,
+    "Nothing to update.",
+  );
 
 export const GET = withTheatreViewer({
   error: "Unable to load the theatre.",
 })(async (_request: Request, { theatre, role, userId }: TheatreViewerContext) => {
+  const tags = await listTheatreTags(theatre.id);
   if (!userId || !role) {
-    return Response.json({ theatre, membership: null });
+    return Response.json({ theatre, tags, membership: null });
   }
   const members = await getDb()
     .select({
@@ -37,6 +49,7 @@ export const GET = withTheatreViewer({
 
   return Response.json({
     theatre,
+    tags,
     inviteCode: await findInviteCode(theatre.id),
     adminInviteCode:
       role === "admin" ? await findAdminInviteCode(theatre.id) : undefined,
@@ -49,20 +62,9 @@ export const PATCH = withTheatreAdmin({ error: "Unable to update the theatre." }
   async (request: Request, { theatre }: TheatreContext) => {
     const parsed = await parseJson(request, updateBody);
     if (!parsed.success) return badRequest(parsed.error);
-    const { name } = parsed.data;
-
-    const [updated] = await getDb()
-      .update(theatres)
-      .set({ name })
-      .where(eq(theatres.id, theatre.id))
-      .returning();
-
-    const {
-      inviteCode: _withheldMember,
-      adminInviteCode: _withheldAdmin,
-      ...safe
-    } = updated;
-    return Response.json(safe);
+    await updateTheatre(theatre.id, parsed.data);
+    const updated = await findTheatreById(theatre.id);
+    return updated ? Response.json(updated) : notFound();
   },
 );
 

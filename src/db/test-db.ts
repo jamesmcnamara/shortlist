@@ -1,13 +1,26 @@
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
+import type { SQLWrapper } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 import * as schema from "@/src/db/schema";
 import { authUsers } from "@/src/db/neon-auth-schema";
 
 export type TestDb = ReturnType<typeof makeDb>;
 
-const makeDb = (client: PGlite) =>
-  drizzle(client, { schema: { ...schema, authUsers } });
+const makeDb = (client: PGlite) => {
+  const db = drizzle(client, { schema: { ...schema, authUsers } });
+  const dialect = new PgDialect();
+  // PGlite has transactions but no batch API; run the same write statements in order.
+  const batch = (queries: readonly SQLWrapper[]) =>
+    client.transaction(async (tx) => {
+      for (const query of queries) {
+        const { sql, params } = dialect.sqlToQuery(query.getSQL());
+        await tx.query(sql, params);
+      }
+    });
+  return Object.assign(db, { batch });
+};
 
 /**
  * An in-process Postgres so isolation is proven against real SQL rather than

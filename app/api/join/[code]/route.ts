@@ -14,7 +14,7 @@ export const GET = withPublicTheatre({
   error: "Unable to load the theatre.",
 })(async (_, { theatre }) =>
   Response.json({
-    theatre: { name: theatre.name },
+    theatre: { name: theatre.name, description: theatre.description },
     nominations: await listNominations(theatre.id),
   }),
 );

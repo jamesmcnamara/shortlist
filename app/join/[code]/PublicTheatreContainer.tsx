@@ -29,6 +29,7 @@ export function PublicTheatreContainer({
       {data && (
         <Theatre
           name={data.theatre.name}
+          description={data.theatre.description}
           userId={userId}
           viewState={viewState}
           viewContext={viewContext}
