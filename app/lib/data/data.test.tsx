@@ -14,7 +14,13 @@ import { SWRConfig } from "swr";
 import { api, ApiError } from "../api";
 import { DataProvider } from "./DataProvider";
 import { DataBoundary } from "./DataBoundary";
-import { useNominations, usePublicTheatre, useTheatres, useTheatreDetail } from "./queries";
+import {
+  useNominations,
+  usePublicTheatre,
+  useTheatres,
+  useTheatresForMovies,
+  useTheatreDetail,
+} from "./queries";
 import { TheatreProvider, useTheatre } from "@/app/theatres/[theatreId]/TheatreContext";
 
 const auth = vi.hoisted(() => ({
@@ -89,6 +95,17 @@ afterEach(() => {
 });
 
 describe("shared data cache", () => {
+  it("loads an empty personal theatre list while signed out", async () => {
+    auth.data = null;
+    fetchMock.mockResolvedValue(json([]));
+    const { result } = renderHook(() => useTheatres(), { wrapper: Wrapper });
+    await waitFor(() => expect(result.current.data).toEqual([]));
+    expect(fetchMock).toHaveBeenCalledWith("/api/theatres?previews=true", {
+      cache: "no-store",
+      headers: undefined,
+    });
+  });
+
   it("loads public theatre previews through the invite GET without a session", async () => {
     auth.data = null;
     fetchMock.mockResolvedValue(json({ theatre: { name: "Club" }, nominations: [] }));
@@ -393,11 +410,11 @@ describe("shared data cache", () => {
     await waitFor(() => expect(result.current.error?.message).toBe("Gone"));
   });
 
-  it("does not fetch protected data until authentication resolves", async () => {
+  it("does not fetch protected movie-list choices until authentication resolves", async () => {
     auth.data = null;
     auth.isPending = true;
     fetchMock.mockResolvedValue(json([]));
-    const { result, rerender } = renderHook(() => useTheatres(), {
+    const { result, rerender } = renderHook(() => useTheatresForMovies([1]), {
       wrapper: Wrapper,
     });
     expect(fetchMock).not.toHaveBeenCalled();
@@ -407,16 +424,16 @@ describe("shared data cache", () => {
     await waitFor(() => expect(result.current.data).toEqual([]));
   });
 
-  it("restores the same user's cache after logout and a new login", async () => {
+  it("restores the same user's protected movie-list cache after logout and a new login", async () => {
     const secondLogin = deferred<Response>();
     fetchMock
-      .mockResolvedValueOnce(json([{ id: 1, comment: "Private" }]))
+      .mockResolvedValueOnce(json([{ id: 1, name: "Private" }]))
       .mockReturnValueOnce(secondLogin.promise);
-    const { result, rerender } = renderHook(() => useNominations(theatre), {
+    const { result, rerender } = renderHook(() => useTheatresForMovies([1]), {
       wrapper: Wrapper,
     });
     await waitFor(() =>
-      expect(result.current.data?.[0].comment).toBe("Private"),
+      expect(result.current.data?.[0].name).toBe("Private"),
     );
     auth.data = null;
     rerender();
@@ -424,13 +441,13 @@ describe("shared data cache", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     auth.data = { session: { id: "new-session" }, user: { id: "alice" } };
     rerender();
-    expect(result.current.data?.[0].comment).toBe("Private");
+    expect(result.current.data?.[0].name).toBe("Private");
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     await act(async () =>
-      secondLogin.resolve(json([{ id: 1, comment: "New session" }])),
+      secondLogin.resolve(json([{ id: 1, name: "New session" }])),
     );
     await waitFor(() =>
-      expect(result.current.data?.[0].comment).toBe("New session"),
+      expect(result.current.data?.[0].name).toBe("New session"),
     );
   });
 
@@ -502,9 +519,9 @@ describe("data boundary", () => {
     expect(screen.queryByText("Private content")).toBeNull();
     expect(
       screen
-        .getByRole("link", { name: "Back to Theatres Near You" })
+        .getByRole("link", { name: "Back to My Theatres" })
         .getAttribute("href"),
-    ).toBe("/theatres");
+    ).toBe("/u/alice");
   });
 
   it("redirects to sign-in with the return path", () => {

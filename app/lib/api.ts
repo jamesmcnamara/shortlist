@@ -79,7 +79,7 @@ export interface TheatreSummary {
   id: string;
   name: string;
   watchlistFor: string | null;
-  role: TheatreRole;
+  role: TheatreRole | null;
 }
 
 export interface TheatreSummaryWithPosterPreviews extends TheatreSummary {
@@ -106,8 +106,8 @@ export interface TheatreDetail {
   theatre: SafeTheatre;
   inviteCode?: string;
   adminInviteCode?: string;
-  membership: { userId: string; role: TheatreRole };
-  members: TheatreMemberSummary[];
+  membership: { userId: string; role: TheatreRole } | null;
+  members?: TheatreMemberSummary[];
 }
 
 /** What anyone with an invite link can see: read-only, and no member details. */

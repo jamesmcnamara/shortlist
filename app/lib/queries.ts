@@ -3,7 +3,6 @@ import { getDb } from "@/src/db/client";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import {
   nominations,
-  theatreMembers,
   seen,
   type Nomination,
   type Person,
@@ -20,12 +19,10 @@ const nominationRelations = {
 } as const;
 
 /**
- * Seen is a user-level fact, so it is joined against the theatre's membership
- * here: a nomination only reports the people in *this* theatre who have seen it,
- * never someone's viewing history from a theatre you do not share.
+ * Seen is a user-level fact, so each public list shows everyone who has marked
+ * one of its movies seen.
  */
-async function seenByTheatreMembers(
-  theatreId: string,
+export async function seenByMovieIds(
   movieIds: number[],
 ): Promise<Map<number, Person[]>> {
   const byMovie = new Map<number, Person[]>();
@@ -39,13 +36,6 @@ async function seenByTheatreMembers(
     })
     .from(seen)
     .innerJoin(authUsers, eq(authUsers.id, seen.userId))
-    .innerJoin(
-      theatreMembers,
-      and(
-        eq(theatreMembers.userId, seen.userId),
-        eq(theatreMembers.theatreId, theatreId),
-      ),
-    )
     .where(inArray(seen.movieId, movieIds));
 
   for (const { movieId, ...user } of rows) {
@@ -57,13 +47,9 @@ async function seenByTheatreMembers(
 }
 
 const withSeenBy = async <T extends { movieId: number }>(
-  theatreId: string,
   rows: T[],
 ): Promise<(T & { seenBy: Person[] })[]> => {
-  const byMovie = await seenByTheatreMembers(
-    theatreId,
-    rows.map((row) => row.movieId),
-  );
+  const byMovie = await seenByMovieIds(rows.map((row) => row.movieId));
   return rows.map((row) => ({
     ...row,
     seenBy: byMovie.get(row.movieId) ?? [],
@@ -84,7 +70,7 @@ export async function listNominations(
     orderBy: (n, { desc }) => desc(n.createdAt),
   })) as Omit<Nomination, "seenBy">[];
 
-  return withSeenBy(theatreId, rows);
+  return withSeenBy(rows);
 }
 
 export async function listNominationsByTheatreId(
@@ -104,7 +90,7 @@ export async function getNomination(
   })) as Omit<Nomination, "seenBy"> | undefined;
 
   if (!row) return undefined;
-  return (await withSeenBy(theatreId, [row]))[0];
+  return (await withSeenBy([row]))[0];
 }
 
 /** Bare existence check that respects theatre scoping. */

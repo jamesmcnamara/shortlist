@@ -171,12 +171,12 @@ describe("GET /api/join/[code]", () => {
     expect(statuses).toEqual([404, 404, 404, 404, 404]);
   });
 
-  it("doesn't open member-only routes", async () => {
+  it("does not resolve an invite code as a theatre ID", async () => {
     const response = await nominationsRoute.GET(
       get(),
       asTheatre(club.inviteCode),
     );
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(404);
   });
 
   it("does not create or upgrade memberships, even for signed-in viewers", async () => {

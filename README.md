@@ -4,19 +4,33 @@ A tiny Next.js + Vercel + Neon app for deciding what to watch, built on Drizzle 
 
 ## Theatres
 
-All content lives in a **theatre**, which is a shared watch list. Every movie,
-comment and watched marking is scoped to one. Members only ever see the theatres
-they belong to; theatres are joined through a shareable invite link. Admins can
-rename a theatre, manage its members and rotate its invite links from its settings
-page.
+All content lives in a **theatre**, which is a shared watch list. Every list,
+including personal Watchlists, is public: anyone can open a list without signing
+in or joining. Clicking a nominator's name or a comment avatar opens
+`/u/<user-id>/`, showing the theatres that person belongs to. **My Theatres**
+opens your own page; there is no global theatre directory. Movies, recommendation
+notes,
+discussion comments, and the names of people who marked a movie seen are
+visible to everyone, as are list creator and Watchlist owner IDs. Email addresses,
+member rosters, invite codes, and
+notification settings are not part of public list pages.
 
-The **Share** menu item copies the member invite link, `/join/<code>`. Anyone
-with that link can view the theatre read-only while signed out. Signed-in
-visitors join as members and are taken to the normal theatre. Admin invite
-links show the same preview while signed out, but grant admin access when
-opened while signed in. All members can share the member link; only admins can
-access admin links or rotate either kind. Rotating a link revokes both preview
-and join access through it, without removing existing members.
+Admins curate a list: they can add or remove movies, import titles, mark entries
+completed, rename or delete the list, and manage its members and invite links.
+Recommendation notes can only be changed by their original nominator, who must
+also be an admin of that list. Any signed-in user can add discussion comments,
+edit their own discussion comments, mark movies seen, and refresh shared
+streaming or box-office metadata without joining. These personal actions do
+not create membership.
+
+The **Share** menu item copies the public list URL. Opening it never joins a
+viewer. `/join/<code>` invite links remain separate: a valid code still opens a
+read-only preview while signed out; anyone signed in who opens a member link
+joins as a member, while an admin link grants admin access. Existing members
+can still share member links; only admins can access admin links or rotate
+either kind. Rotating an invite revokes preview and joining through its old
+code, but does not affect public viewing through the list URL or remove existing
+members.
 
 Marking a movie seen, using bulk **Mark watched**, or moving a movie into
 **Watched** triggers a bold confetti celebration immediately, while the save
@@ -189,10 +203,11 @@ theatres. Reads are deduplicated, and inactive queries refresh on their next mou
 New reads belong in `app/lib/data/queries.ts`; writes should keep using
 `app/lib/api.ts` so cache invalidation stays centralized.
 
-Theatre HTML is a data-free shell; the existing authenticated API routes enforce
-membership for every read and write. The service worker caches assets, but
-authenticated API responses and page navigations use the network, leaving SWR
-as the only cache for private data.
+Theatre HTML is a data-free shell. User theatre pages and individual list reads
+are available without a session; list curation routes require admin membership, while personal
+comments, seen marks, and metadata refreshes require sign-in but not membership.
+The service worker caches assets, but API responses and page navigations use
+the network, leaving SWR as the only data cache.
 
 ## Local development
 

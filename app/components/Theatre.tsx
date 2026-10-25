@@ -51,7 +51,8 @@ export function Theatre({
   nominees,
 }: TheatreProps) {
   const isReadOnly = "isReadOnly" in api;
-  const canEdit = when(!isReadOnly);
+  const canParticipate = !isReadOnly && Boolean(userId);
+  const canCurate = canParticipate && isAdmin;
   const { focusedId, closeDiscussion, openDiscussion } =
     useMovieDiscussionHistory();
   const [isWatchedOpen, setIsWatchedOpen] = useState(false);
@@ -205,7 +206,7 @@ export function Theatre({
     >
       <ShortlistHeader
         {...header}
-        additionalMenuItems={isReadOnly ? [] : additionalMenuItems}
+        additionalMenuItems={canCurate ? additionalMenuItems : []}
       />
 
       <section
@@ -221,7 +222,7 @@ export function Theatre({
           onChange={setViewState}
           existing={existing}
           isSubmitting={isSubmitting}
-          onNominate={canEdit(actions.nominate)}
+          onNominate={when(canCurate)(actions.nominate)}
         />
 
         {(message || notice) && (
@@ -232,7 +233,7 @@ export function Theatre({
         {visible.length === 0 && (
           <p className={styles.message} role="status">
             {nominees.length === 0
-              ? `Nothing here yet.${isReadOnly ? "" : " Add the first movie."}`
+              ? `Nothing here yet.${canCurate ? " Add the first movie." : ""}`
               : "No movies match these filters."}
           </p>
         )}
@@ -280,7 +281,7 @@ export function Theatre({
         </section>
       )}
 
-      {!isReadOnly && isImportOpen && (
+      {canCurate && isImportOpen && (
         <div className={styles.bulkImport}>
           <BulkMovieImport
             onImport={api.importTitle}
@@ -295,7 +296,7 @@ export function Theatre({
           <PickerBar
             picked={picked}
             theatreId={theatreId}
-            isReadOnly={isReadOnly}
+            canParticipate={canParticipate}
             isSubmitting={isSubmitting}
             isMenuOpen={isMenuOpen}
             setIsMenuOpen={setIsMenuOpen}
@@ -339,24 +340,26 @@ export function Theatre({
             nomination={focused}
             hasSeen={some({ id: userId })(focused.seenBy)}
             currentUserId={userId ?? null}
-            onUpdateComment={canEdit((comment: string) =>
+            onUpdateComment={when(
+              canCurate && focused.userId === userId,
+            )((comment: string) =>
               actions.updateNomRec(focused.id, comment),
             )}
-            onAddNomCom={canEdit((comment: string) =>
+            onAddNomCom={when(canParticipate)((comment: string) =>
               actions.addNomCom(focused.id, comment),
             )}
-            onUpdateNomCom={canEdit(actions.updateNomCom)}
-            onMarkWatched={canEdit(() =>
+            onUpdateNomCom={when(canParticipate)(actions.updateNomCom)}
+            onMarkWatched={when(canParticipate)(() =>
               actions.toggleWatched(focused.movieId),
             )}
-            onRefreshJustWatch={canEdit(() =>
+            onRefreshJustWatch={when(canParticipate)(() =>
               api.refreshJustWatch(focused.movieId),
             )}
-            onRefreshBoxOffice={canEdit(() =>
+            onRefreshBoxOffice={when(canParticipate)(() =>
               api.refreshBoxOffice(focused.movieId),
             )}
-            onDelete={when(isAdmin)(() => actions.delete(focused.id))}
-            onToggleCompleted={when(isAdmin)(async () => {
+            onDelete={when(canCurate)(() => actions.delete(focused.id))}
+            onToggleCompleted={when(canCurate)(async () => {
               if (await actions.toggleCompleted(focused.id)) {
                 closeDiscussion();
               }

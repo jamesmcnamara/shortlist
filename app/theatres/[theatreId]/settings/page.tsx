@@ -8,7 +8,7 @@ import { NotificationSettings } from "./NotificationSettings";
 import styles from "./page.module.css";
 
 export default function TheatreSettingsPage() {
-  const { theatre, isAdmin } = useTheatre();
+  const { theatre, role, isAdmin } = useTheatre();
 
   return (
     <main className={styles.shell}>
@@ -22,8 +22,15 @@ export default function TheatreSettingsPage() {
         </Link>
       </header>
 
+      {!role && (
+        <p className={styles.subtitle} role="alert">
+          You need a list invitation to open its settings.
+        </p>
+      )}
       {isAdmin && <AdminSettings />}
-      <NotificationSettings key={theatre.id} theatreId={theatre.id} />
+      {role && (
+        <NotificationSettings key={theatre.id} theatreId={theatre.id} />
+      )}
     </main>
   );
 }

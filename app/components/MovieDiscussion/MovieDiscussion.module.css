@@ -85,6 +85,11 @@
   font-weight: 700;
 }
 
+.discussionMeta {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
 .runtime {
   font-style: italic;
   margin: 0;

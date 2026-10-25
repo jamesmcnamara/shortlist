@@ -19,7 +19,7 @@ import { isAccessError } from "@/app/lib/data/DataProvider";
 
 interface TheatreContextValue {
   theatre: SafeTheatre;
-  role: TheatreRole;
+  role: TheatreRole | null;
   theatres: TheatreSummary[];
   client: TheatreApi;
   isAdmin: boolean;
@@ -41,12 +41,13 @@ export function TheatreProvider({ theatreId, children }: TheatreProviderProps) {
   const client = useMemo(() => api.theatre(theatreId), [theatreId]);
   const value = useMemo<TheatreContextValue | null>(() => {
     if (!detail || !theatres || !noms) return null;
+    const role = detail.membership?.role ?? null;
     return {
       theatre: detail.theatre,
-      role: detail.membership.role,
+      role,
       theatres,
       client,
-      isAdmin: detail.membership.role === "admin",
+      isAdmin: role === "admin",
       detail,
       noms,
     };
@@ -59,6 +60,7 @@ export function TheatreProvider({ theatreId, children }: TheatreProviderProps) {
       pending={!value}
       error={errors.find(isAccessError) ?? errors.find(Boolean)}
       retry={() => Promise.all(queries.map((query) => query.retry()))}
+      requiresUser={false}
     >
       <TheatreContext.Provider value={value}>{children}</TheatreContext.Provider>
     </DataBoundary>

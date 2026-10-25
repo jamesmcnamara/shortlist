@@ -3,6 +3,8 @@ import styles from "./MovieCard.module.css";
 import { getColor, getInitials } from "@/app/lib/utils";
 import classnames from "classnames";
 import { useLongPress } from "@/app/lib/useLongPress";
+import Link from "next/link";
+import { userPath } from "@/lib/user-path";
 
 interface MovieCardProps {
   nomination: Nomination;
@@ -87,12 +89,14 @@ export function MovieCard({
 
         {showMeta && (
           <div className={styles.meta}>
-            <span
+            <Link
+              href={userPath(nominator.id)}
               className={`avatar avatar-${getColor(details.title)}`}
               title={`Nominated by ${nominator.name}`}
+              aria-label={`Nominated by ${nominator.name}`}
             >
               {getInitials(nominator.name)}
-            </span>
+            </Link>
             {seenBy.length > 0 && (
               <span
                 className={styles.seenCount}

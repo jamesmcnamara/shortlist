@@ -9,7 +9,7 @@ interface PickerBarProps {
   picked: number[];
   theatreId?: string;
   menuRef: React.RefObject<HTMLDivElement | null>;
-  isReadOnly: boolean;
+  canParticipate: boolean;
   isMenuOpen: boolean;
   isSubmitting: boolean;
   setIsMenuOpen: Dispatch<SetStateAction<boolean>>;
@@ -24,7 +24,7 @@ export function PickerBar({
   picked,
   theatreId,
   menuRef,
-  isReadOnly,
+  canParticipate,
   isMenuOpen,
   isSubmitting,
   setIsMenuOpen,
@@ -35,7 +35,7 @@ export function PickerBar({
   onClickMarkWatched,
 }: PickerBarProps) {
   const openMenu = useLongPress(() => {
-    if (!isReadOnly) setIsMenuOpen(true);
+    if (canParticipate) setIsMenuOpen(true);
   });
 
   return (
@@ -73,7 +73,7 @@ export function PickerBar({
         >
           Compare
         </button>
-        {!isReadOnly && (
+        {canParticipate && (
           <button
             type="button"
             className={styles.compareMore}
@@ -88,7 +88,7 @@ export function PickerBar({
             </svg>
           </button>
         )}
-        {isMenuOpen && picked.length > 0 && (
+        {canParticipate && isMenuOpen && picked.length > 0 && (
           <div className={styles.compareMenu} role="menu">
             {theatreId && (
               <button type="button" role="menuitem" onClick={onClickCrossPost}>

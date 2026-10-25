@@ -1,7 +1,7 @@
 import { getMovieProvider } from "@/app/lib/movie-metadata";
 import type { MovieImportResult } from "@/app/lib/bulk-movie-import";
 import { z } from "zod";
-import { withTheatreMember } from "@/lib/auth/require-theatre";
+import { withTheatreAdmin } from "@/lib/auth/require-theatre";
 import { badRequest, parseJson, requiredText } from "@/lib/validation";
 import { getDb } from "@/src/db/client";
 import { nominations, type Movie } from "@/src/db/schema";
@@ -17,7 +17,7 @@ const importBody = z.object({
     .regex(/^[^\r\n]*$/, ONE_TITLE),
 });
 
-export const POST = withTheatreMember({ error: "Unable to import this movie." })(
+export const POST = withTheatreAdmin({ error: "Unable to import this movie." })(
   async (request, { theatre, userId }) => {
     const parsed = await parseJson(request, importBody);
     if (!parsed.success) return badRequest(parsed.error);

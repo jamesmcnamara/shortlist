@@ -125,10 +125,11 @@ export function AdminSettings() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Invite</h2>
         <p className={styles.hint}>
-          Anyone with this link can view the theatre while signed out and join
-          after signing in. Members can share the member invite too. Rotating a
-          link stops it working for viewing or joining; existing members keep
-          their access.
+          The public list URL already lets anyone view this list. These invite
+          links can also preview it while signed out, and let signed-in visitors
+          join: the member link adds a member, while the admin link grants admin
+          access. Rotating a link revokes preview and joining through its old
+          code; existing members keep their access.
         </p>
         <div
           className={styles.radioGroup}
@@ -184,7 +185,7 @@ export function AdminSettings() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Members</h2>
         <ul className={styles.members}>
-          {detail?.members.map((member) => (
+          {(detail.members ?? []).map((member) => (
             <li key={member.id} className={styles.member}>
               <div className={styles.memberIdentity}>
                 <span className={styles.memberName}>{member.name}</span>

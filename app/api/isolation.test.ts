@@ -133,7 +133,7 @@ beforeEach(async () => {
 
   await db.insert(seen).values([
     { movieId: insertedMovies[1].id, userId: MALLORY },
-    // Mallory is not in theatre A, so this must never surface on its nomination.
+    // A public list shows seen marks from everyone, not only its members.
     { movieId: insertedMovies[0].id, userId: MALLORY },
   ]);
 
@@ -157,7 +157,7 @@ describe("theatre membership", () => {
     const malloryClub = await GET(new Request("http://test"), route("secret"));
 
     expect(await aliceClub.json()).toHaveLength(1);
-    expect(malloryClub.status).toBe(404);
+    expect(malloryClub.status).toBe(200);
   });
 
   it("returns only the caller's own theatre contents", async () => {
@@ -172,32 +172,50 @@ describe("theatre membership", () => {
     expect(body[0].movie.details.title).toBe("Public Movie");
   });
 
-  it("hides a theatre the caller does not belong to", async () => {
+  it("shows a theatre the caller does not belong to", async () => {
     const { GET } = nominationsRoute;
     asUser(BOB);
 
     const response = await GET(new Request("http://test"), route("secret"));
-
-    // 404 rather than 403, so theatre IDs cannot be probed for existence.
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toHaveLength(1);
   });
 
-  it("rejects anonymous callers", async () => {
+  it("allows anonymous callers to read list contents", async () => {
     const { GET } = nominationsRoute;
     asUser("");
 
     const response = await GET(new Request("http://test"), route("club"));
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toHaveLength(1);
   });
 
-  it("lists only theatres the caller belongs to", async () => {
+  it("lists only the caller's theatres for personal navigation", async () => {
     const { GET } = theatresRoute;
     asUser(BOB);
 
     const body = await (await GET(new Request("http://test"))).json();
-    expect(body.map((theatre: { id: string }) => theatre.id)).toEqual([
-      fixture.theatreA.id,
-    ]);
+    expect(body.map((theatre: { id: string }) => theatre.id))
+      .toEqual([fixture.theatreA.id]);
+  });
+
+  it.each(["", MALLORY])("returns creator IDs but no membership details or invite codes to public viewers (%s)", async (userId) => {
+    const { GET } = theatreRoute;
+    asUser(userId);
+    const body = await (
+      await GET(new Request("http://test"), route("club"))
+    ).json();
+
+    expect(body).toEqual({
+      theatre: expect.objectContaining({
+        name: "Club",
+        createdBy: ALICE,
+        watchlistFor: null,
+      }),
+      membership: null,
+    });
+    expect(JSON.stringify(body)).not.toContain("email");
+    expect(JSON.stringify(body)).not.toContain("invite-a");
   });
 });
 
@@ -215,6 +233,23 @@ describe("cross-theatre writes", () => {
     expect(await fixture.db.select().from(nomcoms)).toHaveLength(0);
   });
 
+  it("lets signed-in nonmembers comment without joining", async () => {
+    const { POST } = nomcomsRoute;
+    asUser(MALLORY);
+    const response = await POST(
+      post({ nominationId: fixture.nominationInA, comment: "Looks good." }),
+      route("club"),
+    );
+    expect(response.status).toBe(201);
+    expect(
+      (await fixture.db.select().from(theatreMembers)).some(
+        (member) =>
+          member.theatreId === fixture.theatreA.id &&
+          member.userId === MALLORY,
+      ),
+    ).toBe(false);
+  });
+
   it("cannot delete another theatre's nomination", async () => {
     const { DELETE } = nominationsRoute;
     asUser(BOB);
@@ -226,7 +261,7 @@ describe("cross-theatre writes", () => {
       route("club"),
     );
 
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(403);
     expect(await fixture.db.select().from(nominations)).toHaveLength(2);
   });
 
@@ -241,7 +276,7 @@ describe("cross-theatre writes", () => {
       route("club"),
     );
 
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(403);
   });
 
   it("lets a nominator update and clear their own nomination comment", async () => {
@@ -277,7 +312,7 @@ describe("cross-theatre writes", () => {
       route("club"),
     );
 
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(403);
     const [row] = await fixture.db
       .select()
       .from(nominations)
@@ -294,7 +329,7 @@ describe("cross-theatre writes", () => {
       route("club"),
     );
 
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(403);
   });
 
   it("lets a commenter update their own discussion comment", async () => {
@@ -372,21 +407,20 @@ describe("cross-theatre writes", () => {
     expect(row.comment).toBe("secret take");
   });
 
-  it("does not report a non-member's viewing on a shared movie", async () => {
+  it("shows a non-member's viewing on a public list", async () => {
     const { GET } = nominationsRoute;
     asUser(BOB);
 
     const body = await (
       await GET(new Request("http://test"), route("club"))
     ).json();
-    // Mallory has seen this movie, but is not in theatre A.
-    expect(body[0].seenBy).toEqual([]);
+    expect(body[0].seenBy).toEqual([{ id: MALLORY, name: "Mallory" }]);
   });
 
-  it("shows a theatre member's own viewing on the nomination", async () => {
+  it("lets any signed-in viewer mark a movie seen without joining", async () => {
     const { POST } = seenRoute;
     const { GET } = nominationsRoute;
-    asUser(BOB);
+    asUser(MALLORY);
 
     const marked = await POST(
       post({ movieId: fixture.movieInA }),
@@ -398,8 +432,15 @@ describe("cross-theatre writes", () => {
       await GET(new Request("http://test"), route("club"))
     ).json();
     expect(body[0].seenBy.map((user: { id: string }) => user.id)).toEqual([
-      BOB,
+      MALLORY,
     ]);
+    expect(
+      (await fixture.db.select().from(theatreMembers)).some(
+        (member) =>
+          member.theatreId === fixture.theatreA.id &&
+          member.userId === MALLORY,
+      ),
+    ).toBe(false);
   });
 
   it("refuses to mark a movie that is not on the acting theatre's list", async () => {

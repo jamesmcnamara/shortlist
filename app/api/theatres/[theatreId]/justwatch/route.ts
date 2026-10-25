@@ -2,7 +2,7 @@ import { and, eq, exists, sql } from "drizzle-orm";
 import { z } from "zod";
 import * as justwatch from "@/app/lib/justwatch";
 import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
-import { withTheatreMember } from "@/lib/auth/require-theatre";
+import { withTheatreUser } from "@/lib/auth/require-theatre";
 import { badRequest, dbId, parseJson } from "@/lib/validation";
 import { getDb } from "@/src/db/client";
 import { movies, nominations, type MovieDetails } from "@/src/db/schema";
@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 
 const refreshBody = z.object({ movieId: dbId("A movie id is required.") });
 
-export const POST = withTheatreMember({
+export const POST = withTheatreUser({
   error: "Unable to save JustWatch availability.",
 })(async (request, { theatre }) => {
   const parsed = await parseJson(request, refreshBody);

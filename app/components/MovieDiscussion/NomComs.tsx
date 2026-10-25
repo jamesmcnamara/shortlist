@@ -3,6 +3,8 @@ import { useState, type SubmitEventHandler } from "react";
 import styles from "./MovieDiscussion.module.css";
 import { getColor, getInitials, when } from "@/app/lib/utils";
 import { EditableComment } from "./EditableComment";
+import Link from "next/link";
+import { userPath } from "@/lib/user-path";
 
 interface NomComsProps {
   nominationId: number;
@@ -42,11 +44,13 @@ export function NomComs({
         {nomcoms.map((nomcom) => {
           return (
             <div className={styles.nomcomItem} key={nomcom.id}>
-              <span
+              <Link
+                href={userPath(nomcom.commenter.id)}
                 className={`avatar avatar-${getColor(nomcom.commenter.name)}`}
+                aria-label={`View ${nomcom.commenter.name}'s theatres`}
               >
                 {getInitials(nomcom.commenter.name)}
-              </span>
+              </Link>
               <div className={styles.commentContent}>
                 <strong>{nomcom.commenter.name}</strong>
                 <EditableComment

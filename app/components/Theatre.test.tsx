@@ -62,7 +62,18 @@ vi.mock("./ShortlistHeader", () => ({
   ),
 }));
 vi.mock("./ViewControls", () => ({
-  ViewControls: () => <div>List controls</div>,
+  ViewControls: ({
+    onNominate,
+  }: {
+    onNominate?: (movie: { id: number }, comment: string) => void;
+  }) => (
+    <div>
+      List controls
+      {onNominate && (
+        <button onClick={() => onNominate({ id: 1 }, "")}>Add nomination</button>
+      )}
+    </div>
+  ),
 }));
 vi.mock("./MovieCard", () => ({
   MovieCard: ({
@@ -127,24 +138,72 @@ const createApi = (): TheatreAPI => ({
   toggleCompleted: vi.fn(),
 });
 
-function show(nominees: Nomination[], api: TheatreAPI | null = createApi()) {
+function show(
+  nominees: Nomination[],
+  api: TheatreAPI | null = createApi(),
+  isAdmin = true,
+  userId: string | null = "user",
+) {
   return render(
     <Theatre
       theatreId="theatre"
       name="Watchlist"
       header={{}}
-      isAdmin
-      userId="user"
+      isAdmin={isAdmin}
+      userId={userId ?? undefined}
       api={api ?? undefined}
       nominees={nominees}
       viewState={{ sort: "newest", filters: [] }}
       setViewState={vi.fn()}
-      viewContext={{ userId: "user" }}
+      viewContext={{ userId: userId ?? undefined }}
     />,
   );
 }
 
 describe("theatre movie animations", () => {
+  it("lets signed-in non-admins participate without showing curation controls", () => {
+    const api = createApi();
+    show([{ ...watched, completed: false }], api, false);
+    expect(screen.queryByRole("button", { name: "Add nomination" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Import Movies" })).toBeNull();
+
+    fireEvent.click(screen.getByText("Watched movie"));
+    expect(
+      screen.getByRole("button", { name: "Mark Watched movie as seen" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Mark .* as Watched/ })).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Post comment" }),
+    ).toBeTruthy();
+  });
+
+  it("keeps signed-out viewers read-only while leaving the list browsable", () => {
+    show([{ ...watched, completed: false }], createApi(), false, null);
+    expect(screen.getByText("Watched movie")).toBeTruthy();
+    fireEvent.click(screen.getByText("Watched movie"));
+    expect(
+      screen.queryByRole("button", { name: "Mark Watched movie as seen" }),
+    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Post comment" })).toBeNull();
+  });
+
+  it("does not let an admin edit another nominator's recommendation", () => {
+    show([
+      {
+        ...watched,
+        completed: false,
+        userId: "original",
+        nominator: { id: "original", name: "Original" },
+      },
+    ]);
+    fireEvent.click(screen.getByText("Watched movie"));
+    expect(
+      screen.queryByRole("button", {
+        name: "Edit Watched movie nomination comment",
+      }),
+    ).toBeNull();
+  });
+
   it("renders active movies immediately and keeps completed movies collapsed", () => {
     show([watched, { ...watched, id: 2, completed: false }]);
     const cards = screen.getAllByRole("article");

@@ -24,8 +24,8 @@ export type SafeTheatre = Omit<
 const THEATRE_COLUMNS = {
   id: theatres.id,
   name: theatres.name,
-  watchlistFor: theatres.watchlistFor,
   createdBy: theatres.createdBy,
+  watchlistFor: theatres.watchlistFor,
   description: theatres.description,
   createdAt: theatres.createdAt,
 };
@@ -144,6 +144,58 @@ export function withTheatreAdmin(config: WithTheatreConfig) {
 export interface PublicTheatreContext {
   theatre: SafeTheatre;
   params: Record<string, string>;
+}
+
+export interface TheatreViewerContext extends PublicTheatreContext {
+  userId: string | null;
+  role: TheatreRole | null;
+}
+
+export interface TheatreUserContext extends PublicTheatreContext {
+  userId: string;
+}
+
+type TheatreViewerHandler = (
+  request: Request,
+  context: TheatreViewerContext,
+) => Promise<Response>;
+
+type TheatreUserHandler = (
+  request: Request,
+  context: TheatreUserContext,
+) => Promise<Response>;
+
+/** Resolves a public list by ID and includes membership only for the viewer. */
+export function withTheatreViewer(config: WithTheatreConfig) {
+  return (handler: TheatreViewerHandler) =>
+    async (request: Request, routeContext: RouteContext): Promise<Response> =>
+      catchErrors(config, async () => {
+        const params = await routeContext.params;
+        const theatreId = params.theatreId;
+        if (!theatreId || !isUuid(theatreId)) return notFound();
+        const theatre = await findTheatreById(theatreId);
+        if (!theatre) return notFound();
+        const userId = await requireUserId();
+        const role = userId ? await findMembership(theatre.id, userId) : null;
+        return handler(request, { theatre, userId, role, params });
+      });
+}
+
+/** Resolves a list for any signed-in user, without requiring membership. */
+export function withTheatreUser(config: WithTheatreConfig) {
+  return (handler: TheatreUserHandler) =>
+    async (request: Request, routeContext: RouteContext): Promise<Response> => {
+      const userId = await requireUserId();
+      if (!userId) return unauthorized();
+      return catchErrors(config, async () => {
+        const params = await routeContext.params;
+        const theatreId = params.theatreId;
+        if (!theatreId || !isUuid(theatreId)) return notFound();
+        const theatre = await findTheatreById(theatreId);
+        if (!theatre) return notFound();
+        return handler(request, { theatre, userId, params });
+      });
+    };
 }
 
 /**

@@ -4,8 +4,9 @@ import {
   findInviteCode,
   findAdminInviteCode,
   withTheatreAdmin,
-  withTheatreMember,
+  withTheatreViewer,
   type TheatreContext,
+  type TheatreViewerContext,
 } from "@/lib/auth/require-theatre";
 import { getDb } from "@/src/db/client";
 import { theatreMembers, theatres } from "@/src/db/schema";
@@ -16,9 +17,12 @@ export const runtime = "nodejs";
 
 const updateBody = z.object({ name: requiredText("Nothing to update.") });
 
-export const GET = withTheatreMember({
+export const GET = withTheatreViewer({
   error: "Unable to load the theatre.",
-})(async (_request: Request, { theatre, role, userId }: TheatreContext) => {
+})(async (_request: Request, { theatre, role, userId }: TheatreViewerContext) => {
+  if (!userId || !role) {
+    return Response.json({ theatre, membership: null });
+  }
   const members = await getDb()
     .select({
       id: authUsers.id,

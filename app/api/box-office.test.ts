@@ -65,7 +65,11 @@ beforeEach(async () => {
     inviteCode: id,
     adminInviteCode: `admin-${id}`,
   })));
-  await db.insert(theatreMembers).values({ theatreId: THEATRE, userId: USER });
+  await db.insert(theatreMembers).values({
+    theatreId: THEATRE,
+    userId: USER,
+    role: "admin",
+  });
   const [stored] = await db.insert(movies).values({
     tmdbId: 157336,
     details: {
@@ -198,15 +202,59 @@ describe("theatre-scoped box office refresh", () => {
     expect(await db.select().from(nominations)).toEqual(before);
   });
 
-  it.each(["", "44444444-4444-4444-4444-444444444444"])(
-    "rejects an unauthorized user before scraping (%s)",
-    async (userId) => {
-      auth.userId = userId;
-      expect((await refresh(request({ movieId: movie.id }), context())).status)
-        .toBe(userId ? 404 : 401);
-      expect(fetch).not.toHaveBeenCalled();
-    },
-  );
+  it("rejects anonymous refreshes before scraping", async () => {
+    auth.userId = "";
+    expect((await refresh(request({ movieId: movie.id }), context())).status)
+      .toBe(401);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("lets a signed-in nonmember refresh shared metadata without joining", async () => {
+    const outsider = "44444444-4444-4444-4444-444444444444";
+    await db.insert(authUsers).values({
+      id: outsider,
+      name: "Outsider",
+      email: "outsider@example.com",
+    });
+    auth.userId = outsider;
+    expect((await refresh(request({ movieId: movie.id }), context())).status)
+      .toBe(200);
+    expect(
+      await db
+        .select()
+        .from(theatreMembers)
+        .where(eq(theatreMembers.userId, outsider)),
+    ).toHaveLength(0);
+  });
+
+  it("keeps nomination creation admin-only", async () => {
+    const member = "44444444-4444-4444-4444-444444444444";
+    await db.insert(authUsers).values({
+      id: member,
+      name: "Member",
+      email: "member@example.com",
+    });
+    await db.insert(theatreMembers).values({
+      theatreId: THEATRE,
+      userId: member,
+      role: "member",
+    });
+    auth.userId = member;
+    expect((await add(request({ movieId: movie.id }), context())).status).toBe(403);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("returns not found for a missing list", async () => {
+    expect(
+      (
+        await refresh(
+          request({ movieId: movie.id }),
+          context("66666666-6666-6666-6666-666666666666"),
+        )
+      ).status,
+    ).toBe(404);
+    expect(fetch).not.toHaveBeenCalled();
+  });
 
   it("rejects movies not on the authorized theatre", async () => {
     await db.delete(nominations).where(eq(nominations.theatreId, THEATRE));
@@ -334,7 +382,11 @@ describe("nomination box office enrichment failures and imports", () => {
 
   it("refreshes a movie already cached through another theatre", async () => {
     await add(request({ movieId: movie.id }), context());
-    await db.insert(theatreMembers).values({ theatreId: OTHER, userId: USER });
+    await db.insert(theatreMembers).values({
+      theatreId: OTHER,
+      userId: USER,
+      role: "admin",
+    });
     fetch.mockImplementation(async () => new Response(
       html.replace("$782,948,164", "$783,000,000"),
       { headers: { "Content-Type": "text/html" } },

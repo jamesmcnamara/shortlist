@@ -1,13 +1,13 @@
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
-import { withUser } from "@/lib/auth/require-user";
+import { requireUserId, unauthorized, withUser } from "@/lib/auth/require-user";
 import { generateInviteCode } from "@/app/lib/theatres";
 import { theatrePath } from "@/lib/theatre-path";
 import { getDb } from "@/src/db/client";
 import { nominations, theatreMembers, theatres } from "@/src/db/schema";
 import {
-  listTheatresForUser,
-  listTheatresWithPosterPreviewsForUser,
+  listPublicTheatres,
+  listPublicTheatresWithPosterPreviews,
   recentActivityOrder,
 } from "@/app/lib/load-theatre";
 import {
@@ -39,21 +39,29 @@ const createBody = z.object({
  * Theatres the caller belongs to. With `?movieIds=1,2`, each also lists which
  * of those movies it already carries, for the list pickers.
  */
-export const GET = withUser({ error: "Unable to load your theatres." })(async (
-  request: Request,
-  userId: string,
-) => {
-  const params = new URL(request.url).searchParams;
-  if (params.get("previews") === "true") {
-    return Response.json(await listTheatresWithPosterPreviewsForUser(userId));
+export async function GET(request: Request) {
+  try {
+    const userId = await requireUserId();
+    const params = new URL(request.url).searchParams;
+    if (params.has("movieIds")) {
+      if (!userId) return unauthorized();
+      const movieIds = movieIdsParam.safeParse(params.get("movieIds"));
+      if (!movieIds.success) return badRequest(movieIds.error);
+      return Response.json(await listTheatresWithMovies(userId, movieIds.data));
+    }
+    if (!userId) return Response.json([]);
+    if (params.get("previews") === "true") {
+      return Response.json(await listPublicTheatresWithPosterPreviews(userId));
+    }
+    return Response.json(await listPublicTheatres(userId));
+  } catch (error) {
+    console.error(error);
+    return Response.json(
+      { error: "Unable to load the theatres." },
+      { status: 500 },
+    );
   }
-  if (params.has("movieIds")) {
-    const movieIds = movieIdsParam.safeParse(params.get("movieIds"));
-    if (!movieIds.success) return badRequest(movieIds.error);
-    return Response.json(await listTheatresWithMovies(userId, movieIds.data));
-  }
-  return Response.json(await listTheatresForUser(userId));
-});
+}
 
 const listTheatresWithMovies = (userId: string, movieIds: number[]) =>
   getDb()
@@ -71,7 +79,12 @@ const listTheatresWithMovies = (userId: string, movieIds: number[]) =>
     })
     .from(theatreMembers)
     .innerJoin(theatres, eq(theatres.id, theatreMembers.theatreId))
-    .where(eq(theatreMembers.userId, userId))
+    .where(
+      and(
+        eq(theatreMembers.userId, userId),
+        eq(theatreMembers.role, "admin"),
+      ),
+    )
     .orderBy(...recentActivityOrder);
 
 export const POST = withUser({

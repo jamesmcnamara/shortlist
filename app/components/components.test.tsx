@@ -159,6 +159,8 @@ describe("high-churn component smoke tests", () => {
     );
 
     expect(screen.getByText("A Movie")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Nominated by Alice" })
+      .getAttribute("href")).toBe("/u/user");
     expect(screen.getByRole("img", { name: "Watched" })).toBeTruthy();
     expect(screen.getByAltText("").parentElement?.className).toContain(
       "watchedPoster",
@@ -396,6 +398,8 @@ describe("high-churn component smoke tests", () => {
       expect(screen.getByText("Nominated by Alice").parentElement).toBe(
         heading.parentElement,
       );
+      expect(screen.getByRole("link", { name: "Nominated by Alice" })
+        .getAttribute("href")).toBe("/u/user");
       expect(screen.getByText("A description").parentElement).not.toBe(
         heading.parentElement,
       );
@@ -542,6 +546,12 @@ describe("high-churn component smoke tests", () => {
 
     expect(screen.getByText("Nom Coms")).toBeTruthy();
     expect(screen.getByText("I agree")).toBeTruthy();
+    const profiles = screen.getAllByRole("link", {
+      name: "View Alice's theatres",
+    });
+    expect(profiles).toHaveLength(2);
+    expect(profiles.map((link) => link.getAttribute("href")))
+      .toEqual(["/u/user", "/u/user"]);
     fireEvent.change(screen.getByRole("textbox", { name: "Add a comment" }), {
       target: { value: "Count me in" },
     });

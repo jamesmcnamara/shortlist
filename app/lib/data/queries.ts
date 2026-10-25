@@ -27,7 +27,11 @@ function useQuery<T>(
 }
 
 export function useTheatres() {
-  return useQuery("/api/theatres?previews=true", api.theatres.listWithPosters);
+  return useQuery(
+    "/api/theatres?previews=true",
+    api.theatres.listWithPosters,
+    { requiresUser: false },
+  );
 }
 
 export function useTheatresForMovies(movieIds: number[]) {
@@ -42,8 +46,10 @@ interface TheatreReference {
 }
 
 export function useTheatreDetail(theatre: TheatreReference) {
-  return useQuery(`/api/theatres/${encodeURIComponent(theatre.id)}`, () =>
-    api.theatre(theatre.id).get(),
+  return useQuery(
+    `/api/theatres/${encodeURIComponent(theatre.id)}`,
+    () => api.theatre(theatre.id).get(),
+    { requiresUser: false },
   );
 }
 
@@ -51,6 +57,7 @@ export function useNominations(theatre: TheatreReference) {
   return useQuery(
     `/api/theatres/${encodeURIComponent(theatre.id)}/nominations`,
     () => api.theatre(theatre.id).nominations.list(),
+    { requiresUser: false },
   );
 }
 

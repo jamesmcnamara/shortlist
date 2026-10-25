@@ -5,6 +5,7 @@ import { redirect, usePathname } from "next/navigation";
 import { LoadingOverlay } from "@/app/components/LoadingOverlay";
 import { isAccessError, useDataSession } from "./DataProvider";
 import styles from "./DataBoundary.module.css";
+import { userPath } from "@/lib/user-path";
 
 interface DataBoundaryProps {
   pending: boolean;
@@ -36,7 +37,7 @@ export function DataBoundary({
       <main className={styles.message} role="alert">
         <p>{error.message}</p>
         {session.userId && (
-          <Link href="/theatres">Back to Theatres Near You</Link>
+          <Link href={userPath(session.userId)}>Back to My Theatres</Link>
         )}
       </main>
     );

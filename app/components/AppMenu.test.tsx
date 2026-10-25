@@ -7,6 +7,7 @@ const data = vi.hoisted(() => ({
   disconnect: vi.fn(),
   signOut: vi.fn(),
   userId: "alice",
+  userName: "Alice",
   theatres: [
     { id: "ordinary", name: "Watchlist", watchlistFor: null },
     { id: "bobs", name: "Watchlist", watchlistFor: "bob" },
@@ -16,7 +17,11 @@ const data = vi.hoisted(() => ({
 
 vi.mock("@/lib/auth/client", () => ({
   authClient: {
-    useSession: () => ({ data: { user: { id: data.userId, name: "Alice" } } }),
+    useSession: () => ({
+      data: data.userId
+        ? { user: { id: data.userId, name: data.userName } }
+        : null,
+    }),
     signOut: data.signOut,
   },
 }));
@@ -32,6 +37,20 @@ vi.mock("next/navigation", () => ({
 afterEach(() => {
   cleanup();
   vi.resetAllMocks();
+  data.userId = "alice";
+  data.userName = "Alice";
+});
+
+it("offers sign-in without a global directory to signed-out visitors", () => {
+  data.userId = "";
+  render(<AppMenu />);
+  fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+  expect(screen.queryByRole("menuitem", { name: "All Theatres" })).toBeNull();
+  expect(screen.queryByRole("menuitem", { name: "My Theatres" })).toBeNull();
+  expect(
+    screen.getByRole("menuitem", { name: "Sign in" }).getAttribute("href"),
+  ).toBe("/auth/sign-in");
+  expect(screen.queryByRole("menuitem", { name: "New Theatre" })).toBeNull();
 });
 
 describe("watchlist menu link", () => {
@@ -39,8 +58,8 @@ describe("watchlist menu link", () => {
     render(<AppMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     expect(
-      screen.getByRole("menuitem", { name: "Theatres Near You" }).getAttribute("href"),
-    ).toBe("/theatres");
+      screen.getByRole("menuitem", { name: "My Theatres" }).getAttribute("href"),
+    ).toBe("/u/alice");
   });
 
   it("links to the current user's designated theatre even when renamed", () => {
@@ -76,14 +95,17 @@ describe("watchlist menu link", () => {
 });
 
 describe("share menu item", () => {
-  const code = "member-link";
   const writeText = vi.fn();
   Object.assign(navigator, { clipboard: { writeText } });
 
-  it("only shows when there's a theatre to share", () => {
+  it("copies the public list link, which does not grant membership", async () => {
+    writeText.mockResolvedValue(undefined);
     render(<AppMenu theatre={{ id: "ordinary" }} />);
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
-    expect(screen.queryByRole("button", { name: "Share" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    expect(writeText).toHaveBeenCalledWith(
+      `${window.location.origin}/theatres/ordinary`,
+    );
   });
 
   describe("additional menu items", () => {
@@ -105,18 +127,18 @@ describe("share menu item", () => {
     });
   });
 
-  it("copies the member join link", async () => {
+  it("shows a confirmation after copying the public link", async () => {
     writeText.mockResolvedValue(undefined);
-    render(<AppMenu theatre={{ id: "ordinary", inviteCode: code }} />);
+    render(<AppMenu theatre={{ id: "ordinary" }} />);
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
-    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/join/${code}`);
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/theatres/ordinary`);
     await screen.findByRole("button", { name: "Link copied ✓" });
   });
 
   it("says so when copying fails", async () => {
     writeText.mockRejectedValue(new Error("denied"));
-    render(<AppMenu theatre={{ id: "ordinary", inviteCode: code }} />);
+    render(<AppMenu theatre={{ id: "ordinary" }} />);
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     await screen.findByRole("button", { name: "Couldn't copy link" });

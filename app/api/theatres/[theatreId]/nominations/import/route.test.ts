@@ -42,7 +42,7 @@ beforeEach(async () => {
   db = created.db;
   close = () => created.client.close();
   setDbForTesting(() => db as unknown as DB);
-  auth.userId = MEMBER;
+  auth.userId = OWNER;
   bestMatch.mockReset();
   setMovieProviderForTesting({
     hasCredentials: () => true,
@@ -108,7 +108,7 @@ afterEach(async () => {
 });
 
 describe("per-title movie import", () => {
-  it("adds a member's trimmed title with no note to the authorized theatre", async () => {
+  it("adds an admin's trimmed title with no note to the authorized theatre", async () => {
     const response = await POST(request({ title: " Arrival " }), context());
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
@@ -119,7 +119,7 @@ describe("per-title movie import", () => {
     expect(await db.select().from(nominations)).toEqual([
       expect.objectContaining({
         theatreId,
-        userId: MEMBER,
+        userId: OWNER,
         movieId: movie.id,
         comment: null,
         completed: false,
@@ -129,6 +129,7 @@ describe("per-title movie import", () => {
 
   it.each([
     ["unauthenticated", "", "44444444-4444-4444-4444-444444444444", 401],
+    ["non-admin member", MEMBER, "44444444-4444-4444-4444-444444444444", 403],
     ["nonmember", OUTSIDER, "44444444-4444-4444-4444-444444444444", 404],
     ["other theatre", MEMBER, "55555555-5555-5555-5555-555555555555", 404],
     ["missing theatre", MEMBER, "66666666-6666-6666-6666-666666666666", 404],

@@ -23,7 +23,9 @@ git-ignored `.dev-user.json`. Never print, commit, or copy those credentials int
 documentation or memory. If the file or account is missing, run `npm run dev:seed`.
 Do not run `dev:sync` just to log in: it replaces the dev database with production
 data. The test user is an admin of shared dev theatres and has its own Watchlist;
-other users' personal Watchlists remain private.
+all dev Watchlists and other lists are publicly viewable, including by signed-out
+visitors. Do not use `dev:sync` to test permissions; it replaces the dev database
+with production data.
 
 ## Responsive design priorities
 

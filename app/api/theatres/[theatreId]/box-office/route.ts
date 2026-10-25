@@ -1,13 +1,13 @@
 import { z } from "zod";
 import { refreshBoxOffice } from "@/app/lib/enrich-box-office";
-import { withTheatreMember } from "@/lib/auth/require-theatre";
+import { withTheatreUser } from "@/lib/auth/require-theatre";
 import { badRequest, dbId, parseJson } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
 const refreshBody = z.object({ movieId: dbId("A movie id is required.") });
 
-export const POST = withTheatreMember({
+export const POST = withTheatreUser({
   error: "Unable to refresh Box Office Mojo.",
 })(async (request, { theatre }) => {
   const parsed = await parseJson(request, refreshBody);

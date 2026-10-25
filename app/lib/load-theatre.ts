@@ -21,45 +21,60 @@ import { and, desc, eq, inArray, lte, not, sql } from "drizzle-orm";
 export interface LoadedTheatre {
   /** Never the raw row: the invite code must not reach the client. */
   theatre: SafeTheatre;
-  role: TheatreRole;
+  role: TheatreRole | null;
   theatres: TheatreSummary[];
-  userId: string;
+  userId: string | null;
 }
 
-/** Latest nomination first; theatres with none fall back to newest membership. */
 export const recentActivityOrder = [
   sql`(select max(${nominations.createdAt}) from ${nominations} where ${nominations.theatreId} = ${theatres.id}) desc nulls last`,
-  desc(theatreMembers.joinedAt),
+  desc(theatres.createdAt),
 ];
 
-/** Theatres the user belongs to, most recently added-to first. */
-export async function listTheatresForUser(
-  userId: string,
+/** A user's theatres, with the current viewer's membership role. */
+export async function listPublicTheatres(
+  memberUserId: string,
+  viewerUserId: string | null = memberUserId,
 ): Promise<TheatreSummary[]> {
-  const memberships = await getDb()
+  const viewerMembership = viewerUserId
+    ? and(
+        eq(theatreMembers.theatreId, theatres.id),
+        eq(theatreMembers.userId, viewerUserId),
+      )
+    : sql`false`;
+  const rows = await getDb()
     .select({
       id: theatres.id,
       name: theatres.name,
       watchlistFor: theatres.watchlistFor,
       role: theatreMembers.role,
     })
-    .from(theatreMembers)
-    .innerJoin(theatres, eq(theatres.id, theatreMembers.theatreId))
-    .where(eq(theatreMembers.userId, userId))
+    .from(theatres)
+    .leftJoin(theatreMembers, viewerMembership)
+    .where(
+      inArray(
+        theatres.id,
+        getDb()
+          .select({ id: theatreMembers.theatreId })
+          .from(theatreMembers)
+          .where(eq(theatreMembers.userId, memberUserId)),
+      ),
+    )
     .orderBy(...recentActivityOrder);
 
-  return memberships as TheatreSummary[];
+  return rows as TheatreSummary[];
 }
 
 /** Enough to fill the widest theatre card; the UI clips whatever doesn't fit. */
 export const MAX_POSTER_PREVIEWS = 12;
 
-/** Theatres the user belongs to, with their most recent nomination posters. */
-export async function listTheatresWithPosterPreviewsForUser(
-  userId: string,
+/** A user's theatres with their most recent nomination posters. */
+export async function listPublicTheatresWithPosterPreviews(
+  memberUserId: string,
+  viewerUserId: string | null = memberUserId,
 ): Promise<TheatreSummaryWithPosterPreviews[]> {
-  const memberships = await listTheatresForUser(userId);
-  if (memberships.length === 0) return [];
+  const theatres = await listPublicTheatres(memberUserId, viewerUserId);
+  if (theatres.length === 0) return [];
 
   const posterUrl = sql<string>`${movies.details} ->> 'posterUrl'`;
   const rankedPosters = getDb()
@@ -77,7 +92,7 @@ export async function listTheatresWithPosterPreviewsForUser(
         not(nominations.completed),
         inArray(
           nominations.theatreId,
-          memberships.map(({ id }) => id),
+          theatres.map(({ id }) => id),
         ),
         sql`${posterUrl} is not null`,
       ),
@@ -93,7 +108,7 @@ export async function listTheatresWithPosterPreviewsForUser(
     .where(lte(rankedPosters.rank, MAX_POSTER_PREVIEWS))
     .orderBy(rankedPosters.theatreId, rankedPosters.rank);
 
-  return memberships.map((theatre) => ({
+  return theatres.map((theatre) => ({
     ...theatre,
     posterUrls: posters
       .filter(({ theatreId }) => theatreId === theatre.id)
@@ -103,31 +118,27 @@ export async function listTheatresWithPosterPreviewsForUser(
 
 export type LoadTheatreResult =
   | { status: "ok"; data: LoadedTheatre }
-  | { status: "unauthenticated" }
-  | { status: "not-a-member" };
+  | { status: "not-found" };
 
 /**
- * The server-side gate for the read path. A page renders only after this has
- * confirmed the viewer belongs to the theatre.
+ * Server-side data for a public theatre page. Membership is optional and only
+ * affects the viewer's available controls.
  */
 export async function loadTheatre(
   theatreId: string,
 ): Promise<LoadTheatreResult> {
   const userId = await requireUserId();
-  if (!userId) return { status: "unauthenticated" };
-
   const theatre = await findTheatreById(theatreId);
-  if (!theatre) return { status: "not-a-member" };
+  if (!theatre) return { status: "not-found" };
 
-  const role = await findMembership(theatre.id, userId);
-  if (!role) return { status: "not-a-member" };
+  const role = userId ? await findMembership(theatre.id, userId) : null;
 
   return {
     status: "ok",
     data: {
       theatre,
       role,
-      theatres: await listTheatresForUser(userId),
+      theatres: userId ? await listPublicTheatres(userId) : [],
       userId,
     },
   };

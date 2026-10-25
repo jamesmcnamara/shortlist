@@ -9,7 +9,7 @@ import { some } from "shades";
 import { useTheatre } from "./TheatreContext";
 
 export function TheatreContainer() {
-  const { theatre, theatres, isAdmin, detail, client, noms } = useTheatre();
+  const { theatre, theatres, isAdmin, role, client, noms } = useTheatre();
   const { userId } = useDataSession();
   const viewContext = useMemo(() => ({ userId }), [userId]);
   const [viewState, setViewState] = useUrlViewState();
@@ -63,8 +63,8 @@ export function TheatreContainer() {
       theatreId={theatre.id}
       name={theatre.name}
       header={{
-        theatre: { id: theatre.id, inviteCode: detail.inviteCode },
-        showMyTheatres: theatres.length > 1,
+        theatre: { id: theatre.id, isMember: Boolean(role) },
+        showMyTheatres: true,
       }}
       isAdmin={isAdmin}
       userId={userId}

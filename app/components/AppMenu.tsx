@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth/client";
 import { useClickOutside } from "@/app/lib/useClickOutside";
 import { FilmReelIcon } from "./FilmReelIcon";
-import { joinPath, theatrePath } from "@/lib/theatre-path";
+import { theatrePath } from "@/lib/theatre-path";
+import { userPath } from "@/lib/user-path";
 import { useTheatres } from "@/app/lib/data/queries";
 import { disconnectDeviceNotifications } from "@/app/lib/push";
 import styles from "./AppMenu.module.css";
@@ -14,7 +15,7 @@ import { BulkBoxOfficeRefresh } from "./BulkBoxOfficeRefresh";
 
 export interface AppMenuProps {
   /** Omitted outside a theatre, which hides the theatre-scoped items. */
-  theatre?: { id: string; inviteCode?: string };
+  theatre?: { id: string; isMember?: boolean };
   showMyTheatres?: boolean;
   additionalMenuItems?: AdditionalMenuItem[];
 }
@@ -56,7 +57,6 @@ export function AppMenu({
   );
   const router = useRouter();
   const name = session?.user?.name || session?.user?.email || "";
-  const inviteCode = theatre?.inviteCode;
 
   async function signOut() {
     setIsSigningOut(true);
@@ -73,18 +73,16 @@ export function AppMenu({
     }
   }
 
-  async function copyShareLink(inviteCode: string) {
+  async function copyShareLink(theatreId: string) {
     try {
       await navigator.clipboard.writeText(
-        `${window.location.origin}${joinPath(inviteCode)}`,
+        `${window.location.origin}${theatrePath({ id: theatreId })}`,
       );
       setShareStatus("copied");
     } catch {
       setShareStatus("failed");
     }
   }
-
-  if (!name) return null;
 
   const close = () => setIsOpen(false);
 
@@ -114,15 +112,17 @@ export function AppMenu({
             Home Theatre
           </MenuLink>
         )}
-        {showMyTheatres && (
-          <MenuLink href="/theatres" onNavigate={close}>
-            Theatres Near You
+        {showMyTheatres && session?.user.id && (
+          <MenuLink href={userPath(session.user.id)} onNavigate={close}>
+            My Theatres
           </MenuLink>
         )}
-        <MenuLink href="/theatres/new" onNavigate={close}>
-          New Theatre
-        </MenuLink>
-        {theatre && (
+        {name && (
+          <MenuLink href="/theatres/new" onNavigate={close}>
+            New Theatre
+          </MenuLink>
+        )}
+        {theatre?.isMember && (
           <MenuLink
             href={`${theatrePath(theatre)}/settings`}
             onNavigate={close}
@@ -130,20 +130,27 @@ export function AppMenu({
             Settings
           </MenuLink>
         )}
-        {inviteCode && (
-          <MenuButton onClick={() => copyShareLink(inviteCode)}>
+        {theatre && (
+          <MenuButton onClick={() => copyShareLink(theatre.id)}>
             {SHARE_LABELS[shareStatus]}
           </MenuButton>
         )}
         <MenuLink href="/compare" onNavigate={close}>
           Compare
         </MenuLink>
-        <MenuButton onClick={() => setIsExpanded(!isExpanded)}>
-          {isExpanded ? "Collapse" : "Extra Settings"}
-        </MenuButton>
+        {!name && (
+          <MenuLink href="/auth/sign-in" onNavigate={close}>
+            Sign in
+          </MenuLink>
+        )}
+        {name && (
+          <MenuButton onClick={() => setIsExpanded(!isExpanded)}>
+            {isExpanded ? "Collapse" : "Extra Settings"}
+          </MenuButton>
+        )}
         <hr className={styles.divider} />
         <div className={styles.extraSettings} hidden={!isExpanded}>
-          {theatre && (
+          {name && theatre && (
             <BulkBoxOfficeRefresh
               key={theatre.id}
               theatreId={theatre.id}
@@ -151,10 +158,10 @@ export function AppMenu({
               onStart={close}
             />
           )}
-          <MenuLink href="/feedback" onNavigate={close}>
+          {name && <MenuLink href="/feedback" onNavigate={close}>
             Feedback
-          </MenuLink>
-          {additionalMenuItems?.map((item, index) =>
+          </MenuLink>}
+          {name && additionalMenuItems?.map((item, index) =>
             item.type === "link" ? (
               <MenuLink
                 key={index}
@@ -169,15 +176,17 @@ export function AppMenu({
               </MenuButton>
             ),
           )}
-          <button
-            className={styles.menuItem}
-            type="button"
-            role="menuitem"
-            disabled={isSigningOut}
-            onClick={signOut}
-          >
-            {isSigningOut ? "Signing out…" : "Sign out"}
-          </button>
+          {name && (
+            <button
+              className={styles.menuItem}
+              type="button"
+              role="menuitem"
+              disabled={isSigningOut}
+              onClick={signOut}
+            >
+              {isSigningOut ? "Signing out…" : "Sign out"}
+            </button>
+          )}
         </div>
       </div>
     </div>

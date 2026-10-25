@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  listTheatresWithPosterPreviewsForUser,
+  listPublicTheatres,
+  listPublicTheatresWithPosterPreviews,
   MAX_POSTER_PREVIEWS,
 } from "@/app/lib/load-theatre";
 import { authUsers } from "@/src/db/neon-auth-schema";
@@ -27,14 +28,15 @@ beforeEach(async () => {
   ]);
 });
 
-describe("listTheatresWithPosterPreviewsForUser", () => {
-  it("returns the most recent posters, up to the cap, from each theatre the user belongs to", async () => {
+describe("listPublicTheatresWithPosterPreviews", () => {
+  it("scopes public posters to a user's theatres and roles to the viewer", async () => {
     const [firstTheatre, secondTheatre, otherTheatre] = await db
       .insert(theatres)
       .values([
         {
           name: "First",
           createdBy: USER_ID,
+          watchlistFor: USER_ID,
           inviteCode: "first-member",
           adminInviteCode: "first-admin",
         },
@@ -47,6 +49,7 @@ describe("listTheatresWithPosterPreviewsForUser", () => {
         {
           name: "Other",
           createdBy: OTHER_USER_ID,
+          watchlistFor: OTHER_USER_ID,
           inviteCode: "other-member",
           adminInviteCode: "other-admin",
         },
@@ -56,6 +59,7 @@ describe("listTheatresWithPosterPreviewsForUser", () => {
     await db.insert(theatreMembers).values([
       { theatreId: firstTheatre.id, userId: USER_ID },
       { theatreId: secondTheatre.id, userId: USER_ID },
+      { theatreId: secondTheatre.id, userId: OTHER_USER_ID },
       { theatreId: otherTheatre.id, userId: OTHER_USER_ID },
     ]);
 
@@ -96,7 +100,7 @@ describe("listTheatresWithPosterPreviewsForUser", () => {
       },
     ]);
 
-    const result = await listTheatresWithPosterPreviewsForUser(USER_ID);
+    const result = await listPublicTheatresWithPosterPreviews(USER_ID);
     const postersByTheatreId = Object.fromEntries(
       result.map(({ id, posterUrls }) => [id, posterUrls]),
     );
@@ -108,5 +112,21 @@ describe("listTheatresWithPosterPreviewsForUser", () => {
         (_, i) => `/${posterCount - 1 - i}.jpg`,
       ),
     });
+
+    const anonymous = await listPublicTheatres(USER_ID, null);
+    expect(anonymous).toHaveLength(2);
+    expect(anonymous.every(({ role }) => !role))
+      .toBe(true);
+    expect(
+      anonymous.find(({ id }) => id === firstTheatre.id),
+    ).toMatchObject({ watchlistFor: USER_ID, role: null });
+    const viewerLists = await listPublicTheatres(OTHER_USER_ID, USER_ID);
+    expect(viewerLists).toHaveLength(2);
+    expect(
+      viewerLists.find(({ id }) => id === secondTheatre.id),
+    ).toMatchObject({ watchlistFor: null, role: "member" });
+    expect(
+      viewerLists.find(({ id }) => id === otherTheatre.id),
+    ).toMatchObject({ watchlistFor: OTHER_USER_ID, role: null });
   });
 });

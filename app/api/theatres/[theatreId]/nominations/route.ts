@@ -1,7 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { getNomination, listNominations } from "@/app/lib/queries";
-import { withTheatreMember, type TheatreContext } from "@/lib/auth/require-theatre";
+import {
+  withTheatreAdmin,
+  withTheatreViewer,
+  type TheatreContext,
+  type TheatreViewerContext,
+} from "@/lib/auth/require-theatre";
 import { getDb } from "@/src/db/client";
 import { movies, nominations } from "@/src/db/schema";
 import { scheduleNomNotys } from "@/lib/notifications/push";
@@ -30,12 +35,12 @@ const updateBody = z
     "A comment is required.",
   );
 
-export const GET = withTheatreMember({ error: "Unable to load nominations" })(
-  async (_request: Request, { theatre }: TheatreContext) =>
+export const GET = withTheatreViewer({ error: "Unable to load nominations" })(
+  async (_request: Request, { theatre }: TheatreViewerContext) =>
     Response.json(await listNominations(theatre.id)),
 );
 
-export const POST = withTheatreMember({ error: "Unable to create nomination." })(
+export const POST = withTheatreAdmin({ error: "Unable to create nomination." })(
   async (request: Request, { theatre, userId }: TheatreContext) => {
     const parsed = await parseJson(request, createBody);
     if (!parsed.success) return badRequest(parsed.error);
@@ -69,29 +74,19 @@ export const POST = withTheatreMember({ error: "Unable to create nomination." })
   },
 );
 
-export const PATCH = withTheatreMember({
+export const PATCH = withTheatreAdmin({
   error: "Unable to update the nomination.",
-})(async (request: Request, { theatre, userId, role }: TheatreContext) => {
+})(async (request: Request, { theatre, userId }: TheatreContext) => {
   const parsed = await parseJson(request, updateBody);
   if (!parsed.success) return badRequest(parsed.error);
   const { id, comment, completed } = parsed.data;
-
-  // Marking a nomination completed moves it into the theatre's Watched section
-  // for everyone, so only an admin may flip that flag. A comment edit is
-  // still scoped to the nominator, as before.
-  if (completed != null && role !== "admin") {
-    return Response.json(
-      { error: "Only an admin can mark a movie completed." },
-      { status: 403 },
-    );
-  }
 
   const values: Partial<typeof nominations.$inferInsert> = {};
   if (comment != null) values.comment = comment || null;
   if (completed != null) values.completed = completed;
 
   const ownershipCondition =
-    completed != null ? undefined : eq(nominations.userId, userId);
+    comment != null ? eq(nominations.userId, userId) : undefined;
 
   const updated = await getDb()
     .update(nominations)
@@ -115,18 +110,14 @@ export const PATCH = withTheatreMember({
   return Response.json(await getNomination(theatre.id, id), { status: 200 });
 });
 
-export const DELETE = withTheatreMember({
+export const DELETE = withTheatreAdmin({
   error: "Unable to delete the nomination.",
-})(async (request: Request, { theatre, userId, role }: TheatreContext) => {
+})(async (request: Request, { theatre }: TheatreContext) => {
   const parsed = dbIdParam(NOMINATION_ID).safeParse(
     new URL(request.url).searchParams.get("id"),
   );
   if (!parsed.success) return badRequest(parsed.error);
   const id = parsed.data;
-
-  // Admins can remove any nomination; everyone else can only rescind their own.
-  const ownershipCondition =
-    role === "admin" ? undefined : eq(nominations.userId, userId);
 
   const deleted = await getDb()
     .delete(nominations)
@@ -134,7 +125,6 @@ export const DELETE = withTheatreMember({
       and(
         eq(nominations.id, id),
         eq(nominations.theatreId, theatre.id),
-        ownershipCondition,
       ),
     )
     .returning({ id: nominations.id });

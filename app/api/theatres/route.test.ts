@@ -129,7 +129,7 @@ describe("GET /api/theatres", () => {
   });
 
   describe("GET /api/theatres?previews=true", () => {
-    it("returns poster previews without invite codes or non-member theatres", async () => {
+    it("returns the caller's theatre previews without invite codes", async () => {
       asUser(CASEY);
       const otherUserId = "55555555-5555-5555-5555-555555555555";
       await fixture.db.insert(authUsers).values({
@@ -140,6 +140,7 @@ describe("GET /api/theatres", () => {
       await fixture.db.insert(theatres).values({
         name: "Private",
         createdBy: otherUserId,
+        watchlistFor: otherUserId,
         inviteCode: "private-invite",
         adminInviteCode: "private-admin-invite",
       });
@@ -166,14 +167,19 @@ describe("GET /api/theatres", () => {
         id: fixture.otherWatchlist.id,
         posterUrls: [],
       }));
+      expect(body).not.toContainEqual(expect.objectContaining({ name: "Private" }));
       expect(JSON.stringify(body)).not.toContain("invite");
-      expect(JSON.stringify(body)).not.toContain("Private");
+      expect(JSON.stringify(body)).not.toContain("private-admin-invite");
+      expect(JSON.stringify(body)).not.toContain("other@example.com");
     });
 
-    it("requires a signed-in user", async () => {
+    it("returns no personal theatre choices to signed-out visitors", async () => {
+      await createWatchlist(CASEY);
       asUser("");
       const response = await theatresRoute.GET(new Request("http://test?previews=true"));
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body).toEqual([]);
     });
   });
 });

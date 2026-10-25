@@ -8,6 +8,8 @@ import { useClickOutside } from "@/app/lib/useClickOutside";
 import { MovieStreaming } from "@/app/components/MovieStreaming";
 import { NomComs } from "./NomComs";
 import { MovieBoxOffice } from "../MovieBoxOffice";
+import Link from "next/link";
+import { userPath } from "@/lib/user-path";
 
 interface MovieDiscussionProps {
   nomination: Nomination;
@@ -66,9 +68,9 @@ export function MovieDiscussion({
             )}
             <div className={styles.discussionHeading}>
               <h2>{details.title}</h2>
-              <span className={styles.discussionMeta}>
+              <Link href={userPath(nominator.id)} className={styles.discussionMeta}>
                 Nominated by {nominator.name}
-              </span>
+              </Link>
             </div>
             <button
               className={styles.closeDiscussion}
@@ -140,9 +142,13 @@ export function MovieDiscussion({
           )}
         </div>
         <div className={styles.nominationQuote}>
-          <span className={`avatar avatar-${getColor(nominator.name)}`}>
+          <Link
+            href={userPath(nominator.id)}
+            className={`avatar avatar-${getColor(nominator.name)}`}
+            aria-label={`View ${nominator.name}'s theatres`}
+          >
             {getInitials(nominator.name)}
-          </span>
+          </Link>
           <div className={styles.commentContent}>
             <strong>{nominator.name}</strong>
             <EditableComment

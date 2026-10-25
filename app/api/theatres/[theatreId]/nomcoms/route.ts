@@ -1,5 +1,5 @@
 import { getNomination, nominationExistsInTheatre } from "@/app/lib/queries";
-import { withTheatreMember, type TheatreContext } from "@/lib/auth/require-theatre";
+import { withTheatreUser, type TheatreUserContext } from "@/lib/auth/require-theatre";
 import { getDb } from "@/src/db/client";
 import { nomcoms } from "@/src/db/schema";
 import { badRequest, dbId, parseJson, requiredText } from "@/lib/validation";
@@ -20,8 +20,8 @@ const updateBody = z.object({
   comment,
 });
 
-export const POST = withTheatreMember({ error: "Unable to add your comment." })(
-  async (request: Request, { theatre, userId }: TheatreContext) => {
+export const POST = withTheatreUser({ error: "Unable to add your comment." })(
+  async (request: Request, { theatre, userId }: TheatreUserContext) => {
     const parsed = await parseJson(request, createBody);
     if (!parsed.success) return badRequest(parsed.error);
     const { nominationId, comment } = parsed.data;
@@ -43,9 +43,9 @@ export const POST = withTheatreMember({ error: "Unable to add your comment." })(
   },
 );
 
-export const PATCH = withTheatreMember({
+export const PATCH = withTheatreUser({
   error: "Unable to update your comment.",
-})(async (request: Request, { theatre, userId }: TheatreContext) => {
+})(async (request: Request, { theatre, userId }: TheatreUserContext) => {
   const parsed = await parseJson(request, updateBody);
   if (!parsed.success) return badRequest(parsed.error);
   const { id, comment } = parsed.data;

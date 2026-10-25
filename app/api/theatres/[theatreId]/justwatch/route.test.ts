@@ -95,13 +95,32 @@ describe("list-scoped JustWatch refresh", () => {
 
   it.each([
     ["anonymous", "", "44444444-4444-4444-4444-444444444444", 401],
-    ["nonmember", OUTSIDER, "44444444-4444-4444-4444-444444444444", 404],
-    ["other theatre", MEMBER, "55555555-5555-5555-5555-555555555555", 404],
     ["missing theatre", MEMBER, "66666666-6666-6666-6666-666666666666", 404],
   ])("rejects %s before external lookup", async (_name, userId, theatreId, status) => {
     auth.userId = userId;
     expect((await POST(request({ movieId }), context(theatreId))).status).toBe(status);
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("lets a signed-in nonmember refresh a list movie without joining", async () => {
+    auth.userId = OUTSIDER;
+    const response = await POST(request({ movieId }), context());
+    expect(response.status).toBe(200);
+    expect(
+      (await db.select().from(theatreMembers)).some(
+        ({ theatreId: memberTheatre, userId }) =>
+          memberTheatre === theatreId && userId === OUTSIDER,
+      ),
+    ).toBe(false);
+  });
+
+  it("allows a signed-in user to refresh a movie on any public list", async () => {
+    auth.userId = MEMBER;
+    const response = await POST(
+      request({ movieId }),
+      context("55555555-5555-5555-5555-555555555555"),
+    );
+    expect(response.status).toBe(200);
   });
 
   it("cannot update a movie belonging only to another theatre", async () => {
