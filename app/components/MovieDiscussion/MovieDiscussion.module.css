@@ -208,6 +208,10 @@
   white-space: pre-wrap;
 }
 
+.tag {
+  color: var(--accent);
+}
+
 .emptyComment {
   color: var(--muted-soft);
   font-style: italic;

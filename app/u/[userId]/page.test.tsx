@@ -37,7 +37,10 @@ beforeEach(() => {
   data.users.mockResolvedValue([{ name: "Alice" }]);
   data.viewer.mockResolvedValue(null);
   data.theatres.mockResolvedValue([
-    { id: "club", name: "Movie Club", posterUrls: ["/poster.jpg"] },
+    {
+      id: "club", name: "Movie Club", posterUrls: ["/poster.jpg"], tags: [],
+      createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
+    },
   ]);
 });
 afterEach(cleanup);

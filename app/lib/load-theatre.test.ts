@@ -7,7 +7,7 @@ import {
 import { authUsers } from "@/src/db/neon-auth-schema";
 import { setDbForTesting, type DB } from "@/src/db/client";
 import { createTestDb } from "@/src/db/test-db";
-import { movies, nominations, theatreMembers, theatres } from "@/src/db/schema";
+import { movies, nominations, tags, theatreMembers, theatres, theatreTags } from "@/src/db/schema";
 
 vi.mock("@/lib/auth/require-user", () => ({
   requireUserId: vi.fn(),
@@ -62,6 +62,14 @@ describe("listPublicTheatresWithPosterPreviews", () => {
       { theatreId: secondTheatre.id, userId: OTHER_USER_ID },
       { theatreId: otherTheatre.id, userId: OTHER_USER_ID },
     ]);
+    await db.insert(tags).values([
+      { name: "horror" }, { name: "2026" }, { name: "unused" }, { name: "other" },
+    ]);
+    await db.insert(theatreTags).values([
+      { theatreId: firstTheatre.id, tag: "horror" },
+      { theatreId: firstTheatre.id, tag: "2026" },
+      { theatreId: otherTheatre.id, tag: "other" },
+    ]);
 
     const posterCount = MAX_POSTER_PREVIEWS + 1;
     const posterMovies = await db
@@ -101,6 +109,15 @@ describe("listPublicTheatresWithPosterPreviews", () => {
     ]);
 
     const result = await listPublicTheatresWithPosterPreviews(USER_ID);
+    expect(result.find(({ id }) => id === firstTheatre.id)?.tags).toEqual(["2026", "horror"]);
+    expect(result.find(({ id }) => id === secondTheatre.id)?.tags).toEqual([]);
+    expect(result.every((theatre) =>
+      typeof theatre.createdAt === "string" && typeof theatre.updatedAt === "string"
+      && !("inviteCode" in theatre) && !("adminInviteCode" in theatre),
+    )).toBe(true);
+    const publicResult = await listPublicTheatresWithPosterPreviews(USER_ID, null);
+    expect(publicResult.every(({ role }) => role === null)).toBe(true);
+    expect(publicResult.flatMap(({ tags }) => tags)).toEqual(["2026", "horror"]);
     const postersByTheatreId = Object.fromEntries(
       result.map(({ id, posterUrls }) => [id, posterUrls]),
     );

@@ -13,6 +13,7 @@ import {
   movies,
   nominations,
   theatreMembers,
+  theatreTags,
   theatres,
   type TheatreRole,
 } from "@/src/db/schema";
@@ -31,11 +32,10 @@ export const recentActivityOrder = [
   desc(theatres.createdAt),
 ];
 
-/** A user's theatres, with the current viewer's membership role. */
-export async function listPublicTheatres(
+async function listPublicTheatreRows(
   memberUserId: string,
   viewerUserId: string | null = memberUserId,
-): Promise<TheatreSummary[]> {
+) {
   const viewerMembership = viewerUserId
     ? and(
         eq(theatreMembers.theatreId, theatres.id),
@@ -48,6 +48,8 @@ export async function listPublicTheatres(
       name: theatres.name,
       watchlistFor: theatres.watchlistFor,
       role: theatreMembers.role,
+      createdAt: theatres.createdAt,
+      updatedAt: theatres.updatedAt,
     })
     .from(theatres)
     .leftJoin(theatreMembers, viewerMembership)
@@ -62,7 +64,16 @@ export async function listPublicTheatres(
     )
     .orderBy(...recentActivityOrder);
 
-  return rows as TheatreSummary[];
+  return rows as (TheatreSummary & { createdAt: Date; updatedAt: Date })[];
+}
+
+/** A user's theatres, with the current viewer's membership role. */
+export async function listPublicTheatres(
+  memberUserId: string,
+  viewerUserId: string | null = memberUserId,
+): Promise<TheatreSummary[]> {
+  const rows = await listPublicTheatreRows(memberUserId, viewerUserId);
+  return rows.map(({ createdAt, updatedAt, ...theatre }) => theatre);
 }
 
 /** Enough to fill the widest theatre card; the UI clips whatever doesn't fit. */
@@ -73,8 +84,9 @@ export async function listPublicTheatresWithPosterPreviews(
   memberUserId: string,
   viewerUserId: string | null = memberUserId,
 ): Promise<TheatreSummaryWithPosterPreviews[]> {
-  const theatres = await listPublicTheatres(memberUserId, viewerUserId);
-  if (theatres.length === 0) return [];
+  const summaries = await listPublicTheatreRows(memberUserId, viewerUserId);
+  if (summaries.length === 0) return [];
+  const ids = summaries.map(({ id }) => id);
 
   const posterUrl = sql<string>`${movies.details} ->> 'posterUrl'`;
   const rankedPosters = getDb()
@@ -92,28 +104,40 @@ export async function listPublicTheatresWithPosterPreviews(
         not(nominations.completed),
         inArray(
           nominations.theatreId,
-          theatres.map(({ id }) => id),
+          ids,
         ),
         sql`${posterUrl} is not null`,
       ),
     )
     .as("ranked_posters");
 
-  const posters = await getDb()
-    .select({
-      theatreId: rankedPosters.theatreId,
-      posterUrl: rankedPosters.posterUrl,
-    })
-    .from(rankedPosters)
-    .where(lte(rankedPosters.rank, MAX_POSTER_PREVIEWS))
-    .orderBy(rankedPosters.theatreId, rankedPosters.rank);
+  const [posters, tagRows] = await Promise.all([
+    getDb()
+      .select({
+        theatreId: rankedPosters.theatreId,
+        posterUrl: rankedPosters.posterUrl,
+      })
+      .from(rankedPosters)
+      .where(lte(rankedPosters.rank, MAX_POSTER_PREVIEWS))
+      .orderBy(rankedPosters.theatreId, rankedPosters.rank),
+    getDb()
+      .select({ theatreId: theatreTags.theatreId, tag: theatreTags.tag })
+      .from(theatreTags)
+      .where(inArray(theatreTags.theatreId, ids))
+      .orderBy(theatreTags.tag),
+  ]);
 
-  return theatres.map((theatre) => ({
-    ...theatre,
-    posterUrls: posters
-      .filter(({ theatreId }) => theatreId === theatre.id)
-      .map(({ posterUrl }) => posterUrl),
-  }));
+  const tagsById = Map.groupBy(tagRows, ({ theatreId }) => theatreId);
+  const postersById = Map.groupBy(posters, ({ theatreId }) => theatreId);
+  return summaries.map((theatre) => {
+    return {
+      ...theatre,
+      createdAt: theatre.createdAt.toISOString(),
+      updatedAt: theatre.updatedAt.toISOString(),
+      tags: (tagsById.get(theatre.id) ?? []).map(({ tag }) => tag),
+      posterUrls: (postersById.get(theatre.id) ?? []).map(({ posterUrl }) => posterUrl),
+    };
+  });
 }
 
 export type LoadTheatreResult =

@@ -106,6 +106,13 @@
   color: var(--accent);
 }
 
+.option {
+  flex: none;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .toggleActive,
 .optionActive {
   border-color: var(--accent-soft);

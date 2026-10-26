@@ -84,6 +84,9 @@ export interface TheatreSummary {
 
 export interface TheatreSummaryWithPosterPreviews extends TheatreSummary {
   posterUrls: string[];
+  createdAt: string;
+  updatedAt: string;
+  tags: string[];
 }
 
 /** As `TheatreSummary`, listing which of the `?movieIds=` it already has. */

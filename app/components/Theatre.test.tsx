@@ -166,7 +166,8 @@ function show(
 describe("list descriptions", () => {
   it("shows the description before the list controls with an admin edit action", () => {
     show([], createApi(), true, "user", "Our #Horror movies");
-    const description = screen.getByText("Our #Horror movies");
+    const description = screen.getByText("#Horror");
+    expect(description.parentElement?.textContent).toBe("Our #Horror movies");
     expect(description.compareDocumentPosition(screen.getByText("List controls")) &
       Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole("button", { name: "Edit list description" })).toBeTruthy();
@@ -222,7 +223,7 @@ describe("list descriptions", () => {
     "lets %s read descriptions without editing (admin=%s)",
     (userId, isAdmin) => {
       show([], createApi(), isAdmin, userId, "Our #Horror movies");
-      expect(screen.getByText("Our #Horror movies")).toBeTruthy();
+      expect(screen.getByText("#Horror").parentElement?.textContent).toBe("Our #Horror movies");
       expect(screen.queryByRole("button", { name: "Edit list description" })).toBeNull();
     },
   );

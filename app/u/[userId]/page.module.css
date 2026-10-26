@@ -50,7 +50,7 @@
 
 .theatreCard::before {
   content: "";
-  grid-area: 2 / 1;
+  grid-area: 2 / 1 / 4 / 2;
   min-height: 2.5rem;
   border: 1px solid var(--border);
   border-radius: 0.875rem;
@@ -118,6 +118,47 @@
 
 .poster + .poster {
   margin-left: calc(var(--poster-overlap) * -1);
+}
+
+.tags {
+  display: flex;
+  grid-area: 3 / 1;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  min-width: 0;
+  padding: 0.75rem 1rem 1rem;
+}
+
+.tag {
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-size: 0.8625rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.clearFilters {
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+}
+
+.resultCount {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 @media (max-width: 40rem) {

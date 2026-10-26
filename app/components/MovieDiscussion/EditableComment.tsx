@@ -1,4 +1,5 @@
 import { useState, type SubmitEventHandler } from "react";
+import * as tags from "@/app/lib/tags";
 import styles from "./MovieDiscussion.module.css";
 
 interface EditableCommentProps {
@@ -72,7 +73,17 @@ export function EditableComment({
   return (
     <span className={styles.commentBody}>
       <span className={value ? styles.commentText : styles.emptyComment}>
-        {value || emptyText}
+        {value
+          ? tags.split(value).map((part, index) =>
+              part.type === "tag" ? (
+                <span key={index} className={styles.tag}>
+                  {part.value}
+                </span>
+              ) : (
+                part.value
+              ),
+            )
+          : emptyText}
       </span>
       {onSave && (
         <button

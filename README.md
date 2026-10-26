@@ -57,7 +57,8 @@ Unicode letters and numbers, underscores, and hyphens, including `#2026`,
 after whitespace or opening punctuation (parentheses, brackets, braces, or
 quotes). Spaces and other punctuation end a tag. Bare `#`, Markdown headings
 such as `# Heading`, URL fragments, and hashes embedded in words are not tags.
-Descriptions remain plain text, not Markdown.
+Descriptions remain plain text, not Markdown. Recognized hashtags appear in
+blue when displayed, without links or chips; the editor stays plain text.
 
 The canonical tag text (without `#`, normalized to Unicode NFC and lowercase)
 is its immutable primary key. The shared `tags` dictionary is insert-only in
@@ -67,8 +68,34 @@ never renames a shared tag. Unused dictionary entries are retained.
 
 Apply migration `0025_petite_colossus.sql` before deploying this feature.
 Existing descriptions are preserved and get their tags extracted on their next
-save. Backfill any never-edited descriptions before introducing tag filtering.
-Autocomplete, tag filtering, and nomination tagging are not implemented yet.
+save, or by the backfill below.
+Autocomplete and nomination tagging are not implemented yet.
+
+### Finding theatres
+
+Each user's theatre page has title search, sorting, and tag filters below the
+heading. Search matches list titles without regard to case. Sort alphabetically
+(A-Z), by creation date (newest first), or by update date (newest first, the
+default). Selecting multiple tags requires every selected tag; search and tags
+combine. The URL preserves the view when refreshing or sharing it. Blue tag
+chips below each card's posters show the list's tags; they are labels, not
+separate filter buttons.
+
+A list is updated when its title or description changes, or a movie is added or
+removed, including imports. No-op saves, duplicate imports, discussion,
+seen/completed changes, membership changes, and invite rotation do not change
+this date. Database triggers maintain it atomically with each change.
+Historical update dates start from list creation or its latest movie addition;
+past edits and removals cannot be reconstructed.
+
+Apply migration `0026_rainy_jetstream.sql`, then backfill existing description
+tags before deploying the directory controls. With Node 24 and the intended
+database configured, preview the backfill with
+`node --env-file=.env.local scripts/backfill-theatre-tags.mjs`, then add
+`--apply` to run it. Verify the target database first. This idempotent operation
+uses the same hashtag parser as description saves, preserves descriptions and
+update dates, and skips descriptions changed concurrently since its initial
+read. A normal concurrent description save already synchronizes its own tags.
 
 ### Bulk movie import
 

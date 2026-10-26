@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "@/src/db/client";
 import { tags, theatres, theatreTags } from "@/src/db/schema";
-import { extractTags } from "./tags";
+import * as tagsutils from "./tags";
 
 export async function listTheatreTags(theatreId: string): Promise<string[]> {
   const rows = await getDb()
@@ -22,7 +22,9 @@ export async function updateTheatre(
     .update(theatres)
     .set({
       ...(name !== undefined ? { name } : {}),
-      ...(description !== undefined ? { description: description || null } : {}),
+      ...(description !== undefined
+        ? { description: description || null }
+        : {}),
     })
     .where(eq(theatres.id, theatreId));
 
@@ -31,8 +33,10 @@ export async function updateTheatre(
     return;
   }
 
-  const names = extractTags(description);
-  const clear = db.delete(theatreTags).where(eq(theatreTags.theatreId, theatreId));
+  const names = tagsutils.extract(description);
+  const clear = db
+    .delete(theatreTags)
+    .where(eq(theatreTags.theatreId, theatreId));
 
   // Lock the theatre first so concurrent saves replace tags in description order.
   if (names.length === 0) {
@@ -40,7 +44,8 @@ export async function updateTheatre(
   } else {
     await db.batch([
       update,
-      db.insert(tags)
+      db
+        .insert(tags)
         .values(names.map((name) => ({ name })))
         .onConflictDoNothing(),
       clear,

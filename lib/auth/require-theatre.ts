@@ -28,6 +28,7 @@ const THEATRE_COLUMNS = {
   watchlistFor: theatres.watchlistFor,
   description: theatres.description,
   createdAt: theatres.createdAt,
+  updatedAt: theatres.updatedAt,
 };
 
 export interface TheatreContext {
