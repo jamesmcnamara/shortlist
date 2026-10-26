@@ -1,7 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useSyncExternalStore, type CSSProperties } from "react";
+import {
+  forwardRef,
+  Fragment,
+  useSyncExternalStore,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import {
+  AnimatePresence,
+  motion,
+  useIsPresent,
+  useReducedMotion,
+} from "motion/react";
 import { CollectionViewControls } from "@/app/components/CollectionViewControls";
 import type { TheatreSummaryWithPosterPreviews } from "@/app/lib/api";
 import {
@@ -54,6 +66,7 @@ export function TheatreDirectory({
     window.dispatchEvent(new Event(VIEW_CHANGE));
   };
   const visible = applyTheatreView(theatres, state);
+  const reducedMotion = useReducedMotion();
   const tags = [
     ...new Set([
       ...theatres.flatMap((theatre) => theatre.tags),
@@ -80,60 +93,94 @@ export function TheatreDirectory({
         {visible.length} {visible.length === 1 ? "theatre" : "theatres"}
       </span>
       <ul className={styles.list}>
-        {theatres.length === 0 && (
-          <li>
-            <p>No theatres yet.</p>
-          </li>
-        )}
-        {theatres.length > 0 && visible.length === 0 && (
-          <li>
-            <p>No matching theatres.</p>
-            <button
-              type="button"
-              className={styles.clearFilters}
-              onClick={() => change({ query: "", filters: [] })}
-            >
-              Clear search and filters
-            </button>
-          </li>
-        )}
-        {visible.map((theatre) => (
-          <li key={theatre.id}>
-            <Link
-              className={styles.theatreCard}
-              href={theatrePath(theatre)}
-              prefetch
-            >
-              <span className={styles.theatreName}>{theatre.name}</span>
-              {theatre.posterUrls.length > 0 && (
-                <span className={styles.posters} aria-hidden="true">
-                  {theatre.posterUrls.map((posterUrl, i) => (
-                    <img
-                      className={styles.poster}
-                      key={posterUrl}
-                      style={{ "--i": i } as CSSProperties}
-                      src={posterUrl}
-                      alt=""
-                      width="72"
-                      height="108"
-                      loading="lazy"
-                    />
-                  ))}
-                </span>
-              )}
-              {theatre.tags.length > 0 && (
-                <span className={styles.tags}>
-                  {theatre.tags.toSorted().map((tag) => (
-                    <Fragment key={tag}>
-                      <span className={styles.tag}>#{tag}</span>{" "}
-                    </Fragment>
-                  ))}
-                </span>
-              )}
-            </Link>
-          </li>
-        ))}
+        <AnimatePresence initial={false} mode="popLayout">
+          {theatres.length === 0 && (
+            <TheatreListItem key="empty" reducedMotion={reducedMotion}>
+              <p>No theatres yet.</p>
+            </TheatreListItem>
+          )}
+          {theatres.length > 0 && visible.length === 0 && (
+            <TheatreListItem key="no-matches" reducedMotion={reducedMotion}>
+              <p>No matching theatres.</p>
+              <button
+                type="button"
+                className={styles.clearFilters}
+                onClick={() => change({ query: "", filters: [] })}
+              >
+                Clear search and filters
+              </button>
+            </TheatreListItem>
+          )}
+          {visible.map((theatre) => (
+            <TheatreListItem key={theatre.id} reducedMotion={reducedMotion}>
+              <Link
+                className={styles.theatreCard}
+                href={theatrePath(theatre)}
+                prefetch
+              >
+                <span className={styles.theatreName}>{theatre.name}</span>
+                {theatre.posterUrls.length > 0 && (
+                  <span className={styles.posters} aria-hidden="true">
+                    {theatre.posterUrls.map((posterUrl, i) => (
+                      <img
+                        className={styles.poster}
+                        key={posterUrl}
+                        style={{ "--i": i } as CSSProperties}
+                        src={posterUrl}
+                        alt=""
+                        width="72"
+                        height="108"
+                        loading="lazy"
+                      />
+                    ))}
+                  </span>
+                )}
+                {theatre.tags.length > 0 && (
+                  <span className={styles.tags}>
+                    {theatre.tags.toSorted().map((tag) => (
+                      <Fragment key={tag}>
+                        <span className={styles.tag}>#{tag}</span>{" "}
+                      </Fragment>
+                    ))}
+                  </span>
+                )}
+              </Link>
+            </TheatreListItem>
+          ))}
+        </AnimatePresence>
       </ul>
     </>
   );
 }
+
+const TheatreListItem = forwardRef<
+  HTMLLIElement,
+  {
+    children: ReactNode;
+    reducedMotion: boolean | null;
+  }
+>(function TheatreListItem({ children, reducedMotion }, ref) {
+  const present = useIsPresent();
+  const spatialState = reducedMotion
+    ? { opacity: 0.7 }
+    : { opacity: 0, scale: 0.975, filter: "blur(2px)" };
+
+  return (
+    <motion.li
+      ref={ref}
+      inert={!present}
+      layout={reducedMotion ? false : "position"}
+      initial={spatialState}
+      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+      exit={spatialState}
+      transition={{
+        layout: { type: "spring", stiffness: 380, damping: 38 },
+        opacity: { duration: reducedMotion ? 0.1 : 0.16 },
+        scale: { duration: 0.16, ease: [0.16, 1, 0.3, 1] },
+        filter: { duration: 0.16, ease: [0.16, 1, 0.3, 1] },
+      }}
+    >
+      {children}
+    </motion.li>
+  );
+});

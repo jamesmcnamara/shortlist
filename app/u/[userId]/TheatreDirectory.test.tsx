@@ -1,5 +1,13 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import type { TheatreSummaryWithPosterPreviews } from "@/app/lib/api";
 import { TheatreDirectory } from "./TheatreDirectory";
@@ -34,27 +42,29 @@ it("shows sorted chips inside the single card link, including lists without post
   expect(screen.getByRole("link", { name: "Halloween" })).toBeTruthy();
 });
 
-it("filters titles immediately while retaining sort and filter controls", () => {
+it("animates filtered rows out while retaining sort and filter controls", async () => {
   render(<TheatreDirectory theatres={theatres} initialSearch="" />);
   const input = screen.getByRole("textbox", { name: "Search theatres" });
+  const aliens = screen.getByRole("link", { name: /^Aliens / });
   fireEvent.focus(input);
   fireEvent.change(input, { target: { value: "ZOM" } });
-  expect(names()).toEqual(["Zombies"]);
+  expect(aliens.closest("li")?.hasAttribute("inert")).toBe(true);
+  await waitFor(() => expect(names()).toEqual(["Zombies"]));
   expect(window.location.search).toBe("?q=ZOM");
   expect(screen.getByRole("button", { name: "Sort by" })).toBeTruthy();
   fireEvent.keyDown(input, { key: "Escape" });
-  expect(names()).toHaveLength(3);
+  await waitFor(() => expect(names()).toHaveLength(3));
   expect(window.location.search).toBe("");
 });
 
-it("combines tags with AND and preserves query and unrelated URL values", () => {
+it("combines tags with AND and preserves query and unrelated URL values", async () => {
   window.history.replaceState(null, "", "?q=o&extra=keep");
   render(<TheatreDirectory theatres={theatres} initialSearch="" />);
   fireEvent.click(screen.getByRole("button", { name: "Filter" }));
   const filters = screen.getByRole("group", { name: "Filters" });
   fireEvent.click(within(filters).getByRole("button", { name: "#2026" }));
   fireEvent.click(within(filters).getByRole("button", { name: "#horror" }));
-  expect(names()).toEqual(["Zombies"]);
+  await waitFor(() => expect(names()).toEqual(["Zombies"]));
   expect(screen.getByRole("button", { name: "Filter (2)" })).toBeTruthy();
   const params = new URLSearchParams(window.location.search);
   expect(params.getAll("tag")).toEqual(["2026", "horror"]);
@@ -62,7 +72,7 @@ it("combines tags with AND and preserves query and unrelated URL values", () => 
   expect(params.get("q")).toBe("o");
 });
 
-it("sorts titles and restores URL state on browser navigation", () => {
+it("sorts titles and restores URL state on browser navigation", async () => {
   render(<TheatreDirectory theatres={theatres} initialSearch="" />);
   fireEvent.click(screen.getByRole("button", { name: "Sort by" }));
   fireEvent.click(screen.getByRole("button", { name: "Alphabetical" }));
@@ -72,7 +82,7 @@ it("sorts titles and restores URL state on browser navigation", () => {
     window.history.replaceState(null, "", "?sort=created&q=Halloween");
     window.dispatchEvent(new PopStateEvent("popstate"));
   });
-  expect(names()).toEqual(["Halloween"]);
+  await waitFor(() => expect(names()).toEqual(["Halloween"]));
   expect(screen.getByRole("textbox").getAttribute("value")).toBe("Halloween");
 });
 
