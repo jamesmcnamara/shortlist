@@ -1,0 +1,144 @@
+.oscars {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.625rem;
+}
+
+.detail {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.icon {
+  display: block;
+  width: 1.25rem;
+  height: 1.6667rem;
+  color: #966b18;
+  fill: currentColor;
+}
+
+.unavailable {
+  margin: 0;
+  align-self: center;
+  color: var(--muted);
+  font-size: 0.9344rem;
+}
+
+.content {
+  min-width: 0;
+}
+
+.single {
+  display: grid;
+  gap: 0.1875rem;
+}
+
+.single strong {
+  color: var(--text);
+  font-size: 0.9344rem;
+}
+
+.single span {
+  color: var(--muted);
+  font-size: 0.7906rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.details {
+  color: var(--text-soft);
+  font-size: 0.9344rem;
+}
+
+.details summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.details summary::-webkit-details-marker {
+  display: none;
+}
+
+.summaryCopy {
+  display: grid;
+  gap: 0.1875rem;
+}
+
+.summaryCopy strong {
+  color: var(--text);
+  font-size: 0.9344rem;
+}
+
+.summaryCopy > span {
+  color: var(--muted);
+  font-size: 0.7906rem;
+  line-height: 1.4;
+}
+
+.chevron {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 0.125rem solid var(--accent);
+  border-bottom: 0.125rem solid var(--accent);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.details[open] .chevron {
+  transform: rotate(225deg);
+}
+
+.entries {
+  display: grid;
+  gap: 0;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+  list-style: none;
+}
+
+.entry {
+  display: grid;
+  gap: 0.1875rem;
+  padding: 0.6875rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.entryHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--text);
+  font-size: 0.8625rem;
+  font-weight: 800;
+}
+
+.winner {
+  flex: none;
+  padding: 0.1875rem 0.4375rem;
+  border-radius: var(--radius-pill);
+  background: var(--success-wash);
+  color: var(--success);
+  font-size: 0.6562rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.nominee {
+  color: var(--muted);
+  font-size: 0.7906rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}

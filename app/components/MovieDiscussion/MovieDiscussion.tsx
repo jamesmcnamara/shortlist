@@ -8,6 +8,7 @@ import { useClickOutside } from "@/app/lib/useClickOutside";
 import { MovieStreaming } from "@/app/components/MovieStreaming";
 import { NomComs } from "./NomComs";
 import { MovieBoxOffice } from "../MovieBoxOffice";
+import { MovieOscars } from "../MovieOscars";
 import Link from "next/link";
 import { userPath } from "@/lib/user-path";
 
@@ -105,6 +106,7 @@ export function MovieDiscussion({
             )}
           </div>
           <MovieRatings services={ratings.services} />
+          <MovieOscars movie={nomination.movie} />
           <MovieBoxOffice
             data={details.boxOffice}
             onRefresh={onRefreshBoxOffice}
