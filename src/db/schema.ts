@@ -15,7 +15,7 @@ import { relations } from "drizzle-orm";
 import { authUsers } from "./neon-auth-schema";
 import type { MovieDetails as _MovieDetails } from "@lorenzopant/tmdb";
 import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
-import type { BoxOffice } from "@/app/lib/box-office";
+import type { BoxOfficeData } from "@/app/lib/box-office";
 
 /** A theatre is a shared watch list for a group. */
 export const theatres = pgTable("theatres", {
@@ -71,7 +71,10 @@ export const theatreTags = pgTable(
       .references(() => theatres.id, { onDelete: "cascade" }),
     tag: text()
       .notNull()
-      .references(() => tags.name, { onDelete: "restrict", onUpdate: "restrict" }),
+      .references(() => tags.name, {
+        onDelete: "restrict",
+        onUpdate: "restrict",
+      }),
   },
   (table) => [
     primaryKey({ columns: [table.theatreId, table.tag] }),
@@ -319,7 +322,7 @@ export interface MovieDetails extends _MovieDetails {
   description?: string | null;
   year?: number | null;
   justWatch?: JustWatchAvailability;
-  boxOffice?: BoxOffice;
+  boxOffice?: BoxOfficeData;
 }
 
 export interface MDBResponse {

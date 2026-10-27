@@ -1,6 +1,6 @@
 "use client";
 
-import { MovieSearchResults } from "@/app/components/MovieSearchResults";
+import { SearchResults } from "@/app/components/SearchResults";
 import { CollectionViewControls } from "./CollectionViewControls";
 import { NominationForm } from "@/app/components/NominationForm";
 import { useMovieSearch } from "@/app/lib/useMovieSearch";
@@ -77,13 +77,17 @@ export function ViewControls({
       sorts={SORTS}
       filters={FILTERS}
       expandSearch
-      search={onNominate ? {
-        query,
-        onChange: changeQuery,
-        label: "Search for a movie to add",
-        placeholder: "Add a movie...",
-        inputRef,
-      } : undefined}
+      search={
+        onNominate
+          ? {
+              query,
+              onChange: changeQuery,
+              label: "Search for a movie to add",
+              placeholder: "Add a movie...",
+              inputRef,
+            }
+          : undefined
+      }
     >
       {notice && (
         <p className={styles.notice} role="alert">
@@ -92,7 +96,7 @@ export function ViewControls({
       )}
 
       {query !== "" && (
-        <MovieSearchResults
+        <SearchResults
           results={search.results}
           isLoading={search.isLoading}
           error={search.error}

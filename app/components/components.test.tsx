@@ -1,5 +1,13 @@
 // @vitest-environment jsdom
 
+import { LoadingOverlay } from "@/app/components/LoadingOverlay";
+import loadingStyles from "@/app/components/LoadingOverlay.module.css";
+import { MovieCard } from "@/app/components/MovieCard";
+import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
+import { NominationForm } from "@/app/components/NominationForm";
+import { SearchResult } from "@/app/components/SearchResult";
+import { ViewControls } from "@/app/components/ViewControls";
+import type { MovieDetails, Nomination } from "@/src/db/schema";
 import {
   act,
   cleanup,
@@ -10,14 +18,6 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MovieCard } from "@/app/components/MovieCard";
-import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
-import { NominationForm } from "@/app/components/NominationForm";
-import { ViewControls } from "@/app/components/ViewControls";
-import { LoadingOverlay } from "@/app/components/LoadingOverlay";
-import loadingStyles from "@/app/components/LoadingOverlay.module.css";
-import { MovieSearchResult } from "@/app/components/MovieSearchResult";
-import type { MovieDetails, Nomination } from "@/src/db/schema";
 
 const nomination: Nomination = {
   id: 1,
@@ -53,7 +53,7 @@ describe("high-churn component smoke tests", () => {
     const onAdd = vi.fn();
     const onSelect = vi.fn();
     render(
-      <MovieSearchResult
+      <SearchResult
         movie={nomination.movie}
         onAdd={onAdd}
         onSelect={onSelect}
@@ -111,14 +111,16 @@ describe("high-churn component smoke tests", () => {
     const onQuickAdd = vi.fn(() => pendingAdd);
     const onSelect = vi.fn();
     render(
-      <MovieSearchResult
+      <SearchResult
         movie={nomination.movie}
         onQuickAdd={onQuickAdd}
         onSelect={onSelect}
       />,
     );
 
-    expect(screen.queryByRole("status", { name: "Adding movie..." })).toBeNull();
+    expect(
+      screen.queryByRole("status", { name: "Adding movie..." }),
+    ).toBeNull();
     fireEvent.click(
       screen.getByRole("button", { name: "Add A Movie to this list" }),
     );
@@ -137,7 +139,9 @@ describe("high-churn component smoke tests", () => {
       await pendingAdd;
     });
 
-    expect(screen.queryByRole("status", { name: "Adding movie..." })).toBeNull();
+    expect(
+      screen.queryByRole("status", { name: "Adding movie..." }),
+    ).toBeNull();
     expect(
       screen.getByRole("button", { name: "Add A Movie to this list" }),
     ).toBeTruthy();
@@ -159,8 +163,11 @@ describe("high-churn component smoke tests", () => {
     );
 
     expect(screen.getByText("A Movie")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Nominated by Alice" })
-      .getAttribute("href")).toBe("/u/user");
+    expect(
+      screen
+        .getByRole("link", { name: "Nominated by Alice" })
+        .getAttribute("href"),
+    ).toBe("/u/user");
     expect(screen.getByRole("img", { name: "Watched" })).toBeTruthy();
     expect(screen.getByAltText("").parentElement?.className).toContain(
       "watchedPoster",
@@ -301,7 +308,9 @@ describe("high-churn component smoke tests", () => {
 
     expect(onChange).toHaveBeenCalledWith({ sort, filters: ["mine"] });
     expect(
-      screen.getByRole("button", { name: "Sort by" }).getAttribute("aria-expanded"),
+      screen
+        .getByRole("button", { name: "Sort by" })
+        .getAttribute("aria-expanded"),
     ).toBe("false");
   });
 
@@ -398,8 +407,11 @@ describe("high-churn component smoke tests", () => {
       expect(screen.getByText("Nominated by Alice").parentElement).toBe(
         heading.parentElement,
       );
-      expect(screen.getByRole("link", { name: "Nominated by Alice" })
-        .getAttribute("href")).toBe("/u/user");
+      expect(
+        screen
+          .getByRole("link", { name: "Nominated by Alice" })
+          .getAttribute("href"),
+      ).toBe("/u/user");
       expect(screen.getByText("A description").parentElement).not.toBe(
         heading.parentElement,
       );
@@ -445,7 +457,9 @@ describe("high-churn component smoke tests", () => {
       expect(onMarkWatched).not.toHaveBeenCalled();
 
       if (!completed) {
-        const seen = screen.getByRole("button", { name: "Mark A Movie as seen" });
+        const seen = screen.getByRole("button", {
+          name: "Mark A Movie as seen",
+        });
         expect(runtimeRow.contains(seen)).toBe(false);
         fireEvent.click(seen);
         expect(onMarkWatched).toHaveBeenCalledTimes(1);
@@ -457,7 +471,9 @@ describe("high-churn component smoke tests", () => {
         expect(onDelete).toHaveBeenCalledTimes(1);
       } else {
         expect(screen.queryByRole("button", { name: /as seen/ })).toBeNull();
-        expect(screen.queryByRole("button", { name: /Delete A Movie/ })).toBeNull();
+        expect(
+          screen.queryByRole("button", { name: /Delete A Movie/ }),
+        ).toBeNull();
       }
       fireEvent.click(screen.getByRole("button", { name: "Close discussion" }));
       expect(onClose).toHaveBeenCalledTimes(1);
@@ -550,20 +566,27 @@ describe("high-churn component smoke tests", () => {
       name: "View Alice's theatres",
     });
     expect(profiles).toHaveLength(2);
-    expect(profiles.map((link) => link.getAttribute("href")))
-      .toEqual(["/u/user", "/u/user"]);
+    expect(profiles.map((link) => link.getAttribute("href"))).toEqual([
+      "/u/user",
+      "/u/user",
+    ]);
     fireEvent.change(screen.getByRole("textbox", { name: "Add a comment" }), {
       target: { value: "Count me in" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Post comment" }));
-    await waitFor(() => expect(onAddNomCom).toHaveBeenCalledWith("Count me in"));
+    await waitFor(() =>
+      expect(onAddNomCom).toHaveBeenCalledWith("Count me in"),
+    );
 
     fireEvent.click(
       screen.getByRole("button", { name: "Edit Alice's comment" }),
     );
-    fireEvent.change(screen.getByRole("textbox", { name: "Comment from Alice" }), {
-      target: { value: "I still agree" },
-    });
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Comment from Alice" }),
+      {
+        target: { value: "I still agree" },
+      },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() =>
       expect(onUpdateNomCom).toHaveBeenCalledWith(7, "I still agree"),

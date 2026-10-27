@@ -100,5 +100,6 @@ function isMajorCategory(category) {
 function categoryRank(category) {
   if (category === "BEST PICTURE") return 0;
   if (category.startsWith("DIRECTING")) return 1;
-  return isMajorCategory(category) ? 2 : 3;
+  if (category.startsWith("WRITING")) return 2;
+  return isMajorCategory(category) ? 3 : 4;
 }

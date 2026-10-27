@@ -12,7 +12,7 @@ import type { SafeTheatre } from "@/lib/auth/require-theatre";
 import type { Movie } from "@/src/db/schema";
 import type { MovieImportResult } from "./bulk-movie-import";
 import type { JustWatchAvailability } from "./justwatch-types";
-import type { BoxOffice } from "./box-office";
+import type { BoxOfficeData } from "./box-office";
 
 export const errorResponse = z.object({ error: z.string() });
 
@@ -140,9 +140,7 @@ export const api = {
   theatres: {
     listWithPosters: (): Promise<TheatreSummaryWithPosterPreviews[]> =>
       request("/api/theatres?previews=true"),
-    listForMovies: (
-      movieIds: number[],
-    ): Promise<TheatreSummaryWithMovies[]> =>
+    listForMovies: (movieIds: number[]): Promise<TheatreSummaryWithMovies[]> =>
       request(`/api/theatres?movieIds=${movieIds.join(",")}`),
     create: (input: { name: string }): Promise<SafeTheatre> =>
       request("/api/theatres", { method: "POST", body: JSON.stringify(input) }),
@@ -179,7 +177,10 @@ export const api = {
           method: "POST",
           body: JSON.stringify({ movieId }),
         }),
-      refreshBoxOffice: (movieId: number, signal?: AbortSignal): Promise<BoxOffice> =>
+      refreshBoxOffice: (
+        movieId: number,
+        signal?: AbortSignal,
+      ): Promise<BoxOfficeData> =>
         request(`${base}/box-office`, {
           method: "POST",
           body: JSON.stringify({ movieId }),

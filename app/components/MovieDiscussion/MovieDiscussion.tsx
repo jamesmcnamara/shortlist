@@ -2,13 +2,13 @@ import { getColor, getInitials, when } from "@/app/lib/utils";
 import type { Nomination, Person } from "@/src/db/schema";
 import { motion } from "motion/react";
 import styles from "./MovieDiscussion.module.css";
-import { MovieRatings } from "@/app/components/MovieRatings";
+import { Ratings } from "@/app/components/Ratings";
 import { EditableComment } from "./EditableComment";
 import { useClickOutside } from "@/app/lib/useClickOutside";
-import { MovieStreaming } from "@/app/components/MovieStreaming";
+import { Streaming } from "@/app/components/Streaming";
 import { NomComs } from "./NomComs";
-import { MovieBoxOffice } from "../MovieBoxOffice";
-import { MovieOscars } from "../MovieOscars";
+import { BoxOffice } from "../BoxOffice";
+import { Oscars } from "../Oscars";
 import Link from "next/link";
 import { userPath } from "@/lib/user-path";
 
@@ -108,13 +108,10 @@ export function MovieDiscussion({
               </button>
             )}
           </div>
-          <MovieOscars movie={nomination.movie} />
-          <MovieRatings services={ratings.services} />
-          <MovieBoxOffice
-            data={details.boxOffice}
-            onRefresh={onRefreshBoxOffice}
-          />
-          <MovieStreaming
+          <Oscars movie={nomination.movie} />
+          <Ratings services={ratings.services} />
+          <BoxOffice data={details.boxOffice} onRefresh={onRefreshBoxOffice} />
+          <Streaming
             availability={details.justWatch}
             onRefresh={onRefreshJustWatch}
           />

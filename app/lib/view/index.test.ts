@@ -6,7 +6,7 @@ import {
   type ViewContext,
 } from "./index";
 import type { Nomination, RatingSource } from "@/src/db/schema";
-import type { BoxOffice } from "../box-office";
+import type { BoxOfficeData } from "../box-office";
 
 const user = (id: string) => ({ id, name: id, email: `${id}@example.com` });
 
@@ -21,7 +21,7 @@ interface NominationOverrides {
   year?: number | null;
   movieId?: number;
   seenBy?: string[];
-  boxOffice?: BoxOffice;
+  boxOffice?: BoxOfficeData;
 }
 
 const nomination = ({
@@ -79,7 +79,7 @@ const ids = (nominations: Nomination[]) => nominations.map((n) => n.id);
 const boxOffice = (
   budget: number | null,
   worldwideGross: number | null,
-): BoxOffice => ({
+): BoxOfficeData => ({
   source: "boxofficemojo",
   url: "https://www.boxofficemojo.com/title/tt1234567/",
   fetchedAt: "2024-01-01T00:00:00Z",

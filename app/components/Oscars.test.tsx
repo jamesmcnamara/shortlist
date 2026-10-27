@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Movie, MovieDetails } from "@/src/db/schema";
 import { SWRConfig } from "swr";
-import { MovieOscars } from "./MovieOscars";
+import { Oscars } from "./Oscars";
 
 const movie = {
   id: 1,
@@ -23,7 +23,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("MovieOscars", () => {
+describe("Oscars", () => {
   it("shows an expandable summary for multiple nominations", async () => {
     vi.stubGlobal(
       "fetch",
@@ -108,6 +108,6 @@ describe("MovieOscars", () => {
 const renderMovieOscars = () =>
   render(
     <SWRConfig value={{ provider: () => new Map() }}>
-      <MovieOscars movie={movie} />
+      <Oscars movie={movie} />
     </SWRConfig>,
   );

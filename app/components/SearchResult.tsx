@@ -1,23 +1,23 @@
 import type { Movie } from "@/src/db/schema";
 import { useState } from "react";
 import { LoadingOverlay } from "@/app/components/LoadingOverlay";
-import styles from "./MovieSearchResult.module.css";
-import { MovieStreaming } from "./MovieStreaming";
+import styles from "./SearchResult.module.css";
+import { Streaming } from "./Streaming";
 import { stopPropagation } from "../lib/utils";
 
-interface MovieSearchResultProps {
+interface SearchResultProps {
   movie: Movie;
   onSelect?: (movie: Movie) => void;
   onAdd?: (movie: Movie) => void;
   onQuickAdd?: (movie: Movie) => Promise<void>;
 }
 
-export function MovieSearchResult({
+export function SearchResult({
   movie,
   onSelect,
   onAdd,
   onQuickAdd,
-}: MovieSearchResultProps) {
+}: SearchResultProps) {
   const [isAdding, setIsAdding] = useState(false);
   const year = movie.details.release_date
     ? movie.details.release_date.slice(0, 4)
@@ -53,7 +53,7 @@ export function MovieSearchResult({
         {movie.details.overview && (
           <span className={styles.overview}>{movie.details.overview}</span>
         )}
-        <MovieStreaming availability={movie.details.justWatch} />
+        <Streaming availability={movie.details.justWatch} />
       </div>
       {(() => {
         switch (true) {

@@ -1,6 +1,7 @@
 "use client";
 
-import { MovieSearchResults } from "@/app/components/MovieSearchResults";
+import { SearchResults } from "@/app/components/SearchResults";
+import { heat } from "@/app/lib/heat";
 import { useMovieSearch } from "@/app/lib/useMovieSearch";
 import { capitalize, when, withTargetValue } from "@/app/lib/utils";
 import type { Movie } from "@/src/db/schema";
@@ -15,7 +16,6 @@ import {
   type SortDirection,
 } from "./metrics";
 import styles from "./page.module.css";
-import { heat } from "@/app/lib/heat";
 
 const SCALE_HINTS: Record<Scale, string> = {
   relative: "Colors rank these movies against each other.",
@@ -23,12 +23,12 @@ const SCALE_HINTS: Record<Scale, string> = {
     "Colors use each service's full scale. Runtime runs from 1h 20m (great) to 3h (oof).",
 };
 
-interface MovieCompareProps {
+interface CompareProps {
   initialMovies: Movie[];
   userId?: string | null;
 }
 
-export function MovieCompare({ initialMovies, userId }: MovieCompareProps) {
+export function Compare({ initialMovies, userId }: CompareProps) {
   const [query, setQuery] = useState("");
   const [movies, setMovies] = useState<Movie[]>(initialMovies);
   const [scale, setScale] = useState<Scale>("relative");
@@ -228,7 +228,7 @@ export function MovieCompare({ initialMovies, userId }: MovieCompareProps) {
             </p>
           )}
           <div className={styles.searchResults}>
-            <MovieSearchResults
+            <SearchResults
               results={freshResults}
               isLoading={isLoading}
               error={error}

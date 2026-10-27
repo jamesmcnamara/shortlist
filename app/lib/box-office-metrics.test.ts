@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
-import type { BoxOffice } from "./box-office";
-import { boxOfficeMetrics, compactMoney, floorThreeDigits, formatMultiplier } from "./box-office-metrics";
+import type { BoxOfficeData } from "./box-office";
+import {
+  boxOfficeMetrics,
+  compactMoney,
+  floorThreeDigits,
+  formatMultiplier,
+} from "./box-office-metrics";
 import { heat } from "./heat";
 
-const data: BoxOffice = {
+const data: BoxOfficeData = {
   source: "boxofficemojo",
   url: "https://www.boxofficemojo.com/title/tt0816692/",
   fetchedAt: "2026-10-16T00:00:00Z",
@@ -47,9 +52,12 @@ describe("financial formatting", () => {
     [10, "10x"],
     [10.1, "10x"],
     [19.99, "19x"],
-  ])("clips multiplier %s to magnitude-dependent precision: %s", (input, output) => {
-    expect(formatMultiplier(input)).toBe(output);
-  });
+  ])(
+    "clips multiplier %s to magnitude-dependent precision: %s",
+    (input, output) => {
+      expect(formatMultiplier(input)).toBe(output);
+    },
+  );
 });
 
 describe("financial calculations and colors", () => {
@@ -68,7 +76,9 @@ describe("financial calculations and colors", () => {
       multiplier: { value: "-1x", score: 0 },
       net: { value: "$10m", score: 0 },
     });
-    expect(boxOfficeMetrics({ ...data, worldwideGross: data.budget })).toMatchObject({
+    expect(
+      boxOfficeMetrics({ ...data, worldwideGross: data.budget }),
+    ).toMatchObject({
       verb: "Made",
       multiplier: { value: "0x", score: 0.5 },
       net: { value: "$0", score: 0.5 },
@@ -78,7 +88,11 @@ describe("financial calculations and colors", () => {
   it("never computes returns from missing or zero budgets", () => {
     const missing = { value: "\u2013", score: null };
     expect(boxOfficeMetrics({ ...data, budget: null })).toEqual({
-      missing: true, verb: "Net", budget: missing, net: missing, multiplier: missing,
+      missing: true,
+      verb: "Net",
+      budget: missing,
+      net: missing,
+      multiplier: missing,
     });
     expect(boxOfficeMetrics({ ...data, budget: 0 })).toMatchObject({
       verb: "Made",
@@ -87,16 +101,24 @@ describe("financial calculations and colors", () => {
       multiplier: missing,
     });
     expect(boxOfficeMetrics({ ...data, worldwideGross: null })).toMatchObject({
-      verb: "Net", budget: { value: "$10m" }, net: missing, multiplier: missing,
+      verb: "Net",
+      budget: { value: "$10m" },
+      net: missing,
+      multiplier: missing,
     });
     expect(boxOfficeMetrics()).toEqual({
-      missing: true, verb: "Net", budget: missing, net: missing, multiplier: missing,
+      missing: true,
+      verb: "Net",
+      budget: missing,
+      net: missing,
+      multiplier: missing,
     });
   });
 
   it("colors zero budget white and increasing budgets progressively greener, capped at $1bn", () => {
-    const scores = [0, 1, 100_000, 1e6, 10e6, 100e6, 1e9, 2e9]
-      .map((budget) => boxOfficeMetrics({ ...data, budget }).budget.score!);
+    const scores = [0, 1, 100_000, 1e6, 10e6, 100e6, 1e9, 2e9].map(
+      (budget) => boxOfficeMetrics({ ...data, budget }).budget.score!,
+    );
     expect(scores[0]).toBe(0.5);
     expect(heat(scores[0])).toBe(heat(0.5));
     scores.slice(1, -1).forEach((score, index) => {
@@ -112,12 +134,13 @@ describe("financial calculations and colors", () => {
       net: { value: "$10m" },
       multiplier: { value: "-0.99x" },
     });
-
   });
 
   it("displays 150% net return as 1.5x", () => {
-    expect(boxOfficeMetrics({ ...data, worldwideGross: 25_000_000 }).multiplier.value)
-      .toBe("1.5x");
+    expect(
+      boxOfficeMetrics({ ...data, worldwideGross: 25_000_000 }).multiplier
+        .value,
+    ).toBe("1.5x");
   });
 
   it.each([
@@ -126,9 +149,14 @@ describe("financial calculations and colors", () => {
     [9_999_999, "0x"],
     [21_300_000, "1.13x"],
     [25_999_999, "1.59x"],
-  ])("clips the multiplier for gross %s to two decimal places", (worldwideGross, value) => {
-    expect(boxOfficeMetrics({ ...data, worldwideGross }).multiplier.value).toBe(value);
-  });
+  ])(
+    "clips the multiplier for gross %s to two decimal places",
+    (worldwideGross, value) => {
+      expect(
+        boxOfficeMetrics({ ...data, worldwideGross }).multiplier.value,
+      ).toBe(value);
+    },
+  );
 
   it("clamps heat colors while keeping the comparison's existing scale", () => {
     expect(heat(-100)).toBe(heat(0));

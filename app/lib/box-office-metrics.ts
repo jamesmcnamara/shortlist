@@ -1,4 +1,4 @@
-import type { BoxOffice } from "./box-office";
+import type { BoxOfficeData } from "./box-office";
 
 export function floorThreeDigits(value: number): number {
   if (value === 0) return 0;
@@ -22,7 +22,7 @@ export function compactMoney(value: number | null): string {
   return `${rounded < 0 ? "-" : ""}$${amount}${unit?.suffix ?? ""}`;
 }
 
-export function calculateReturns(data?: BoxOffice) {
+export function calculateReturns(data?: BoxOfficeData) {
   if (data?.budget == null || data.worldwideGross === null) return null;
 
   const net = data.worldwideGross - data.budget;
@@ -34,7 +34,9 @@ export function formatMultiplier(value: number): string {
   const decimalPlaces = value > 10 ? 0 : value > 2 ? 1 : 2;
   const factor = 10 ** decimalPlaces;
   const [significand, exponent] = value.toExponential().split("e");
-  const clipped = Math.trunc(Number(`${significand}e${Number(exponent) + decimalPlaces}`));
+  const clipped = Math.trunc(
+    Number(`${significand}e${Number(exponent) + decimalPlaces}`),
+  );
   return `${clipped / factor}x`;
 }
 
@@ -47,7 +49,7 @@ function formatMetric(
   return { value: format(value), score: score(value) };
 }
 
-export function boxOfficeMetrics(data?: BoxOffice) {
+export function boxOfficeMetrics(data?: BoxOfficeData) {
   const returns = calculateReturns(data);
   const multiplier = formatMetric(
     returns?.multiplier,

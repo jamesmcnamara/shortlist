@@ -2,8 +2,8 @@
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MovieStreaming } from "./MovieStreaming";
-import { MovieSearchResult } from "./MovieSearchResult";
+import { Streaming } from "./Streaming";
+import { SearchResult } from "./SearchResult";
 import { MovieDiscussion } from "./MovieDiscussion/MovieDiscussion";
 import { STREAMING_SERVICES } from "@/app/lib/streaming-services";
 import type {
@@ -11,7 +11,7 @@ import type {
   StreamingOffer,
 } from "@/app/lib/justwatch-types";
 import type { MovieDetails, Nomination } from "@/src/db/schema";
-import streamingStyles from "./MovieStreaming.module.css";
+import streamingStyles from "./Streaming.module.css";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 vi.mock("@/lib/auth/client", () => ({
@@ -64,7 +64,7 @@ afterEach(cleanup);
 describe("streaming service row", () => {
   it("shows only the configured services with icons, safe links and attribution", () => {
     render(
-      <MovieStreaming
+      <Streaming
         availability={availability([offer(8), offer(191, "FREE"), offer(999)])}
       />,
     );
@@ -80,10 +80,13 @@ describe("streaming service row", () => {
         .getByRole("link", { name: "Watch on Kanopy: Free" })
         .getAttribute("rel"),
     ).toBe("noopener noreferrer");
-    const freeLink = screen.getByRole("link", { name: "Watch on Kanopy: Free" });
+    const freeLink = screen.getByRole("link", {
+      name: "Watch on Kanopy: Free",
+    });
     expect(freeLink.getAttribute("title")).toBe("Kanopy: Free");
-    expect(freeLink.querySelector("img")?.parentElement?.className)
-      .toBe(streamingStyles.iconWrap);
+    expect(freeLink.querySelector("img")?.parentElement?.className).toBe(
+      streamingStyles.iconWrap,
+    );
     expect(screen.queryByText("FREE")).toBeNull();
     expect(screen.queryByText("Service 999")).toBeNull();
     expect(
@@ -98,7 +101,7 @@ describe("streaming service row", () => {
 
   it("accepts a custom service list instead of the default list", () => {
     render(
-      <MovieStreaming
+      <Streaming
         availability={availability([offer(8), offer(999, "ADS")])}
         services={[{ name: "Custom", packageIds: [999] }]}
       />,
@@ -106,14 +109,17 @@ describe("streaming service row", () => {
     expect(
       screen.getByRole("link", { name: "Watch on Custom: Free with ads" }),
     ).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Watch on Custom: Free with ads" })
-      .getAttribute("href")).toBe("https://stream.example.com/999");
+    expect(
+      screen
+        .getByRole("link", { name: "Watch on Custom: Free with ads" })
+        .getAttribute("href"),
+    ).toBe("https://stream.example.com/999");
     expect(screen.queryByRole("link", { name: /Watch on Netflix/ })).toBeNull();
   });
 
   it("matches subscription variants and prefers free offers without duplicates", () => {
     render(
-      <MovieStreaming
+      <Streaming
         availability={availability([
           offer(8),
           offer(1796, "ADS"),
@@ -151,12 +157,12 @@ describe("streaming service row", () => {
     ],
     [availability([]), "It's fuckin' nowhere. Ghost town."],
   ])("distinguishes empty and unknown states", (data, message) => {
-    render(<MovieStreaming availability={data} />);
+    render(<Streaming availability={data} />);
     expect(screen.getByRole("status").textContent).toBe(message);
   });
 
   it("keeps the service link accessible when an icon fails", () => {
-    render(<MovieStreaming availability={availability([offer(8)])} />);
+    render(<Streaming availability={availability([offer(8)])} />);
     const link = screen.getByRole("link", { name: /Watch on Netflix/ });
     fireEvent.error(link.querySelector("img")!);
     expect(link.querySelector("img")).toBeNull();
@@ -169,7 +175,7 @@ describe("streaming service row", () => {
 
   it("does not render an unsafe stored offer URL", () => {
     render(
-      <MovieStreaming
+      <Streaming
         availability={availability([
           { ...offer(8), url: "javascript:alert(1)" },
         ])}
@@ -180,7 +186,7 @@ describe("streaming service row", () => {
 
   it("renders links in search without selecting the movie, and preserves keyboard selection", () => {
     const onSelect = vi.fn();
-    render(<MovieSearchResult movie={nomination.movie} onSelect={onSelect} />);
+    render(<SearchResult movie={nomination.movie} onSelect={onSelect} />);
     const link = screen.getByRole("link", { name: /Watch on Netflix/ });
     fireEvent.click(link);
     fireEvent.keyDown(link, { key: "Enter" });
@@ -191,20 +197,36 @@ describe("streaming service row", () => {
   });
 
   it("shows rentals only for rent-enabled services and prefers streaming offers", () => {
-    render(<MovieStreaming
-      availability={availability([offer(10, "RENT"), offer(2, "RENT"), offer(8, "RENT"), offer(15), offer(15, "RENT")])}
-      services={[
-        { name: "Prime", packageIds: [9, 10], rent: true },
-        { name: "Apple TV", packageIds: [2], rent: true },
-        { name: "Netflix", packageIds: [8] },
-        { name: "Hulu", packageIds: [15], rent: true },
-      ]}
-    />);
-    expect(screen.getByRole("link", { name: "Watch on Prime: Rent" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Watch on Apple TV: Rent" })).toBeTruthy();
+    render(
+      <Streaming
+        availability={availability([
+          offer(10, "RENT"),
+          offer(2, "RENT"),
+          offer(8, "RENT"),
+          offer(15),
+          offer(15, "RENT"),
+        ])}
+        services={[
+          { name: "Prime", packageIds: [9, 10], rent: true },
+          { name: "Apple TV", packageIds: [2], rent: true },
+          { name: "Netflix", packageIds: [8] },
+          { name: "Hulu", packageIds: [15], rent: true },
+        ]}
+      />,
+    );
+    expect(
+      screen.getByRole("link", { name: "Watch on Prime: Rent" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Watch on Apple TV: Rent" }),
+    ).toBeTruthy();
     expect(screen.getAllByText("RENT")).toHaveLength(2);
     expect(screen.queryByRole("link", { name: /Netflix/ })).toBeNull();
-    expect(screen.getByRole("link", { name: "Watch on Hulu: Included with subscription" })).toBeTruthy();
+    expect(
+      screen.getByRole("link", {
+        name: "Watch on Hulu: Included with subscription",
+      }),
+    ).toBeTruthy();
   });
 
   it("checks JustWatch from the empty state and reports failures", async () => {
@@ -215,7 +237,7 @@ describe("streaming service row", () => {
           fail = reject;
         }),
     );
-    render(<MovieStreaming onRefresh={onRefresh} />);
+    render(<Streaming onRefresh={onRefresh} />);
     const button = screen.getByRole("button", { name: "Check JustWatch" });
     expect(button.textContent).toBe("");
     expect(button.querySelector('svg[aria-hidden="true"]')).toBeTruthy();
@@ -238,16 +260,13 @@ describe("streaming service row", () => {
 
   it("hides the check button when there are offers or no refresh handler", () => {
     render(
-      <MovieStreaming
-        availability={availability([offer(8)])}
-        onRefresh={vi.fn()}
-      />,
+      <Streaming availability={availability([offer(8)])} onRefresh={vi.fn()} />,
     );
     expect(
       screen.queryByRole("button", { name: "Check JustWatch" }),
     ).toBeNull();
     cleanup();
-    render(<MovieStreaming />);
+    render(<Streaming />);
     expect(
       screen.queryByRole("button", { name: "Check JustWatch" }),
     ).toBeNull();

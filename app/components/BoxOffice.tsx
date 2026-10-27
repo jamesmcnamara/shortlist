@@ -1,18 +1,18 @@
 "use client";
 
 import { useAPICall } from "@/app/lib/useAPIActions";
-import type { BoxOffice } from "@/app/lib/box-office";
+import type { BoxOfficeData } from "@/app/lib/box-office";
 import { boxOfficeMetrics } from "@/app/lib/box-office-metrics";
 import { heat } from "@/app/lib/heat";
 import { RefreshButton } from "./RefreshButton";
-import styles from "./MovieBoxOffice.module.css";
+import styles from "./BoxOffice.module.css";
 
-interface Props {
-  data?: BoxOffice;
+interface BoxOfficeProps {
+  data?: BoxOfficeData;
   onRefresh?: () => Promise<void>;
 }
 
-export function MovieBoxOffice({ data, onRefresh }: Props) {
+export function BoxOffice({ data, onRefresh }: BoxOfficeProps) {
   const { isSubmitting: refreshing, message: error, fromAPI } = useAPICall();
   const { missing, verb, net, multiplier, budget } = boxOfficeMetrics(data);
 

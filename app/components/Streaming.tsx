@@ -10,7 +10,7 @@ import type {
 import { STREAMING_SERVICES } from "@/app/lib/streaming-services";
 import { useState } from "react";
 import { RefreshButton } from "./RefreshButton";
-import styles from "./MovieStreaming.module.css";
+import styles from "./Streaming.module.css";
 
 const LABELS: Record<StreamingType, string> = {
   FREE: "Free",
@@ -25,17 +25,17 @@ const PRIORITY: Record<StreamingType, number> = {
   RENT: 3,
 };
 
-interface MovieStreamingProps {
+interface StreamingProps {
   availability?: JustWatchAvailability;
   services?: readonly StreamingService[];
   onRefresh?: () => Promise<unknown>;
 }
 
-export function MovieStreaming({
+export function Streaming({
   availability,
   services = STREAMING_SERVICES,
   onRefresh,
-}: MovieStreamingProps) {
+}: StreamingProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshFailed, setRefreshFailed] = useState(false);
   const offers = getOffers(services, availability);

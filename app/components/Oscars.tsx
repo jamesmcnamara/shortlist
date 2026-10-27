@@ -2,8 +2,9 @@
 
 import type { Movie } from "@/src/db/schema";
 import useSWR from "swr";
-import styles from "./MovieOscars.module.css";
+import styles from "./Oscars.module.css";
 import { every } from "shades";
+import classname from "classnames";
 
 interface OscarEntry {
   year: string;
@@ -25,12 +26,12 @@ interface OscarDataset {
   movies: Record<string, OscarMovie>;
 }
 
-interface MovieOscarsProps {
+interface OscarsProps {
   movie: Movie;
   variant?: "default" | "detail";
 }
 
-export function MovieOscars({ movie, variant = "default" }: MovieOscarsProps) {
+export function Oscars({ movie, variant = "default" }: OscarsProps) {
   const imdbId = getImdbId(movie);
   const { data, error } = useSWR<OscarDataset>(
     imdbId ? "/data/oscars.json" : null,
@@ -65,7 +66,9 @@ export function MovieOscars({ movie, variant = "default" }: MovieOscarsProps) {
 
   return (
     <section
-      className={`${styles.oscars} ${variant === "detail" ? styles.detail : ""}`}
+      className={classname(styles.oscars, {
+        [styles.detail]: variant === "detail",
+      })}
       aria-label="Academy Awards"
     >
       <OscarStatuetteIcon />
@@ -150,19 +153,21 @@ const formatMultipleHeadline = ({ entries, wins, nominations }: OscarMovie) => {
 };
 
 const formatMultipleDetail = (
-  { nominations }: OscarMovie,
+  { wins, nominations }: OscarMovie,
   majorNominations: number,
-) =>
-  [
+) => {
+  if (wins === 0 && nominations === majorNominations) return ``;
+  return [
     majorNominations > 0
       ? `${majorNominations} major ${
           majorNominations === 1 ? "nomination" : "nominations"
         }`
       : null,
-    `${nominations} total`,
+    nominations > majorNominations ? `${nominations} total` : null,
   ]
     .filter(Boolean)
     .join(" · ");
+};
 
 const formatCategory = (category: string) =>
   category

@@ -1,7 +1,7 @@
 "use client";
 
 import { redirect } from "next/navigation";
-import { MovieSearch } from "@/app/components/MovieSearch";
+import { Search } from "@/app/components/Search";
 import { useTheatres } from "@/app/lib/data/queries";
 import { DataBoundary } from "@/app/lib/data/DataBoundary";
 
@@ -15,7 +15,7 @@ export default function Home() {
 
   return (
     <DataBoundary pending={!theatres} error={error} retry={retry}>
-      <MovieSearch />
+      <Search />
     </DataBoundary>
   );
 }

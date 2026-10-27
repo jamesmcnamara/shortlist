@@ -1,20 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { AnimatePresence } from "motion/react";
-import { useDebouncedCallback } from "use-debounce";
-import { api, ApiError } from "@/app/lib/api";
-import { withTargetValue } from "@/app/lib/utils";
-import type { Movie } from "@/src/db/schema";
 import { AddToLists } from "@/app/components/AddToLists/AddToLists";
 import { AppMenu } from "@/app/components/AppMenu";
 import { CloseIcon } from "@/app/components/CloseIcon";
 import { MovieDetail } from "@/app/components/MovieDetail";
-import { MovieSearchResults } from "@/app/components/MovieSearchResults";
-import styles from "./MovieSearch.module.css";
+import { SearchResults } from "@/app/components/SearchResults";
+import { api, ApiError } from "@/app/lib/api";
+import { withTargetValue } from "@/app/lib/utils";
+import type { Movie } from "@/src/db/schema";
+import { AnimatePresence } from "motion/react";
+import { useEffect, useState } from "react";
+import { useDebouncedCallback } from "use-debounce";
+import styles from "./Search.module.css";
 
 /** Movie search with the add-to-lists sheet. */
-export function MovieSearch() {
+export function Search() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Movie[]>([]);
   const [error, setError] = useState("");
@@ -110,7 +110,7 @@ export function MovieSearch() {
               </p>
             )}
 
-            <MovieSearchResults
+            <SearchResults
               results={results}
               isLoading={isSearching}
               error={error}

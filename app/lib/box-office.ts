@@ -1,7 +1,7 @@
 import { load } from "cheerio/slim";
 import { z } from "zod";
 
-export interface BoxOffice {
+export interface BoxOfficeData {
   source: "boxofficemojo";
   url: string;
   fetchedAt: string;
@@ -32,11 +32,13 @@ function money(text: string): number | null {
   return amount;
 }
 
-export function parseBoxOffice(html: string, id: string): BoxOffice {
+export function parseBoxOffice(html: string, id: string): BoxOfficeData {
   const url = titleUrl(id);
   const $ = load(html);
   if ($('link[rel="canonical"]').attr("href") !== url) {
-    throw new Error("Box Office Mojo returned a different title or an invalid page.");
+    throw new Error(
+      "Box Office Mojo returned a different title or an invalid page.",
+    );
   }
 
   const summary = $(".mojo-performance-summary-table");
@@ -48,10 +50,15 @@ export function parseBoxOffice(html: string, id: string): BoxOffice {
   }
 
   const gross = (label: string) => {
-    const rows = summary.children("div").filter((_index, row) =>
-      normalized($(row).children("span").first().text())
-        .replace(/\s*\([^)]*\)$/, "") === label,
-    );
+    const rows = summary
+      .children("div")
+      .filter(
+        (_index, row) =>
+          normalized($(row).children("span").first().text()).replace(
+            /\s*\([^)]*\)$/,
+            "",
+          ) === label,
+      );
     if (rows.length !== 1 || rows.children("span").length !== 2) {
       throw new Error(`Box Office Mojo ${label} total was not found.`);
     }
@@ -60,8 +67,9 @@ export function parseBoxOffice(html: string, id: string): BoxOffice {
 
   const budget = $(".mojo-summary-values")
     .children("div")
-    .filter((_index, row) =>
-      normalized($(row).children("span").first().text()) === "Budget",
+    .filter(
+      (_index, row) =>
+        normalized($(row).children("span").first().text()) === "Budget",
     );
   if (budget.length > 1) {
     throw new Error("Box Office Mojo returned multiple budgets.");
@@ -79,7 +87,7 @@ export function parseBoxOffice(html: string, id: string): BoxOffice {
   };
 }
 
-export async function getBoxOffice(id: string): Promise<BoxOffice> {
+export async function getBoxOffice(id: string): Promise<BoxOfficeData> {
   const response = await fetch(titleUrl(id), {
     headers: { Accept: "text/html" },
     signal: AbortSignal.timeout(10_000),

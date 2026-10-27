@@ -1,9 +1,9 @@
-import { MovieSearchResult } from "./MovieSearchResult";
+import { SearchResult } from "./SearchResult";
 import { LoadingOverlay } from "./LoadingOverlay";
 import type { Movie } from "@/src/db/schema";
-import styles from "./MovieSearchResults.module.css";
+import styles from "./SearchResults.module.css";
 
-type MovieSearchResultsProps = {
+type SearchResultsProps = {
   results: Movie[];
   isLoading: boolean;
   error: string;
@@ -12,14 +12,14 @@ type MovieSearchResultsProps = {
   onQuickAdd?: (movie: Movie) => Promise<void>;
 };
 
-export function MovieSearchResults({
+export function SearchResults({
   results,
   isLoading,
   error,
   onSelect,
   onAdd,
   onQuickAdd,
-}: MovieSearchResultsProps) {
+}: SearchResultsProps) {
   if (isLoading) {
     return <LoadingOverlay fullscreen={false} label="Searching TMDB..." />;
   }
@@ -46,7 +46,7 @@ export function MovieSearchResults({
       </div>
       <ul className={styles.list}>
         {results.map((movie) => (
-          <MovieSearchResult
+          <SearchResult
             key={movie.id}
             movie={movie}
             onSelect={onSelect}

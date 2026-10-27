@@ -1,7 +1,7 @@
 import { withTargetValue } from "@/app/lib/utils";
 import type { Movie } from "@/src/db/schema";
 import { useState } from "react";
-import { MovieRatings } from "./MovieRatings";
+import { Ratings } from "./Ratings";
 import styles from "./NominationForm.module.css";
 
 type NominationFormProps = {
@@ -54,7 +54,7 @@ export function NominationForm({
           {candidate.details.overview && (
             <span>{candidate.details.overview}</span>
           )}
-          <MovieRatings services={candidate.ratings.services} />
+          <Ratings services={candidate.ratings.services} />
         </div>
         <button
           className={styles.close}

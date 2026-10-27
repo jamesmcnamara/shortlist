@@ -1,0 +1,10 @@
+.next
+dist
+node_modules
+coverage
+letterboxd
+public/data/oscars.json
+public/sw.js
+public/sw.js.map
+package-lock.json
+skills-lock.json

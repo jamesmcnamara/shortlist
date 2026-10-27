@@ -1,8 +1,12 @@
 import type { MDBRating } from "@/src/db/schema";
 import { find } from "shades";
-import styles from "./MovieRatings.module.css";
+import styles from "./Ratings.module.css";
 
 interface RatingProps {
+  services: MDBRating[];
+}
+
+interface Rating {
   name: string;
   rating: number;
   url: string;
@@ -10,7 +14,7 @@ interface RatingProps {
   value: string;
 }
 
-export function MovieRatings({ services }: { services: MDBRating[] }) {
+export function Ratings({ services }: RatingProps) {
   const imdb = find({ source: "imdb" })(services);
   const letterboxd = find({ source: "letterboxd" })(services);
   const tomatoes = find({ source: "tomatoes" })(services);
@@ -45,7 +49,7 @@ export function MovieRatings({ services }: { services: MDBRating[] }) {
       value: !!popcorn?.value ? `${Math.round(popcorn.value)}%` : null,
     },
   ].filter(
-    (rating): rating is RatingProps =>
+    (rating): rating is Rating =>
       rating.rating !== null && rating.url !== null && rating.value !== null,
   );
 
