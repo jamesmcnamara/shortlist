@@ -86,7 +86,6 @@
   font-size: 1rem;
 }
 
-
 .inlineRow {
   display: flex;
   align-items: center;
@@ -98,7 +97,6 @@
   flex: 1 1 12rem;
   min-width: 0;
 }
-
 
 .checkbox {
   display: flex;

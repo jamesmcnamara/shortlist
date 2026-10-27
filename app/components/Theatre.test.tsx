@@ -70,7 +70,9 @@ vi.mock("./ViewControls", () => ({
     <div>
       List controls
       {onNominate && (
-        <button onClick={() => onNominate({ id: 1 }, "")}>Add nomination</button>
+        <button onClick={() => onNominate({ id: 1 }, "")}>
+          Add nomination
+        </button>
       )}
     </div>
   ),
@@ -168,27 +170,40 @@ describe("list descriptions", () => {
     show([], createApi(), true, "user", "Our #Horror movies");
     const description = screen.getByText("#Horror");
     expect(description.parentElement?.textContent).toBe("Our #Horror movies");
-    expect(description.compareDocumentPosition(screen.getByText("List controls")) &
-      Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Edit list description" })).toBeTruthy();
+    expect(
+      description.compareDocumentPosition(screen.getByText("List controls")) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Edit list description" }),
+    ).toBeTruthy();
   });
 
   it("lets admins save a trimmed description and closes the editor", async () => {
     const api = createApi();
     show([], api);
-    fireEvent.click(screen.getByRole("button", { name: "Edit list description" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "List description" }), {
-      target: { value: "  Our #Horror films  " },
-    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit list description" }),
+    );
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "List description" }),
+      {
+        target: { value: "  Our #Horror films  " },
+      },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    await waitFor(() => expect(api.updateDescription).toHaveBeenCalledWith("Our #Horror films"));
+    await waitFor(() =>
+      expect(api.updateDescription).toHaveBeenCalledWith("Our #Horror films"),
+    );
     await waitFor(() => expect(screen.queryByRole("textbox")).toBeNull());
   });
 
   it("allows clearing a description", async () => {
     const api = createApi();
     show([], api, true, "user", "#Horror");
-    fireEvent.click(screen.getByRole("button", { name: "Edit list description" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit list description" }),
+    );
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(api.updateDescription).toHaveBeenCalledWith(""));
@@ -197,41 +212,67 @@ describe("list descriptions", () => {
   it("cancels without saving and resets the draft on the next edit", () => {
     const api = createApi();
     show([], api, true, "user", "#Horror");
-    fireEvent.click(screen.getByRole("button", { name: "Edit list description" }));
-    fireEvent.change(screen.getByRole("textbox"), { target: { value: "#Comedy" } });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit list description" }),
+    );
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "#Comedy" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(api.updateDescription).not.toHaveBeenCalled();
     expect(screen.getByText("#Horror")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Edit list description" }));
-    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("#Horror");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit list description" }),
+    );
+    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe(
+      "#Horror",
+    );
   });
 
   it("keeps failed drafts editable and shows the error for retry", async () => {
     const api = createApi();
-    vi.mocked(api.updateDescription).mockRejectedValueOnce(new Error("Could not save description."));
+    vi.mocked(api.updateDescription).mockRejectedValueOnce(
+      new Error("Could not save description."),
+    );
     show([], api);
-    fireEvent.click(screen.getByRole("button", { name: "Edit list description" }));
-    fireEvent.change(screen.getByRole("textbox"), { target: { value: "#Horror" } });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit list description" }),
+    );
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "#Horror" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await screen.findByText("Could not save description.");
-    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("#Horror");
+    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe(
+      "#Horror",
+    );
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(screen.queryByRole("textbox")).toBeNull());
   });
 
-  it.each([["member", false], [null, false], [null, true]] as const)(
+  it.each([
+    ["member", false],
+    [null, false],
+    [null, true],
+  ] as const)(
     "lets %s read descriptions without editing (admin=%s)",
     (userId, isAdmin) => {
       show([], createApi(), isAdmin, userId, "Our #Horror movies");
-      expect(screen.getByText("#Horror").parentElement?.textContent).toBe("Our #Horror movies");
-      expect(screen.queryByRole("button", { name: "Edit list description" })).toBeNull();
+      expect(screen.getByText("#Horror").parentElement?.textContent).toBe(
+        "Our #Horror movies",
+      );
+      expect(
+        screen.queryByRole("button", { name: "Edit list description" }),
+      ).toBeNull();
     },
   );
 
   it("hides empty descriptions from read-only viewers", () => {
     show([], null, false, null);
     expect(screen.queryByText("Add a description and #tags.")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Edit list description" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Edit list description" }),
+    ).toBeNull();
   });
 });
 
@@ -246,10 +287,10 @@ describe("theatre movie animations", () => {
     expect(
       screen.getByRole("button", { name: "Mark Watched movie as seen" }),
     ).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Mark .* as Watched/ })).toBeNull();
     expect(
-      screen.getByRole("button", { name: "Post comment" }),
-    ).toBeTruthy();
+      screen.queryByRole("button", { name: /Mark .* as Watched/ }),
+    ).toBeNull();
+    expect(screen.getByRole("button", { name: "Post comment" })).toBeTruthy();
   });
 
   it("keeps signed-out viewers read-only while leaving the list browsable", () => {
@@ -318,11 +359,13 @@ describe("theatre movie animations", () => {
   it("does not celebrate unmarking a movie seen", async () => {
     const api = createApi();
     show(
-      [{
-        ...watched,
-        completed: false,
-        seenBy: [{ id: "user", name: "User" }],
-      }],
+      [
+        {
+          ...watched,
+          completed: false,
+          seenBy: [{ id: "user", name: "User" }],
+        },
+      ],
       api,
     );
     fireEvent.click(screen.getByText("Watched movie"));
@@ -409,9 +452,7 @@ describe("theatre bulk import panel", () => {
       screen.getByText("Watched movie").compareDocumentPosition(panel) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(
-      panel.closest("main")?.lastElementChild?.contains(panel),
-    ).toBe(true);
+    expect(panel.closest("main")?.lastElementChild?.contains(panel)).toBe(true);
   });
 
   it("opens and imports on an empty list", async () => {
@@ -422,8 +463,7 @@ describe("theatre bulk import panel", () => {
     expect(
       screen
         .getByText("Nothing here yet. Add the first movie.")
-        .compareDocumentPosition(panel) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
+        .compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     fireEvent.change(screen.getByRole("textbox", { name: "Movie titles" }), {
       target: { value: "Arrival" },
@@ -462,10 +502,12 @@ describe("theatre bulk import panel", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("region", { name: "Movie titles" })).toBeNull();
-    await act(async () => first.resolve({
-      status: "added",
-      movie: { id: 2, title: "Arrival", year: 2016 },
-    }));
+    await act(async () =>
+      first.resolve({
+        status: "added",
+        movie: { id: 2, title: "Arrival", year: 2016 },
+      }),
+    );
     expect(api.importTitle).toHaveBeenCalledTimes(1);
   });
 });
@@ -553,7 +595,9 @@ describe("picked movie actions", () => {
     fireEvent.click(more());
     fireEvent.click(screen.getByRole("menuitem", { name: "Mark watched" }));
     await waitFor(() =>
-      expect(screen.queryByRole("region", { name: "Compare movies" })).toBeNull(),
+      expect(
+        screen.queryByRole("region", { name: "Compare movies" }),
+      ).toBeNull(),
     );
     expect(api.markWatched).toHaveBeenCalledWith([10]);
     expect(celebrate).not.toHaveBeenCalled();

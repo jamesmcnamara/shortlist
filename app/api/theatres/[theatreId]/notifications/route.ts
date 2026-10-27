@@ -19,7 +19,10 @@ export const GET = withTheatreMember({
     .select()
     .from(notifications)
     .where(
-      and(eq(notifications.theatreId, theatre.id), eq(notifications.userId, userId)),
+      and(
+        eq(notifications.theatreId, theatre.id),
+        eq(notifications.userId, userId),
+      ),
     );
   return Response.json({
     enabled: Boolean(preference),

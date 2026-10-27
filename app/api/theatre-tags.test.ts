@@ -26,9 +26,10 @@ const patch = (body: unknown) =>
     new Request("http://test", { method: "PATCH", body: JSON.stringify(body) }),
     route(),
   );
-const storedTheatre = () => fixture.db.query.theatres.findFirst({
-  where: eq(theatres.id, theatreId),
-});
+const storedTheatre = () =>
+  fixture.db.query.theatres.findFirst({
+    where: eq(theatres.id, theatreId),
+  });
 
 beforeEach(async () => {
   fixture = await createTestDb();
@@ -39,10 +40,23 @@ beforeEach(async () => {
     { id: MEMBER, name: "Member", email: "member@example.com" },
     { id: OUTSIDER, name: "Outsider", email: "outsider@example.com" },
   ]);
-  const rows = await fixture.db.insert(theatres).values([
-    { name: "Club", createdBy: ADMIN, inviteCode: "member-code", adminInviteCode: "admin-code" },
-    { name: "Other", createdBy: OUTSIDER, inviteCode: "other-member", adminInviteCode: "other-admin" },
-  ]).returning();
+  const rows = await fixture.db
+    .insert(theatres)
+    .values([
+      {
+        name: "Club",
+        createdBy: ADMIN,
+        inviteCode: "member-code",
+        adminInviteCode: "admin-code",
+      },
+      {
+        name: "Other",
+        createdBy: OUTSIDER,
+        inviteCode: "other-member",
+        adminInviteCode: "other-admin",
+      },
+    ])
+    .returning();
   theatreId = rows[0].id;
   otherId = rows[1].id;
   await fixture.db.insert(theatreMembers).values([
@@ -59,22 +73,32 @@ afterEach(async () => {
 
 describe("theatre descriptions and tags", () => {
   it("saves trimmed descriptions with canonical, deduplicated text-keyed tags", async () => {
-    const response = await patch({ description: "  Our #SciFi #scifi #2026 #date-night  " });
+    const response = await patch({
+      description: "  Our #SciFi #scifi #2026 #date-night  ",
+    });
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.description).toBe("Our #SciFi #scifi #2026 #date-night");
     expect(body).not.toHaveProperty("inviteCode");
     expect(body).not.toHaveProperty("adminInviteCode");
-    expect(await listTheatreTags(theatreId)).toEqual(["2026", "date-night", "scifi"]);
+    expect(await listTheatreTags(theatreId)).toEqual([
+      "2026",
+      "date-night",
+      "scifi",
+    ]);
     expect(await fixture.db.select().from(tags).orderBy(tags.name)).toEqual([
-      { name: "2026" }, { name: "date-night" }, { name: "scifi" },
+      { name: "2026" },
+      { name: "date-night" },
+      { name: "scifi" },
     ]);
     const related = await fixture.db.query.theatres.findFirst({
       where: eq(theatres.id, theatreId),
       with: { tags: { with: { tagDefinition: true } } },
     });
     expect(related?.tags).toContainEqual({
-      theatreId, tag: "scifi", tagDefinition: { name: "scifi" },
+      theatreId,
+      tag: "scifi",
+      tagDefinition: { name: "scifi" },
     });
   });
 
@@ -85,7 +109,8 @@ describe("theatre descriptions and tags", () => {
     expect(await listTheatreTags(theatreId)).toEqual(["comedy"]);
     expect(await listTheatreTags(otherId)).toEqual(["horror"]);
     expect(await fixture.db.select().from(tags).orderBy(tags.name)).toEqual([
-      { name: "comedy" }, { name: "horror" },
+      { name: "comedy" },
+      { name: "horror" },
     ]);
     await patch({ description: "#COMEDY" });
     expect(await listTheatreTags(theatreId)).toEqual(["comedy"]);
@@ -109,14 +134,22 @@ describe("theatre descriptions and tags", () => {
     expect((await storedTheatre())?.description).toBe("#Horror");
     expect(await listTheatreTags(theatreId)).toEqual(["horror"]);
     await patch({ name: "Both", description: "#Comedy" });
-    expect(await storedTheatre()).toMatchObject({ name: "Both", description: "#Comedy" });
+    expect(await storedTheatre()).toMatchObject({
+      name: "Both",
+      description: "#Comedy",
+    });
     expect(await listTheatreTags(theatreId)).toEqual(["comedy"]);
   });
 
   it("rejects invalid descriptions, empty updates, and tag-only updates", async () => {
     for (const body of [
-      {}, { description: null }, { description: 1 }, { description: [] },
-      { name: " " }, { tags: ["horror"] }, { description: "#horror", name: "" },
+      {},
+      { description: null },
+      { description: 1 },
+      { description: [] },
+      { name: " " },
+      { tags: ["horror"] },
+      { description: "#horror", name: "" },
     ]) {
       expect((await patch(body)).status).toBe(400);
     }
@@ -125,12 +158,18 @@ describe("theatre descriptions and tags", () => {
   });
 
   it("derives tags from the description, not a supplied tag list", async () => {
-    expect((await patch({ description: "#Comedy", tags: ["horror"] })).status).toBe(200);
+    expect(
+      (await patch({ description: "#Comedy", tags: ["horror"] })).status,
+    ).toBe(200);
     expect(await listTheatreTags(theatreId)).toEqual(["comedy"]);
   });
 
   it("only lets admins edit, including when a caller supplies another theatre ID", async () => {
-    for (const [userId, status] of [["", 401], [MEMBER, 403], [OUTSIDER, 404]] as const) {
+    for (const [userId, status] of [
+      ["", 401],
+      [MEMBER, 403],
+      [OUTSIDER, 404],
+    ] as const) {
       currentUserId.value = userId;
       expect((await patch({ description: "#Horror" })).status).toBe(status);
     }
@@ -147,7 +186,9 @@ describe("theatre descriptions and tags", () => {
     await patch({ description: "Our #Horror films" });
     for (const userId of ["", OUTSIDER, MEMBER, ADMIN]) {
       currentUserId.value = userId;
-      const body = await (await theatreRoute.GET(new Request("http://test"), route())).json();
+      const body = await (
+        await theatreRoute.GET(new Request("http://test"), route())
+      ).json();
       expect(body.theatre.description).toBe("Our #Horror films");
       expect(body.tags).toEqual(["horror"]);
       expect(body.theatre).not.toHaveProperty("inviteCode");
@@ -163,7 +204,8 @@ describe("theatre descriptions and tags", () => {
       params: Promise.resolve({ code: "member-code" }),
     });
     expect((await preview.json()).theatre).toEqual({
-      name: "Club", description: "Our #Horror films",
+      name: "Club",
+      description: "Our #Horror films",
     });
   });
 
@@ -179,10 +221,16 @@ describe("theatre descriptions and tags", () => {
       FOR EACH ROW EXECUTE FUNCTION reject_tag();
     `);
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
-    const response = await patch({ name: "Should roll back", description: "#Broken" });
+    const response = await patch({
+      name: "Should roll back",
+      description: "#Broken",
+    });
     expect(response.status).toBe(500);
     expect(log).toHaveBeenCalled();
-    expect(await storedTheatre()).toMatchObject({ name: "Club", description: "#Horror" });
+    expect(await storedTheatre()).toMatchObject({
+      name: "Club",
+      description: "#Horror",
+    });
     expect(await listTheatreTags(theatreId)).toEqual(["horror"]);
     expect(await fixture.db.select().from(tags)).toEqual([{ name: "horror" }]);
   });
@@ -193,27 +241,47 @@ describe("theatre descriptions and tags", () => {
       patch({ description: "#Comedy #2026" }),
       patch({ description: "#Drama" }),
     ]);
-    expect(responses.map((response) => response.status)).toEqual([200, 200, 200]);
+    expect(responses.map((response) => response.status)).toEqual([
+      200, 200, 200,
+    ]);
     const stored = await storedTheatre();
     expect(await listTheatreTags(theatreId)).toEqual(
-      stored?.description === "#Horror" ? ["horror"]
-        : stored?.description === "#Drama" ? ["drama"] : ["2026", "comedy"],
+      stored?.description === "#Horror"
+        ? ["horror"]
+        : stored?.description === "#Drama"
+          ? ["drama"]
+          : ["2026", "comedy"],
     );
   });
 
   it("enforces text-key uniqueness and restrictive tag references, cascading only theatre deletion", async () => {
     await patch({ description: "#Horror" });
-    await expect(fixture.db.insert(tags).values({ name: "horror" })).rejects.toThrow();
-    await expect(fixture.db.insert(theatreTags).values({ theatreId, tag: "horror" })).rejects.toThrow();
-    await expect(fixture.db.insert(theatreTags).values({ theatreId, tag: "missing" })).rejects.toThrow();
-    await expect(fixture.db.update(tags).set({ name: "comedy" }).where(eq(tags.name, "horror"))).rejects.toThrow();
-    await expect(fixture.db.delete(tags).where(eq(tags.name, "horror"))).rejects.toThrow();
+    await expect(
+      fixture.db.insert(tags).values({ name: "horror" }),
+    ).rejects.toThrow();
+    await expect(
+      fixture.db.insert(theatreTags).values({ theatreId, tag: "horror" }),
+    ).rejects.toThrow();
+    await expect(
+      fixture.db.insert(theatreTags).values({ theatreId, tag: "missing" }),
+    ).rejects.toThrow();
+    await expect(
+      fixture.db
+        .update(tags)
+        .set({ name: "comedy" })
+        .where(eq(tags.name, "horror")),
+    ).rejects.toThrow();
+    await expect(
+      fixture.db.delete(tags).where(eq(tags.name, "horror")),
+    ).rejects.toThrow();
     await fixture.db.delete(theatres).where(eq(theatres.id, theatreId));
     expect(await fixture.db.select().from(theatreTags)).toEqual([]);
     expect(await fixture.db.select().from(tags)).toEqual([{ name: "horror" }]);
     const indexes = await fixture.db.execute(sql`
       SELECT indexdef FROM pg_indexes WHERE tablename = 'theatre_tags'
     `);
-    expect(indexes.rows.map(({ indexdef }) => indexdef).join("\n")).toContain("(tag, theatre_id)");
+    expect(indexes.rows.map(({ indexdef }) => indexdef).join("\n")).toContain(
+      "(tag, theatre_id)",
+    );
   });
 });

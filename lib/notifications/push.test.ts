@@ -39,7 +39,9 @@ const BOB = "22222222-2222-2222-2222-222222222222";
 const OUTSIDER = "33333333-3333-3333-3333-333333333333";
 const THEATRE = "44444444-4444-4444-4444-444444444444";
 const OTHER_THEATRE = "55555555-5555-5555-5555-555555555555";
-const context = (theatreId = THEATRE) => ({ params: Promise.resolve({ theatreId }) });
+const context = (theatreId = THEATRE) => ({
+  params: Promise.resolve({ theatreId }),
+});
 const request = (body: unknown, method = "POST") =>
   new Request("https://shortlist.test/api", {
     method,

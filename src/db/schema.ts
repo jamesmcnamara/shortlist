@@ -341,12 +341,7 @@ export interface MDBRating {
 }
 
 export type RatingSource =
-  | "imdb"
-  | "letterboxd"
-  | "tomatoes"
-  | "popcorn"
-  | "metacritic"
-  | "rogerebert";
+  "imdb" | "letterboxd" | "tomatoes" | "popcorn" | "metacritic" | "rogerebert";
 
 export interface MovieRatings {
   services: MDBRating[];

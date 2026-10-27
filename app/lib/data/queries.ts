@@ -27,11 +27,9 @@ function useQuery<T>(
 }
 
 export function useTheatres() {
-  return useQuery(
-    "/api/theatres?previews=true",
-    api.theatres.listWithPosters,
-    { requiresUser: false },
-  );
+  return useQuery("/api/theatres?previews=true", api.theatres.listWithPosters, {
+    requiresUser: false,
+  });
 }
 
 export function useTheatresForMovies(movieIds: number[]) {

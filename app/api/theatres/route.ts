@@ -10,12 +10,7 @@ import {
   listPublicTheatresWithPosterPreviews,
   recentActivityOrder,
 } from "@/app/lib/load-theatre";
-import {
-  badRequest,
-  dbId,
-  parseJson,
-  requiredText,
-} from "@/lib/validation";
+import { badRequest, dbId, parseJson, requiredText } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -80,10 +75,7 @@ const listTheatresWithMovies = (userId: string, movieIds: number[]) =>
     .from(theatreMembers)
     .innerJoin(theatres, eq(theatres.id, theatreMembers.theatreId))
     .where(
-      and(
-        eq(theatreMembers.userId, userId),
-        eq(theatreMembers.role, "admin"),
-      ),
+      and(eq(theatreMembers.userId, userId), eq(theatreMembers.role, "admin")),
     )
     .orderBy(...recentActivityOrder);
 
@@ -116,5 +108,8 @@ export const POST = withUser({
     adminInviteCode: _withheldAdmin,
     ...safe
   } = theatre;
-  return Response.json({ ...safe, path: theatrePath(theatre) }, { status: 201 });
+  return Response.json(
+    { ...safe, path: theatrePath(theatre) },
+    { status: 201 },
+  );
 });

@@ -158,24 +158,27 @@ export function AppMenu({
               onStart={close}
             />
           )}
-          {name && <MenuLink href="/feedback" onNavigate={close}>
-            Feedback
-          </MenuLink>}
-          {name && additionalMenuItems?.map((item, index) =>
-            item.type === "link" ? (
-              <MenuLink
-                key={index}
-                href={item.href}
-                onNavigate={item.onNavigate}
-              >
-                {item.label}
-              </MenuLink>
-            ) : (
-              <MenuButton key={index} onClick={item.onClick}>
-                {item.label}
-              </MenuButton>
-            ),
+          {name && (
+            <MenuLink href="/feedback" onNavigate={close}>
+              Feedback
+            </MenuLink>
           )}
+          {name &&
+            additionalMenuItems?.map((item, index) =>
+              item.type === "link" ? (
+                <MenuLink
+                  key={index}
+                  href={item.href}
+                  onNavigate={item.onNavigate}
+                >
+                  {item.label}
+                </MenuLink>
+              ) : (
+                <MenuButton key={index} onClick={item.onClick}>
+                  {item.label}
+                </MenuButton>
+              ),
+            )}
           {name && (
             <button
               className={styles.menuItem}

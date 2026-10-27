@@ -102,10 +102,7 @@ export async function listPublicTheatresWithPosterPreviews(
     .where(
       and(
         not(nominations.completed),
-        inArray(
-          nominations.theatreId,
-          ids,
-        ),
+        inArray(nominations.theatreId, ids),
         sql`${posterUrl} is not null`,
       ),
     )
@@ -135,14 +132,15 @@ export async function listPublicTheatresWithPosterPreviews(
       createdAt: theatre.createdAt.toISOString(),
       updatedAt: theatre.updatedAt.toISOString(),
       tags: (tagsById.get(theatre.id) ?? []).map(({ tag }) => tag),
-      posterUrls: (postersById.get(theatre.id) ?? []).map(({ posterUrl }) => posterUrl),
+      posterUrls: (postersById.get(theatre.id) ?? []).map(
+        ({ posterUrl }) => posterUrl,
+      ),
     };
   });
 }
 
 export type LoadTheatreResult =
-  | { status: "ok"; data: LoadedTheatre }
-  | { status: "not-found" };
+  { status: "ok"; data: LoadedTheatre } | { status: "not-found" };
 
 /**
  * Server-side data for a public theatre page. Membership is optional and only

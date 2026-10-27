@@ -62,7 +62,9 @@ export function TheatreProvider({ theatreId, children }: TheatreProviderProps) {
       retry={() => Promise.all(queries.map((query) => query.retry()))}
       requiresUser={false}
     >
-      <TheatreContext.Provider value={value}>{children}</TheatreContext.Provider>
+      <TheatreContext.Provider value={value}>
+        {children}
+      </TheatreContext.Provider>
     </DataBoundary>
   );
 }

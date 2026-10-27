@@ -30,7 +30,10 @@ const updateBody = z
 
 export const GET = withTheatreViewer({
   error: "Unable to load the theatre.",
-})(async (_request: Request, { theatre, role, userId }: TheatreViewerContext) => {
+})(async (
+  _request: Request,
+  { theatre, role, userId }: TheatreViewerContext,
+) => {
   const tags = await listTheatreTags(theatre.id);
   if (!userId || !role) {
     return Response.json({ theatre, tags, membership: null });
@@ -58,19 +61,19 @@ export const GET = withTheatreViewer({
   });
 });
 
-export const PATCH = withTheatreAdmin({ error: "Unable to update the theatre." })(
-  async (request: Request, { theatre }: TheatreContext) => {
-    const parsed = await parseJson(request, updateBody);
-    if (!parsed.success) return badRequest(parsed.error);
-    await updateTheatre(theatre.id, parsed.data);
-    const updated = await findTheatreById(theatre.id);
-    return updated ? Response.json(updated) : notFound();
-  },
-);
+export const PATCH = withTheatreAdmin({
+  error: "Unable to update the theatre.",
+})(async (request: Request, { theatre }: TheatreContext) => {
+  const parsed = await parseJson(request, updateBody);
+  if (!parsed.success) return badRequest(parsed.error);
+  await updateTheatre(theatre.id, parsed.data);
+  const updated = await findTheatreById(theatre.id);
+  return updated ? Response.json(updated) : notFound();
+});
 
-export const DELETE = withTheatreAdmin({ error: "Unable to delete the theatre." })(
-  async (_request: Request, { theatre }: TheatreContext) => {
-    await getDb().delete(theatres).where(eq(theatres.id, theatre.id));
-    return new Response(null, { status: 204 });
-  },
-);
+export const DELETE = withTheatreAdmin({
+  error: "Unable to delete the theatre.",
+})(async (_request: Request, { theatre }: TheatreContext) => {
+  await getDb().delete(theatres).where(eq(theatres.id, theatre.id));
+  return new Response(null, { status: 204 });
+});

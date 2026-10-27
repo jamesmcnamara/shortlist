@@ -1,7 +1,10 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { generateInviteCode } from "@/app/lib/theatres";
-import { withTheatreAdmin, type TheatreContext } from "@/lib/auth/require-theatre";
+import {
+  withTheatreAdmin,
+  type TheatreContext,
+} from "@/lib/auth/require-theatre";
 import { getDb } from "@/src/db/client";
 import { theatres } from "@/src/db/schema";
 import { badRequest, parseJson } from "@/lib/validation";

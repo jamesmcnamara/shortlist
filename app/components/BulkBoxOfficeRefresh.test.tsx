@@ -1,5 +1,12 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/app/lib/api";
 import { AppMenu } from "./AppMenu";
@@ -11,11 +18,13 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/app/lib/api", async (original) => ({
-  ...await original<typeof import("@/app/lib/api")>(),
+  ...(await original<typeof import("@/app/lib/api")>()),
   api: { theatre: mocks.theatre },
 }));
 vi.mock("@/lib/auth/client", () => ({
-  authClient: { useSession: () => ({ data: { user: { id: "user", name: "User" } } }) },
+  authClient: {
+    useSession: () => ({ data: { user: { id: "user", name: "User" } } }),
+  },
 }));
 vi.mock("@/app/lib/data/queries", () => ({
   useTheatres: () => ({ data: [] }),
@@ -38,7 +47,8 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-const openMenu = () => fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+const openMenu = () =>
+  fireEvent.click(screen.getByRole("button", { name: "Menu" }));
 const start = () => {
   openMenu();
   fireEvent.click(screen.getByRole("button", { name: "Extra Settings" }));
@@ -51,30 +61,50 @@ describe("bulk box office refresh", () => {
     menu();
     start();
     expect(screen.queryByRole("menu")).toBeNull();
-    await waitFor(() => expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("100"));
+    await waitFor(() =>
+      expect(
+        screen.getByRole("progressbar").getAttribute("aria-valuenow"),
+      ).toBe("100"),
+    );
     expect(mocks.theatre).toHaveBeenCalledWith("current-theatre");
     expect(mocks.refresh.mock.calls.map(([id]) => id)).toEqual([1, 2]);
-    expect(screen.getByRole("progressbar").getAttribute("aria-valuetext"))
-      .toContain("2 movies checked, 0 failed");
+    expect(
+      screen.getByRole("progressbar").getAttribute("aria-valuetext"),
+    ).toContain("2 movies checked, 0 failed");
   });
 
   it("shows real sequential progress and can be dismissed and reopened without starting another job", async () => {
     let finish!: () => void;
-    mocks.refresh.mockImplementationOnce(() =>
-      new Promise<void>((resolve) => { finish = resolve; }),
+    mocks.refresh.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
     );
     menu();
     start();
     await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
-    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("0");
-    fireEvent.click(screen.getByRole("button", { name: "Dismiss box office progress" }));
+    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe(
+      "0",
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Dismiss box office progress" }),
+    );
     await waitFor(() => expect(screen.queryByRole("progressbar")).toBeNull());
     openMenu();
-    fireEvent.click(screen.getByRole("button", { name: "Show box office progress" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show box office progress" }),
+    );
     expect(screen.getByRole("progressbar")).toBeTruthy();
     expect(mocks.list).toHaveBeenCalledOnce();
-    await act(async () => { finish(); });
-    await waitFor(() => expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("100"));
+    await act(async () => {
+      finish();
+    });
+    await waitFor(() =>
+      expect(
+        screen.getByRole("progressbar").getAttribute("aria-valuenow"),
+      ).toBe("100"),
+    );
     expect(mocks.refresh).toHaveBeenCalledTimes(2);
   });
 
@@ -82,16 +112,24 @@ describe("bulk box office refresh", () => {
     mocks.refresh.mockRejectedValueOnce(new ApiError("No IMDb ID", 400));
     menu();
     start();
-    await waitFor(() => expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("100"));
+    await waitFor(() =>
+      expect(
+        screen.getByRole("progressbar").getAttribute("aria-valuenow"),
+      ).toBe("100"),
+    );
     expect(mocks.refresh).toHaveBeenCalledTimes(2);
-    expect(screen.getByRole("alert").textContent).toContain("1 movie couldn't be refreshed");
+    expect(screen.getByRole("alert").textContent).toContain(
+      "1 movie couldn't be refreshed",
+    );
   });
 
   it("stops if access is lost", async () => {
     mocks.refresh.mockRejectedValueOnce(new ApiError("Access denied", 401));
     menu();
     start();
-    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("Access denied"));
+    await waitFor(() =>
+      expect(screen.getByRole("alert").textContent).toBe("Access denied"),
+    );
     expect(mocks.refresh).toHaveBeenCalledOnce();
   });
 
@@ -99,7 +137,9 @@ describe("bulk box office refresh", () => {
     mocks.list.mockRejectedValueOnce(new Error("Couldn't load this theatre"));
     menu();
     start();
-    expect((await screen.findByRole("alert")).textContent).toBe("Couldn't load this theatre");
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "Couldn't load this theatre",
+    );
     expect(mocks.refresh).not.toHaveBeenCalled();
     openMenu();
     fireEvent.click(screen.getByRole("button", { name: "Refresh box office" }));
@@ -111,15 +151,22 @@ describe("bulk box office refresh", () => {
     mocks.list.mockResolvedValue([]);
     menu();
     start();
-    await screen.findByText("No movies to refresh.", { selector: "p:not(.srOnly)" });
-    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("100");
+    await screen.findByText("No movies to refresh.", {
+      selector: "p:not(.srOnly)",
+    });
+    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe(
+      "100",
+    );
     expect(mocks.refresh).not.toHaveBeenCalled();
   });
 
   it("aborts the current request and starts no more when leaving the page", async () => {
     let finish!: () => void;
-    mocks.refresh.mockImplementationOnce(() =>
-      new Promise<void>((resolve) => { finish = resolve; }),
+    mocks.refresh.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
     );
     const view = menu();
     start();
@@ -127,7 +174,9 @@ describe("bulk box office refresh", () => {
     const signal = mocks.refresh.mock.calls[0][1] as AbortSignal;
     view.unmount();
     expect(signal.aborted).toBe(true);
-    await act(async () => { finish(); });
+    await act(async () => {
+      finish();
+    });
     expect(mocks.refresh).toHaveBeenCalledOnce();
   });
 
@@ -135,6 +184,8 @@ describe("bulk box office refresh", () => {
     render(<AppMenu />);
     openMenu();
     fireEvent.click(screen.getByRole("button", { name: "Extra Settings" }));
-    expect(screen.queryByRole("button", { name: "Refresh box office" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Refresh box office" }),
+    ).toBeNull();
   });
 });

@@ -39,7 +39,12 @@ const QUERY = `
 const link = z.string().nullish().catch(null);
 
 const offerSchema = z.object({
-  monetizationType: z.enum(["FREE", "ADS", "FLATRATE", "RENT"] satisfies StreamingType[]),
+  monetizationType: z.enum([
+    "FREE",
+    "ADS",
+    "FLATRATE",
+    "RENT",
+  ] satisfies StreamingType[]),
   standardWebURL: link,
   package: z.object({
     packageId: z.int(),
@@ -81,9 +86,7 @@ export function httpsUrl(value: unknown, base?: string): string | null {
   }
 }
 
-function toOffer(
-  value: z.infer<typeof offerSchema>,
-): StreamingOffer | null {
+function toOffer(value: z.infer<typeof offerSchema>): StreamingOffer | null {
   const provider = value.package;
   // Some offers have no usable web link; never turn them into clickable URLs.
   const url = httpsUrl(value.standardWebURL);

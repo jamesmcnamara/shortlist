@@ -103,12 +103,22 @@ describe("GET /api/theatres", () => {
     async (query) => {
       asUser(CASEY);
       await createWatchlist(CASEY);
-      const body = await (await theatresRoute.GET(new Request(`http://test${query}`))).json();
-      expect(body).toContainEqual(expect.objectContaining({
-        name: "Watchlist", watchlistFor: CASEY, role: "admin",
-      }));
-      expect(body.filter((theatre: { watchlistFor: string | null }) => theatre.watchlistFor === CASEY))
-        .toHaveLength(1);
+      const body = await (
+        await theatresRoute.GET(new Request(`http://test${query}`))
+      ).json();
+      expect(body).toContainEqual(
+        expect.objectContaining({
+          name: "Watchlist",
+          watchlistFor: CASEY,
+          role: "admin",
+        }),
+      );
+      expect(
+        body.filter(
+          (theatre: { watchlistFor: string | null }) =>
+            theatre.watchlistFor === CASEY,
+        ),
+      ).toHaveLength(1);
     },
   );
 
@@ -144,30 +154,44 @@ describe("GET /api/theatres", () => {
         inviteCode: "private-invite",
         adminInviteCode: "private-admin-invite",
       });
-      const [posterMovie] = await fixture.db.insert(movies).values({
-        tmdbId: 2,
-        details: { title: "Poster movie", posterUrl: "https://example.com/poster.jpg" },
-        ratings: { services: [], raw: {} },
-      }).returning();
+      const [posterMovie] = await fixture.db
+        .insert(movies)
+        .values({
+          tmdbId: 2,
+          details: {
+            title: "Poster movie",
+            posterUrl: "https://example.com/poster.jpg",
+          },
+          ratings: { services: [], raw: {} },
+        })
+        .returning();
       await fixture.db.insert(nominations).values({
         theatreId: fixture.club.id,
         userId: CASEY,
         movieId: posterMovie.id,
       });
 
-      const response = await theatresRoute.GET(new Request("http://test?previews=true"));
+      const response = await theatresRoute.GET(
+        new Request("http://test?previews=true"),
+      );
       expect(response.status).toBe(200);
       const body = await response.json();
       expect(body).toHaveLength(3);
-      expect(body).toContainEqual(expect.objectContaining({
-        id: fixture.club.id,
-        posterUrls: ["https://example.com/poster.jpg"],
-      }));
-      expect(body).toContainEqual(expect.objectContaining({
-        id: fixture.otherWatchlist.id,
-        posterUrls: [],
-      }));
-      expect(body).not.toContainEqual(expect.objectContaining({ name: "Private" }));
+      expect(body).toContainEqual(
+        expect.objectContaining({
+          id: fixture.club.id,
+          posterUrls: ["https://example.com/poster.jpg"],
+        }),
+      );
+      expect(body).toContainEqual(
+        expect.objectContaining({
+          id: fixture.otherWatchlist.id,
+          posterUrls: [],
+        }),
+      );
+      expect(body).not.toContainEqual(
+        expect.objectContaining({ name: "Private" }),
+      );
       expect(JSON.stringify(body)).not.toContain("invite");
       expect(JSON.stringify(body)).not.toContain("private-admin-invite");
       expect(JSON.stringify(body)).not.toContain("other@example.com");
@@ -176,7 +200,9 @@ describe("GET /api/theatres", () => {
     it("returns no personal theatre choices to signed-out visitors", async () => {
       await createWatchlist(CASEY);
       asUser("");
-      const response = await theatresRoute.GET(new Request("http://test?previews=true"));
+      const response = await theatresRoute.GET(
+        new Request("http://test?previews=true"),
+      );
       expect(response.status).toBe(200);
       const body = await response.json();
       expect(body).toEqual([]);
@@ -223,9 +249,7 @@ describe("GET /api/theatres?movieIds=", () => {
       movieId: fixture.movieId,
     });
 
-    const response = await get(
-      `${second.id},${fixture.movieId},${second.id}`,
-    );
+    const response = await get(`${second.id},${fixture.movieId},${second.id}`);
     expect(response.status).toBe(200);
     const body = await response.json();
 
@@ -238,7 +262,9 @@ describe("GET /api/theatres?movieIds=", () => {
       ),
     ).toEqual({
       [fixture.club.id]: [second.id],
-      [fixture.watchlist.id]: [fixture.movieId, second.id].sort((a, b) => a - b),
+      [fixture.watchlist.id]: [fixture.movieId, second.id].sort(
+        (a, b) => a - b,
+      ),
       [fixture.otherWatchlist.id]: [],
     });
     expect(JSON.stringify(body)).not.toContain("invite");

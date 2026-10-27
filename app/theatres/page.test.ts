@@ -4,7 +4,9 @@ import Theatres from "./page";
 const session = vi.hoisted(() => ({ user: vi.fn() }));
 vi.mock("@/lib/auth/require-user", () => ({ requireUserId: session.user }));
 vi.mock("next/navigation", () => ({
-  redirect: (path: string) => { throw new Error(`REDIRECT:${path}`); },
+  redirect: (path: string) => {
+    throw new Error(`REDIRECT:${path}`);
+  },
 }));
 
 beforeEach(() => vi.resetAllMocks());

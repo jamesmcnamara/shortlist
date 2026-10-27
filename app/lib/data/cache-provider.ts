@@ -5,7 +5,10 @@ const CACHE_KEY = "shortlist:swr-cache";
 const EPHEMERAL_PREFIX = "/api/tmdb/";
 
 const savedCache = z.array(
-  z.tuple([z.string(), z.object({ data: z.unknown().optional(), _k: z.unknown().optional() })]),
+  z.tuple([
+    z.string(),
+    z.object({ data: z.unknown().optional(), _k: z.unknown().optional() }),
+  ]),
 );
 
 type CacheEntry = z.infer<typeof savedCache>[number][1];

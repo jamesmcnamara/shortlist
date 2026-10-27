@@ -53,7 +53,7 @@ export function CollectionViewControls({
     inputRef.current?.blur();
   };
   const toggle = (panel: "sort" | "filter") =>
-    setExpanded((current) => current === panel ? null : panel);
+    setExpanded((current) => (current === panel ? null : panel));
 
   return (
     <div className={styles.controls}>
@@ -112,12 +112,14 @@ export function CollectionViewControls({
               <button
                 type="button"
                 className={classnames(styles.toggle, {
-                  [styles.toggleActive]: expanded === "filter" || state.filters.length > 0,
+                  [styles.toggleActive]:
+                    expanded === "filter" || state.filters.length > 0,
                 })}
                 aria-expanded={expanded === "filter"}
                 onClick={() => toggle("filter")}
               >
-                Filter{state.filters.length > 0 ? ` (${state.filters.length})` : ""}
+                Filter
+                {state.filters.length > 0 ? ` (${state.filters.length})` : ""}
               </button>
             </motion.div>
           )}
@@ -139,14 +141,17 @@ export function CollectionViewControls({
               aria-label={expanded === "sort" ? "Sort by" : "Filters"}
             >
               {(expanded === "sort" ? sorts : filters).map((option) => {
-                const active = expanded === "sort"
-                  ? state.sort === option.id
-                  : state.filters.includes(option.id);
+                const active =
+                  expanded === "sort"
+                    ? state.sort === option.id
+                    : state.filters.includes(option.id);
                 return (
                   <button
                     key={option.id}
                     type="button"
-                    className={classnames(styles.option, { [styles.optionActive]: active })}
+                    className={classnames(styles.option, {
+                      [styles.optionActive]: active,
+                    })}
                     aria-pressed={active}
                     onClick={() => {
                       if (expanded === "sort") {
@@ -166,9 +171,9 @@ export function CollectionViewControls({
                   </button>
                 );
               })}
-              {expanded === "filter" && filters.length === 0 && emptyFilters && (
-                <p className={styles.notice}>{emptyFilters}</p>
-              )}
+              {expanded === "filter" &&
+                filters.length === 0 &&
+                emptyFilters && <p className={styles.notice}>{emptyFilters}</p>}
             </div>
           </motion.div>
         )}

@@ -9,7 +9,9 @@ const html = readFileSync(
 const ID = "tt0816692";
 const TITLE_URL = `https://www.boxofficemojo.com/title/${ID}/`;
 const response = (body = html) =>
-  new Response(body, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+  new Response(body, {
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -33,7 +35,10 @@ describe("Box Office Mojo parsing", () => {
   it("accepts nested links and extra whitespace", () => {
     const linked = html
       .replace("Worldwide", " \n Worldwide \n ")
-      .replace('<span class="money">$782,948,164</span>', '<a href="/chart/"><span class="money">$782,948,164</span></a>');
+      .replace(
+        '<span class="money">$782,948,164</span>',
+        '<a href="/chart/"><span class="money">$782,948,164</span></a>',
+      );
     expect(parseBoxOffice(linked, ID).worldwideGross).toBe(782_948_164);
   });
 
@@ -50,19 +55,35 @@ describe("Box Office Mojo parsing", () => {
   });
 
   it("allows an absent budget", () => {
-    expect(parseBoxOffice(html.replace("<span>Budget</span>", "<span>MPAA</span>"), ID).budget).toBeNull();
+    expect(
+      parseBoxOffice(
+        html.replace("<span>Budget</span>", "<span>MPAA</span>"),
+        ID,
+      ).budget,
+    ).toBeNull();
   });
 
   it("preserves an explicitly reported zero", () => {
-    expect(parseBoxOffice(html.replace("$203,227,580", "$0"), ID).domesticGross).toBe(0);
+    expect(
+      parseBoxOffice(html.replace("$203,227,580", "$0"), ID).domesticGross,
+    ).toBe(0);
   });
 
   it.each([
     ["different movie", html.replaceAll(ID, "tt1234567")],
     ["blocked page", "<html><h1>Verify you are human</h1></html>"],
     ["release-only totals", html.replace("All Releases", "Original Release")],
-    ["missing total", html.replace("<span>Worldwide</span>", "<span>Other</span>")],
-    ["duplicate total", html.replace("<h2>", "<div><span>Worldwide</span><span>$1</span></div><h2>")],
+    [
+      "missing total",
+      html.replace("<span>Worldwide</span>", "<span>Other</span>"),
+    ],
+    [
+      "duplicate total",
+      html.replace(
+        "<h2>",
+        "<div><span>Worldwide</span><span>$1</span></div><h2>",
+      ),
+    ],
     ["bad amount", html.replace("$782,948,164", "$782 million")],
     ["bad grouping", html.replace("$782,948,164", "$78,29,48,164")],
     ["negative amount", html.replace("$782,948,164", "-$100")],
@@ -86,18 +107,23 @@ describe("Box Office Mojo requests", () => {
     });
   });
 
-  it.each(["https://example.com", "../tt0816692", "tt123", "tt0816692?redirect=x"])(
-    "rejects an invalid ID %s before making a request",
-    async (id) => {
-      const fetch = vi.fn();
-      vi.stubGlobal("fetch", fetch);
-      await expect(getBoxOffice(id)).rejects.toThrow();
-      expect(fetch).not.toHaveBeenCalled();
-    },
-  );
+  it.each([
+    "https://example.com",
+    "../tt0816692",
+    "tt123",
+    "tt0816692?redirect=x",
+  ])("rejects an invalid ID %s before making a request", async (id) => {
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+    await expect(getBoxOffice(id)).rejects.toThrow();
+    expect(fetch).not.toHaveBeenCalled();
+  });
 
   it.each([403, 404, 429, 503])("reports HTTP %s", async (status) => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("", { status })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response("", { status })),
+    );
     await expect(getBoxOffice(ID)).rejects.toThrow(`returned ${status}`);
   });
 
@@ -109,15 +135,26 @@ describe("Box Office Mojo requests", () => {
   it("aborts the request after ten seconds", async () => {
     vi.useFakeTimers();
     const signal = new AbortController();
-    const timeout = vi.spyOn(AbortSignal, "timeout").mockImplementation((ms) => {
-      setTimeout(() => signal.abort(new DOMException("Timeout", "TimeoutError")), ms);
-      return signal.signal;
-    });
-    vi.stubGlobal("fetch", vi.fn((_url, options: RequestInit) =>
-      new Promise((_resolve, reject) =>
-        options.signal?.addEventListener("abort", () => reject(options.signal?.reason)),
+    const timeout = vi
+      .spyOn(AbortSignal, "timeout")
+      .mockImplementation((ms) => {
+        setTimeout(
+          () => signal.abort(new DOMException("Timeout", "TimeoutError")),
+          ms,
+        );
+        return signal.signal;
+      });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_url, options: RequestInit) =>
+          new Promise((_resolve, reject) =>
+            options.signal?.addEventListener("abort", () =>
+              reject(options.signal?.reason),
+            ),
+          ),
       ),
-    ));
+    );
     try {
       const pending = expect(getBoxOffice(ID)).rejects.toThrow("Timeout");
       await vi.advanceTimersByTimeAsync(10_000);

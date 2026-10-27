@@ -5,9 +5,7 @@ import { createTestDb } from "./test-db";
 import { notifications, theatreMembers, theatres } from "./schema";
 
 function reverseRename(statement: string): string {
-  const table = statement.match(
-    /^ALTER TABLE "([^"]+)" RENAME TO "([^"]+)";$/,
-  );
+  const table = statement.match(/^ALTER TABLE "([^"]+)" RENAME TO "([^"]+)";$/);
   if (table) return `ALTER TABLE "${table[2]}" RENAME TO "${table[1]}";`;
 
   const column = statement.match(
@@ -24,9 +22,7 @@ function reverseRename(statement: string): string {
     return `ALTER TABLE "${constraint[1]}" RENAME CONSTRAINT "${constraint[3]}" TO "${constraint[2]}";`;
   }
 
-  const index = statement.match(
-    /^ALTER INDEX "([^"]+)" RENAME TO "([^"]+)";$/,
-  );
+  const index = statement.match(/^ALTER INDEX "([^"]+)" RENAME TO "([^"]+)";$/);
   if (index) return `ALTER INDEX "${index[2]}" RENAME TO "${index[1]}";`;
 
   throw new Error(`Unsupported migration statement: ${statement}`);

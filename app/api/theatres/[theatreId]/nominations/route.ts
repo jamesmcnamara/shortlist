@@ -121,12 +121,7 @@ export const DELETE = withTheatreAdmin({
 
   const deleted = await getDb()
     .delete(nominations)
-    .where(
-      and(
-        eq(nominations.id, id),
-        eq(nominations.theatreId, theatre.id),
-      ),
-    )
+    .where(and(eq(nominations.id, id), eq(nominations.theatreId, theatre.id)))
     .returning({ id: nominations.id });
   if (deleted.length === 0)
     return Response.json(

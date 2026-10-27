@@ -195,29 +195,33 @@ describe("theatre membership", () => {
     asUser(BOB);
 
     const body = await (await GET(new Request("http://test"))).json();
-    expect(body.map((theatre: { id: string }) => theatre.id))
-      .toEqual([fixture.theatreA.id]);
+    expect(body.map((theatre: { id: string }) => theatre.id)).toEqual([
+      fixture.theatreA.id,
+    ]);
   });
 
-  it.each(["", MALLORY])("returns creator IDs but no membership details or invite codes to public viewers (%s)", async (userId) => {
-    const { GET } = theatreRoute;
-    asUser(userId);
-    const body = await (
-      await GET(new Request("http://test"), route("club"))
-    ).json();
+  it.each(["", MALLORY])(
+    "returns creator IDs but no membership details or invite codes to public viewers (%s)",
+    async (userId) => {
+      const { GET } = theatreRoute;
+      asUser(userId);
+      const body = await (
+        await GET(new Request("http://test"), route("club"))
+      ).json();
 
-    expect(body).toEqual({
-      theatre: expect.objectContaining({
-        name: "Club",
-        createdBy: ALICE,
-        watchlistFor: null,
-      }),
-      membership: null,
-      tags: [],
-    });
-    expect(JSON.stringify(body)).not.toContain("email");
-    expect(JSON.stringify(body)).not.toContain("invite-a");
-  });
+      expect(body).toEqual({
+        theatre: expect.objectContaining({
+          name: "Club",
+          createdBy: ALICE,
+          watchlistFor: null,
+        }),
+        membership: null,
+        tags: [],
+      });
+      expect(JSON.stringify(body)).not.toContain("email");
+      expect(JSON.stringify(body)).not.toContain("invite-a");
+    },
+  );
 });
 
 describe("cross-theatre writes", () => {
@@ -245,8 +249,7 @@ describe("cross-theatre writes", () => {
     expect(
       (await fixture.db.select().from(theatreMembers)).some(
         (member) =>
-          member.theatreId === fixture.theatreA.id &&
-          member.userId === MALLORY,
+          member.theatreId === fixture.theatreA.id && member.userId === MALLORY,
       ),
     ).toBe(false);
   });
@@ -438,8 +441,7 @@ describe("cross-theatre writes", () => {
     expect(
       (await fixture.db.select().from(theatreMembers)).some(
         (member) =>
-          member.theatreId === fixture.theatreA.id &&
-          member.userId === MALLORY,
+          member.theatreId === fixture.theatreA.id && member.userId === MALLORY,
       ),
     ).toBe(false);
   });

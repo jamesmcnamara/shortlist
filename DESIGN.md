@@ -143,6 +143,7 @@ Warm, sleek, and playful: a relaxed movie-club interface with confident typograp
 The system is mostly flat, with soft shadows for raised controls and artwork. Warm paper grounds the light interface; compact white surfaces, Cinema Blue actions, and Charcoal Ink type provide structure without turning every content group into a decorated card.
 
 **Key Characteristics:**
+
 - Artwork first, with quiet framing and compact controls.
 - Bold, tightly tracked headings over a practical sans-serif body.
 - Warm neutral surfaces with a restrained blue interaction palette.

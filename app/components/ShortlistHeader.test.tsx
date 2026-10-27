@@ -18,29 +18,37 @@ describe("ShortlistHeader", () => {
   it("renders the home link and menu without theatre context", () => {
     render(<ShortlistHeader />);
 
-    expect(screen.getByRole("link", { name: "Shortlist" }).getAttribute("href"))
-      .toBe("/");
-    expect(screen.getByRole("button", { name: "Menu" }).closest("header"))
-      .toBe(screen.getByRole("link", { name: "Shortlist" }).closest("header"));
+    expect(
+      screen.getByRole("link", { name: "Shortlist" }).getAttribute("href"),
+    ).toBe("/");
+    expect(screen.getByRole("button", { name: "Menu" }).closest("header")).toBe(
+      screen.getByRole("link", { name: "Shortlist" }).closest("header"),
+    );
     expect(vi.mocked(AppMenu).mock.calls[0][0]).toEqual({});
   });
 
-  it.each([false, true])("preserves theatre menu options (showMyTheatres=%s)", (showMyTheatres) => {
-    const theatre = { id: "theatre" };
-    render(<ShortlistHeader theatre={theatre} showMyTheatres={showMyTheatres} />);
+  it.each([false, true])(
+    "preserves theatre menu options (showMyTheatres=%s)",
+    (showMyTheatres) => {
+      const theatre = { id: "theatre" };
+      render(
+        <ShortlistHeader theatre={theatre} showMyTheatres={showMyTheatres} />,
+      );
 
-    expect(vi.mocked(AppMenu).mock.calls[0][0]).toEqual({
-      theatre,
-      showMyTheatres,
-    });
-
-  });
+      expect(vi.mocked(AppMenu).mock.calls[0][0]).toEqual({
+        theatre,
+        showMyTheatres,
+      });
+    },
+  );
 
   it("passes additional actions to the menu", () => {
     const additionalMenuItems = [
       { type: "button" as const, label: "Import Movies", onClick: vi.fn() },
     ];
     render(<ShortlistHeader additionalMenuItems={additionalMenuItems} />);
-    expect(vi.mocked(AppMenu).mock.calls[0][0]).toEqual({ additionalMenuItems });
+    expect(vi.mocked(AppMenu).mock.calls[0][0]).toEqual({
+      additionalMenuItems,
+    });
   });
 });

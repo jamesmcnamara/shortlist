@@ -14,10 +14,7 @@ import { requireUserId, unauthorized } from "./require-user";
  * gets handed to members or serialized into a page. Routes read codes
  * explicitly after checking membership or admin access.
  */
-export type SafeTheatre = Omit<
-  Theatre,
-  "inviteCode" | "adminInviteCode"
-> & {
+export type SafeTheatre = Omit<Theatre, "inviteCode" | "adminInviteCode"> & {
   path: string;
 };
 
@@ -73,7 +70,9 @@ export async function findTheatreByInviteCode(
   const [row] = await getDb()
     .select({ ...THEATRE_COLUMNS, adminInviteCode: theatres.adminInviteCode })
     .from(theatres)
-    .where(or(eq(theatres.inviteCode, code), eq(theatres.adminInviteCode, code)))
+    .where(
+      or(eq(theatres.inviteCode, code), eq(theatres.adminInviteCode, code)),
+    )
     .limit(1);
   if (!row) return null;
   const { adminInviteCode, ...theatre } = row;

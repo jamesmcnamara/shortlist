@@ -4,51 +4,360 @@
   "title": "Design System: Shortlist",
   "extensions": {
     "colorMeta": {
-      "primary": { "role": "primary", "displayName": "Cinema Blue", "tonalRamp": ["oklch(15% 0.0699 231.67)", "oklch(26% 0.0699 231.67)", "oklch(38% 0.0699 231.67)", "oklch(49% 0.0699 231.67)", "oklch(61% 0.0699 231.67)", "oklch(72% 0.0699 231.67)", "oklch(84% 0.0699 231.67)", "oklch(95% 0.0699 231.67)"] },
-      "accent-light": { "role": "primary", "displayName": "Soft Cinema Blue", "tonalRamp": ["oklch(15% 0.0512 222.72)", "oklch(26% 0.0512 222.72)", "oklch(38% 0.0512 222.72)", "oklch(49% 0.0512 222.72)", "oklch(61% 0.0512 222.72)", "oklch(72% 0.0512 222.72)", "oklch(84% 0.0512 222.72)", "oklch(95% 0.0512 222.72)"] },
-      "accent-soft": { "role": "primary", "displayName": "Blue Mist", "tonalRamp": ["oklch(15% 0.0320 222.11)", "oklch(26% 0.0320 222.11)", "oklch(38% 0.0320 222.11)", "oklch(49% 0.0320 222.11)", "oklch(61% 0.0320 222.11)", "oklch(72% 0.0320 222.11)", "oklch(84% 0.0320 222.11)", "oklch(95% 0.0320 222.11)"] },
-      "accent-wash": { "role": "primary", "displayName": "Blue Wash", "tonalRamp": ["oklch(15% 0.0148 218.05)", "oklch(26% 0.0148 218.05)", "oklch(38% 0.0148 218.05)", "oklch(49% 0.0148 218.05)", "oklch(61% 0.0148 218.05)", "oklch(72% 0.0148 218.05)", "oklch(84% 0.0148 218.05)", "oklch(95% 0.0148 218.05)"] },
-      "page": { "role": "neutral", "displayName": "Warm Paper", "tonalRamp": ["oklch(15% 0.0119 79.78)", "oklch(26% 0.0119 79.78)", "oklch(38% 0.0119 79.78)", "oklch(49% 0.0119 79.78)", "oklch(61% 0.0119 79.78)", "oklch(72% 0.0119 79.78)", "oklch(84% 0.0119 79.78)", "oklch(95% 0.0119 79.78)"] },
-      "text": { "role": "neutral", "displayName": "Charcoal Ink", "tonalRamp": ["oklch(15% 0.0129 285.51)", "oklch(26% 0.0129 285.51)", "oklch(38% 0.0129 285.51)", "oklch(49% 0.0129 285.51)", "oklch(61% 0.0129 285.51)", "oklch(72% 0.0129 285.51)", "oklch(84% 0.0129 285.51)", "oklch(95% 0.0129 285.51)"] },
-      "text-soft": { "role": "neutral", "displayName": "Soft Ink", "tonalRamp": ["oklch(15% 0.0226 285.47)", "oklch(26% 0.0226 285.47)", "oklch(38% 0.0226 285.47)", "oklch(49% 0.0226 285.47)", "oklch(61% 0.0226 285.47)", "oklch(72% 0.0226 285.47)", "oklch(84% 0.0226 285.47)", "oklch(95% 0.0226 285.47)"] },
-      "muted": { "role": "neutral", "displayName": "Muted Ink", "tonalRamp": ["oklch(15% 0.0219 285.61)", "oklch(26% 0.0219 285.61)", "oklch(38% 0.0219 285.61)", "oklch(49% 0.0219 285.61)", "oklch(61% 0.0219 285.61)", "oklch(72% 0.0219 285.61)", "oklch(84% 0.0219 285.61)", "oklch(95% 0.0219 285.61)"] },
-      "muted-soft": { "role": "neutral", "displayName": "Muted Placeholder Ink", "tonalRamp": ["oklch(15% 0.0203 285.68)", "oklch(26% 0.0203 285.68)", "oklch(38% 0.0203 285.68)", "oklch(49% 0.0203 285.68)", "oklch(61% 0.0203 285.68)", "oklch(72% 0.0203 285.68)", "oklch(84% 0.0203 285.68)", "oklch(95% 0.0203 285.68)"] },
-      "border": { "role": "neutral", "displayName": "Quiet Border", "tonalRamp": ["oklch(15% 0.0081 286.24)", "oklch(26% 0.0081 286.24)", "oklch(38% 0.0081 286.24)", "oklch(49% 0.0081 286.24)", "oklch(61% 0.0081 286.24)", "oklch(72% 0.0081 286.24)", "oklch(84% 0.0081 286.24)", "oklch(95% 0.0081 286.24)"] },
-      "border-strong": { "role": "neutral", "displayName": "Control Border", "tonalRamp": ["oklch(15% 0.0150 286.08)", "oklch(26% 0.0150 286.08)", "oklch(38% 0.0150 286.08)", "oklch(49% 0.0150 286.08)", "oklch(61% 0.0150 286.08)", "oklch(72% 0.0150 286.08)", "oklch(84% 0.0150 286.08)", "oklch(95% 0.0150 286.08)"] },
-      "surface": { "role": "neutral", "displayName": "White Surface", "tonalRamp": ["oklch(15% 0 0)", "oklch(26% 0 0)", "oklch(38% 0 0)", "oklch(49% 0 0)", "oklch(61% 0 0)", "oklch(72% 0 0)", "oklch(84% 0 0)", "oklch(95% 0 0)"] },
-      "surface-muted": { "role": "neutral", "displayName": "Paper Shade", "tonalRamp": ["oklch(15% 0.0120 79.78)", "oklch(26% 0.0120 79.78)", "oklch(38% 0.0120 79.78)", "oklch(49% 0.0120 79.78)", "oklch(61% 0.0120 79.78)", "oklch(72% 0.0120 79.78)", "oklch(84% 0.0120 79.78)", "oklch(95% 0.0120 79.78)"] },
-      "success": { "role": "success", "displayName": "Evergreen", "tonalRamp": ["oklch(15% 0.0772 170.91)", "oklch(26% 0.0772 170.91)", "oklch(38% 0.0772 170.91)", "oklch(49% 0.0772 170.91)", "oklch(61% 0.0772 170.91)", "oklch(72% 0.0772 170.91)", "oklch(84% 0.0772 170.91)", "oklch(95% 0.0772 170.91)"] },
-      "success-wash": { "role": "success", "displayName": "Evergreen Wash", "tonalRamp": ["oklch(15% 0.0134 167.17)", "oklch(26% 0.0134 167.17)", "oklch(38% 0.0134 167.17)", "oklch(49% 0.0134 167.17)", "oklch(61% 0.0134 167.17)", "oklch(72% 0.0134 167.17)", "oklch(84% 0.0134 167.17)", "oklch(95% 0.0134 167.17)"] },
-      "danger": { "role": "error", "displayName": "Brick Red", "tonalRamp": ["oklch(15% 0.1545 25.38)", "oklch(26% 0.1545 25.38)", "oklch(38% 0.1545 25.38)", "oklch(49% 0.1545 25.38)", "oklch(61% 0.1545 25.38)", "oklch(72% 0.1545 25.38)", "oklch(84% 0.1545 25.38)", "oklch(95% 0.1545 25.38)"] },
-      "danger-wash": { "role": "error", "displayName": "Brick Wash", "tonalRamp": ["oklch(15% 0.0141 17.40)", "oklch(26% 0.0141 17.40)", "oklch(38% 0.0141 17.40)", "oklch(49% 0.0141 17.40)", "oklch(61% 0.0141 17.40)", "oklch(72% 0.0141 17.40)", "oklch(84% 0.0141 17.40)", "oklch(95% 0.0141 17.40)"] },
-      "danger-border": { "role": "error", "displayName": "Brick Border", "tonalRamp": ["oklch(15% 0.0512 18.26)", "oklch(26% 0.0512 18.26)", "oklch(38% 0.0512 18.26)", "oklch(49% 0.0512 18.26)", "oklch(61% 0.0512 18.26)", "oklch(72% 0.0512 18.26)", "oklch(84% 0.0512 18.26)", "oklch(95% 0.0512 18.26)"] }
+      "primary": {
+        "role": "primary",
+        "displayName": "Cinema Blue",
+        "tonalRamp": [
+          "oklch(15% 0.0699 231.67)",
+          "oklch(26% 0.0699 231.67)",
+          "oklch(38% 0.0699 231.67)",
+          "oklch(49% 0.0699 231.67)",
+          "oklch(61% 0.0699 231.67)",
+          "oklch(72% 0.0699 231.67)",
+          "oklch(84% 0.0699 231.67)",
+          "oklch(95% 0.0699 231.67)"
+        ]
+      },
+      "accent-light": {
+        "role": "primary",
+        "displayName": "Soft Cinema Blue",
+        "tonalRamp": [
+          "oklch(15% 0.0512 222.72)",
+          "oklch(26% 0.0512 222.72)",
+          "oklch(38% 0.0512 222.72)",
+          "oklch(49% 0.0512 222.72)",
+          "oklch(61% 0.0512 222.72)",
+          "oklch(72% 0.0512 222.72)",
+          "oklch(84% 0.0512 222.72)",
+          "oklch(95% 0.0512 222.72)"
+        ]
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Blue Mist",
+        "tonalRamp": [
+          "oklch(15% 0.0320 222.11)",
+          "oklch(26% 0.0320 222.11)",
+          "oklch(38% 0.0320 222.11)",
+          "oklch(49% 0.0320 222.11)",
+          "oklch(61% 0.0320 222.11)",
+          "oklch(72% 0.0320 222.11)",
+          "oklch(84% 0.0320 222.11)",
+          "oklch(95% 0.0320 222.11)"
+        ]
+      },
+      "accent-wash": {
+        "role": "primary",
+        "displayName": "Blue Wash",
+        "tonalRamp": [
+          "oklch(15% 0.0148 218.05)",
+          "oklch(26% 0.0148 218.05)",
+          "oklch(38% 0.0148 218.05)",
+          "oklch(49% 0.0148 218.05)",
+          "oklch(61% 0.0148 218.05)",
+          "oklch(72% 0.0148 218.05)",
+          "oklch(84% 0.0148 218.05)",
+          "oklch(95% 0.0148 218.05)"
+        ]
+      },
+      "page": {
+        "role": "neutral",
+        "displayName": "Warm Paper",
+        "tonalRamp": [
+          "oklch(15% 0.0119 79.78)",
+          "oklch(26% 0.0119 79.78)",
+          "oklch(38% 0.0119 79.78)",
+          "oklch(49% 0.0119 79.78)",
+          "oklch(61% 0.0119 79.78)",
+          "oklch(72% 0.0119 79.78)",
+          "oklch(84% 0.0119 79.78)",
+          "oklch(95% 0.0119 79.78)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Charcoal Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0129 285.51)",
+          "oklch(26% 0.0129 285.51)",
+          "oklch(38% 0.0129 285.51)",
+          "oklch(49% 0.0129 285.51)",
+          "oklch(61% 0.0129 285.51)",
+          "oklch(72% 0.0129 285.51)",
+          "oklch(84% 0.0129 285.51)",
+          "oklch(95% 0.0129 285.51)"
+        ]
+      },
+      "text-soft": {
+        "role": "neutral",
+        "displayName": "Soft Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0226 285.47)",
+          "oklch(26% 0.0226 285.47)",
+          "oklch(38% 0.0226 285.47)",
+          "oklch(49% 0.0226 285.47)",
+          "oklch(61% 0.0226 285.47)",
+          "oklch(72% 0.0226 285.47)",
+          "oklch(84% 0.0226 285.47)",
+          "oklch(95% 0.0226 285.47)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0219 285.61)",
+          "oklch(26% 0.0219 285.61)",
+          "oklch(38% 0.0219 285.61)",
+          "oklch(49% 0.0219 285.61)",
+          "oklch(61% 0.0219 285.61)",
+          "oklch(72% 0.0219 285.61)",
+          "oklch(84% 0.0219 285.61)",
+          "oklch(95% 0.0219 285.61)"
+        ]
+      },
+      "muted-soft": {
+        "role": "neutral",
+        "displayName": "Muted Placeholder Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0203 285.68)",
+          "oklch(26% 0.0203 285.68)",
+          "oklch(38% 0.0203 285.68)",
+          "oklch(49% 0.0203 285.68)",
+          "oklch(61% 0.0203 285.68)",
+          "oklch(72% 0.0203 285.68)",
+          "oklch(84% 0.0203 285.68)",
+          "oklch(95% 0.0203 285.68)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Quiet Border",
+        "tonalRamp": [
+          "oklch(15% 0.0081 286.24)",
+          "oklch(26% 0.0081 286.24)",
+          "oklch(38% 0.0081 286.24)",
+          "oklch(49% 0.0081 286.24)",
+          "oklch(61% 0.0081 286.24)",
+          "oklch(72% 0.0081 286.24)",
+          "oklch(84% 0.0081 286.24)",
+          "oklch(95% 0.0081 286.24)"
+        ]
+      },
+      "border-strong": {
+        "role": "neutral",
+        "displayName": "Control Border",
+        "tonalRamp": [
+          "oklch(15% 0.0150 286.08)",
+          "oklch(26% 0.0150 286.08)",
+          "oklch(38% 0.0150 286.08)",
+          "oklch(49% 0.0150 286.08)",
+          "oklch(61% 0.0150 286.08)",
+          "oklch(72% 0.0150 286.08)",
+          "oklch(84% 0.0150 286.08)",
+          "oklch(95% 0.0150 286.08)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "White Surface",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "surface-muted": {
+        "role": "neutral",
+        "displayName": "Paper Shade",
+        "tonalRamp": [
+          "oklch(15% 0.0120 79.78)",
+          "oklch(26% 0.0120 79.78)",
+          "oklch(38% 0.0120 79.78)",
+          "oklch(49% 0.0120 79.78)",
+          "oklch(61% 0.0120 79.78)",
+          "oklch(72% 0.0120 79.78)",
+          "oklch(84% 0.0120 79.78)",
+          "oklch(95% 0.0120 79.78)"
+        ]
+      },
+      "success": {
+        "role": "success",
+        "displayName": "Evergreen",
+        "tonalRamp": [
+          "oklch(15% 0.0772 170.91)",
+          "oklch(26% 0.0772 170.91)",
+          "oklch(38% 0.0772 170.91)",
+          "oklch(49% 0.0772 170.91)",
+          "oklch(61% 0.0772 170.91)",
+          "oklch(72% 0.0772 170.91)",
+          "oklch(84% 0.0772 170.91)",
+          "oklch(95% 0.0772 170.91)"
+        ]
+      },
+      "success-wash": {
+        "role": "success",
+        "displayName": "Evergreen Wash",
+        "tonalRamp": [
+          "oklch(15% 0.0134 167.17)",
+          "oklch(26% 0.0134 167.17)",
+          "oklch(38% 0.0134 167.17)",
+          "oklch(49% 0.0134 167.17)",
+          "oklch(61% 0.0134 167.17)",
+          "oklch(72% 0.0134 167.17)",
+          "oklch(84% 0.0134 167.17)",
+          "oklch(95% 0.0134 167.17)"
+        ]
+      },
+      "danger": {
+        "role": "error",
+        "displayName": "Brick Red",
+        "tonalRamp": [
+          "oklch(15% 0.1545 25.38)",
+          "oklch(26% 0.1545 25.38)",
+          "oklch(38% 0.1545 25.38)",
+          "oklch(49% 0.1545 25.38)",
+          "oklch(61% 0.1545 25.38)",
+          "oklch(72% 0.1545 25.38)",
+          "oklch(84% 0.1545 25.38)",
+          "oklch(95% 0.1545 25.38)"
+        ]
+      },
+      "danger-wash": {
+        "role": "error",
+        "displayName": "Brick Wash",
+        "tonalRamp": [
+          "oklch(15% 0.0141 17.40)",
+          "oklch(26% 0.0141 17.40)",
+          "oklch(38% 0.0141 17.40)",
+          "oklch(49% 0.0141 17.40)",
+          "oklch(61% 0.0141 17.40)",
+          "oklch(72% 0.0141 17.40)",
+          "oklch(84% 0.0141 17.40)",
+          "oklch(95% 0.0141 17.40)"
+        ]
+      },
+      "danger-border": {
+        "role": "error",
+        "displayName": "Brick Border",
+        "tonalRamp": [
+          "oklch(15% 0.0512 18.26)",
+          "oklch(26% 0.0512 18.26)",
+          "oklch(38% 0.0512 18.26)",
+          "oklch(49% 0.0512 18.26)",
+          "oklch(61% 0.0512 18.26)",
+          "oklch(72% 0.0512 18.26)",
+          "oklch(84% 0.0512 18.26)",
+          "oklch(95% 0.0512 18.26)"
+        ]
+      }
     },
     "typographyMeta": {
-      "headline": { "displayName": "Headline", "purpose": "Large theatre section headings." },
-      "movie-title": { "displayName": "Movie Title", "purpose": "Movie-detail heading over the backdrop." },
-      "title": { "displayName": "Title", "purpose": "Form and theatre-directory headings." },
-      "brand": { "displayName": "Brand", "purpose": "Compact heavy navigation branding." },
-      "body": { "displayName": "Body", "purpose": "Inherited base text and native controls." },
-      "synopsis": { "displayName": "Synopsis", "purpose": "Longer movie summaries." },
-      "label": { "displayName": "Label", "purpose": "Filters, field labels, and compact metadata." },
-      "section-label": { "displayName": "Section Label", "purpose": "Uppercase movie-detail section headings." },
-      "caption": { "displayName": "Caption", "purpose": "Compact poster metadata and hints." }
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Large theatre section headings."
+      },
+      "movie-title": {
+        "displayName": "Movie Title",
+        "purpose": "Movie-detail heading over the backdrop."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Form and theatre-directory headings."
+      },
+      "brand": {
+        "displayName": "Brand",
+        "purpose": "Compact heavy navigation branding."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Inherited base text and native controls."
+      },
+      "synopsis": {
+        "displayName": "Synopsis",
+        "purpose": "Longer movie summaries."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Filters, field labels, and compact metadata."
+      },
+      "section-label": {
+        "displayName": "Section Label",
+        "purpose": "Uppercase movie-detail section headings."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Compact poster metadata and hints."
+      }
     },
     "shadows": [
-      { "name": "surface", "value": "0 0.75rem 1.75rem rgba(43, 43, 73, 0.08)", "purpose": "Root --shadow for form cards, discovery search, and theatre-directory cards." },
-      { "name": "poster", "value": "0 8px 20px rgba(43, 43, 73, 0.12)", "purpose": "Movie-grid poster at rest." },
-      { "name": "poster-hover", "value": "0 14px 28px rgba(43, 43, 73, 0.2)", "purpose": "Poster hover and keyboard focus." },
-      { "name": "poster-active", "value": "0 10px 0 var(--accent-light)", "purpose": "Solid offset under the active poster; hover/focus increases the offset to 14px." },
-      { "name": "menu", "value": "0 0.625rem 1.875rem rgba(0, 0, 0, 0.12)", "purpose": "Anchored application menu." },
-      { "name": "comparison", "value": "0 0.75rem 1.75rem rgba(20, 20, 32, 0.28)", "purpose": "Floating comparison toolbar and its menu." },
-      { "name": "sheet", "value": "0 -0.75rem 2rem rgba(0, 0, 0, 0.2)", "purpose": "List-picker sheet/dialog." }
+      {
+        "name": "surface",
+        "value": "0 0.75rem 1.75rem rgba(43, 43, 73, 0.08)",
+        "purpose": "Root --shadow for form cards, discovery search, and theatre-directory cards."
+      },
+      {
+        "name": "poster",
+        "value": "0 8px 20px rgba(43, 43, 73, 0.12)",
+        "purpose": "Movie-grid poster at rest."
+      },
+      {
+        "name": "poster-hover",
+        "value": "0 14px 28px rgba(43, 43, 73, 0.2)",
+        "purpose": "Poster hover and keyboard focus."
+      },
+      {
+        "name": "poster-active",
+        "value": "0 10px 0 var(--accent-light)",
+        "purpose": "Solid offset under the active poster; hover/focus increases the offset to 14px."
+      },
+      {
+        "name": "menu",
+        "value": "0 0.625rem 1.875rem rgba(0, 0, 0, 0.12)",
+        "purpose": "Anchored application menu."
+      },
+      {
+        "name": "comparison",
+        "value": "0 0.75rem 1.75rem rgba(20, 20, 32, 0.28)",
+        "purpose": "Floating comparison toolbar and its menu."
+      },
+      {
+        "name": "sheet",
+        "value": "0 -0.75rem 2rem rgba(0, 0, 0, 0.2)",
+        "purpose": "List-picker sheet/dialog."
+      }
     ],
     "motion": [
-      { "name": "poster-transition", "value": "transform 0.2s ease, box-shadow 0.2s ease", "purpose": "Poster hover/focus lift; removed with reduced motion." },
-      { "name": "grid-spring", "value": "spring(stiffness: 380, damping: 38)", "purpose": "Default Motion position-layout transition; descriptive Motion parameters, not CSS syntax." },
-      { "name": "grid-glide", "value": "0.28s cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Optional glide position-layout transition." },
-      { "name": "grid-fade", "value": "0.2s ease-out", "purpose": "Optional grid-order fade from opacity 0.55 to 1." },
-      { "name": "grid-presence", "value": "0.16s", "purpose": "Opacity and scale entry/exit; moving modes use scale 0.96. Off/reduced motion sets duration to zero." }
+      {
+        "name": "poster-transition",
+        "value": "transform 0.2s ease, box-shadow 0.2s ease",
+        "purpose": "Poster hover/focus lift; removed with reduced motion."
+      },
+      {
+        "name": "grid-spring",
+        "value": "spring(stiffness: 380, damping: 38)",
+        "purpose": "Default Motion position-layout transition; descriptive Motion parameters, not CSS syntax."
+      },
+      {
+        "name": "grid-glide",
+        "value": "0.28s cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Optional glide position-layout transition."
+      },
+      {
+        "name": "grid-fade",
+        "value": "0.2s ease-out",
+        "purpose": "Optional grid-order fade from opacity 0.55 to 1."
+      },
+      {
+        "name": "grid-presence",
+        "value": "0.16s",
+        "purpose": "Opacity and scale entry/exit; moving modes use scale 0.96. Off/reduced motion sets duration to zero."
+      }
     ],
     "breakpoints": [
       { "name": "directory-narrow", "value": "24rem" },
@@ -133,9 +442,21 @@
       "Pill-shaped filters, softly rounded media, and responsive movie grids."
     ],
     "rules": [
-      { "name": "The Artwork First Rule", "body": "Let movie imagery supply visual variety. Use the blue palette to express interaction and selection rather than introduce unrelated decorative accents.", "section": "colors" },
-      { "name": "The Role Before Scale Rule", "body": "Reuse the nearest implemented text role. Do not normalize the existing fractional rem values or add a contrasting font as part of ordinary feature work.", "section": "typography" },
-      { "name": "The Quiet Frame Rule", "body": "Preserve the open poster grid. Do not wrap every movie and metadata row in another white, bordered, elevated card.", "section": "elevation" }
+      {
+        "name": "The Artwork First Rule",
+        "body": "Let movie imagery supply visual variety. Use the blue palette to express interaction and selection rather than introduce unrelated decorative accents.",
+        "section": "colors"
+      },
+      {
+        "name": "The Role Before Scale Rule",
+        "body": "Reuse the nearest implemented text role. Do not normalize the existing fractional rem values or add a contrasting font as part of ordinary feature work.",
+        "section": "typography"
+      },
+      {
+        "name": "The Quiet Frame Rule",
+        "body": "Preserve the open poster grid. Do not wrap every movie and metadata row in another white, bordered, elevated card.",
+        "section": "elevation"
+      }
     ],
     "dos": [
       "**Do** reuse the root palette and contextual focus variable rather than hardcode new brand colors.",

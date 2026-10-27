@@ -65,12 +65,8 @@
           "tableFrom": "feedback",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -135,9 +131,7 @@
         "movies_tmdb_id_unique": {
           "name": "movies_tmdb_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "tmdb_id"
-          ]
+          "columns": ["tmdb_id"]
         }
       },
       "policies": {},
@@ -219,12 +213,8 @@
           "name": "nomcoms_theatre_id_theatres_id_fk",
           "tableFrom": "nomcoms",
           "tableTo": "theatres",
-          "columnsFrom": [
-            "theatre_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["theatre_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -233,12 +223,8 @@
           "tableFrom": "nomcoms",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -246,12 +232,8 @@
           "name": "nomcoms_nomination_id_nominations_id_fk",
           "tableFrom": "nomcoms",
           "tableTo": "nominations",
-          "columnsFrom": [
-            "nomination_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["nomination_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -350,12 +332,8 @@
           "name": "nominations_theatre_id_theatres_id_fk",
           "tableFrom": "nominations",
           "tableTo": "theatres",
-          "columnsFrom": [
-            "theatre_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["theatre_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -364,12 +342,8 @@
           "tableFrom": "nominations",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -377,12 +351,8 @@
           "name": "nominations_movie_id_movies_id_fk",
           "tableFrom": "nominations",
           "tableTo": "movies",
-          "columnsFrom": [
-            "movie_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["movie_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -416,14 +386,8 @@
           "name": "notifications_theatre_members_fk",
           "tableFrom": "notifications",
           "tableTo": "theatre_members",
-          "columnsFrom": [
-            "theatre_id",
-            "user_id"
-          ],
-          "columnsTo": [
-            "theatre_id",
-            "user_id"
-          ],
+          "columnsFrom": ["theatre_id", "user_id"],
+          "columnsTo": ["theatre_id", "user_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -431,10 +395,7 @@
       "compositePrimaryKeys": {
         "notifications_theatre_id_user_id_pk": {
           "name": "notifications_theatre_id_user_id_pk",
-          "columns": [
-            "theatre_id",
-            "user_id"
-          ]
+          "columns": ["theatre_id", "user_id"]
         }
       },
       "uniqueConstraints": {},
@@ -511,12 +472,8 @@
           "name": "seen_movie_id_movies_id_fk",
           "tableFrom": "seen",
           "tableTo": "movies",
-          "columnsFrom": [
-            "movie_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["movie_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -525,12 +482,8 @@
           "tableFrom": "seen",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -593,12 +546,8 @@
           "tableFrom": "subscriptions",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -681,12 +630,8 @@
           "name": "theatre_members_theatre_id_theatres_id_fk",
           "tableFrom": "theatre_members",
           "tableTo": "theatres",
-          "columnsFrom": [
-            "theatre_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["theatre_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -695,12 +640,8 @@
           "tableFrom": "theatre_members",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -708,10 +649,7 @@
       "compositePrimaryKeys": {
         "theatre_members_theatre_id_user_id_pk": {
           "name": "theatre_members_theatre_id_user_id_pk",
-          "columns": [
-            "theatre_id",
-            "user_id"
-          ]
+          "columns": ["theatre_id", "user_id"]
         }
       },
       "uniqueConstraints": {},
@@ -764,12 +702,8 @@
           "name": "theatre_tags_theatre_id_theatres_id_fk",
           "tableFrom": "theatre_tags",
           "tableTo": "theatres",
-          "columnsFrom": [
-            "theatre_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["theatre_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -777,12 +711,8 @@
           "name": "theatre_tags_tag_tags_name_fk",
           "tableFrom": "theatre_tags",
           "tableTo": "tags",
-          "columnsFrom": [
-            "tag"
-          ],
-          "columnsTo": [
-            "name"
-          ],
+          "columnsFrom": ["tag"],
+          "columnsTo": ["name"],
           "onDelete": "restrict",
           "onUpdate": "restrict"
         }
@@ -790,10 +720,7 @@
       "compositePrimaryKeys": {
         "theatre_tags_theatre_id_tag_pk": {
           "name": "theatre_tags_theatre_id_tag_pk",
-          "columns": [
-            "theatre_id",
-            "tag"
-          ]
+          "columns": ["theatre_id", "tag"]
         }
       },
       "uniqueConstraints": {},
@@ -863,12 +790,8 @@
           "tableFrom": "theatres",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "watchlist_for"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["watchlist_for"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -877,12 +800,8 @@
           "tableFrom": "theatres",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -892,23 +811,17 @@
         "theatres_watchlist_for_unique": {
           "name": "theatres_watchlist_for_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "watchlist_for"
-          ]
+          "columns": ["watchlist_for"]
         },
         "theatres_invite_code_unique": {
           "name": "theatres_invite_code_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "invite_code"
-          ]
+          "columns": ["invite_code"]
         },
         "theatres_admin_invite_code_unique": {
           "name": "theatres_admin_invite_code_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "admin_invite_code"
-          ]
+          "columns": ["admin_invite_code"]
         }
       },
       "policies": {},

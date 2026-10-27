@@ -1,4 +1,5 @@
 <!-- github-knowledge-base-start -->
+
 ## Knowledge Base
 
 ### Purpose
@@ -34,11 +35,11 @@ preserving a good responsive experience for the friends using other phones.
 For UI changes, consider all four reference viewports:
 
 | Fold state | Orientation | CSS viewport (width x height) |
-| --- | --- | --- |
-| Closed | Portrait | 476 x 752 |
-| Closed | Landscape | 752 x 476 |
-| Unfolded | Portrait | 704 x 933 |
-| Unfolded | Landscape | 933 x 704 |
+| ---------- | ----------- | ----------------------------- |
+| Closed     | Portrait    | 476 x 752                     |
+| Closed     | Landscape   | 752 x 476                     |
+| Unfolded   | Portrait    | 704 x 933                     |
+| Unfolded   | Landscape   | 933 x 704                     |
 
 The portrait dimensions come from Chrome DevTools; landscape references swap
 those dimensions. The device pixel ratio is 2.625, but media queries use CSS

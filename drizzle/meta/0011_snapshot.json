@@ -58,9 +58,7 @@
         "movies_tmdb_id_unique": {
           "name": "movies_tmdb_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "tmdb_id"
-          ]
+          "columns": ["tmdb_id"]
         }
       },
       "policies": {},
@@ -142,12 +140,8 @@
           "name": "nomcoms_room_id_rooms_id_fk",
           "tableFrom": "nomcoms",
           "tableTo": "rooms",
-          "columnsFrom": [
-            "room_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["room_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -156,12 +150,8 @@
           "tableFrom": "nomcoms",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -169,12 +159,8 @@
           "name": "nomcoms_nomination_id_nominations_id_fk",
           "tableFrom": "nomcoms",
           "tableTo": "nominations",
-          "columnsFrom": [
-            "nomination_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["nomination_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -293,12 +279,8 @@
           "name": "nominations_room_id_rooms_id_fk",
           "tableFrom": "nominations",
           "tableTo": "rooms",
-          "columnsFrom": [
-            "room_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["room_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -307,12 +289,8 @@
           "tableFrom": "nominations",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -320,12 +298,8 @@
           "name": "nominations_movie_id_movies_id_fk",
           "tableFrom": "nominations",
           "tableTo": "movies",
-          "columnsFrom": [
-            "movie_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["movie_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -389,12 +363,8 @@
           "name": "room_members_room_id_rooms_id_fk",
           "tableFrom": "room_members",
           "tableTo": "rooms",
-          "columnsFrom": [
-            "room_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["room_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -403,12 +373,8 @@
           "tableFrom": "room_members",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -416,10 +382,7 @@
       "compositePrimaryKeys": {
         "room_members_room_id_user_id_pk": {
           "name": "room_members_room_id_user_id_pk",
-          "columns": [
-            "room_id",
-            "user_id"
-          ]
+          "columns": ["room_id", "user_id"]
         }
       },
       "uniqueConstraints": {},
@@ -523,12 +486,8 @@
           "tableFrom": "rooms",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -538,23 +497,17 @@
         "rooms_slug_unique": {
           "name": "rooms_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         },
         "rooms_invite_code_unique": {
           "name": "rooms_invite_code_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "invite_code"
-          ]
+          "columns": ["invite_code"]
         },
         "rooms_admin_invite_code_unique": {
           "name": "rooms_admin_invite_code_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "admin_invite_code"
-          ]
+          "columns": ["admin_invite_code"]
         }
       },
       "policies": {},
@@ -630,12 +583,8 @@
           "name": "seen_movie_id_movies_id_fk",
           "tableFrom": "seen",
           "tableTo": "movies",
-          "columnsFrom": [
-            "movie_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["movie_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -644,12 +593,8 @@
           "tableFrom": "seen",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -768,12 +713,8 @@
           "name": "votes_room_id_rooms_id_fk",
           "tableFrom": "votes",
           "tableTo": "rooms",
-          "columnsFrom": [
-            "room_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["room_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -782,12 +723,8 @@
           "tableFrom": "votes",
           "tableTo": "user",
           "schemaTo": "neon_auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -795,12 +732,8 @@
           "name": "votes_nomination_id_nominations_id_fk",
           "tableFrom": "votes",
           "tableTo": "nominations",
-          "columnsFrom": [
-            "nomination_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["nomination_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }

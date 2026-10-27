@@ -13,7 +13,7 @@ import {
 
 vi.mock("node:child_process", () => ({ execFileSync: vi.fn() }));
 vi.mock("node:fs/promises", async (importOriginal) => ({
-  ...await importOriginal<typeof import("node:fs/promises")>(),
+  ...(await importOriginal<typeof import("node:fs/promises")>()),
   readFile: vi.fn(),
   writeFile: vi.fn(),
   chmod: vi.fn(),
@@ -34,7 +34,8 @@ const branches = [
     name: "production",
   },
 ];
-const devUrl = "postgresql://owner:password@ep-dev.example/neondb?sslmode=require";
+const devUrl =
+  "postgresql://owner:password@ep-dev.example/neondb?sslmode=require";
 const credentials = {
   email: "dev-agent@shortlist.invalid",
   password: "a-unique-development-test-password",
@@ -56,22 +57,26 @@ describe("dev sync safeguards", () => {
       { protected: true },
       { project_id: "another-project" },
     ]) {
-      expect(() => assertDevBranches([{ ...branches[0], ...change }, branches[1]]))
-        .toThrow("Refusing to sync");
+      expect(() =>
+        assertDevBranches([{ ...branches[0], ...change }, branches[1]]),
+      ).toThrow("Refusing to sync");
     }
     expect(() => assertDevBranches([branches[0]])).toThrow("Refusing to sync");
   });
 
   it("allows pooled dev connections but rejects production or mismatched credentials", () => {
-    expect(() => assertDevDatabase(devUrl.replace("ep-dev.", "ep-dev-pooler."), devUrl))
-      .not.toThrow();
+    expect(() =>
+      assertDevDatabase(devUrl.replace("ep-dev.", "ep-dev-pooler."), devUrl),
+    ).not.toThrow();
     for (const invalid of [
       devUrl.replace("ep-dev", "ep-production"),
       devUrl.replace("neondb", "otherdb"),
       devUrl.replace("owner", "other"),
       devUrl.replace("password", "other"),
     ]) {
-      expect(() => assertDevDatabase(invalid, devUrl)).toThrow("Refusing to write");
+      expect(() => assertDevDatabase(invalid, devUrl)).toThrow(
+        "Refusing to write",
+      );
     }
   });
 
@@ -92,7 +97,9 @@ describe("dev sync safeguards", () => {
     await main(["--dry-run"]);
     expect(execFileSync).toHaveBeenCalledTimes(2);
     expect(vi.mocked(execFileSync).mock.calls[1][1]).toContain(branches[0].id);
-    expect(vi.mocked(execFileSync).mock.calls[1][1]).toContain("wandering-violet-70519991");
+    expect(vi.mocked(execFileSync).mock.calls[1][1]).toContain(
+      "wandering-violet-70519991",
+    );
   });
 
   it("stops before reset or migrations if the local URL targets production", async () => {
@@ -121,12 +128,15 @@ describe("dev sync safeguards", () => {
         .mockResolvedValueOnce(`DATABASE_URL=${devUrl}`)
         .mockResolvedValueOnce(JSON.stringify(credentials));
       vi.mocked(execFileSync).mockImplementation((_file, args) => {
-        if (args?.[0] === "scripts/migrate.mjs") throw new Error("Migration failed");
+        if (args?.[0] === "scripts/migrate.mjs")
+          throw new Error("Migration failed");
         if (args?.includes("list")) return JSON.stringify(branches);
         if (args?.includes("reset")) return "{}";
         return devUrl;
       });
-      await expect(main(seedOnly ? ["--seed-only"] : [])).rejects.toThrow("Migration failed");
+      await expect(main(seedOnly ? ["--seed-only"] : [])).rejects.toThrow(
+        "Migration failed",
+      );
       const calls = vi.mocked(execFileSync).mock.calls;
       const resetCalls = calls.filter((call) => call[1]?.includes("reset"));
       expect(resetCalls).toHaveLength(seedOnly ? 0 : 1);
@@ -148,7 +158,9 @@ describe("dev sync safeguards", () => {
     vi.mocked(execFileSync)
       .mockReturnValueOnce(JSON.stringify(branches))
       .mockReturnValueOnce(devUrl)
-      .mockImplementationOnce(() => { throw new Error("Reset failed"); });
+      .mockImplementationOnce(() => {
+        throw new Error("Reset failed");
+      });
     await expect(main()).rejects.toThrow("Neon branches failed");
     expect(execFileSync).toHaveBeenCalledTimes(3);
   });
@@ -156,9 +168,10 @@ describe("dev sync safeguards", () => {
 
 describe("dev login seed", () => {
   it("creates a real login, preserves it on retries, and only joins shared theatres", async () => {
-    const actualFs = await vi.importActual<typeof import("node:fs/promises")>(
-      "node:fs/promises",
-    );
+    const actualFs =
+      await vi.importActual<typeof import("node:fs/promises")>(
+        "node:fs/promises",
+      );
     vi.mocked(readFile).mockImplementation(actualFs.readFile);
     const { db, client } = await createTestDb();
     try {
@@ -192,30 +205,46 @@ describe("dev login seed", () => {
       await seedDevUser(db, credentials);
       const usersBefore = await client.query('SELECT * FROM neon_auth."user"');
       const theatresBefore = await client.query("SELECT * FROM theatres");
-      const accountsBefore = await client.query<{ providerId: string; password: string }>(
-        'SELECT * FROM neon_auth."account"',
-      );
+      const accountsBefore = await client.query<{
+        providerId: string;
+        password: string;
+      }>('SELECT * FROM neon_auth."account"');
       expect(accountsBefore.rows).toHaveLength(1);
-      expect(accountsBefore.rows[0]).toMatchObject({ providerId: "credential" });
+      expect(accountsBefore.rows[0]).toMatchObject({
+        providerId: "credential",
+      });
       expect(accountsBefore.rows[0].password).not.toBe(credentials.password);
 
       await seedDevUser(db, credentials);
-      expect(await client.query('SELECT * FROM neon_auth."user"')).toEqual(usersBefore);
-      expect(await client.query("SELECT * FROM theatres")).toEqual(theatresBefore);
-      expect(await client.query('SELECT * FROM neon_auth."account"')).toEqual(accountsBefore);
-      expect((await client.query('SELECT * FROM neon_auth."session"')).rows).toEqual([]);
+      expect(await client.query('SELECT * FROM neon_auth."user"')).toEqual(
+        usersBefore,
+      );
+      expect(await client.query("SELECT * FROM theatres")).toEqual(
+        theatresBefore,
+      );
+      expect(await client.query('SELECT * FROM neon_auth."account"')).toEqual(
+        accountsBefore,
+      );
+      expect(
+        (await client.query('SELECT * FROM neon_auth."session"')).rows,
+      ).toEqual([]);
       const access = await client.query(`
         SELECT t.name, m.role FROM theatres t JOIN theatre_members m ON t.id = m.theatre_id
       `);
-      expect(access.rows).toEqual(expect.arrayContaining([
-        { name: "Shared", role: "admin" },
-        { name: "Watchlist", role: "admin" },
-      ]));
+      expect(access.rows).toEqual(
+        expect.arrayContaining([
+          { name: "Shared", role: "admin" },
+          { name: "Watchlist", role: "admin" },
+        ]),
+      );
       expect(access.rows).toHaveLength(2);
 
-      await expect(seedDevUser(db, { ...credentials, password: "wrong-password" }))
-        .rejects.toThrow();
-      expect(await client.query('SELECT * FROM neon_auth."account"')).toEqual(accountsBefore);
+      await expect(
+        seedDevUser(db, { ...credentials, password: "wrong-password" }),
+      ).rejects.toThrow();
+      expect(await client.query('SELECT * FROM neon_auth."account"')).toEqual(
+        accountsBefore,
+      );
     } finally {
       await client.close();
     }

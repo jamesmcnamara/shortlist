@@ -14,9 +14,5 @@ export default async function TheatreLayout({
   const { theatreId } = await params;
   if (!isUuid(theatreId)) notFound();
 
-  return (
-    <TheatreProvider theatreId={theatreId}>
-      {children}
-    </TheatreProvider>
-  );
+  return <TheatreProvider theatreId={theatreId}>{children}</TheatreProvider>;
 }

@@ -5,16 +5,14 @@ const THEATRE_PREFIX = "/theatres/";
 const LEGACY_THEATRE_PREFIX = "/rooms/";
 
 /** Accept old room URLs for notifications created before the rename. */
-export const theatreUrl = z
-  .string()
-  .refine((path) => {
-    const prefix = path.startsWith(THEATRE_PREFIX)
-      ? THEATRE_PREFIX
-      : path.startsWith(LEGACY_THEATRE_PREFIX)
-        ? LEGACY_THEATRE_PREFIX
-        : null;
-    return prefix !== null && isUuid(path.slice(prefix.length));
-  });
+export const theatreUrl = z.string().refine((path) => {
+  const prefix = path.startsWith(THEATRE_PREFIX)
+    ? THEATRE_PREFIX
+    : path.startsWith(LEGACY_THEATRE_PREFIX)
+      ? LEGACY_THEATRE_PREFIX
+      : null;
+  return prefix !== null && isUuid(path.slice(prefix.length));
+});
 
 export const notificationPayload = z.object({
   title: z.string(),

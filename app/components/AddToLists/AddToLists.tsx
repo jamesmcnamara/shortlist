@@ -19,9 +19,7 @@ interface AddToListsProps {
  * each with its own optional note.
  */
 export function AddToLists({ movie, onClose, onAdded }: AddToListsProps) {
-  const { data: allTheatres, error, retry } = useTheatresForMovies([
-    movie.id,
-  ]);
+  const { data: allTheatres, error, retry } = useTheatresForMovies([movie.id]);
   const loadError = error?.message;
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [comments, setComments] = useState<Record<string, string>>({});

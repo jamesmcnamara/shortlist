@@ -78,8 +78,16 @@ beforeEach(async () => {
   const [movie, other] = await db
     .insert(movies)
     .values([
-      { tmdbId: 1, details: { title: "Shared" }, ratings: { services: [], raw: {} } },
-      { tmdbId: 2, details: { title: "Hidden" }, ratings: { services: [], raw: {} } },
+      {
+        tmdbId: 1,
+        details: { title: "Shared" },
+        ratings: { services: [], raw: {} },
+      },
+      {
+        tmdbId: 2,
+        details: { title: "Hidden" },
+        ratings: { services: [], raw: {} },
+      },
     ])
     .returning();
 
@@ -199,7 +207,8 @@ describe("GET /api/join/[code]", () => {
     async (kind) => {
       currentUserId.value = ALICE;
       const oldCode = kind === "admin" ? club.adminInviteCode : club.inviteCode;
-      const otherCode = kind === "admin" ? club.inviteCode : club.adminInviteCode;
+      const otherCode =
+        kind === "admin" ? club.inviteCode : club.adminInviteCode;
       const response = await rotateRoute.POST(
         new Request("http://test/api", {
           method: "POST",
@@ -209,7 +218,8 @@ describe("GET /api/join/[code]", () => {
       );
       expect(response.status).toBe(200);
       const codes = await response.json();
-      const newCode = kind === "admin" ? codes.adminInviteCode : codes.inviteCode;
+      const newCode =
+        kind === "admin" ? codes.adminInviteCode : codes.inviteCode;
 
       currentUserId.value = "";
       expect((await preview(oldCode)).status).toBe(404);

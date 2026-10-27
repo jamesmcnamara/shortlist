@@ -360,10 +360,8 @@ export function Theatre({
             nomination={focused}
             hasSeen={some({ id: userId })(focused.seenBy)}
             currentUserId={userId ?? null}
-            onUpdateComment={when(
-              canCurate && focused.userId === userId,
-            )((comment: string) =>
-              actions.updateNomRec(focused.id, comment),
+            onUpdateComment={when(canCurate && focused.userId === userId)(
+              (comment: string) => actions.updateNomRec(focused.id, comment),
             )}
             onAddNomCom={when(canParticipate)((comment: string) =>
               actions.addNomCom(focused.id, comment),

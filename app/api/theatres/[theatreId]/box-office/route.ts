@@ -16,7 +16,10 @@ export const POST = withTheatreUser({
   try {
     const result = await refreshBoxOffice(parsed.data.movieId, theatre.id);
     if (result.status === "not_found") {
-      return Response.json({ error: "That movie is not on this list." }, { status: 404 });
+      return Response.json(
+        { error: "That movie is not on this list." },
+        { status: 404 },
+      );
     }
     if (result.status === "missing_imdb") {
       return Response.json(

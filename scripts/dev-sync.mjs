@@ -24,7 +24,9 @@ const email = "dev-agent@shortlist.invalid";
 
 export function assertDevBranches(branches) {
   const dev = branches.find((branch) => branch.id === devBranchId);
-  const production = branches.find((branch) => branch.id === productionBranchId);
+  const production = branches.find(
+    (branch) => branch.id === productionBranchId,
+  );
   if (
     dev?.name !== "dev" ||
     production?.name !== "production" ||
@@ -34,7 +36,9 @@ export function assertDevBranches(branches) {
     dev.project_id !== projectId ||
     production.project_id !== projectId
   ) {
-    throw new Error("Refusing to sync: the expected dev/production branch relationship has changed.");
+    throw new Error(
+      "Refusing to sync: the expected dev/production branch relationship has changed.",
+    );
   }
 }
 
@@ -49,16 +53,26 @@ export function assertDevDatabase(localUrl, devUrl) {
     local.username !== dev.username ||
     local.password !== dev.password
   ) {
-    throw new Error("Refusing to write: .env.local DATABASE_URL does not match dev. Run npm run neon:dev first.");
+    throw new Error(
+      "Refusing to write: .env.local DATABASE_URL does not match dev. Run npm run neon:dev first.",
+    );
   }
 }
 
 async function getCredentials() {
   try {
-    await writeFile(credentialsPath, JSON.stringify({
-      email,
-      password: randomBytes(24).toString("base64url"),
-    }, null, 2) + "\n", { flag: "wx", mode: 0o600 });
+    await writeFile(
+      credentialsPath,
+      JSON.stringify(
+        {
+          email,
+          password: randomBytes(24).toString("base64url"),
+        },
+        null,
+        2,
+      ) + "\n",
+      { flag: "wx", mode: 0o600 },
+    );
   } catch (error) {
     if (error.code !== "EEXIST") throw error;
   }
@@ -67,14 +81,18 @@ async function getCredentials() {
   try {
     credentials = JSON.parse(content);
   } catch {
-    throw new Error("Invalid JSON in .dev-user.json; its contents have not been logged.");
+    throw new Error(
+      "Invalid JSON in .dev-user.json; its contents have not been logged.",
+    );
   }
   if (
     credentials?.email !== email ||
     typeof credentials.password !== "string" ||
     credentials.password.length < 16
   ) {
-    throw new Error("Invalid .dev-user.json: expected the dev email and a password of at least 16 characters.");
+    throw new Error(
+      "Invalid .dev-user.json: expected the dev email and a password of at least 16 characters.",
+    );
   }
   await chmod(credentialsPath, 0o600);
   return credentials;
@@ -135,33 +153,56 @@ export async function seedDevUser(db, credentials) {
 
 function runNeon(args) {
   try {
-    return execFileSync(process.execPath, [
-      "node_modules/neonctl/bin/cli.js",
-      ...args,
-      "--project-id", projectId,
-      "--output", "json",
-      "--no-color",
-    ], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 60_000 }).trim();
+    return execFileSync(
+      process.execPath,
+      [
+        "node_modules/neonctl/bin/cli.js",
+        ...args,
+        "--project-id",
+        projectId,
+        "--output",
+        "json",
+        "--no-color",
+      ],
+      {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        timeout: 60_000,
+      },
+    ).trim();
   } catch {
-    throw new Error(`Neon ${args[0]} failed. Check CLI authentication and connectivity; no credentials were logged.`);
+    throw new Error(
+      `Neon ${args[0]} failed. Check CLI authentication and connectivity; no credentials were logged.`,
+    );
   }
 }
 
 export async function main(args = process.argv.slice(2)) {
   if (args.some((arg) => !["--seed-only", "--dry-run"].includes(arg))) {
-    throw new Error("Usage: npm run dev:sync [-- --dry-run] or npm run dev:seed");
+    throw new Error(
+      "Usage: npm run dev:sync [-- --dry-run] or npm run dev:seed",
+    );
   }
   if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
-    throw new Error("This command is local-only; refusing to run in production or on Vercel.");
+    throw new Error(
+      "This command is local-only; refusing to run in production or on Vercel.",
+    );
   }
   assertDevBranches(JSON.parse(runNeon(["branches", "list"])));
-  const env = parseEnv(await readFile(new URL("../.env.local", import.meta.url), "utf8"));
-  if (!env.DATABASE_URL) throw new Error("DATABASE_URL is missing from .env.local.");
+  const env = parseEnv(
+    await readFile(new URL("../.env.local", import.meta.url), "utf8"),
+  );
+  if (!env.DATABASE_URL)
+    throw new Error("DATABASE_URL is missing from .env.local.");
   const local = new URL(env.DATABASE_URL);
   const connectionArgs = [
-    "connection-string", devBranchId,
-    "--database-name", decodeURIComponent(local.pathname.slice(1)),
-    "--role-name", decodeURIComponent(local.username),
+    "connection-string",
+    devBranchId,
+    "--database-name",
+    decodeURIComponent(local.pathname.slice(1)),
+    "--role-name",
+    decodeURIComponent(local.username),
   ];
   const devUrl = runNeon(connectionArgs);
   assertDevDatabase(env.DATABASE_URL, devUrl);
@@ -169,7 +210,9 @@ export async function main(args = process.argv.slice(2)) {
     const steps = args.includes("--seed-only")
       ? "migrate and seed .dev-user.json"
       : "refresh dev from production, migrate, and seed .dev-user.json";
-    console.log(`Verified dev branch and .env.local. Would ${steps}. No changes made.`);
+    console.log(
+      `Verified dev branch and .env.local. Would ${steps}. No changes made.`,
+    );
     return;
   }
   const credentials = await getCredentials();
@@ -187,10 +230,18 @@ export async function main(args = process.argv.slice(2)) {
   try {
     await seedDevUser(drizzle(neon(refreshedUrl)), credentials);
   } catch (error) {
-    const code = error.statusCode ?? error.cause?.code ?? error.code ?? "auth/database error";
-    throw new Error(`Dev login setup failed (${code}). Check migrations and .dev-user.json; existing account passwords are never overwritten.`);
+    const code =
+      error.statusCode ??
+      error.cause?.code ??
+      error.code ??
+      "auth/database error";
+    throw new Error(
+      `Dev login setup failed (${code}). Check migrations and .dev-user.json; existing account passwords are never overwritten.`,
+    );
   }
-  console.log("Dev test user ready. Login credentials: .dev-user.json (git-ignored). Restart any running dev server after a sync.");
+  console.log(
+    "Dev test user ready. Login credentials: .dev-user.json (git-ignored). Restart any running dev server after a sync.",
+  );
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

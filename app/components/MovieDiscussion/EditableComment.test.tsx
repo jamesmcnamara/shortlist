@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { EditableComment } from "./EditableComment";
 import styles from "./MovieDiscussion.module.css";
@@ -16,11 +22,15 @@ const props = {
 
 describe("EditableComment tags", () => {
   it("highlights hashtags as blue text without making them interactive", () => {
-    const value = "Spooky #horror movies to watch during the #2026 Halloween season.";
+    const value =
+      "Spooky #horror movies to watch during the #2026 Halloween season.";
     const { container } = render(<EditableComment {...props} value={value} />);
     expect(container.textContent).toBe(value);
-    expect([...container.querySelectorAll(`.${styles.tag}`)].map((tag) => tag.textContent))
-      .toEqual(["#horror", "#2026"]);
+    expect(
+      [...container.querySelectorAll(`.${styles.tag}`)].map(
+        (tag) => tag.textContent,
+      ),
+    ).toEqual(["#horror", "#2026"]);
     expect(screen.getByText("#horror").tagName).toBe("SPAN");
     expect(screen.queryByRole("link")).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
@@ -30,8 +40,11 @@ describe("EditableComment tags", () => {
     const value = 'Movies (#Sci-Fi), #Sci-Fi\n\t"#Cafe\u0301" #\u6620\u753b.';
     const { container } = render(<EditableComment {...props} value={value} />);
     expect(container.textContent).toBe(value);
-    expect([...container.querySelectorAll(`.${styles.tag}`)].map((tag) => tag.textContent))
-      .toEqual(["#Sci-Fi", "#Sci-Fi", "#Cafe\u0301", "#\u6620\u753b"]);
+    expect(
+      [...container.querySelectorAll(`.${styles.tag}`)].map(
+        (tag) => tag.textContent,
+      ),
+    ).toEqual(["#Sci-Fi", "#Sci-Fi", "#Cafe\u0301", "#\u6620\u753b"]);
   });
 
   it("does not highlight URL fragments, headings, or hashes inside words", () => {
@@ -59,7 +72,9 @@ describe("EditableComment tags", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(screen.queryByRole("textbox")).toBeNull());
     expect(onSave).toHaveBeenCalledWith("Funny #Comedy");
-    rerender(<EditableComment {...props} value="Funny #Comedy" onSave={onSave} />);
+    rerender(
+      <EditableComment {...props} value="Funny #Comedy" onSave={onSave} />,
+    );
     expect(screen.getByText("#Comedy").className).toBe(styles.tag);
     expect(screen.queryByText("#Horror")).toBeNull();
   });

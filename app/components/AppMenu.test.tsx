@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppMenu } from "./AppMenu";
 
@@ -58,15 +64,20 @@ describe("watchlist menu link", () => {
     render(<AppMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     expect(
-      screen.getByRole("menuitem", { name: "My Theatres" }).getAttribute("href"),
+      screen
+        .getByRole("menuitem", { name: "My Theatres" })
+        .getAttribute("href"),
     ).toBe("/u/alice");
   });
 
   it("links to the current user's designated theatre even when renamed", () => {
     render(<AppMenu />);
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
-    expect(screen.getByRole("menuitem", { name: "Home Theatre" }).getAttribute("href"))
-      .toBe("/theatres/alices");
+    expect(
+      screen
+        .getByRole("menuitem", { name: "Home Theatre" })
+        .getAttribute("href"),
+    ).toBe("/theatres/alices");
     const link = screen.getByRole("menuitem", { name: "Home Theatre" });
     link.addEventListener("click", (event) => event.preventDefault());
     fireEvent.click(link);
@@ -80,7 +91,9 @@ describe("watchlist menu link", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Sign out" }));
     await waitFor(() => expect(data.signOut).toHaveBeenCalledOnce());
     expect(data.disconnect).toHaveBeenCalledOnce();
-    expect(data.disconnect.mock.invocationCallOrder[0]).toBeLessThan(data.signOut.mock.invocationCallOrder[0]);
+    expect(data.disconnect.mock.invocationCallOrder[0]).toBeLessThan(
+      data.signOut.mock.invocationCallOrder[0],
+    );
   });
 
   it("shows an error instead of leaving notifications attached to a signed-out browser", async () => {
@@ -89,7 +102,9 @@ describe("watchlist menu link", () => {
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     fireEvent.click(screen.getByRole("button", { name: "Extra Settings" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "Sign out" }));
-    expect((await screen.findByRole("alert")).textContent).toContain("Unable to sign out safely.");
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Unable to sign out safely.",
+    );
     expect(data.signOut).not.toHaveBeenCalled();
   });
 });
@@ -118,9 +133,13 @@ describe("share menu item", () => {
           ]}
         />,
       );
-      expect(screen.queryByRole("button", { name: "Import Movies" })).toBeNull();
+      expect(
+        screen.queryByRole("button", { name: "Import Movies" }),
+      ).toBeNull();
       fireEvent.click(screen.getByRole("button", { name: "Menu" }));
-      expect(screen.queryByRole("button", { name: "Import Movies" })).toBeNull();
+      expect(
+        screen.queryByRole("button", { name: "Import Movies" }),
+      ).toBeNull();
       fireEvent.click(screen.getByRole("button", { name: "Extra Settings" }));
       fireEvent.click(screen.getByRole("button", { name: "Import Movies" }));
       expect(onClick).toHaveBeenCalledOnce();
@@ -132,7 +151,9 @@ describe("share menu item", () => {
     render(<AppMenu theatre={{ id: "ordinary" }} />);
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
-    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/theatres/ordinary`);
+    expect(writeText).toHaveBeenCalledWith(
+      `${window.location.origin}/theatres/ordinary`,
+    );
     await screen.findByRole("button", { name: "Link copied ✓" });
   });
 

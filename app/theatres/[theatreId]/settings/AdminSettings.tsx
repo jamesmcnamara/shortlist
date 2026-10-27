@@ -73,14 +73,18 @@ export function AdminSettings() {
   }
 
   async function deleteTheatre() {
-    if (!confirm(`Delete ${theatre.name}? Every movie and comment goes with it.`))
+    if (
+      !confirm(`Delete ${theatre.name}? Every movie and comment goes with it.`)
+    )
       return;
     try {
       await client.delete();
       router.push("/theatres");
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : "Unable to delete the theatre.",
+        error instanceof Error
+          ? error.message
+          : "Unable to delete the theatre.",
       );
     }
   }

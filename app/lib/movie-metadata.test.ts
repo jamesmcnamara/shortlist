@@ -54,22 +54,34 @@ beforeEach(async () => {
     vi.fn((url: string, init?: RequestInit) => {
       if (url === "https://apis.justwatch.com/graphql") {
         const { variables } = JSON.parse(String(init?.body));
-        return Promise.resolve(Response.json({
-          data: { popularTitles: { edges: [{
-            node: {
-              content: {
-                externalIds: { tmdbId: variables.title.replace("Movie ", "") },
-                fullPath: "/us/movie/test",
+        return Promise.resolve(
+          Response.json({
+            data: {
+              popularTitles: {
+                edges: [
+                  {
+                    node: {
+                      content: {
+                        externalIds: {
+                          tmdbId: variables.title.replace("Movie ", ""),
+                        },
+                        fullPath: "/us/movie/test",
+                      },
+                      offers: [],
+                    },
+                  },
+                ],
               },
-              offers: [],
             },
-          }] } },
-        }));
+          }),
+        );
       }
-      return Promise.resolve(Response.json({
+      return Promise.resolve(
+        Response.json({
           ratings: [],
           ids: {},
-      }));
+        }),
+      );
     }),
   );
 });
@@ -175,16 +187,21 @@ describe("ProdMovieProvider", () => {
     expect(stored.id).toBe(result.id);
     expect(tmdbApi.movies.details).toHaveBeenCalledOnce();
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect((stored.details as MovieDetails).justWatch).toEqual(result.details.justWatch);
+    expect((stored.details as MovieDetails).justWatch).toEqual(
+      result.details.justWatch,
+    );
   });
 
   it("keeps movie creation working but records and logs unavailable JustWatch", async () => {
     const fetchMetadata = fetch;
-    vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) =>
-      url === "https://apis.justwatch.com/graphql"
-        ? Promise.reject(new Error("JustWatch unavailable"))
-        : fetchMetadata(url, init),
-    ));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) =>
+        url === "https://apis.justwatch.com/graphql"
+          ? Promise.reject(new Error("JustWatch unavailable"))
+          : fetchMetadata(url, init),
+      ),
+    );
     const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const result = await new ProdMovieProvider().get(11);
     expect(result.details.justWatch?.status).toBe("unavailable");

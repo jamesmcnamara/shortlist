@@ -14,29 +14,51 @@ import { TheatreDirectory } from "./TheatreDirectory";
 
 const theatres: TheatreSummaryWithPosterPreviews[] = [
   {
-    id: "zombies", name: "Zombies", tags: ["horror", "2026"],
-    posterUrls: ["/poster.jpg"], role: null, watchlistFor: null,
-    createdAt: "2026-01-01", updatedAt: "2026-03-01",
+    id: "zombies",
+    name: "Zombies",
+    tags: ["horror", "2026"],
+    posterUrls: ["/poster.jpg"],
+    role: null,
+    watchlistFor: null,
+    createdAt: "2026-01-01",
+    updatedAt: "2026-03-01",
   },
   {
-    id: "aliens", name: "Aliens", tags: ["scifi", "2026"], posterUrls: [],
-    role: null, watchlistFor: null, createdAt: "2026-02-01", updatedAt: "2026-02-01",
+    id: "aliens",
+    name: "Aliens",
+    tags: ["scifi", "2026"],
+    posterUrls: [],
+    role: null,
+    watchlistFor: null,
+    createdAt: "2026-02-01",
+    updatedAt: "2026-02-01",
   },
   {
-    id: "halloween", name: "Halloween", tags: [], posterUrls: [],
-    role: null, watchlistFor: null, createdAt: "2026-03-01", updatedAt: "2026-01-01",
+    id: "halloween",
+    name: "Halloween",
+    tags: [],
+    posterUrls: [],
+    role: null,
+    watchlistFor: null,
+    createdAt: "2026-03-01",
+    updatedAt: "2026-01-01",
   },
 ];
-const names = () => screen.queryAllByRole("link")
-  .map((link) => link.querySelector("[class*='theatreName']")?.textContent);
+const names = () =>
+  screen
+    .queryAllByRole("link")
+    .map((link) => link.querySelector("[class*='theatreName']")?.textContent);
 beforeEach(() => window.history.replaceState(null, "", "/u/user"));
 afterEach(cleanup);
 
 it("shows sorted chips inside the single card link, including lists without posters", () => {
   render(<TheatreDirectory theatres={theatres} initialSearch="" />);
   const zombies = screen.getByRole("link", { name: /^Zombies / });
-  expect(within(zombies).getAllByText(/^#/).map((tag) => tag.textContent))
-    .toEqual(["#2026", "#horror"]);
+  expect(
+    within(zombies)
+      .getAllByText(/^#/)
+      .map((tag) => tag.textContent),
+  ).toEqual(["#2026", "#horror"]);
   expect(within(zombies).queryByRole("button")).toBeNull();
   expect(screen.getByRole("link", { name: /^Aliens / })).toBeTruthy();
   expect(screen.getByRole("link", { name: "Halloween" })).toBeTruthy();
@@ -91,9 +113,14 @@ it("keeps unknown selected tags removable and clears filters without resetting s
   render(<TheatreDirectory theatres={theatres} initialSearch="" />);
   expect(screen.getByText("No matching theatres.")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Filter (1)" }));
-  expect(screen.getByRole("button", { name: "#missing" }).getAttribute("aria-pressed"))
-    .toBe("true");
-  fireEvent.click(screen.getByRole("button", { name: "Clear search and filters" }));
+  expect(
+    screen
+      .getByRole("button", { name: "#missing" })
+      .getAttribute("aria-pressed"),
+  ).toBe("true");
+  fireEvent.click(
+    screen.getByRole("button", { name: "Clear search and filters" }),
+  );
   expect(names()).toHaveLength(3);
   expect(window.location.search).toBe("?sort=title");
 });

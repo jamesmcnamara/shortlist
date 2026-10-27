@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NotificationSettings } from "./NotificationSettings";
 
@@ -12,7 +18,11 @@ const state = vi.hoisted(() => ({
   set: vi.fn(),
 }));
 vi.mock("@/app/lib/data/queries", () => ({
-  useNotificationSettings: () => ({ data: state.data, error: state.error, retry: state.retry }),
+  useNotificationSettings: () => ({
+    data: state.data,
+    error: state.error,
+    retry: state.retry,
+  }),
 }));
 vi.mock("@/app/lib/push", () => ({
   supportsPush: () => state.supported,
@@ -32,9 +42,11 @@ beforeEach(() => {
   vi.stubGlobal("Notification", { permission: "granted" });
   Object.defineProperty(navigator, "serviceWorker", {
     configurable: true,
-    value: { getRegistration: vi.fn().mockResolvedValue({
-      pushManager: { getSubscription: vi.fn().mockResolvedValue(null) },
-    }) },
+    value: {
+      getRegistration: vi.fn().mockResolvedValue({
+        pushManager: { getSubscription: vi.fn().mockResolvedValue(null) },
+      }),
+    },
   });
 });
 afterEach(() => {
@@ -52,17 +64,23 @@ describe("theatre notification settings", () => {
   });
 
   it("shows permission errors without saving opt-in", async () => {
-    state.enable.mockRejectedValue(new Error("Allow notifications in site settings."));
+    state.enable.mockRejectedValue(
+      new Error("Allow notifications in site settings."),
+    );
     render(<NotificationSettings theatreId="club" />);
     fireEvent.click(screen.getByRole("checkbox"));
-    expect((await screen.findByRole("alert")).textContent).toBe("Allow notifications in site settings.");
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "Allow notifications in site settings.",
+    );
     expect(state.set).not.toHaveBeenCalled();
   });
 
   it("lets an already-followed list enable another device", async () => {
     state.data.enabled = true;
     render(<NotificationSettings theatreId="club" />);
-    fireEvent.click(screen.getByRole("button", { name: "Enable on this device" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Enable on this device" }),
+    );
     await waitFor(() => expect(state.enable).toHaveBeenCalledOnce());
   });
 
@@ -74,15 +92,24 @@ describe("theatre notification settings", () => {
     expect(state.enable).not.toHaveBeenCalled();
   });
 
-  it.each(["unsupported", "unconfigured"])("explains %s notifications", (reason) => {
-    if (reason === "unsupported") state.supported = false;
-    else state.data.configured = false;
-    render(<NotificationSettings theatreId="club" />);
-    expect((screen.getByRole("checkbox") as HTMLInputElement).disabled).toBe(true);
-    expect(screen.getByText(reason === "unsupported"
-      ? "Push notifications need a supported browser and a secure connection."
-      : "Notifications are not configured yet.")).toBeTruthy();
-  });
+  it.each(["unsupported", "unconfigured"])(
+    "explains %s notifications",
+    (reason) => {
+      if (reason === "unsupported") state.supported = false;
+      else state.data.configured = false;
+      render(<NotificationSettings theatreId="club" />);
+      expect((screen.getByRole("checkbox") as HTMLInputElement).disabled).toBe(
+        true,
+      );
+      expect(
+        screen.getByText(
+          reason === "unsupported"
+            ? "Push notifications need a supported browser and a secure connection."
+            : "Notifications are not configured yet.",
+        ),
+      ).toBeTruthy();
+    },
+  );
 
   it("allows opting out even when the current browser is unsupported", async () => {
     state.data.enabled = true;

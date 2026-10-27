@@ -14,12 +14,20 @@ const tmdbBudget = z.object({
 
 export async function refreshBoxOffice(movieId: number, theatreId?: string) {
   const db = getDb();
-  const inTheatre = theatreId === undefined ? undefined : exists(
-    db.select({ id: nominations.id }).from(nominations).where(and(
-      eq(nominations.movieId, movies.id),
-      eq(nominations.theatreId, theatreId),
-    )),
-  );
+  const inTheatre =
+    theatreId === undefined
+      ? undefined
+      : exists(
+          db
+            .select({ id: nominations.id })
+            .from(nominations)
+            .where(
+              and(
+                eq(nominations.movieId, movies.id),
+                eq(nominations.theatreId, theatreId),
+              ),
+            ),
+        );
   const condition = and(eq(movies.id, movieId), inTheatre);
   const [movie] = await db
     .select({ details: movies.details, ratings: movies.ratings })
@@ -39,7 +47,8 @@ export async function refreshBoxOffice(movieId: number, theatreId?: string) {
   const mojo = await getBoxOffice(id);
   const boxOffice = {
     ...mojo,
-    budget: mojo.budget ?? tmdbBudget.safeParse(movie.details).data?.budget ?? null,
+    budget:
+      mojo.budget ?? tmdbBudget.safeParse(movie.details).data?.budget ?? null,
   };
   const [updated] = await db
     .update(movies)
@@ -50,17 +59,22 @@ export async function refreshBoxOffice(movieId: number, theatreId?: string) {
     .where(condition)
     .returning({ id: movies.id });
   return updated
-    ? { status: "updated", boxOffice } as const
-    : { status: "not_found" } as const;
+    ? ({ status: "updated", boxOffice } as const)
+    : ({ status: "not_found" } as const);
 }
 
 export async function enrichBoxOffice(movieId: number): Promise<void> {
   try {
     const result = await refreshBoxOffice(movieId);
     if (result.status !== "updated") {
-      console.warn(`Skipping Box Office Mojo for movie ${movieId}: ${result.status}.`);
+      console.warn(
+        `Skipping Box Office Mojo for movie ${movieId}: ${result.status}.`,
+      );
     }
   } catch (error) {
-    console.error(`Unable to load Box Office Mojo for movie ${movieId}.`, error);
+    console.error(
+      `Unable to load Box Office Mojo for movie ${movieId}.`,
+      error,
+    );
   }
 }

@@ -64,7 +64,9 @@ describe("join page session routing", () => {
   it("waits for the session before previewing or joining", async () => {
     session.isPending = true;
     await show();
-    expect(screen.getByRole("status").getAttribute("aria-label")).toBe("Loading...");
+    expect(screen.getByRole("status").getAttribute("aria-label")).toBe(
+      "Loading...",
+    );
     expect(screen.queryByText(/Preview:/)).toBeNull();
     expect(actions.join).not.toHaveBeenCalled();
   });
@@ -106,7 +108,9 @@ describe("join page session routing", () => {
   it("shows session errors with retry instead of previewing or joining", async () => {
     session.error = { message: "Session unavailable" };
     await show();
-    expect(screen.getByRole("alert").textContent).toContain("Session unavailable");
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Session unavailable",
+    );
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(session.retry).toHaveBeenCalledOnce();
     expect(actions.join).not.toHaveBeenCalled();
@@ -117,20 +121,29 @@ describe("join page session routing", () => {
     new Error("Unable to join that theatre."),
     new ApiError("That invite link is no longer valid.", 404),
     new ApiError("Please sign in.", 401),
-  ])("shows join errors rather than redirecting or falling back to a preview", async (error) => {
-    session.userId = "alice";
-    actions.join.mockRejectedValue(error);
-    await show();
-    expect(await screen.findByText(error.message)).toBeDefined();
-    expect(screen.getByRole("heading").textContent).toBe("That link did not work");
-    expect(actions.router.replace).not.toHaveBeenCalled();
-    expect(screen.queryByText(/Preview:/)).toBeNull();
-  });
+  ])(
+    "shows join errors rather than redirecting or falling back to a preview",
+    async (error) => {
+      session.userId = "alice";
+      actions.join.mockRejectedValue(error);
+      await show();
+      expect(await screen.findByText(error.message)).toBeDefined();
+      expect(screen.getByRole("heading").textContent).toBe(
+        "That link did not work",
+      );
+      expect(actions.router.replace).not.toHaveBeenCalled();
+      expect(screen.queryByText(/Preview:/)).toBeNull();
+    },
+  );
 
   it("ignores a join response after the visitor leaves", async () => {
     session.userId = "alice";
     let resolve!: (value: { path: string }) => void;
-    actions.join.mockReturnValue(new Promise((done) => { resolve = done; }));
+    actions.join.mockReturnValue(
+      new Promise((done) => {
+        resolve = done;
+      }),
+    );
     const { unmount } = await show();
     unmount();
     await act(async () => resolve({ path: "/theatres/club" }));

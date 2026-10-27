@@ -21,7 +21,10 @@ import {
   useTheatresForMovies,
   useTheatreDetail,
 } from "./queries";
-import { TheatreProvider, useTheatre } from "@/app/theatres/[theatreId]/TheatreContext";
+import {
+  TheatreProvider,
+  useTheatre,
+} from "@/app/theatres/[theatreId]/TheatreContext";
 
 const auth = vi.hoisted(() => ({
   data: {
@@ -108,10 +111,12 @@ describe("shared data cache", () => {
 
   it("loads public theatre previews through the invite GET without a session", async () => {
     auth.data = null;
-    fetchMock.mockResolvedValue(json({
-      theatre: { name: "Club", description: "Our #Horror films" },
-      nominations: [],
-    }));
+    fetchMock.mockResolvedValue(
+      json({
+        theatre: { name: "Club", description: "Our #Horror films" },
+        nominations: [],
+      }),
+    );
     const { result } = renderHook(() => usePublicTheatre("member-link"), {
       wrapper: Wrapper,
     });
@@ -295,7 +300,9 @@ describe("shared data cache", () => {
     });
     await waitFor(() => expect(result.current.data).toEqual([]));
     await act(async () => {
-      const outcome = await api.theatre(theatre.id).nominations.importTitle("Arrival");
+      const outcome = await api
+        .theatre(theatre.id)
+        .nominations.importTitle("Arrival");
       expect(outcome).toEqual({
         status: "added",
         movie: { id: 1, title: "Arrival", year: 2016 },
@@ -345,9 +352,9 @@ describe("shared data cache", () => {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data).toBeDefined());
-    await expect(
-      api.theatre(theatre.id).nominations.delete(1),
-    ).rejects.toThrow("Could not save");
+    await expect(api.theatre(theatre.id).nominations.delete(1)).rejects.toThrow(
+      "Could not save",
+    );
     expect(result.current.data).toEqual([{ id: 1 }]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
@@ -436,9 +443,7 @@ describe("shared data cache", () => {
     const { result, rerender } = renderHook(() => useTheatresForMovies([1]), {
       wrapper: Wrapper,
     });
-    await waitFor(() =>
-      expect(result.current.data?.[0].name).toBe("Private"),
-    );
+    await waitFor(() => expect(result.current.data?.[0].name).toBe("Private"));
     auth.data = null;
     rerender();
     expect(result.current.data).toBeUndefined();

@@ -24,7 +24,9 @@ vi.mock("@/app/components/ShortlistHeader", () => ({
   ShortlistHeader: () => <header>Shortlist</header>,
 }));
 vi.mock("next/navigation", () => ({
-  notFound: () => { throw new Error("NEXT_NOT_FOUND"); },
+  notFound: () => {
+    throw new Error("NEXT_NOT_FOUND");
+  },
 }));
 
 const USER = "11111111-1111-1111-1111-111111111111";
@@ -38,21 +40,31 @@ beforeEach(() => {
   data.viewer.mockResolvedValue(null);
   data.theatres.mockResolvedValue([
     {
-      id: "club", name: "Movie Club", posterUrls: ["/poster.jpg"], tags: [],
-      createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
+      id: "club",
+      name: "Movie Club",
+      posterUrls: ["/poster.jpg"],
+      tags: [],
+      createdAt: "2026-01-01T00:00:00Z",
+      updatedAt: "2026-01-01T00:00:00Z",
     },
   ]);
 });
 afterEach(cleanup);
 
-it.each([null, VIEWER])("shows the user's theatres to viewer %s", async (viewer) => {
-  data.viewer.mockResolvedValue(viewer);
-  render(await page());
-  expect(screen.getByRole("heading", { name: "Alice's Theatres" })).toBeTruthy();
-  expect(screen.getByRole("link", { name: "Movie Club" }).getAttribute("href"))
-    .toBe("/theatres/club");
-  expect(data.theatres).toHaveBeenCalledWith(USER, viewer);
-});
+it.each([null, VIEWER])(
+  "shows the user's theatres to viewer %s",
+  async (viewer) => {
+    data.viewer.mockResolvedValue(viewer);
+    render(await page());
+    expect(
+      screen.getByRole("heading", { name: "Alice's Theatres" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Movie Club" }).getAttribute("href"),
+    ).toBe("/theatres/club");
+    expect(data.theatres).toHaveBeenCalledWith(USER, viewer);
+  },
+);
 
 it("shows an empty profile without redirecting or prompting visitors to create lists", async () => {
   data.theatres.mockResolvedValue([]);

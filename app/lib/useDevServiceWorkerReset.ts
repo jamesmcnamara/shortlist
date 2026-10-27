@@ -11,7 +11,9 @@ export function useDevServiceWorkerReset() {
       navigator.serviceWorker
         .getRegistrations()
         .then((registrations) =>
-          Promise.all(registrations.map((registration) => registration.unregister())),
+          Promise.all(
+            registrations.map((registration) => registration.unregister()),
+          ),
         ),
       "caches" in window
         ? caches
@@ -22,6 +24,8 @@ export function useDevServiceWorkerReset() {
       .then(() => {
         if (wasControlled) window.location.reload();
       })
-      .catch((error) => console.error("Unable to reset the service worker.", error));
+      .catch((error) =>
+        console.error("Unable to reset the service worker.", error),
+      );
   }, []);
 }

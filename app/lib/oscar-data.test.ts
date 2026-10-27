@@ -33,9 +33,9 @@ describe("generated Oscar data", () => {
 
       expect(rank).toBeGreaterThanOrEqual(previousRank);
       if (rank === previousRank) {
-        expect(entry.category.localeCompare(previous.category)).toBeGreaterThanOrEqual(
-          0,
-        );
+        expect(
+          entry.category.localeCompare(previous.category),
+        ).toBeGreaterThanOrEqual(0);
       }
     });
   });

@@ -31,8 +31,9 @@ export default async function UserTheatres({
   );
   const initialParams = new URLSearchParams();
   Object.entries(await searchParams).forEach(([key, value]) => {
-    (Array.isArray(value) ? value : value === undefined ? [] : [value])
-      .forEach((entry) => initialParams.append(key, entry));
+    (Array.isArray(value) ? value : value === undefined ? [] : [value]).forEach(
+      (entry) => initialParams.append(key, entry),
+    );
   });
 
   return (
@@ -41,7 +42,10 @@ export default async function UserTheatres({
         <ShortlistHeader />
         <h1 className={styles.title}>{user.name}&apos;s Theatres</h1>
 
-        <TheatreDirectory theatres={theatres} initialSearch={initialParams.toString()} />
+        <TheatreDirectory
+          theatres={theatres}
+          initialSearch={initialParams.toString()}
+        />
       </div>
     </main>
   );

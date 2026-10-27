@@ -63,11 +63,10 @@ export function BulkMovieImport({
         )
         .map((row) => row.title),
     );
-    const queue = nextRows.map(
-      (row): Row =>
-        retry && row.status === "failed"
-          ? { title: row.title, status: "pending" }
-          : row,
+    const queue = nextRows.map((row): Row =>
+      retry && row.status === "failed"
+        ? { title: row.title, status: "pending" }
+        : row,
     );
     setRows(queue);
 
@@ -127,11 +126,7 @@ export function BulkMovieImport({
           <label id={`${id}-label`} htmlFor={`${id}-titles`}>
             Movie titles
           </label>
-          <button
-            type="button"
-            className={styles.close}
-            onClick={onClose}
-          >
+          <button type="button" className={styles.close} onClick={onClose}>
             Close
           </button>
           <p id={`${id}-hint`} className={styles.hint}>

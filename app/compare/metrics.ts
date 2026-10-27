@@ -1,6 +1,10 @@
 import type { Movie, RatingSource } from "@/src/db/schema";
 import { find } from "shades";
-import { calculateReturns, compactMoney, formatMultiplier } from "@/app/lib/box-office-metrics";
+import {
+  calculateReturns,
+  compactMoney,
+  formatMultiplier,
+} from "@/app/lib/box-office-metrics";
 
 export type Scale = "absolute" | "relative";
 
@@ -106,7 +110,8 @@ export const METRICS: Metric[] = [
     logo: null,
     range: [-1, 1],
     lowerIsBetter: false,
-    read: (movie) => calculateReturns(movie.details.boxOffice)?.multiplier ?? null,
+    read: (movie) =>
+      calculateReturns(movie.details.boxOffice)?.multiplier ?? null,
     format: formatMultiplier,
   },
 ];

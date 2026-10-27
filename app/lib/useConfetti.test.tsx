@@ -13,7 +13,10 @@ vi.mock("canvas-confetti", () => ({ default: { create } }));
 
 beforeEach(() => {
   fire.mockReturnValue(null);
-  vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false })));
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn(() => ({ matches: false })),
+  );
 });
 
 afterEach(() => {
@@ -74,7 +77,10 @@ describe("useConfetti", () => {
   });
 
   it("checks reduced motion on every celebration without creating a canvas", () => {
-    vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true })));
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => ({ matches: true })),
+    );
     const { result } = renderHook(() => useConfetti());
     act(() => result.current());
 
@@ -85,11 +91,17 @@ describe("useConfetti", () => {
     expect(fire).not.toHaveBeenCalled();
     expect(document.querySelector("canvas")).toBeNull();
 
-    vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false })));
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => ({ matches: false })),
+    );
     act(() => result.current());
     expect(fire).toHaveBeenCalledTimes(3);
 
-    vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true })));
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => ({ matches: true })),
+    );
     act(() => result.current());
     expect(fire).toHaveBeenCalledTimes(3);
   });

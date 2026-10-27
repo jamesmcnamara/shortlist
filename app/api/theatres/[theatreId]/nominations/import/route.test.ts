@@ -205,7 +205,10 @@ describe("per-title movie import", () => {
     const response = await POST(request({ title: "Arrival" }), context());
     expect((await response.json()).status).toBe("added");
     expect(
-      await db.select().from(nominations).where(eq(nominations.theatreId, theatreId)),
+      await db
+        .select()
+        .from(nominations)
+        .where(eq(nominations.theatreId, theatreId)),
     ).toHaveLength(1);
   });
 

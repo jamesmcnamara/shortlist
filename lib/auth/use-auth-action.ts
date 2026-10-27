@@ -20,12 +20,15 @@ export function useAuthAction(action: AuthAction) {
   const router = useRouter();
   const { refetch } = authClient.useSession();
 
-  return useActionState<AuthFormState, FormData>(async (prevState, formData) => {
-    const result = await action(prevState, formData);
-    if (result?.redirectTo) {
-      await refetch();
-      router.replace(result.redirectTo);
-    }
-    return result;
-  }, null);
+  return useActionState<AuthFormState, FormData>(
+    async (prevState, formData) => {
+      const result = await action(prevState, formData);
+      if (result?.redirectTo) {
+        await refetch();
+        router.replace(result.redirectTo);
+      }
+      return result;
+    },
+    null,
+  );
 }

@@ -28,9 +28,7 @@ export default function TheatreSettingsPage() {
         </p>
       )}
       {isAdmin && <AdminSettings />}
-      {role && (
-        <NotificationSettings key={theatre.id} theatreId={theatre.id} />
-      )}
+      {role && <NotificationSettings key={theatre.id} theatreId={theatre.id} />}
     </main>
   );
 }

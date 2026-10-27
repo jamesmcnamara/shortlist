@@ -1,5 +1,8 @@
 import { getNomination, nominationExistsInTheatre } from "@/app/lib/queries";
-import { withTheatreUser, type TheatreUserContext } from "@/lib/auth/require-theatre";
+import {
+  withTheatreUser,
+  type TheatreUserContext,
+} from "@/lib/auth/require-theatre";
 import { getDb } from "@/src/db/client";
 import { nomcoms } from "@/src/db/schema";
 import { badRequest, dbId, parseJson, requiredText } from "@/lib/validation";

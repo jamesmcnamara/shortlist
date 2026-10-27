@@ -41,9 +41,7 @@ export function TheatreRow({
         locked={locked}
         disabled={isPending}
         isPending={isPending}
-        hint={
-          hasMovie ? "Already on this list" : justAdded ? "Added ✓" : ""
-        }
+        hint={hasMovie ? "Already on this list" : justAdded ? "Added ✓" : ""}
         onToggle={onToggle}
       />
       <AnimatePresence initial={false}>

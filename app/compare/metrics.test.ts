@@ -75,7 +75,10 @@ describe("METRICS", () => {
 
   const totalReturn = METRICS.find(({ name }) => name === "Total return")!;
   const multiplier = METRICS.find(({ name }) => name === "Return multiplier")!;
-  const financialMovie = (budget: number | null, worldwideGross: number | null): Movie => ({
+  const financialMovie = (
+    budget: number | null,
+    worldwideGross: number | null,
+  ): Movie => ({
     ...movie,
     details: {
       ...movie.details,
@@ -109,22 +112,39 @@ describe("METRICS", () => {
   });
 
   it("uses dollar returns for absolute net colors and return on budget for multiplier colors", () => {
-    const movies = [financialMovie(10, 0), financialMovie(10, 10), financialMovie(10, 20)];
-    const dollarReturns = [-200_000_000, -100_000_000, -50_000_000, 0, 50_000_000, 100_000_000, 200_000_000];
-    expect(scoreRow(dollarReturns, totalReturn, "absolute"))
-      .toEqual([0, 0, 0.25, 0.5, 0.75, 1, 1]);
-    expect(scoreRow(movies.map(multiplier.read), multiplier, "absolute"))
-      .toEqual([0, 0.5, 1]);
+    const movies = [
+      financialMovie(10, 0),
+      financialMovie(10, 10),
+      financialMovie(10, 20),
+    ];
+    const dollarReturns = [
+      -200_000_000, -100_000_000, -50_000_000, 0, 50_000_000, 100_000_000,
+      200_000_000,
+    ];
+    expect(scoreRow(dollarReturns, totalReturn, "absolute")).toEqual([
+      0, 0, 0.25, 0.5, 0.75, 1, 1,
+    ]);
+    expect(
+      scoreRow(movies.map(multiplier.read), multiplier, "absolute"),
+    ).toEqual([0, 0.5, 1]);
   });
 
   it("sorts financial rows by unrounded values with missing entries last", () => {
     const loss = { ...financialMovie(10, 5), id: 1 };
     const gain = { ...financialMovie(10, 25), id: 2 };
     const missing = { ...financialMovie(null, 25), id: 3 };
-    expect(sortMovies([missing, loss, gain], totalReturn, "desc").map(({ id }) => id))
-      .toEqual([2, 1, 3]);
-    expect(scoreRow([totalReturn.read(loss), totalReturn.read(gain)], totalReturn, "relative"))
-      .toEqual([0, 1]);
+    expect(
+      sortMovies([missing, loss, gain], totalReturn, "desc").map(
+        ({ id }) => id,
+      ),
+    ).toEqual([2, 1, 3]);
+    expect(
+      scoreRow(
+        [totalReturn.read(loss), totalReturn.read(gain)],
+        totalReturn,
+        "relative",
+      ),
+    ).toEqual([0, 1]);
   });
 });
 

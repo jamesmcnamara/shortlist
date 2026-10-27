@@ -1,8 +1,7 @@
 import { get, Lens, matching } from "shades";
 
 export type TagPart =
-  | { type: "text"; value: string }
-  | { type: "tag"; value: string };
+  { type: "text"; value: string } | { type: "tag"; value: string };
 
 export function split(text: string): TagPart[] {
   // Opening punctuation allows tags in prose without matching URL fragments.
@@ -10,12 +9,10 @@ export function split(text: string): TagPart[] {
     .split(
       /(?<=^|[\s([{'"\u2018\u201c])(#[\p{L}\p{N}_-][\p{L}\p{M}\p{N}_-]*)/gu,
     )
-    .map(
-      (value, index): TagPart => ({
-        type: index % 2 === 1 ? "tag" : "text",
-        value,
-      }),
-    )
+    .map((value, index): TagPart => ({
+      type: index % 2 === 1 ? "tag" : "text",
+      value,
+    }))
     .filter(({ value }) => !!value);
 }
 
