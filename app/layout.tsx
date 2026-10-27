@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import { MotionProvider } from "./components/MotionProvider";
 import "./globals.css";
 import { DataProvider } from "./lib/data/DataProvider";
-import { MotionProvider } from "./components/MotionProvider";
 
 export const metadata: Metadata = {
   title: "Shortlist",
@@ -34,10 +34,7 @@ export default function RootLayout({
         <MotionProvider>
           <DataProvider>{children}</DataProvider>
         </MotionProvider>
-      {/* impeccable-live-start */}
-<script src="http://localhost:8400/live.js?token=3a4f2500-189c-48ec-8a32-7fcb43f08dc2"></script>
-{/* impeccable-live-end */}
-</body>
+      </body>
     </html>
   );
 }

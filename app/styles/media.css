@@ -1,0 +1,8 @@
+@custom-media --zfold-closed-portrait (max-width: 30rem);
+@custom-media --narrow-phone (max-width: 26rem);
+@custom-media --compact-phone (max-width: 32rem);
+@custom-media --phone (max-width: 40rem);
+@custom-media --tablet-up (min-width: 40rem);
+@custom-media --tablet-layout-up (min-width: 40.0625rem);
+@custom-media --compact-tablet (min-width: 40.0625rem) and (max-width: 48rem);
+@custom-media --desktop (min-width: 52rem);

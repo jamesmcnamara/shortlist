@@ -120,7 +120,7 @@
   margin-left: calc(var(--poster-overlap) * -1);
 }
 
-@media (min-width: 40rem) {
+@media (--tablet-up) {
   .card {
     max-width: 40rem;
   }
@@ -192,7 +192,7 @@
   white-space: nowrap;
 }
 
-@media (max-width: 40rem) {
+@media (--phone) {
   .shell {
     padding: 1.125rem 0.875rem 2.375rem;
   }

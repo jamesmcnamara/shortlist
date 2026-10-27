@@ -1,7 +1,7 @@
 export default {
   ignoreFiles: ["app/letterboxd/**"],
   rules: {
-    "at-rule-no-unknown": true,
+    "at-rule-no-unknown": [true, { ignoreAtRules: ["custom-media"] }],
     "block-no-empty": true,
     "declaration-block-no-duplicate-properties": true,
     "keyframe-block-no-duplicate-selectors": true,

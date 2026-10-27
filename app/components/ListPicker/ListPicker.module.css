@@ -19,7 +19,7 @@
   overflow: hidden;
 }
 
-@media (min-width: 40rem) {
+@media (--tablet-up) {
   .scrim {
     align-items: center;
     padding: 1.5rem;

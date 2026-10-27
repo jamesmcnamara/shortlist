@@ -121,7 +121,7 @@
   color: var(--accent-light);
 }
 
-@media (max-width: 40rem) {
+@media (--phone) {
   .footer {
     align-items: stretch;
     flex-direction: column;

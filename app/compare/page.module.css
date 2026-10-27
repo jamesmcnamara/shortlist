@@ -274,7 +274,7 @@
   font-size: 0.8625rem;
 }
 
-@media (min-width: 40.0625rem) {
+@media (--tablet-layout-up) {
   .shell {
     width: min(100% - 2rem, 42rem);
   }
@@ -310,7 +310,7 @@
   }
 }
 
-@media (min-width: 52rem) {
+@media (--desktop) {
   .shell {
     width: min(100% - 2.5rem, 56rem);
   }
@@ -355,7 +355,7 @@
   }
 }
 
-@media (max-width: 32rem) {
+@media (--compact-phone) {
   .shell {
     width: min(100% - 1.5rem, 40rem);
     padding-top: 1rem;

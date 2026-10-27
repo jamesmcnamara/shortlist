@@ -3,6 +3,16 @@ import { mkdir, writeFile } from "node:fs/promises";
 const SOURCE =
   "https://raw.githubusercontent.com/DLu/oscar_data/main/oscars.csv";
 const OUTPUT = new URL("../public/data/oscars.json", import.meta.url);
+const ACTING_CATEGORIES = new Set([
+  "ACTOR IN A LEADING ROLE",
+  "ACTOR IN A SUPPORTING ROLE",
+  "ACTRESS IN A LEADING ROLE",
+  "ACTRESS IN A SUPPORTING ROLE",
+]);
+const SCREENPLAY_CATEGORIES = new Set([
+  "WRITING (Adapted Screenplay)",
+  "WRITING (Original Screenplay)",
+]);
 
 const response = await fetch(SOURCE);
 if (!response.ok) {
@@ -28,6 +38,7 @@ for (const line of lines) {
       year: values[index.Year],
       category: values[index.CanonicalCategory],
       winner: values[index.Winner] === "True",
+      major: isMajorCategory(values[index.CanonicalCategory]),
       name: values[index.Name],
       ...(details[position] ? { detail: details[position] } : {}),
     };
@@ -51,6 +62,8 @@ const output = {
         ).values(),
       ].sort(
         (left, right) =>
+          categoryRank(left.category) - categoryRank(right.category) ||
+          left.category.localeCompare(right.category) ||
           right.year.localeCompare(left.year) ||
           Number(right.winner) - Number(left.winner),
       );
@@ -73,3 +86,19 @@ await writeFile(OUTPUT, JSON.stringify(output));
 console.log(
   `Wrote ${Object.keys(output.movies).length} Oscar movie records through ${output.updatedThrough}.`,
 );
+
+function isMajorCategory(category) {
+  return (
+    category === "BEST PICTURE" ||
+    category.startsWith("DIRECTING") ||
+    ACTING_CATEGORIES.has(category) ||
+    SCREENPLAY_CATEGORIES.has(category) ||
+    category.startsWith("CINEMATOGRAPHY")
+  );
+}
+
+function categoryRank(category) {
+  if (category === "BEST PICTURE") return 0;
+  if (category.startsWith("DIRECTING")) return 1;
+  return isMajorCategory(category) ? 2 : 3;
+}

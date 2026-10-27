@@ -69,7 +69,10 @@ export function MovieDiscussion({
             )}
             <div className={styles.discussionHeading}>
               <h2>{details.title}</h2>
-              <Link href={userPath(nominator.id)} className={styles.discussionMeta}>
+              <Link
+                href={userPath(nominator.id)}
+                className={styles.discussionMeta}
+              >
                 Nominated by {nominator.name}
               </Link>
             </div>
@@ -105,8 +108,8 @@ export function MovieDiscussion({
               </button>
             )}
           </div>
-          <MovieRatings services={ratings.services} />
           <MovieOscars movie={nomination.movie} />
+          <MovieRatings services={ratings.services} />
           <MovieBoxOffice
             data={details.boxOffice}
             onRefresh={onRefreshBoxOffice}

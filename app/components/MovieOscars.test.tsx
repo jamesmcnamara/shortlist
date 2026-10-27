@@ -38,15 +38,17 @@ describe("MovieOscars", () => {
               entries: [
                 {
                   year: "2014",
-                  category: "VISUAL EFFECTS",
-                  winner: true,
-                  name: "Paul Franklin",
+                  category: "PRODUCTION DESIGN",
+                  winner: false,
+                  major: false,
+                  name: "Nathan Crowley",
                 },
                 {
                   year: "2014",
-                  category: "PRODUCTION DESIGN",
-                  winner: false,
-                  name: "Nathan Crowley",
+                  category: "CINEMATOGRAPHY",
+                  winner: true,
+                  major: true,
+                  name: "Paul Franklin",
                 },
               ],
             },
@@ -57,10 +59,12 @@ describe("MovieOscars", () => {
 
     renderMovieOscars();
 
-    expect(await screen.findByText("Won 1 Oscar")).toBeTruthy();
-    expect(screen.getByText("5 total nominations · View details")).toBeTruthy();
-    fireEvent.click(screen.getByText("Won 1 Oscar"));
-    expect(screen.getByText("2014 · Visual Effects")).toBeTruthy();
+    expect(await screen.findByText("Won 1 Major Oscar")).toBeTruthy();
+    expect(screen.getByText("1 major nomination · 5 total")).toBeTruthy();
+    fireEvent.click(screen.getByText("Won 1 Major Oscar"));
+    const entries = screen.getAllByRole("listitem");
+    expect(entries[0].textContent).toContain("Cinematography");
+    expect(entries[1].textContent).toContain("Production Design");
     expect(screen.getByText("Winner")).toBeTruthy();
     expect(screen.getByText("Paul Franklin")).toBeTruthy();
   });
@@ -81,6 +85,7 @@ describe("MovieOscars", () => {
                   year: "2014",
                   category: "VISUAL EFFECTS",
                   winner: false,
+                  major: false,
                   name: "Paul Franklin",
                 },
               ],
@@ -92,7 +97,9 @@ describe("MovieOscars", () => {
 
     renderMovieOscars();
 
-    expect(await screen.findByText("Nominated for Visual Effects")).toBeTruthy();
+    expect(
+      await screen.findByText("Nominated for Visual Effects"),
+    ).toBeTruthy();
     expect(screen.getByText("2014 · Paul Franklin")).toBeTruthy();
     expect(screen.queryByRole("group")).toBeNull();
   });

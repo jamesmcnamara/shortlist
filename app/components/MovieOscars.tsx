@@ -3,11 +3,13 @@
 import type { Movie } from "@/src/db/schema";
 import useSWR from "swr";
 import styles from "./MovieOscars.module.css";
+import { every } from "shades";
 
 interface OscarEntry {
   year: string;
   category: string;
   winner: boolean;
+  major?: boolean;
   name: string;
   detail?: string;
 }
@@ -45,7 +47,21 @@ export function MovieOscars({ movie, variant = "default" }: MovieOscarsProps) {
   const oscars = data?.movies[imdbId];
   if (!oscars && !error) return null;
 
-  const singleEntry = oscars?.entries.length === 1 ? oscars.entries[0] : null;
+  const sortedOscars = oscars
+    ? {
+        ...oscars,
+        entries: oscars.entries
+          .map((entry) => ({
+            ...entry,
+            major: entry.major ?? isMajorCategory(entry.category),
+          }))
+          .sort(compareOscarEntries),
+      }
+    : null;
+  const singleEntry =
+    sortedOscars?.entries.length === 1 ? sortedOscars.entries[0] : null;
+  const majorNominations =
+    sortedOscars?.entries.filter(({ major }) => major).length ?? 0;
 
   return (
     <section
@@ -56,27 +72,31 @@ export function MovieOscars({ movie, variant = "default" }: MovieOscarsProps) {
       {error ? (
         <p className={styles.unavailable}>Oscar data is unavailable.</p>
       ) : (
-        oscars && (
+        sortedOscars && (
           <div className={styles.content}>
             {singleEntry ? (
               <div className={styles.single}>
-                <strong>
-                  {singleEntry.winner ? "Won" : "Nominated for"}{" "}
-                  {formatCategory(singleEntry.category)}
-                </strong>
+                <div className={styles.headline}>
+                  <strong>
+                    {singleEntry.winner ? "Won" : "Nominated for"}{" "}
+                    {formatCategory(singleEntry.category)}
+                  </strong>
+                </div>
                 <span>{formatEntryDetail(singleEntry)}</span>
               </div>
             ) : (
               <details className={styles.details}>
                 <summary>
                   <span className={styles.summaryCopy}>
-                    <strong>{formatMultipleHeadline(oscars)}</strong>
-                    <span>{formatMultipleDetail(oscars)}</span>
+                    <strong>{formatMultipleHeadline(sortedOscars)}</strong>
+                    <span>
+                      {formatMultipleDetail(sortedOscars, majorNominations)}
+                    </span>
                   </span>
                   <span className={styles.chevron} aria-hidden="true" />
                 </summary>
                 <ol className={styles.entries}>
-                  {oscars.entries.map((entry, index) => (
+                  {sortedOscars.entries.map((entry, index) => (
                     <li
                       key={`${entry.year}-${entry.category}-${entry.name}-${index}`}
                       className={styles.entry}
@@ -85,9 +105,11 @@ export function MovieOscars({ movie, variant = "default" }: MovieOscarsProps) {
                         <span>
                           {entry.year} · {formatCategory(entry.category)}
                         </span>
-                        {entry.winner && (
-                          <span className={styles.winner}>Winner</span>
-                        )}
+                        <span className={styles.badges}>
+                          {entry.winner && (
+                            <span className={styles.winner}>Winner</span>
+                          )}
+                        </span>
                       </div>
                       <span className={styles.nominee}>
                         {entry.name}
@@ -115,15 +137,32 @@ const getImdbId = (movie: Movie) => {
     : null;
 };
 
-const formatMultipleHeadline = ({ wins, nominations }: OscarMovie) =>
-  wins > 0
-    ? `Won ${wins} ${wins === 1 ? "Oscar" : "Oscars"}`
-    : `Nominated for ${nominations} Oscars`;
+const formatMultipleHeadline = ({ entries, wins, nominations }: OscarMovie) => {
+  const majors = entries.filter(
+    (entry) => entry.major ?? isMajorCategory(entry.category),
+  );
+  if (wins > 0) {
+    const majorText = every("winner")(majors) ? "Major " : "";
+    return `Won ${wins} ${majorText}${wins === 1 ? "Oscar" : "Oscars"}`;
+  }
+  const majorText = majors.length === entries.length ? "Major " : "";
+  return `Nominated for ${nominations} ${majorText}Oscars`;
+};
 
-const formatMultipleDetail = ({ wins, nominations }: OscarMovie) =>
-  wins > 0
-    ? `${nominations} total nominations · View details`
-    : "View nomination details";
+const formatMultipleDetail = (
+  { nominations }: OscarMovie,
+  majorNominations: number,
+) =>
+  [
+    majorNominations > 0
+      ? `${majorNominations} major ${
+          majorNominations === 1 ? "nomination" : "nominations"
+        }`
+      : null,
+    `${nominations} total`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
 const formatCategory = (category: string) =>
   category
@@ -132,6 +171,26 @@ const formatCategory = (category: string) =>
 
 const formatEntryDetail = (entry: OscarEntry) =>
   [entry.year, entry.name, entry.detail].filter(Boolean).join(" · ");
+
+const compareOscarEntries = (left: OscarEntry, right: OscarEntry) =>
+  categoryRank(left) - categoryRank(right) ||
+  left.category.localeCompare(right.category) ||
+  right.year.localeCompare(left.year) ||
+  Number(right.winner) - Number(left.winner);
+
+const categoryRank = (entry: OscarEntry) => {
+  if (entry.category === "BEST PICTURE") return 0;
+  if (entry.category.startsWith("DIRECTING")) return 1;
+  return (entry.major ?? isMajorCategory(entry.category)) ? 2 : 3;
+};
+
+const isMajorCategory = (category: string) =>
+  category === "BEST PICTURE" ||
+  category.startsWith("DIRECTING") ||
+  /^(ACTOR|ACTRESS) IN A (LEADING|SUPPORTING) ROLE$/.test(category) ||
+  category === "WRITING (Adapted Screenplay)" ||
+  category === "WRITING (Original Screenplay)" ||
+  category.startsWith("CINEMATOGRAPHY");
 
 const OscarStatuetteIcon = () => (
   <svg

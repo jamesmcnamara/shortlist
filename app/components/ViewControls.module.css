@@ -131,7 +131,7 @@
   overflow: hidden;
 }
 
-@media (max-width: 40rem) {
+@media (--phone) {
   .search {
     min-height: 2.75rem;
   }

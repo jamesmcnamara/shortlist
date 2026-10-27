@@ -141,7 +141,7 @@
   opacity: 0.45;
 }
 
-@media (max-width: 26rem) {
+@media (--narrow-phone) {
   .compareBar {
     gap: 0.25rem;
     width: calc(100% - 1rem);

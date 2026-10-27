@@ -18,7 +18,7 @@
   color: var(--text);
 }
 
-@media (max-width: 40rem) {
+@media (--phone) {
   .header {
     gap: 0.5rem;
   }

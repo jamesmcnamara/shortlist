@@ -3,6 +3,7 @@
   grid-template-columns: 1.25rem minmax(0, 1fr);
   align-items: start;
   gap: 0.625rem;
+  width: 100%;
 }
 
 .detail {
@@ -34,7 +35,14 @@
   gap: 0.1875rem;
 }
 
-.single strong {
+.headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.headline strong {
   color: var(--text);
   font-size: 0.9344rem;
 }
@@ -119,15 +127,22 @@
   font-weight: 800;
 }
 
+.badges {
+  display: inline-flex;
+  flex: none;
+  gap: 0.25rem;
+}
+
 .winner {
   flex: none;
   padding: 0.1875rem 0.4375rem;
   border-radius: var(--radius-pill);
-  background: var(--success-wash);
-  color: var(--success);
   font-size: 0.6562rem;
+  font-weight: 800;
   line-height: 1.2;
   text-transform: uppercase;
+  background: var(--success-wash);
+  color: var(--success);
 }
 
 .nominee {
@@ -135,6 +150,14 @@
   font-size: 0.7906rem;
   line-height: 1.4;
   overflow-wrap: anywhere;
+}
+
+@media (--zfold-closed-portrait) {
+  .entryHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
