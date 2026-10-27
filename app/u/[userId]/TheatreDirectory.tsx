@@ -123,7 +123,15 @@ export function TheatreDirectory({
               >
                 <span className={styles.theatreName}>{theatre.name}</span>
                 {theatre.posterUrls.length > 0 && (
-                  <span className={styles.posters} aria-hidden="true">
+                  <span
+                    className={styles.posters}
+                    style={
+                      {
+                        "--poster-count": theatre.posterUrls.length,
+                      } as CSSProperties
+                    }
+                    aria-hidden="true"
+                  >
                     {theatre.posterUrls.map((posterUrl, i) => (
                       <img
                         className={styles.poster}

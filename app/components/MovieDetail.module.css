@@ -188,6 +188,8 @@
 .section {
   display: grid;
   gap: 0.625rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
 }
 
 .sectionTitle {

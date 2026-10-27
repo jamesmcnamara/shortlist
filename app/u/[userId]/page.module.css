@@ -81,8 +81,8 @@
 }
 
 /*
- * Posters that don't fully fit wrap to a second line, which sits below the
- * clipped area. Padding leaves room for the tilt and shadows.
+ * On compact screens, posters that don't fully fit wrap below the clipped
+ * area. Padding leaves room for the tilt and shadows.
  */
 .posters {
   --shadow-theatre: 1rem;
@@ -118,6 +118,37 @@
 
 .poster + .poster {
   margin-left: calc(var(--poster-overlap) * -1);
+}
+
+@media (min-width: 40rem) {
+  .card {
+    max-width: 40rem;
+  }
+
+  .theatreCard {
+    --poster-width: 4.86rem;
+    --poster-height: 7.29rem;
+    --poster-overlap: 2.43rem;
+  }
+
+  .posters {
+    display: grid;
+    grid-template-columns: repeat(var(--poster-count), minmax(0, 1fr));
+    padding-inline: 1.5rem;
+  }
+
+  .poster {
+    grid-row: 1;
+    justify-self: start;
+  }
+
+  .poster:last-child {
+    justify-self: end;
+  }
+
+  .poster + .poster {
+    margin-left: 0;
+  }
 }
 
 .tags {

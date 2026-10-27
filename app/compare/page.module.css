@@ -14,6 +14,10 @@
   min-width: 0;
 }
 
+.comparisonControls {
+  margin-bottom: 0.75rem;
+}
+
 .scaleToggle {
   display: inline-flex;
   padding: 0.1875rem;
@@ -225,6 +229,10 @@
   gap: 1rem;
 }
 
+.searchResults:empty {
+  display: none;
+}
+
 .searchInput {
   display: flex;
   align-items: center;
@@ -264,6 +272,87 @@
   margin: 0;
   color: var(--muted);
   font-size: 0.8625rem;
+}
+
+@media (min-width: 40.0625rem) {
+  .shell {
+    width: min(100% - 2rem, 42rem);
+  }
+
+  .compare {
+    gap: 1.5rem;
+  }
+
+  .comparisonControls {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .scaleHint {
+    min-height: 0;
+    margin: 0;
+  }
+
+  .table {
+    border-spacing: 0.375rem 0.3125rem;
+  }
+
+  .poster {
+    width: 90%;
+    max-width: 6.25rem;
+  }
+
+  .scored,
+  .unscored {
+    height: 3rem;
+  }
+}
+
+@media (min-width: 52rem) {
+  .shell {
+    width: min(100% - 2.5rem, 56rem);
+  }
+
+  .table {
+    border-spacing: 0.5rem 0.375rem;
+  }
+
+  .table thead td,
+  .table tbody th {
+    width: 2.75rem;
+  }
+
+  .poster {
+    max-width: 7rem;
+  }
+
+  .scored,
+  .unscored {
+    height: 3.25rem;
+    font-size: 1rem;
+  }
+
+  .search {
+    grid-template-columns: minmax(18rem, 0.8fr) minmax(0, 1.2fr);
+    align-items: start;
+    gap: 1.25rem;
+  }
+
+  .searchInput,
+  .hint {
+    grid-column: 1;
+  }
+
+  .searchResults {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .search:has(.searchResults:empty) {
+    grid-template-columns: minmax(0, 32rem);
+  }
 }
 
 @media (max-width: 32rem) {

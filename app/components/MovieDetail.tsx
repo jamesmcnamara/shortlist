@@ -1,6 +1,8 @@
 import type { Movie } from "@/src/db/schema";
 import { tmdbImageUrl } from "@/app/lib/utils";
+import { MovieBoxOffice } from "./MovieBoxOffice";
 import { MovieRatings } from "./MovieRatings";
+import { MovieStreaming } from "./MovieStreaming";
 import styles from "./MovieDetail.module.css";
 
 interface MovieDetailProps {
@@ -94,6 +96,16 @@ export function MovieDetail({ movie, onBack, onAdd }: MovieDetailProps) {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Ratings</h2>
           <MovieRatings services={ratings.services} />
+        </div>
+
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Box office</h2>
+          <MovieBoxOffice data={details.boxOffice} />
+        </div>
+
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Where to watch</h2>
+          <MovieStreaming availability={details.justWatch} />
         </div>
       </div>
     </div>

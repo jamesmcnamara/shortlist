@@ -80,24 +80,26 @@ export function MovieCompare({ initialMovies, userId }: MovieCompareProps) {
   return (
     <div className={styles.compare}>
       {movies.length > 0 && (
-        <section aria-label="Movie comparison">
-          <div
-            className={styles.scaleToggle}
-            role="group"
-            aria-label="Color scale"
-          >
-            {(["relative", "absolute"] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={scale === option}
-                onClick={() => setScale(option)}
-              >
-                {capitalize(option)}
-              </button>
-            ))}
+        <section className={styles.comparison} aria-label="Movie comparison">
+          <div className={styles.comparisonControls}>
+            <div
+              className={styles.scaleToggle}
+              role="group"
+              aria-label="Color scale"
+            >
+              {(["relative", "absolute"] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={scale === option}
+                  onClick={() => setScale(option)}
+                >
+                  {capitalize(option)}
+                </button>
+              ))}
+            </div>
+            <p className={styles.scaleHint}>{SCALE_HINTS[scale]}</p>
           </div>
-          <p className={styles.scaleHint}>{SCALE_HINTS[scale]}</p>
 
           <div className={styles.tableScroll}>
             <table
@@ -225,12 +227,14 @@ export function MovieCompare({ initialMovies, userId }: MovieCompareProps) {
               Pick a few movies to stack them side by side.
             </p>
           )}
-          <MovieSearchResults
-            results={freshResults}
-            isLoading={isLoading}
-            error={error}
-            onSelect={add}
-          />
+          <div className={styles.searchResults}>
+            <MovieSearchResults
+              results={freshResults}
+              isLoading={isLoading}
+              error={error}
+              onSelect={add}
+            />
+          </div>
         </section>,
       )}
     </div>

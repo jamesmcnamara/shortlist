@@ -92,6 +92,13 @@
   font: inherit;
 }
 
+@media (min-width: 40.0625rem) and (max-width: 48rem) {
+  .movieList {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.25rem 0.875rem;
+  }
+}
+
 @media (max-width: 40rem) {
   .shell {
     width: min(100% - 1.75rem, 53.75rem);
