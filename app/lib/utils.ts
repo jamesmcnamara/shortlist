@@ -38,3 +38,22 @@ export const when =
   (condition: any) =>
   <T extends any>(arg: T) =>
     condition ? arg : undefined;
+
+interface StopPropagationOptions {
+  preventDefault?: boolean;
+  callback?: (event: React.SyntheticEvent) => void;
+}
+
+export function stopPropagation(
+  options?: StopPropagationOptions | (() => void),
+) {
+  return (event: React.SyntheticEvent) => {
+    event.stopPropagation();
+    if (typeof options === "function") {
+      options();
+    } else {
+      if (options?.preventDefault) event.preventDefault();
+      options?.callback?.(event);
+    }
+  };
+}

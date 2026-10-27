@@ -25,6 +25,7 @@ import {
 } from "@/app/lib/theatre-view";
 import { theatrePath } from "@/lib/theatre-path";
 import styles from "./page.module.css";
+import { stopPropagation } from "@/app/lib/utils";
 
 const VIEW_CHANGE = "theatre-view-change";
 const subscribe = (onChange: () => void) => {
@@ -38,13 +39,15 @@ const subscribe = (onChange: () => void) => {
 
 const getSearch = () => window.location.search;
 
+interface TheatreDirectoryProps {
+  theatres: TheatreSummaryWithPosterPreviews[];
+  initialSearch: string;
+}
+
 export function TheatreDirectory({
   theatres,
   initialSearch,
-}: {
-  theatres: TheatreSummaryWithPosterPreviews[];
-  initialSearch: string;
-}) {
+}: TheatreDirectoryProps) {
   const search = useSyncExternalStore(
     subscribe,
     getSearch,
@@ -139,7 +142,15 @@ export function TheatreDirectory({
                   <span className={styles.tags}>
                     {theatre.tags.toSorted().map((tag) => (
                       <Fragment key={tag}>
-                        <span className={styles.tag}>#{tag}</span>{" "}
+                        <span
+                          onClick={stopPropagation({
+                            callback: () => change({ filters: [tag] }),
+                            preventDefault: true,
+                          })}
+                          className={styles.tag}
+                        >
+                          #{tag}
+                        </span>{" "}
                       </Fragment>
                     ))}
                   </span>

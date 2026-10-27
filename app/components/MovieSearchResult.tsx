@@ -3,6 +3,7 @@ import { useState } from "react";
 import { LoadingOverlay } from "@/app/components/LoadingOverlay";
 import styles from "./MovieSearchResult.module.css";
 import { MovieStreaming } from "./MovieStreaming";
+import { stopPropagation } from "../lib/utils";
 
 interface MovieSearchResultProps {
   movie: Movie;
@@ -23,10 +24,7 @@ export function MovieSearchResult({
     : "Year unknown";
 
   return (
-    <li
-      className={styles.result}
-      onClick={() => onSelect?.(movie)}
-    >
+    <li className={styles.result} onClick={() => onSelect?.(movie)}>
       {movie.details.posterUrl ? (
         <img
           src={movie.details.posterUrl}
@@ -43,10 +41,7 @@ export function MovieSearchResult({
             <button
               className={styles.select}
               type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onSelect(movie);
-              }}
+              onClick={stopPropagation(() => onSelect(movie))}
             >
               {movie.details.title}
             </button>
@@ -70,10 +65,7 @@ export function MovieSearchResult({
                 className={styles.add}
                 type="button"
                 aria-label={`Add ${movie.details.title} to a list`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onAdd(movie);
-                }}
+                onClick={stopPropagation(() => onAdd(movie))}
               >
                 {plusIcon}
               </button>
@@ -84,15 +76,14 @@ export function MovieSearchResult({
                 className={styles.addIcon}
                 type="button"
                 aria-label={`Add ${movie.details.title} to this list`}
-                onClick={async (event) => {
-                  event.stopPropagation();
+                onClick={stopPropagation(async () => {
                   setIsAdding(true);
                   try {
                     await onQuickAdd(movie);
                   } finally {
                     setIsAdding(false);
                   }
-                }}
+                })}
               >
                 {plusIcon}
               </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { httpsUrl } from "@/app/lib/justwatch";
+import { stopPropagation } from "@/app/lib/utils";
 import type {
   JustWatchAvailability,
   StreamingService,
@@ -57,8 +58,8 @@ export function MovieStreaming({
     <div
       className={styles.streaming}
       aria-label="Streaming availability"
-      onClick={stopPropagation}
-      onKeyDown={stopPropagation}
+      onClick={stopPropagation()}
+      onKeyDown={stopPropagation()}
     >
       {availability?.status === "matched" && offers.length > 0 ? (
         <ul className={styles.services} aria-label="Your streaming services">
@@ -161,7 +162,3 @@ const getOffers = (
       return offer ? [{ ...offer, serviceName: service.name }] : [];
     })
     .sort((a, b) => PRIORITY[a.type] - PRIORITY[b.type]);
-
-const stopPropagation = (event: React.SyntheticEvent) => {
-  event.stopPropagation();
-};

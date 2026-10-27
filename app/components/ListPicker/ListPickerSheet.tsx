@@ -8,6 +8,7 @@ import { NewListForm } from "./NewListForm";
 import { SheetFooter } from "./SheetFooter";
 import { TheatreSkeleton } from "./TheatreSkeleton";
 import styles from "./ListPicker.module.css";
+import { stopPropagation } from "@/app/lib/utils";
 
 interface ListPickerSheetProps<T extends TheatreSummary> {
   label: string;
@@ -64,7 +65,7 @@ export function ListPickerSheet<T extends TheatreSummary>({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ duration: 0.2, ease: "easeOut" }}
-        onClick={(event) => event.stopPropagation()}
+        onClick={stopPropagation()}
       >
         <div className={styles.header}>
           {posterUrl !== undefined &&
