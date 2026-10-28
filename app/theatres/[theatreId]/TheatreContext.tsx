@@ -35,9 +35,9 @@ interface TheatreProviderProps {
 }
 
 export function TheatreProvider({ theatreId, children }: TheatreProviderProps) {
-  const { data: detail, ...detailQuery } = useTheatreDetail({ id: theatreId });
+  const { data: detail, ...detailQuery } = useTheatreDetail(theatreId);
   const { data: theatres, ...theatresQuery } = useTheatres();
-  const { data: noms, ...nomQuery } = useNominations({ id: theatreId });
+  const { data: noms, ...nomQuery } = useNominations(theatreId);
   const client = useMemo(() => api.theatre(theatreId), [theatreId]);
   const value = useMemo<TheatreContextValue | null>(() => {
     if (!detail || !theatres || !noms) return null;

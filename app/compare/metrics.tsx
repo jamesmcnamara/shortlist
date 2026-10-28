@@ -1,10 +1,17 @@
-import type { Movie, RatingSource } from "@/src/db/schema";
-import { find } from "shades";
 import {
   calculateReturns,
   compactMoney,
   formatMultiplier,
 } from "@/app/lib/box-office-metrics";
+import { getImdbId, type OscarEntry, type Oscars } from "@/app/lib/data/oscars";
+import type { Movie, RatingSource } from "@/src/db/schema";
+import countBy from "lodash/fp/countBy";
+import React from "react";
+import { find } from "shades";
+import { OscarStatuette } from "../components/OscarStatuette";
+import { ClockIcon } from "./ClockIcon";
+
+import { some } from "shades";
 
 export type Scale = "absolute" | "relative";
 
@@ -27,13 +34,17 @@ export const parseTmdbIds = (param: string | string[] | undefined) =>
 export const compareHref = (tmdbIds: number[]) =>
   tmdbIds.length > 0 ? `/compare?tmdb=${tmdbIds.join(",")}` : "/compare";
 
+export interface MetricsContext {
+  oscars?: Oscars;
+}
+
 export interface Metric {
   name: string;
-  logo: string | null;
+  logo: string | (() => React.ReactNode) | null;
   /** The full possible range, used by the absolute scale. */
   range: [number, number];
   lowerIsBetter: boolean;
-  read: (movie: Movie) => number | null;
+  read: (movie: Movie, context?: MetricsContext) => number | null;
   format: (value: number) => string;
 }
 
@@ -90,8 +101,22 @@ export const METRICS: Metric[] = [
     format: toPct,
   },
   {
+    name: "Oscars",
+    logo: () => <OscarStatuette />,
+    range: [-50, 50],
+    lowerIsBetter: false,
+    read: (movie, ctx) => {
+      if (!ctx?.oscars) return null;
+      const imdbId = getImdbId(movie);
+      if (!imdbId || !ctx.oscars.movies[imdbId]) return null;
+      const awards = ctx.oscars.movies[imdbId];
+      return scoreOscars(awards.entries);
+    },
+    format: (n) => `${n}pt${n === 1 ? "" : "s"}`,
+  },
+  {
     name: "Runtime",
-    logo: null,
+    logo: () => <ClockIcon label="Runtime" />,
     range: [80, 180],
     lowerIsBetter: true,
     read: (movie) => positive(movie.details?.runtime),
@@ -123,10 +148,11 @@ export const sortMovies = (
   movies: Movie[],
   metric: Pick<Metric, "read">,
   direction: SortDirection,
+  context: MetricsContext,
 ) => {
   const sign = direction === "desc" ? -1 : 1;
   return movies
-    .map((movie) => ({ movie, value: metric.read(movie) }))
+    .map((movie) => ({ movie, value: metric.read(movie, context) }))
     .toSorted((a, b) =>
       a.value === null || b.value === null
         ? Number(a.value === null) - Number(b.value === null)
@@ -160,4 +186,25 @@ export const scoreRow = (
     const position = clamp((value - low) / (high - low));
     return metric.lowerIsBetter ? 1 - position : position;
   });
+};
+
+const scoreOscars = (entries: OscarEntry[]) => {
+  const {
+    majorWins = 0,
+    majorNoms = 0,
+    minorWins = 0,
+    minorNoms = 0,
+  } = countBy(
+    (entry: OscarEntry) =>
+      `${entry.major ? "major" : "minor"}${entry.winner ? "Wins" : "Noms"}`,
+  )(entries);
+
+  // Give Best Picture winner a bonus of 5 points
+  const bestPicture = some({ category: "BEST PICTURE", winner: true })(entries)
+    ? 5
+    : 0;
+
+  return (
+    bestPicture + majorWins * 10 + majorNoms * 5 + minorWins * 3 + minorNoms
+  );
 };

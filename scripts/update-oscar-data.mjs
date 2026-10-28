@@ -38,8 +38,8 @@ for (const line of lines) {
       year: values[index.Year],
       category: values[index.CanonicalCategory],
       winner: values[index.Winner] === "True",
-      major: isMajorCategory(values[index.CanonicalCategory]),
       name: values[index.Name],
+      major: isMajorCategory(values[index.CanonicalCategory]),
       ...(details[position] ? { detail: details[position] } : {}),
     };
     movies.set(imdbId, [...(movies.get(imdbId) ?? []), entry]);
@@ -81,7 +81,7 @@ const output = {
 };
 
 await mkdir(new URL("../public/data/", import.meta.url), { recursive: true });
-await writeFile(OUTPUT, JSON.stringify(output));
+await writeFile(OUTPUT, JSON.stringify(output, null, 2));
 
 console.log(
   `Wrote ${Object.keys(output.movies).length} Oscar movie records through ${output.updatedThrough}.`,

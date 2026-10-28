@@ -65,6 +65,7 @@ describe("METRICS", () => {
       null,
       null,
       null,
+      null,
     ]);
   });
 
@@ -125,7 +126,11 @@ describe("METRICS", () => {
       0, 0, 0.25, 0.5, 0.75, 1, 1,
     ]);
     expect(
-      scoreRow(movies.map(multiplier.read), multiplier, "absolute"),
+      scoreRow(
+        movies.map((m) => multiplier.read(m)),
+        multiplier,
+        "absolute",
+      ),
     ).toEqual([0, 0.5, 1]);
   });
 
@@ -134,7 +139,7 @@ describe("METRICS", () => {
     const gain = { ...financialMovie(10, 25), id: 2 };
     const missing = { ...financialMovie(null, 25), id: 3 };
     expect(
-      sortMovies([missing, loss, gain], totalReturn, "desc").map(
+      sortMovies([missing, loss, gain], totalReturn, "desc", {}).map(
         ({ id }) => id,
       ),
     ).toEqual([2, 1, 3]);
@@ -186,12 +191,14 @@ describe("sortMovies", () => {
   const ids = (list: Movie[]) => list.map(({ id }) => id);
 
   it("sorts highest first, keeping ties in order and missing last", () => {
-    expect(ids(sortMovies(movies, byValue, "desc"))).toEqual([
+    expect(ids(sortMovies(movies, byValue, "desc", {}))).toEqual([
       13, 3, 22, 31, 4,
     ]);
   });
 
   it("sorts lowest first with missing still last", () => {
-    expect(ids(sortMovies(movies, byValue, "asc"))).toEqual([31, 22, 13, 3, 4]);
+    expect(ids(sortMovies(movies, byValue, "asc", {}))).toEqual([
+      31, 22, 13, 3, 4,
+    ]);
   });
 });

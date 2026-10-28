@@ -1,68 +1,29 @@
 "use client";
 
+import {
+  isMajorCategory,
+  useOscarsFor,
+  type OscarEntry,
+  type OscarMovie,
+} from "@/app/lib/data/oscars";
 import type { Movie } from "@/src/db/schema";
-import useSWR from "swr";
-import styles from "./Oscars.module.css";
-import { every } from "shades";
 import classname from "classnames";
+import { every } from "shades";
+import styles from "./Oscars.module.css";
+import { OscarStatuette } from "./OscarStatuette";
 
-interface OscarEntry {
-  year: string;
-  category: string;
-  winner: boolean;
-  major?: boolean;
-  name: string;
-  detail?: string;
-}
-
-interface OscarMovie {
-  wins: number;
-  nominations: number;
-  entries: OscarEntry[];
-}
-
-interface OscarDataset {
-  updatedThrough: number;
-  movies: Record<string, OscarMovie>;
-}
-
-interface OscarsProps {
+export interface OscarsProps {
   movie: Movie;
   variant?: "default" | "detail";
 }
 
 export function Oscars({ movie, variant = "default" }: OscarsProps) {
-  const imdbId = getImdbId(movie);
-  const { data, error } = useSWR<OscarDataset>(
-    imdbId ? "/data/oscars.json" : null,
-    fetchDataset,
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    },
-  );
-
-  if (!imdbId || (!data && !error)) return null;
-
-  const oscars = data?.movies[imdbId];
+  const { awards: oscars, error } = useOscarsFor(movie);
   if (!oscars && !error) return null;
 
-  const sortedOscars = oscars
-    ? {
-        ...oscars,
-        entries: oscars.entries
-          .map((entry) => ({
-            ...entry,
-            major: entry.major ?? isMajorCategory(entry.category),
-          }))
-          .sort(compareOscarEntries),
-      }
-    : null;
-  const singleEntry =
-    sortedOscars?.entries.length === 1 ? sortedOscars.entries[0] : null;
+  const singleEntry = oscars?.entries.length === 1 ? oscars.entries[0] : null;
   const majorNominations =
-    sortedOscars?.entries.filter(({ major }) => major).length ?? 0;
+    oscars?.entries.filter(({ major }) => major).length ?? 0;
 
   return (
     <section
@@ -71,11 +32,11 @@ export function Oscars({ movie, variant = "default" }: OscarsProps) {
       })}
       aria-label="Academy Awards"
     >
-      <OscarStatuetteIcon />
+      <OscarStatuette />
       {error ? (
         <p className={styles.unavailable}>Oscar data is unavailable.</p>
       ) : (
-        sortedOscars && (
+        oscars && (
           <div className={styles.content}>
             {singleEntry ? (
               <div className={styles.single}>
@@ -91,15 +52,15 @@ export function Oscars({ movie, variant = "default" }: OscarsProps) {
               <details className={styles.details}>
                 <summary>
                   <span className={styles.summaryCopy}>
-                    <strong>{formatMultipleHeadline(sortedOscars)}</strong>
+                    <strong>{formatMultipleHeadline(oscars)}</strong>
                     <span>
-                      {formatMultipleDetail(sortedOscars, majorNominations)}
+                      {formatMultipleDetail(oscars, majorNominations)}
                     </span>
                   </span>
                   <span className={styles.chevron} aria-hidden="true" />
                 </summary>
                 <ol className={styles.entries}>
-                  {sortedOscars.entries.map((entry, index) => (
+                  {oscars.entries.map((entry, index) => (
                     <li
                       key={`${entry.year}-${entry.category}-${entry.name}-${index}`}
                       className={styles.entry}
@@ -129,16 +90,6 @@ export function Oscars({ movie, variant = "default" }: OscarsProps) {
     </section>
   );
 }
-
-const getImdbId = (movie: Movie) => {
-  const detailsId = movie.details.imdb_id;
-  if (detailsId && /^tt\d+$/.test(detailsId)) return detailsId;
-
-  const raw = movie.ratings.raw as { ids?: { imdb?: unknown } };
-  return typeof raw.ids?.imdb === "string" && /^tt\d+$/.test(raw.ids.imdb)
-    ? raw.ids.imdb
-    : null;
-};
 
 const formatMultipleHeadline = ({ entries, wins, nominations }: OscarMovie) => {
   const majors = entries.filter(
@@ -176,45 +127,3 @@ const formatCategory = (category: string) =>
 
 const formatEntryDetail = (entry: OscarEntry) =>
   [entry.year, entry.name, entry.detail].filter(Boolean).join(" · ");
-
-const compareOscarEntries = (left: OscarEntry, right: OscarEntry) =>
-  categoryRank(left) - categoryRank(right) ||
-  left.category.localeCompare(right.category) ||
-  right.year.localeCompare(left.year) ||
-  Number(right.winner) - Number(left.winner);
-
-const categoryRank = (entry: OscarEntry) => {
-  if (entry.category === "BEST PICTURE") return 0;
-  if (entry.category.startsWith("DIRECTING")) return 1;
-  return (entry.major ?? isMajorCategory(entry.category)) ? 2 : 3;
-};
-
-const isMajorCategory = (category: string) =>
-  category === "BEST PICTURE" ||
-  category.startsWith("DIRECTING") ||
-  /^(ACTOR|ACTRESS) IN A (LEADING|SUPPORTING) ROLE$/.test(category) ||
-  category === "WRITING (Adapted Screenplay)" ||
-  category === "WRITING (Original Screenplay)" ||
-  category.startsWith("CINEMATOGRAPHY");
-
-const OscarStatuetteIcon = () => (
-  <svg
-    className={styles.icon}
-    viewBox="0 0 24 32"
-    role="img"
-    aria-label="Oscar"
-  >
-    <circle cx="12" cy="4.5" r="3" />
-    <path d="M8.7 8.4h6.6l1.4 8.1-2.5 7.1H9.8l-2.5-7.1 1.4-8.1Z" />
-    <path d="M9.7 23.2h4.6l1 3.1H8.7l1-3.1Z" />
-    <path d="M6.5 27h11l1.5 3H5l1.5-3Z" />
-  </svg>
-);
-
-const fetchDataset = async (url: string): Promise<OscarDataset> => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Oscar data returned ${response.status}.`);
-  }
-  return response.json();
-};

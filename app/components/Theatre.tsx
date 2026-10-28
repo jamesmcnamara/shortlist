@@ -104,9 +104,7 @@ export function Theatre({
     };
   };
 
-  const focused = focusedId
-    ? (find({ id: focusedId })(nominees) ?? null)
-    : null;
+  const focused = when(focusedId)(find({ id: focusedId })(nominees));
 
   const pickedNoms = nominees.filter(
     ({ movie }) => movie.tmdbId !== null && picked?.includes(movie.tmdbId),

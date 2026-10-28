@@ -136,7 +136,7 @@ describe("shared data cache", () => {
       .mockResolvedValueOnce(json([{ id: 2, comment: "Other theatre" }]))
       .mockReturnValueOnce(refreshed.promise);
     const { result, rerender } = renderHook(
-      ({ current }) => useNominations(current),
+      ({ current }) => useNominations(current.id),
       { wrapper: Wrapper, initialProps: { current: theatre } },
     );
     await waitFor(() =>
@@ -159,7 +159,7 @@ describe("shared data cache", () => {
   it("deduplicates simultaneous readers", async () => {
     fetchMock.mockResolvedValue(json([]));
     const { result } = renderHook(
-      () => [useNominations(theatre), useNominations(theatre)],
+      () => [useNominations(theatre.id), useNominations(theatre.id)],
       { wrapper: Wrapper },
     );
     await waitFor(() =>
@@ -177,7 +177,7 @@ describe("shared data cache", () => {
     fetchMock
       .mockResolvedValueOnce(json([{ id: 1, comment: "Cached" }]))
       .mockReturnValueOnce(refresh.promise);
-    const { result, rerender } = renderHook(() => useNominations(theatre), {
+    const { result, rerender } = renderHook(() => useNominations(theatre.id), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data).toBeDefined());
@@ -192,7 +192,7 @@ describe("shared data cache", () => {
   it("does not duplicate an in-progress fetch on navigation", async () => {
     const firstRead = deferred<Response>();
     fetchMock.mockReturnValue(firstRead.promise);
-    const { result, rerender } = renderHook(() => useNominations(theatre), {
+    const { result, rerender } = renderHook(() => useNominations(theatre.id), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
@@ -210,7 +210,7 @@ describe("shared data cache", () => {
       fetchMock
         .mockResolvedValueOnce(json([{ id: 1, comment: "Cached" }]))
         .mockReturnValueOnce(refresh.promise);
-      const { result } = renderHook(() => useNominations(theatre), {
+      const { result } = renderHook(() => useNominations(theatre.id), {
         wrapper: Wrapper,
       });
       await waitFor(() => expect(result.current.data).toBeDefined());
@@ -236,7 +236,7 @@ describe("shared data cache", () => {
       return json(deleted ? [] : [{ id: 1 }]);
     });
     const { result } = renderHook(
-      () => [useNominations(theatre), useNominations(otherTheatre)],
+      () => [useNominations(theatre.id), useNominations(otherTheatre.id)],
       { wrapper: Wrapper },
     );
     await waitFor(() =>
@@ -261,7 +261,7 @@ describe("shared data cache", () => {
       return json([{ id: 1, comment: reads === 1 ? "Old" : "New" }]);
     });
 
-    const { result } = renderHook(() => useNominations(theatre), {
+    const { result } = renderHook(() => useNominations(theatre.id), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data?.[0].comment).toBe("Old"));
@@ -295,7 +295,7 @@ describe("shared data cache", () => {
       }
       return json(imported ? [{ id: 1 }] : []);
     });
-    const { result } = renderHook(() => useNominations(theatre), {
+    const { result } = renderHook(() => useNominations(theatre.id), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data).toEqual([]));
@@ -315,7 +315,7 @@ describe("shared data cache", () => {
     fetchMock
       .mockResolvedValueOnce(json([{ id: 1 }]))
       .mockResolvedValueOnce(json({ error: "Temporarily unavailable" }, 503));
-    const { result } = renderHook(() => useNominations(theatre), {
+    const { result } = renderHook(() => useNominations(theatre.id), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data).toBeDefined());
@@ -332,7 +332,7 @@ describe("shared data cache", () => {
       fetchMock
         .mockResolvedValueOnce(json([{ id: 1 }]))
         .mockResolvedValueOnce(json({ error: "Access denied" }, status));
-      const { result } = renderHook(() => useNominations(theatre), {
+      const { result } = renderHook(() => useNominations(theatre.id), {
         wrapper: Wrapper,
       });
       await waitFor(() => expect(result.current.data).toBeDefined());
@@ -348,7 +348,7 @@ describe("shared data cache", () => {
     fetchMock
       .mockResolvedValueOnce(json([{ id: 1 }]))
       .mockResolvedValueOnce(json({ error: "Could not save" }, 500));
-    const { result } = renderHook(() => useNominations(theatre), {
+    const { result } = renderHook(() => useNominations(theatre.id), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data).toBeDefined());
@@ -370,7 +370,7 @@ describe("shared data cache", () => {
       }
       return json(nominations);
     });
-    const { result } = renderHook(() => useNominations(theatre), {
+    const { result } = renderHook(() => useNominations(theatre.id), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data).toHaveLength(2));
@@ -407,7 +407,7 @@ describe("shared data cache", () => {
       .mockResolvedValueOnce(json([{ id: 2 }]))
       .mockResolvedValueOnce(json({ error: "Gone" }, 404));
     const { result, rerender } = renderHook(
-      ({ current }) => useNominations(current),
+      ({ current }) => useNominations(current.id),
       { wrapper: Wrapper, initialProps: { current: theatre } },
     );
     await waitFor(() => expect(result.current.data?.[0].id).toBe(1));
@@ -466,7 +466,7 @@ describe("shared data cache", () => {
       .mockResolvedValueOnce(json([{ id: 1, comment: "Alice" }]))
       .mockReturnValueOnce(write.promise)
       .mockResolvedValueOnce(json([{ id: 1, comment: "Bob" }]));
-    const { result, rerender } = renderHook(() => useNominations(theatre), {
+    const { result, rerender } = renderHook(() => useNominations(theatre.id), {
       wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.data?.[0].comment).toBe("Alice"));
@@ -563,7 +563,7 @@ describe("theatre integration", () => {
 
     function Content() {
       const { theatre, noms } = useTheatre();
-      const { data } = useTheatreDetail(theatre);
+      const { data } = useTheatreDetail(theatre.id);
       return (
         <p>
           {data?.theatre.name}: {noms.length} movies

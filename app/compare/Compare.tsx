@@ -1,6 +1,6 @@
 "use client";
-
 import { SearchResults } from "@/app/components/SearchResults";
+import { useOscars } from "@/app/lib/data/oscars";
 import { heat } from "@/app/lib/heat";
 import { useMovieSearch } from "@/app/lib/useMovieSearch";
 import { capitalize, when, withTargetValue } from "@/app/lib/utils";
@@ -17,10 +17,12 @@ import {
 } from "./metrics";
 import styles from "./page.module.css";
 
+const OSCAR_HINT =
+  "Oscar points are calculated as: Best Picture = 15pts, Major win = 10pts, Major nomination = 5pts, Minor win = 3pts, Minor nomination = 1pt.";
+
 const SCALE_HINTS: Record<Scale, string> = {
-  relative: "Colors rank these movies against each other.",
-  absolute:
-    "Colors use each service's full scale. Runtime runs from 1h 20m (great) to 3h (oof).",
+  relative: `Colors rank these movies against each other. ${OSCAR_HINT}`,
+  absolute: `Colors use each service's full scale. ${OSCAR_HINT} Runtime runs from 1h 20m (great) to 3h (oof).`,
 };
 
 interface CompareProps {
@@ -37,6 +39,7 @@ export function Compare({ initialMovies, userId }: CompareProps) {
     direction: SortDirection;
   } | null>(null);
   const { results, error, isLoading } = useMovieSearch(query);
+  const { data: oscars } = useOscars();
 
   useEffect(() => {
     window.history.replaceState(
@@ -46,9 +49,7 @@ export function Compare({ initialMovies, userId }: CompareProps) {
     );
   }, [movies]);
 
-  const freshResults = results.filter(
-    (result) => !movies.some((movie) => movie.id === result.id),
-  );
+  const freshResults = results.filter(({ id }) => !some({ id })(movies));
 
   function add(movie: Movie) {
     setMovies((current) =>
@@ -74,7 +75,7 @@ export function Compare({ initialMovies, userId }: CompareProps) {
   const sortMetric = find({ name: sort?.metric })(METRICS);
   const shown =
     sort && sortMetric
-      ? sortMovies(movies, sortMetric, sort.direction)
+      ? sortMovies(movies, sortMetric, sort.direction, { oscars })
       : movies;
 
   return (
@@ -134,7 +135,9 @@ export function Compare({ initialMovies, userId }: CompareProps) {
               </thead>
               <tbody>
                 {METRICS.map((metric) => {
-                  const values = shown.map(metric.read);
+                  const values = shown.map((movie) =>
+                    metric.read(movie, { oscars }),
+                  );
                   const direction =
                     sort?.metric === metric.name ? sort.direction : null;
                   const scores = scoreRow(values, metric, scale);
@@ -157,10 +160,10 @@ export function Compare({ initialMovies, userId }: CompareProps) {
                           aria-label={`Sort by ${metric.name}`}
                           onClick={() => toggleSort(metric.name)}
                         >
-                          {metric.logo ? (
+                          {typeof metric.logo === "string" ? (
                             <img src={metric.logo} alt={metric.name} />
-                          ) : metric.name === "Runtime" ? (
-                            <ClockIcon label={metric.name} />
+                          ) : typeof metric.logo === "function" ? (
+                            metric.logo()
                           ) : (
                             <span className={styles.metricLabel} aria-hidden>
                               {metric.name === "Total return" ? "Net" : "x"}
@@ -240,19 +243,3 @@ export function Compare({ initialMovies, userId }: CompareProps) {
     </div>
   );
 }
-
-interface ClockProps {
-  label: string;
-}
-
-const ClockIcon = ({ label }: ClockProps) => (
-  <svg
-    className={styles.clock}
-    viewBox="0 0 24 24"
-    role="img"
-    aria-label={label}
-  >
-    <circle cx="12" cy="12" r="9" />
-    <path d="M12 7v5l3 2" />
-  </svg>
-);

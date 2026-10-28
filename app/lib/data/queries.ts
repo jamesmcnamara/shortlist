@@ -39,22 +39,18 @@ export function useTheatresForMovies(movieIds: number[]) {
   );
 }
 
-interface TheatreReference {
-  id: string;
-}
-
-export function useTheatreDetail(theatre: TheatreReference) {
+export function useTheatreDetail(theatreId: string) {
   return useQuery(
-    `/api/theatres/${encodeURIComponent(theatre.id)}`,
-    () => api.theatre(theatre.id).get(),
+    `/api/theatres/${encodeURIComponent(theatreId)}`,
+    () => api.theatre(theatreId).get(),
     { requiresUser: false },
   );
 }
 
-export function useNominations(theatre: TheatreReference) {
+export function useNominations(theatreId: string) {
   return useQuery(
-    `/api/theatres/${encodeURIComponent(theatre.id)}/nominations`,
-    () => api.theatre(theatre.id).nominations.list(),
+    `/api/theatres/${encodeURIComponent(theatreId)}/nominations`,
+    () => api.theatre(theatreId).nominations.list(),
     { requiresUser: false },
   );
 }
