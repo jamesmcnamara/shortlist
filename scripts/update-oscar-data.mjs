@@ -13,6 +13,8 @@ const SCREENPLAY_CATEGORIES = new Set([
   "WRITING (Adapted Screenplay)",
   "WRITING (Original Screenplay)",
 ]);
+// Honorary and technical awards, which don't have competing nominees.
+const NON_COMPETITIVE_CLASSES = new Set(["Special", "SciTech"]);
 
 const response = await fetch(SOURCE);
 if (!response.ok) {
@@ -25,16 +27,32 @@ const index = Object.fromEntries(
   columns.map((column, position) => [column, position]),
 );
 const movies = new Map();
+const awards = new Map();
 
-for (const line of lines) {
+for (const [id, line] of lines.entries()) {
   const values = line.split("\t");
   const filmIds = values[index.FilmId]?.split("|") ?? [];
   const details = values[index.Detail]?.split("|") ?? [];
+
+  if (!NON_COMPETITIVE_CLASSES.has(values[index.Class])) {
+    const key = awardKey(values[index.Year], values[index.CanonicalCategory]);
+    const films = values[index.Film]?.split("|").filter(Boolean) ?? [];
+    const detail = details.filter(Boolean).join(" / ");
+    const nominee = {
+      id,
+      ...(films.length > 0 ? { film: films.join(" / ") } : {}),
+      name: values[index.Name],
+      winner: values[index.Winner] === "True",
+      ...(detail ? { detail } : {}),
+    };
+    awards.set(key, [...(awards.get(key) ?? []), nominee]);
+  }
 
   filmIds.forEach((imdbId, position) => {
     if (!/^tt\d+$/.test(imdbId)) return;
 
     const entry = {
+      id,
       year: values[index.Year],
       category: values[index.CanonicalCategory],
       winner: values[index.Winner] === "True",
@@ -45,6 +63,12 @@ for (const line of lines) {
     movies.set(imdbId, [...(movies.get(imdbId) ?? []), entry]);
   });
 }
+
+const referencedAwards = new Set(
+  [...movies.values()]
+    .flat()
+    .map(({ year, category }) => awardKey(year, category)),
+);
 
 const output = {
   source: "https://github.com/DLu/oscar_data",
@@ -58,7 +82,10 @@ const output = {
     [...movies.entries()].map(([imdbId, entries]) => {
       const unique = [
         ...new Map(
-          entries.map((entry) => [JSON.stringify(entry), entry]),
+          entries.map((entry) => [
+            JSON.stringify({ ...entry, id: undefined }),
+            entry,
+          ]),
         ).values(),
       ].sort(
         (left, right) =>
@@ -78,6 +105,16 @@ const output = {
       ];
     }),
   ),
+  nominees: Object.fromEntries(
+    [...awards.entries()]
+      .filter(([key]) => referencedAwards.has(key))
+      .map(([key, nominees]) => [
+        key,
+        nominees.toSorted(
+          (left, right) => Number(right.winner) - Number(left.winner),
+        ),
+      ]),
+  ),
 };
 
 await mkdir(new URL("../public/data/", import.meta.url), { recursive: true });
@@ -95,6 +132,10 @@ function isMajorCategory(category) {
     SCREENPLAY_CATEGORIES.has(category) ||
     category.startsWith("CINEMATOGRAPHY")
   );
+}
+
+function awardKey(year, category) {
+  return `${year}|${category}`;
 }
 
 function categoryRank(category) {

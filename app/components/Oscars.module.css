@@ -47,7 +47,7 @@
   font-size: 0.9344rem;
 }
 
-.single span {
+.singleDetail {
   color: var(--muted);
   font-size: 0.7906rem;
   line-height: 1.4;
@@ -97,7 +97,7 @@
   transition: transform 0.15s ease;
 }
 
-.details[open] .chevron {
+.details[open] > summary .chevron {
   transform: rotate(225deg);
 }
 
@@ -125,6 +125,7 @@
   color: var(--text);
   font-size: 0.8625rem;
   font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .badges {
@@ -150,6 +151,67 @@
   font-size: 0.7906rem;
   line-height: 1.4;
   overflow-wrap: anywhere;
+}
+
+.toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+}
+
+.toggleCopy {
+  display: grid;
+  gap: 0.1875rem;
+  min-width: 0;
+}
+
+.toggle > .chevron {
+  border-color: var(--muted);
+}
+
+.toggle[aria-expanded="true"] > .chevron {
+  transform: rotate(225deg);
+}
+
+.entry:has(> .toggle) {
+  gap: 0;
+  padding: 0;
+}
+
+.entry > .toggle {
+  padding: 0.6875rem 0;
+}
+
+.single:has(> .toggle) {
+  gap: 0;
+}
+
+.reveal {
+  overflow: hidden;
+}
+
+.otherNominees {
+  display: grid;
+  margin: 0 0 0 1rem;
+  padding: 0;
+  border-top: 1px solid var(--border);
+  list-style: none;
+}
+
+.single .otherNominees {
+  margin-top: 0.75rem;
+}
+
+.entry .otherNominees > .entry:last-child {
+  border-bottom: 0;
 }
 
 @media (--zfold-closed-portrait) {

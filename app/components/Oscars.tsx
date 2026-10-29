@@ -1,13 +1,18 @@
 "use client";
 
 import {
+  getOtherNominees,
   isMajorCategory,
   useOscarsFor,
   type OscarEntry,
   type OscarMovie,
+  type OscarNominee,
+  type OscarNominees,
 } from "@/app/lib/data/oscars";
 import type { Movie } from "@/src/db/schema";
 import classname from "classnames";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useState, type ReactNode } from "react";
 import { every } from "shades";
 import styles from "./Oscars.module.css";
 import { OscarStatuette } from "./OscarStatuette";
@@ -18,8 +23,9 @@ export interface OscarsProps {
 }
 
 export function Oscars({ movie, variant = "default" }: OscarsProps) {
-  const { awards: oscars, error } = useOscarsFor(movie);
-  if (!oscars && !error) return null;
+  const result = useOscarsFor(movie);
+  if (result.type === "error") return null;
+  const { awards: oscars, nominees } = result;
 
   const singleEntry = oscars?.entries.length === 1 ? oscars.entries[0] : null;
   const majorNominations =
@@ -33,63 +39,120 @@ export function Oscars({ movie, variant = "default" }: OscarsProps) {
       aria-label="Academy Awards"
     >
       <OscarStatuette />
-      {error ? (
-        <p className={styles.unavailable}>Oscar data is unavailable.</p>
-      ) : (
-        oscars && (
-          <div className={styles.content}>
-            {singleEntry ? (
-              <div className={styles.single}>
-                <div className={styles.headline}>
-                  <strong>
-                    {singleEntry.winner ? "Won" : "Nominated for"}{" "}
-                    {formatCategory(singleEntry.category)}
-                  </strong>
-                </div>
-                <span>{formatEntryDetail(singleEntry)}</span>
-              </div>
-            ) : (
-              <details className={styles.details}>
-                <summary>
-                  <span className={styles.summaryCopy}>
-                    <strong>{formatMultipleHeadline(oscars)}</strong>
-                    <span>
-                      {formatMultipleDetail(oscars, majorNominations)}
-                    </span>
-                  </span>
-                  <span className={styles.chevron} aria-hidden="true" />
-                </summary>
-                <ol className={styles.entries}>
-                  {oscars.entries.map((entry, index) => (
-                    <li
-                      key={`${entry.year}-${entry.category}-${entry.name}-${index}`}
-                      className={styles.entry}
-                    >
-                      <div className={styles.entryHeading}>
-                        <span>
-                          {entry.year} · {formatCategory(entry.category)}
-                        </span>
-                        <span className={styles.badges}>
-                          {entry.winner && (
-                            <span className={styles.winner}>Winner</span>
-                          )}
-                        </span>
-                      </div>
-                      <span className={styles.nominee}>
-                        {entry.name}
-                        {entry.detail ? ` — ${entry.detail}` : ""}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              </details>
-            )}
+      <div className={styles.content}>
+        {singleEntry ? (
+          <div className={styles.single}>
+            <OtherNominees entry={singleEntry} nominees={nominees}>
+              <span className={styles.headline}>
+                <strong>
+                  {singleEntry.winner ? "Won" : "Nominated for"}{" "}
+                  {formatCategory(singleEntry.category)}
+                </strong>
+              </span>
+              <span className={styles.singleDetail}>
+                {formatEntryDetail(singleEntry)}
+              </span>
+            </OtherNominees>
           </div>
-        )
-      )}
+        ) : (
+          <details className={styles.details}>
+            <summary>
+              <span className={styles.summaryCopy}>
+                <strong>{formatMultipleHeadline(oscars)}</strong>
+                <span>{formatMultipleDetail(oscars, majorNominations)}</span>
+              </span>
+              <span className={styles.chevron} aria-hidden="true" />
+            </summary>
+            <ol className={styles.entries}>
+              {oscars.entries.map((entry, index) => (
+                <li
+                  key={`${entry.year}-${entry.category}-${entry.name}-${index}`}
+                  className={styles.entry}
+                >
+                  <OtherNominees entry={entry} nominees={nominees}>
+                    <span className={styles.entryHeading}>
+                      <span>
+                        {entry.year} · {formatCategory(entry.category)}
+                      </span>
+                      <WinnerBadge winner={entry.winner} />
+                    </span>
+                    <span className={styles.nominee}>
+                      {entry.name}
+                      {entry.detail ? ` — ${entry.detail}` : ""}
+                    </span>
+                  </OtherNominees>
+                </li>
+              ))}
+            </ol>
+          </details>
+        )}
+      </div>
     </section>
   );
 }
+
+interface OtherNomineesProps {
+  entry: OscarEntry;
+  nominees: OscarNominees;
+  children: ReactNode;
+}
+
+function OtherNominees({ entry, nominees, children }: OtherNomineesProps) {
+  const [open, setOpen] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const others = getOtherNominees(nominees, entry);
+  if (others.length === 0) return children;
+
+  return (
+    <>
+      <button
+        type="button"
+        className={styles.toggle}
+        aria-expanded={open}
+        onClick={() => setOpen((wasOpen) => !wasOpen)}
+      >
+        <span className={styles.toggleCopy}>{children}</span>
+        <span className={styles.chevron} aria-hidden="true" />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            className={styles.reveal}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: reducedMotion ? 0 : 0.2, ease: "easeOut" }}
+          >
+            <ol
+              className={styles.otherNominees}
+              aria-label={`Other nominees for ${formatCategory(entry.category)}, ${entry.year}`}
+            >
+              {others.map((nominee) => (
+                <li key={nominee.id} className={styles.entry}>
+                  <span className={styles.entryHeading}>
+                    <span>{nominee.film ?? nominee.name}</span>
+                    <WinnerBadge winner={nominee.winner} />
+                  </span>
+                  {formatNomineeDetail(nominee) && (
+                    <span className={styles.nominee}>
+                      {formatNomineeDetail(nominee)}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+const WinnerBadge = ({ winner }: { winner: boolean }) => (
+  <span className={styles.badges}>
+    {winner && <span className={styles.winner}>Winner</span>}
+  </span>
+);
 
 const formatMultipleHeadline = ({ entries, wins, nominations }: OscarMovie) => {
   const majors = entries.filter(
@@ -127,3 +190,6 @@ const formatCategory = (category: string) =>
 
 const formatEntryDetail = (entry: OscarEntry) =>
   [entry.year, entry.name, entry.detail].filter(Boolean).join(" · ");
+
+const formatNomineeDetail = ({ film, name, detail }: OscarNominee) =>
+  [film ? name : null, detail].filter(Boolean).join(" — ");

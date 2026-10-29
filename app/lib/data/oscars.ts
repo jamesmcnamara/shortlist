@@ -1,9 +1,11 @@
 "use client";
 
 import { Movie } from "@/src/db/schema";
+import { filter, not } from "shades";
 import useSWR from "swr";
 
 export interface OscarEntry {
+  id: number;
   year: string;
   category: string;
   winner: boolean;
@@ -11,6 +13,16 @@ export interface OscarEntry {
   name: string;
   detail?: string;
 }
+
+export interface OscarNominee {
+  id: number;
+  film?: string;
+  name: string;
+  winner: boolean;
+  detail?: string;
+}
+
+export type OscarNominees = Partial<Record<string, OscarNominee[]>>;
 
 export interface OscarMovie {
   wins: number;
@@ -21,27 +33,40 @@ export interface OscarMovie {
 export interface Oscars {
   updatedThrough: number;
   movies: Record<string, OscarMovie>;
+  nominees: OscarNominees;
 }
 
+const OSCARS_URL = `/data/oscars.json?v=${process.env.OSCARS_DATA_VERSION}`;
+
 export function useOscars() {
-  return useSWR<Oscars>("/data/oscars.json", fetchOscars, {
+  return useSWR<Oscars>(OSCARS_URL, fetchOscars, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   });
 }
 
-interface OscarsData {
-  awards?: OscarMovie;
-  error?: Error;
-}
+type OscarsData =
+  | { type: "success"; awards: OscarMovie; nominees: OscarNominees }
+  | { type: "error"; error: Error };
 
 export function useOscarsFor(movie: Movie): OscarsData {
   const { data, error } = useOscars();
   const imdbId = getImdbId(movie);
-  if (!imdbId || !data || !data.movies[imdbId]) return { error };
-  return { awards: data.movies[imdbId] as OscarMovie, error };
+  if (error) return { type: "error", error };
+  if (!imdbId || !data || !data.movies[imdbId])
+    return { type: "error", error: new Error("Oscar data not found") };
+  return {
+    type: "success",
+    awards: data.movies[imdbId] as OscarMovie,
+    nominees: data.nominees,
+  };
 }
+
+export const getOtherNominees = (nominees: OscarNominees, entry: OscarEntry) =>
+  filter(not({ id: entry.id }))(
+    nominees[`${entry.year}|${entry.category}`] ?? [],
+  );
 
 export const getImdbId = (movie: Movie) => {
   const detailsId = movie.details.imdb_id;

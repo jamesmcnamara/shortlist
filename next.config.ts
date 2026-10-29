@@ -1,4 +1,6 @@
 import withSerwistInit from "@serwist/next";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import type { NextConfig } from "next";
 
@@ -13,6 +15,13 @@ export default function nextConfig(phase: string): NextConfig {
   });
 
   return withSerwist({
+    env: {
+      // Versions the data URL, so a refreshed bundle never reads an older cached copy.
+      OSCARS_DATA_VERSION: createHash("sha256")
+        .update(readFileSync("public/data/oscars.json"))
+        .digest("hex")
+        .slice(0, 16),
+    },
     turbopack: {},
     experimental: {
       turbopackFileSystemCacheForDev: false,
