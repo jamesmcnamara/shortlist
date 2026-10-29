@@ -11,11 +11,11 @@ import {
 } from "@/app/lib/data/oscars";
 import type { Movie } from "@/src/db/schema";
 import classname from "classnames";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState, type ReactNode } from "react";
 import { every } from "shades";
 import styles from "./Oscars.module.css";
 import { OscarStatuette } from "./OscarStatuette";
+import { SlideOpen } from "./SlideOpen";
 
 export interface OscarsProps {
   movie: Movie;
@@ -24,6 +24,7 @@ export interface OscarsProps {
 
 export function Oscars({ movie, variant = "default" }: OscarsProps) {
   const result = useOscarsFor(movie);
+  const [open, setOpen] = useState(false);
   if (result.type === "error") return null;
   const { awards: oscars, nominees } = result;
 
@@ -55,36 +56,43 @@ export function Oscars({ movie, variant = "default" }: OscarsProps) {
             </OtherNominees>
           </div>
         ) : (
-          <details className={styles.details}>
-            <summary>
+          <div className={styles.details}>
+            <button
+              type="button"
+              className={classname(styles.toggle, styles.summary)}
+              aria-expanded={open}
+              onClick={() => setOpen((wasOpen) => !wasOpen)}
+            >
               <span className={styles.summaryCopy}>
                 <strong>{formatMultipleHeadline(oscars)}</strong>
                 <span>{formatMultipleDetail(oscars, majorNominations)}</span>
               </span>
               <span className={styles.chevron} aria-hidden="true" />
-            </summary>
-            <ol className={styles.entries}>
-              {oscars.entries.map((entry, index) => (
-                <li
-                  key={`${entry.year}-${entry.category}-${entry.name}-${index}`}
-                  className={styles.entry}
-                >
-                  <OtherNominees entry={entry} nominees={nominees}>
-                    <span className={styles.entryHeading}>
-                      <span>
-                        {entry.year} · {formatCategory(entry.category)}
+            </button>
+            <SlideOpen open={open} className={styles.reveal}>
+              <ol className={styles.entries}>
+                {oscars.entries.map((entry, index) => (
+                  <li
+                    key={`${entry.year}-${entry.category}-${entry.name}-${index}`}
+                    className={styles.entry}
+                  >
+                    <OtherNominees entry={entry} nominees={nominees}>
+                      <span className={styles.entryHeading}>
+                        <span>
+                          {entry.year} · {formatCategory(entry.category)}
+                        </span>
+                        <WinnerBadge winner={entry.winner} />
                       </span>
-                      <WinnerBadge winner={entry.winner} />
-                    </span>
-                    <span className={styles.nominee}>
-                      {entry.name}
-                      {entry.detail ? ` — ${entry.detail}` : ""}
-                    </span>
-                  </OtherNominees>
-                </li>
-              ))}
-            </ol>
-          </details>
+                      <span className={styles.nominee}>
+                        {entry.name}
+                        {entry.detail ? ` — ${entry.detail}` : ""}
+                      </span>
+                    </OtherNominees>
+                  </li>
+                ))}
+              </ol>
+            </SlideOpen>
+          </div>
         )}
       </div>
     </section>
@@ -99,7 +107,6 @@ interface OtherNomineesProps {
 
 function OtherNominees({ entry, nominees, children }: OtherNomineesProps) {
   const [open, setOpen] = useState(false);
-  const reducedMotion = useReducedMotion();
   const others = getOtherNominees(nominees, entry);
   if (others.length === 0) return children;
 
@@ -114,36 +121,26 @@ function OtherNominees({ entry, nominees, children }: OtherNomineesProps) {
         <span className={styles.toggleCopy}>{children}</span>
         <span className={styles.chevron} aria-hidden="true" />
       </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            className={styles.reveal}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: reducedMotion ? 0 : 0.2, ease: "easeOut" }}
-          >
-            <ol
-              className={styles.otherNominees}
-              aria-label={`Other nominees for ${formatCategory(entry.category)}, ${entry.year}`}
-            >
-              {others.map((nominee) => (
-                <li key={nominee.id} className={styles.entry}>
-                  <span className={styles.entryHeading}>
-                    <span>{nominee.film ?? nominee.name}</span>
-                    <WinnerBadge winner={nominee.winner} />
-                  </span>
-                  {formatNomineeDetail(nominee) && (
-                    <span className={styles.nominee}>
-                      {formatNomineeDetail(nominee)}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ol>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <SlideOpen open={open} className={styles.reveal}>
+        <ol
+          className={styles.otherNominees}
+          aria-label={`Other nominees for ${formatCategory(entry.category)}, ${entry.year}`}
+        >
+          {others.map((nominee) => (
+            <li key={nominee.id} className={styles.entry}>
+              <span className={styles.entryHeading}>
+                <span>{nominee.film ?? nominee.name}</span>
+                <WinnerBadge winner={nominee.winner} />
+              </span>
+              {formatNomineeDetail(nominee) && (
+                <span className={styles.nominee}>
+                  {formatNomineeDetail(nominee)}
+                </span>
+              )}
+            </li>
+          ))}
+        </ol>
+      </SlideOpen>
     </>
   );
 }

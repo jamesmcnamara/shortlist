@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { SlideOpen } from "@/app/components/SlideOpen";
 import { api, ApiError } from "@/app/lib/api";
 import { withTargetValue } from "@/app/lib/utils";
+import { useState } from "react";
 import styles from "./ListPicker.module.css";
 
 interface NewListFormProps {
@@ -14,8 +14,6 @@ export function NewListForm({ onCreated }: NewListFormProps) {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const reducedMotion = useReducedMotion();
-
   async function create() {
     const trimmed = name.trim();
     if (!trimmed || isSubmitting) return;
@@ -48,48 +46,38 @@ export function NewListForm({ onCreated }: NewListFormProps) {
         {isOpen ? "Cancel" : "+ New list"}
       </button>
 
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            className={styles.newListFields}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: reducedMotion ? 0 : 0.2, ease: "easeOut" }}
+      <SlideOpen open={isOpen} className={styles.newListFields}>
+        <div className={styles.newListRow}>
+          <input
+            autoFocus
+            className={styles.newListInput}
+            type="text"
+            aria-label="New list name"
+            placeholder="Name this list"
+            value={name}
+            disabled={isSubmitting}
+            onChange={withTargetValue(setName)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") return;
+              event.preventDefault();
+              create();
+            }}
+          />
+          <button
+            className={styles.newListCreate}
+            type="button"
+            disabled={!name.trim() || isSubmitting}
+            onClick={create}
           >
-            <div className={styles.newListRow}>
-              <input
-                autoFocus
-                className={styles.newListInput}
-                type="text"
-                aria-label="New list name"
-                placeholder="Name this list"
-                value={name}
-                disabled={isSubmitting}
-                onChange={withTargetValue(setName)}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter") return;
-                  event.preventDefault();
-                  create();
-                }}
-              />
-              <button
-                className={styles.newListCreate}
-                type="button"
-                disabled={!name.trim() || isSubmitting}
-                onClick={create}
-              >
-                {isSubmitting ? "Creating..." : "Create"}
-              </button>
-            </div>
-            {error && (
-              <p className={styles.rowError} role="alert">
-                {error}
-              </p>
-            )}
-          </motion.div>
+            {isSubmitting ? "Creating..." : "Create"}
+          </button>
+        </div>
+        {error && (
+          <p className={styles.rowError} role="alert">
+            {error}
+          </p>
         )}
-      </AnimatePresence>
+      </SlideOpen>
     </div>
   );
 }

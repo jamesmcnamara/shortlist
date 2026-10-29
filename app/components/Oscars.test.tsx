@@ -83,12 +83,22 @@ describe("Oscars", () => {
 
     expect(await screen.findByText("Won 1 Major Oscar")).toBeTruthy();
     expect(screen.getByText("1 major nomination · 5 total")).toBeTruthy();
-    fireEvent.click(screen.getByText("Won 1 Major Oscar"));
+    const summary = screen.getByRole("button", { name: /Won 1 Major Oscar/ });
+    expect(summary.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByRole("listitem")).toBeNull();
+
+    fireEvent.click(summary);
+
+    expect(summary.getAttribute("aria-expanded")).toBe("true");
     const entries = screen.getAllByRole("listitem");
     expect(entries[0].textContent).toContain("Production Design");
     expect(entries[1].textContent).toContain("Cinematography");
     expect(screen.getByText("Winner")).toBeTruthy();
     expect(screen.getByText("Paul Franklin")).toBeTruthy();
+
+    fireEvent.click(summary);
+
+    await waitFor(() => expect(screen.queryByRole("listitem")).toBeNull());
   });
 
   it("slides open the other nominees for an award", async () => {

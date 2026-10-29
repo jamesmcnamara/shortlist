@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { SlideOpen } from "@/app/components/SlideOpen";
 import type { TheatreSummary } from "@/app/lib/api";
 import { ListOption } from "../ListPicker/ListOption";
 import { NoteField } from "../ListPicker/NoteField";
@@ -31,8 +31,6 @@ export function TheatreRow({
   const justAdded = status === "done";
   const isPending = status === "pending";
   const locked = hasMovie || justAdded;
-  const reducedMotion = useReducedMotion();
-
   return (
     <div className={styles.row}>
       <ListOption
@@ -44,23 +42,13 @@ export function TheatreRow({
         hint={hasMovie ? "Already on this list" : justAdded ? "Added ✓" : ""}
         onToggle={onToggle}
       />
-      <AnimatePresence initial={false}>
-        {checked && !locked && (
-          <motion.div
-            className={styles.commentWrap}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: reducedMotion ? 0 : 0.2, ease: "easeOut" }}
-          >
-            <NoteField
-              value={comment}
-              disabled={isPending}
-              onChange={onCommentChange}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <SlideOpen open={checked && !locked} className={styles.commentWrap}>
+        <NoteField
+          value={comment}
+          disabled={isPending}
+          onChange={onCommentChange}
+        />
+      </SlideOpen>
       {status === "error" && error && <RowError message={error} />}
     </div>
   );

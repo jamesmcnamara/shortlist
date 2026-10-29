@@ -27,6 +27,19 @@ export default function nextConfig(phase: string): NextConfig {
       turbopackFileSystemCacheForDev: false,
     },
     allowedDevOrigins: ["p0wd43vp2t.local"],
+    async headers() {
+      return [
+        {
+          source: "/data/oscars.json",
+          headers: [
+            {
+              key: "Cache-Control",
+              value: "public, max-age=31536000, immutable",
+            },
+          ],
+        },
+      ];
+    },
     async redirects() {
       return [
         {

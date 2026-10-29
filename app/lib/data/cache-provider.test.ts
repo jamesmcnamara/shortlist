@@ -31,14 +31,43 @@ describe("persistent SWR cache provider", () => {
     expect(JSON.parse(localStorage.getItem(aliceKey) ?? "[]")).toEqual([]);
   });
 
-  it("keeps movie search results in memory only", () => {
-    const cache = createCacheProvider("alice");
-    cache.set("/api/tmdb/search?query=alien", { data: [{ id: 1 }] });
+  it.each(["/api/tmdb/search?query=alien", "/data/oscars.json?v=1"])(
+    "keeps %s in memory only",
+    (key) => {
+      const cache = createCacheProvider("alice");
+      cache.set(key, { data: [{ id: 1 }] });
 
-    expect(cache.get("/api/tmdb/search?query=alien")?.data).toEqual([
-      { id: 1 },
+      expect(cache.get(key)?.data).toEqual([{ id: 1 }]);
+      expect(JSON.parse(localStorage.getItem(aliceKey) ?? "[]")).toEqual([]);
+    },
+  );
+
+  it("keeps saving other data when static data outgrows the storage quota", () => {
+    const cache = createCacheProvider("alice");
+    cache.set("/data/oscars.json?v=1", { data: "x".repeat(5_000_000) });
+    cache.set("/api/theatres", { data: [{ id: "theatre-1" }] });
+
+    expect(createCacheProvider("alice").get("/api/theatres")?.data).toEqual([
+      { id: "theatre-1" },
     ]);
-    expect(JSON.parse(localStorage.getItem(aliceKey) ?? "[]")).toEqual([]);
+  });
+
+  it("drops static data saved by older versions", () => {
+    localStorage.setItem(
+      aliceKey,
+      JSON.stringify([
+        ["/data/oscars.json", { data: { movies: {} } }],
+        ["/api/theatres", { data: [{ id: "theatre-1" }] }],
+      ]),
+    );
+
+    const cache = createCacheProvider("alice");
+    expect(cache.get("/data/oscars.json")).toBeUndefined();
+
+    cache.set("/api/theatres/pending", {});
+    expect(JSON.parse(localStorage.getItem(aliceKey) ?? "[]")).toEqual([
+      ["/api/theatres", { data: [{ id: "theatre-1" }] }],
+    ]);
   });
 
   it("keeps each user's cache separate", () => {

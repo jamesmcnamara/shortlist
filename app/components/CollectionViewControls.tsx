@@ -4,6 +4,7 @@ import { CloseIcon } from "./CloseIcon";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useRef, useState, type ReactNode, type RefObject } from "react";
 import classnames from "classnames";
+import { SlideOpen } from "./SlideOpen";
 import styles from "./ViewControls.module.css";
 
 interface Option {
@@ -125,59 +126,53 @@ export function CollectionViewControls({
           )}
         </AnimatePresence>
       </div>
-      <AnimatePresence initial={false} mode="wait">
-        {expanded && (
-          <motion.div
-            key={expanded}
-            className={styles.optionsPanel}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={transition}
-          >
-            <div
-              className={styles.options}
-              role="group"
-              aria-label={expanded === "sort" ? "Sort by" : "Filters"}
-            >
-              {(expanded === "sort" ? sorts : filters).map((option) => {
-                const active =
-                  expanded === "sort"
-                    ? state.sort === option.id
-                    : state.filters.includes(option.id);
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    className={classnames(styles.option, {
-                      [styles.optionActive]: active,
-                    })}
-                    aria-pressed={active}
-                    onClick={() => {
-                      if (expanded === "sort") {
-                        onChange({ ...state, sort: option.id });
-                        setExpanded(null);
-                      } else {
-                        onChange({
-                          ...state,
-                          filters: active
-                            ? state.filters.filter((id) => id !== option.id)
-                            : [...state.filters, option.id],
-                        });
-                      }
-                    }}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
-              {expanded === "filter" &&
-                filters.length === 0 &&
-                emptyFilters && <p className={styles.notice}>{emptyFilters}</p>}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <SlideOpen
+        open={Boolean(expanded)}
+        className={styles.optionsPanel}
+        mode="wait"
+        contentKey={expanded ?? undefined}
+      >
+        <div
+          className={styles.options}
+          role="group"
+          aria-label={expanded === "sort" ? "Sort by" : "Filters"}
+        >
+          {(expanded === "sort" ? sorts : filters).map((option) => {
+            const active =
+              expanded === "sort"
+                ? state.sort === option.id
+                : state.filters.includes(option.id);
+            return (
+              <button
+                key={option.id}
+                type="button"
+                className={classnames(styles.option, {
+                  [styles.optionActive]: active,
+                })}
+                aria-pressed={active}
+                onClick={() => {
+                  if (expanded === "sort") {
+                    onChange({ ...state, sort: option.id });
+                    setExpanded(null);
+                  } else {
+                    onChange({
+                      ...state,
+                      filters: active
+                        ? state.filters.filter((id) => id !== option.id)
+                        : [...state.filters, option.id],
+                    });
+                  }
+                }}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+          {expanded === "filter" && filters.length === 0 && emptyFilters && (
+            <p className={styles.notice}>{emptyFilters}</p>
+          )}
+        </div>
+      </SlideOpen>
       {children}
     </div>
   );

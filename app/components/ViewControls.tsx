@@ -1,13 +1,13 @@
 "use client";
 
-import { SearchResults } from "@/app/components/SearchResults";
-import { CollectionViewControls } from "./CollectionViewControls";
 import { NominationForm } from "@/app/components/NominationForm";
+import { SearchResults } from "@/app/components/SearchResults";
 import { useMovieSearch } from "@/app/lib/useMovieSearch";
 import { FILTERS, SORTS, type ViewState } from "@/app/lib/view";
 import type { Movie } from "@/src/db/schema";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useRef, useState } from "react";
+import { CollectionViewControls } from "./CollectionViewControls";
+import { SlideOpen } from "./SlideOpen";
 import styles from "./ViewControls.module.css";
 
 interface ViewControlsProps {
@@ -30,11 +30,6 @@ export function ViewControls({
   const [candidate, setCandidate] = useState<Movie | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const search = useMovieSearch(query);
-  const reducedMotion = useReducedMotion();
-  const transition = {
-    duration: reducedMotion ? 0 : 0.2,
-    ease: "easeOut",
-  } as const;
 
   const changeQuery = (next: string) => {
     setQuery(next);
@@ -105,26 +100,20 @@ export function ViewControls({
         />
       )}
 
-      <AnimatePresence initial={false}>
+      <SlideOpen
+        open={Boolean(candidate)}
+        className={styles.nomination}
+        contentKey={candidate?.id}
+      >
         {candidate && (
-          <motion.div
-            key="nomination"
-            className={styles.nomination}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={transition}
-          >
-            <NominationForm
-              key={candidate.id}
-              candidate={candidate}
-              isSubmitting={isSubmitting}
-              onCancel={() => setCandidate(null)}
-              onSubmit={(comment) => submit(candidate, comment)}
-            />
-          </motion.div>
+          <NominationForm
+            candidate={candidate}
+            isSubmitting={isSubmitting}
+            onCancel={() => setCandidate(null)}
+            onSubmit={(comment) => submit(candidate, comment)}
+          />
         )}
-      </AnimatePresence>
+      </SlideOpen>
     </CollectionViewControls>
   );
 }
