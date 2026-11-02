@@ -5,8 +5,8 @@ import type { AppMenuProps } from "@/app/components/AppMenu";
 import { BulkMovieImport } from "@/app/components/BulkMovieImport";
 import { CrossPost } from "@/app/components/CrossPost/CrossPost";
 import { MovieCard } from "@/app/components/MovieCard";
-import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
 import { EditableComment } from "@/app/components/MovieDiscussion/EditableComment";
+import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
 import { PickerBar } from "@/app/components/PickerBar";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import { ViewControls } from "@/app/components/ViewControls";
@@ -18,6 +18,7 @@ import { useMovieDiscussionHistory } from "@/app/lib/useMovieDiscussionHistory";
 import { applyView, ViewContext, ViewState } from "@/app/lib/view";
 import type { Movie, Nomination } from "@/src/db/schema";
 import classnames from "classnames";
+import { orderBy } from "lodash";
 import { AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -156,7 +157,7 @@ export function Theatre({
     toggleCompleted: {
       api: api.toggleCompleted,
       onStart: () => {
-        if (focused && !focused.completed) celebrate();
+        if (focused && !focused.completedAt) celebrate();
       },
       action: "update the completed status",
     },
@@ -169,7 +170,7 @@ export function Theatre({
   const visible = useMemo(
     () =>
       applyView(
-        nominees.filter((nom) => !nom.completed),
+        nominees.filter((nom) => !nom.completedAt),
         viewState,
         viewContext,
       ),
@@ -181,9 +182,15 @@ export function Theatre({
   ) as number[];
 
   const watched = useMemo(
-    () => nominees.filter((nom) => nom.completed),
+    () =>
+      orderBy(
+        nominees.filter((nom) => nom.completedAt),
+        (nom) => new Date(nom.completedAt!).getTime(),
+        "desc",
+      ),
     [nominees],
   );
+  console.log("watched", watched);
 
   const existing = useMemo(
     () =>

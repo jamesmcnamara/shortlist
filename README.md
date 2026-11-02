@@ -376,9 +376,21 @@ missing `theatreId` predicate fails the suite.
 
 Push this directory to a new GitHub repository. In Vercel, choose **Add New Project**, import that repository, and keep the detected Next.js settings. Add `DATABASE_URL` under the project's Environment Variables for the environments you use.
 
-Production deployments use the build command in `vercel.json` to apply pending
-Drizzle migrations before building the app. A migration failure stops the build.
-Set Vercel's Production `DATABASE_URL` to the production database; the migration
-step reads that environment variable directly and does not load `.env.local` or
-switch Neon branches. Preview builds skip migrations. For schema changes,
-generate and review the migration before pushing.
+Every Vercel build first runs `npm run db:check`, which generates Drizzle
+migrations and fails if anything in `drizzle/` is added, changed, or removed.
+Generation errors and unresolved rename prompts also fail the build. This
+compares files before and after generation rather than relying on a `.git`
+directory being available on Vercel. For schema changes, run `npm run db:generate`
+locally, review the SQL, and commit the migration, snapshot, and journal before
+pushing.
+
+After that check, production deployments apply pending migrations before
+building the app. A migration failure stops the build and deployment. Set
+Vercel's Production `DATABASE_URL` to the production database; the migration step
+reads that environment variable directly and does not load `.env.local` or
+switch Neon branches. Preview builds run the generation check but skip migrations.
+Local `npm run build` remains database-independent.
+
+Migrations run while the previous deployment is still serving requests, so keep
+them compatible with the running version. For destructive changes, deploy the
+compatible app change first and remove the old column in a later deployment.

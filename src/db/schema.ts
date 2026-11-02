@@ -135,7 +135,7 @@ export const nominations = pgTable(
       .notNull()
       .references(() => movies.id),
     comment: text("comment"),
-    completed: boolean("completed").notNull().default(false),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

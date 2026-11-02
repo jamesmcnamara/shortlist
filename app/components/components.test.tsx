@@ -25,7 +25,7 @@ const nomination: Nomination = {
   userId: "user",
   movieId: 1,
   comment: "A recommendation",
-  completed: false,
+  completedAt: null,
   createdAt: new Date(),
   movie: {
     id: 1,
@@ -429,7 +429,7 @@ describe("high-churn component smoke tests", () => {
         <MovieDiscussion
           nomination={{
             ...nomination,
-            completed,
+            completedAt: completed ? new Date() : null,
             movie: {
               ...nomination.movie,
               details: { ...nomination.movie.details, runtime: 123 },

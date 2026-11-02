@@ -41,7 +41,7 @@ const nomination: Nomination = {
   userId: "user",
   movieId: 1,
   comment: null,
-  completed: false,
+  completedAt: null,
   createdAt: new Date(),
   movie: {
     id: 1,

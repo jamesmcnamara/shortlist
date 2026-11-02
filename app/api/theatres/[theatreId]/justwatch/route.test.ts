@@ -117,7 +117,7 @@ beforeEach(async () => {
       userId: MEMBER,
       movieId,
       comment: "Keep this",
-      completed: true,
+      completedAt: new Date(),
     },
     { theatreId: other.id, userId: OWNER, movieId: privateMovieId },
     { theatreId: other.id, userId: OWNER, movieId },

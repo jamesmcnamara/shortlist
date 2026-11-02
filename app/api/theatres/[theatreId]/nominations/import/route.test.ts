@@ -122,7 +122,7 @@ describe("per-title movie import", () => {
         userId: OWNER,
         movieId: movie.id,
         comment: null,
-        completed: false,
+        completedAt: null,
       }),
     ]);
   });
@@ -178,8 +178,9 @@ describe("per-title movie import", () => {
   });
 
   it.each([false, true])(
-    "leaves existing nominations untouched (completed=%s)",
-    async (completed) => {
+    "leaves existing nominations untouched (completedAt=%s)",
+    async (isCompleted) => {
+      const completedAt = isCompleted ? new Date() : null;
       const [existing] = await db
         .insert(nominations)
         .values({
@@ -187,7 +188,7 @@ describe("per-title movie import", () => {
           userId: OWNER,
           movieId: movie.id,
           comment: "Keep this note",
-          completed,
+          completedAt,
         })
         .returning();
       const response = await POST(request({ title: "Arrival" }), context());

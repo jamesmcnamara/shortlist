@@ -239,11 +239,11 @@ export const api = {
           }),
         setCompleted: (
           nominationId: number,
-          completed: boolean,
+          completedAt: Date | null,
         ): Promise<Nomination> =>
           request(`${base}/nominations`, {
             method: "PATCH",
-            body: JSON.stringify({ id: nominationId, completed }),
+            body: JSON.stringify({ id: nominationId, completedAt }),
           }),
         delete: (nominationId: number): Promise<void> =>
           request(`${base}/nominations?id=${nominationId}`, {

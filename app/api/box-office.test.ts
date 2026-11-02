@@ -208,7 +208,7 @@ describe("theatre-scoped box office refresh", () => {
       theatreId: THEATRE,
       userId: USER,
       movieId: movie.id,
-      completed: true,
+      completedAt: new Date(),
     });
   });
 

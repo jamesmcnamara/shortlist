@@ -109,7 +109,7 @@ const watched: Nomination = {
   userId: "user",
   movieId: 1,
   comment: null,
-  completed: true,
+  completedAt: new Date(),
   createdAt: new Date(),
   movie: {
     id: 1,
@@ -279,7 +279,7 @@ describe("list descriptions", () => {
 describe("theatre movie animations", () => {
   it("lets signed-in non-admins participate without showing curation controls", () => {
     const api = createApi();
-    show([{ ...watched, completed: false }], api, false);
+    show([{ ...watched, completedAt: null }], api, false);
     expect(screen.queryByRole("button", { name: "Add nomination" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Import Movies" })).toBeNull();
 
@@ -294,7 +294,7 @@ describe("theatre movie animations", () => {
   });
 
   it("keeps signed-out viewers read-only while leaving the list browsable", () => {
-    show([{ ...watched, completed: false }], createApi(), false, null);
+    show([{ ...watched, completedAt: null }], createApi(), false, null);
     expect(screen.getByText("Watched movie")).toBeTruthy();
     fireEvent.click(screen.getByText("Watched movie"));
     expect(
@@ -307,7 +307,7 @@ describe("theatre movie animations", () => {
     show([
       {
         ...watched,
-        completed: false,
+        completedAt: null,
         userId: "original",
         nominator: { id: "original", name: "Original" },
       },
@@ -321,7 +321,7 @@ describe("theatre movie animations", () => {
   });
 
   it("renders active movies immediately and keeps completed movies collapsed", () => {
-    show([watched, { ...watched, id: 2, completed: false }]);
+    show([watched, { ...watched, id: 2, completedAt: null }]);
     const cards = screen.getAllByRole("article");
     expect(cards).toHaveLength(1);
     expect(cards[0].textContent).toBe("Watched movie");
@@ -337,7 +337,7 @@ describe("theatre movie animations", () => {
     const api = createApi();
     const save = Promise.withResolvers<void>();
     vi.mocked(api.toggleWatched).mockReturnValue(save.promise);
-    show([{ ...watched, completed: false }], api);
+    show([{ ...watched, completedAt: null }], api);
 
     fireEvent.click(screen.getByText("Watched movie"));
     fireEvent.click(
@@ -362,7 +362,7 @@ describe("theatre movie animations", () => {
       [
         {
           ...watched,
-          completed: false,
+          completedAt: null,
           seenBy: [{ id: "user", name: "User" }],
         },
       ],
@@ -382,7 +382,7 @@ describe("theatre movie animations", () => {
     const api = createApi();
     const save = Promise.withResolvers<void>();
     vi.mocked(api.toggleCompleted).mockReturnValue(save.promise);
-    show([{ ...watched, completed: false }], api);
+    show([{ ...watched, completedAt: null }], api);
     fireEvent.click(screen.getByText("Watched movie"));
     fireEvent.click(
       screen.getByRole("button", { name: "Mark Watched movie as Watched" }),
@@ -412,7 +412,7 @@ describe("theatre movie animations", () => {
     async (action) => {
       const api = createApi();
       vi.mocked(api[action]).mockRejectedValue(new Error("Save failed"));
-      show([{ ...watched, completed: false }], api);
+      show([{ ...watched, completedAt: null }], api);
       fireEvent.click(screen.getByText("Watched movie"));
       fireEvent.click(
         screen.getByRole("button", {
@@ -514,7 +514,7 @@ describe("theatre bulk import panel", () => {
 
 describe("read-only theatre", () => {
   it("shows the list but hides every way to change it", () => {
-    show([watched, { ...watched, id: 2, completed: false }], null);
+    show([watched, { ...watched, id: 2, completedAt: null }], null);
     expect(screen.getByText("Watchlist")).toBeTruthy();
     expect(screen.getAllByRole("article")).toHaveLength(1);
     expect(screen.queryByRole("button", { name: /Import movies/i })).toBeNull();
@@ -527,7 +527,7 @@ describe("picked movie actions", () => {
     ...watched,
     id,
     movieId: id,
-    completed: false,
+    completedAt: null,
     movie: {
       ...watched.movie,
       id,

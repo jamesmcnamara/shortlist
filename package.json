@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
+    "db:check": "node scripts/check-migrations.mjs",
     "db:migrate:dev": "npm run neon:dev; npm run db:migrate",
     "db:migrate:prod": "npm run neon:prod; npm run db:migrate; npm run neon:dev",
     "db:migrate": "node --env-file=.env.local ./scripts/migrate.mjs",

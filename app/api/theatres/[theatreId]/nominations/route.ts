@@ -28,11 +28,11 @@ const updateBody = z
   .object({
     id: dbId(NOMINATION_ID),
     comment,
-    completed: z.boolean("Completed must be true or false.").nullish(),
+    completedAt: z.iso.datetime().nullable().optional(),
   })
   .refine(
-    (body) => body.comment != null || body.completed != null,
-    "A comment is required.",
+    (body) => body.comment != null || body.completedAt !== undefined,
+    "A comment or completion time is required.",
   );
 
 export const GET = withTheatreViewer({ error: "Unable to load nominations" })(
@@ -79,11 +79,13 @@ export const PATCH = withTheatreAdmin({
 })(async (request: Request, { theatre, userId }: TheatreContext) => {
   const parsed = await parseJson(request, updateBody);
   if (!parsed.success) return badRequest(parsed.error);
-  const { id, comment, completed } = parsed.data;
+  const { id, comment, completedAt } = parsed.data;
 
   const values: Partial<typeof nominations.$inferInsert> = {};
   if (comment != null) values.comment = comment || null;
-  if (completed != null) values.completed = completed;
+  if (completedAt !== undefined) {
+    values.completedAt = completedAt === null ? null : new Date(completedAt);
+  }
 
   const ownershipCondition =
     comment != null ? eq(nominations.userId, userId) : undefined;

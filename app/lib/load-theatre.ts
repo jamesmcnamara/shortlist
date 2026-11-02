@@ -17,7 +17,7 @@ import {
   theatres,
   type TheatreRole,
 } from "@/src/db/schema";
-import { and, desc, eq, inArray, lte, not, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
 
 export interface LoadedTheatre {
   /** Never the raw row: the invite code must not reach the client. */
@@ -101,7 +101,7 @@ export async function listPublicTheatresWithPosterPreviews(
     .innerJoin(movies, eq(movies.id, nominations.movieId))
     .where(
       and(
-        not(nominations.completed),
+        isNull(nominations.completedAt),
         inArray(nominations.theatreId, ids),
         sql`${posterUrl} is not null`,
       ),

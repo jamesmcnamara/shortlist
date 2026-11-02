@@ -90,7 +90,7 @@ it("tracks adds and removals but not duplicates, nomination edits or failed writ
     .onConflictDoNothing();
   await fixture.db
     .update(nominations)
-    .set({ comment: "Edited", completed: true })
+    .set({ comment: "Edited", completedAt: new Date() })
     .where(eq(nominations.id, nomination.id));
   expect((await stored()).updatedAt).toEqual(added);
   await expect(

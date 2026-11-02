@@ -1,16 +1,17 @@
-import { getColor, getInitials, when } from "@/app/lib/utils";
-import type { Nomination, Person } from "@/src/db/schema";
-import { motion } from "motion/react";
-import styles from "./MovieDiscussion.module.css";
 import { Ratings } from "@/app/components/Ratings";
-import { EditableComment } from "./EditableComment";
-import { useClickOutside } from "@/app/lib/useClickOutside";
 import { Streaming } from "@/app/components/Streaming";
-import { NomComs } from "./NomComs";
+import { useClickOutside } from "@/app/lib/useClickOutside";
+import { getColor, getInitials, when } from "@/app/lib/utils";
+import { userPath } from "@/lib/user-path";
+import type { Nomination, Person } from "@/src/db/schema";
+import classnames from "classnames";
+import { motion } from "motion/react";
+import Link from "next/link";
 import { BoxOffice } from "../BoxOffice";
 import { Oscars } from "../Oscars";
-import Link from "next/link";
-import { userPath } from "@/lib/user-path";
+import { EditableComment } from "./EditableComment";
+import styles from "./MovieDiscussion.module.css";
+import { NomComs } from "./NomComs";
 
 interface MovieDiscussionProps {
   nomination: Nomination;
@@ -94,17 +95,19 @@ export function MovieDiscussion({
             </p>
             {onToggleCompleted && (
               <button
-                className={`${styles.completeToggle} ${nomination.completed ? styles.completeToggleActive : ""}`}
+                className={classnames(styles.completeToggle, {
+                  [styles.completeToggleActive]: nomination.completedAt,
+                })}
                 type="button"
                 onClick={onToggleCompleted}
-                aria-pressed={nomination.completed}
+                aria-pressed={Boolean(nomination.completedAt)}
                 aria-label={
-                  nomination.completed
+                  nomination.completedAt
                     ? `Move ${details.title} out of Watched`
                     : `Mark ${details.title} as Watched`
                 }
               >
-                {nomination.completed ? "Completed ✓" : "Watched"}
+                {nomination.completedAt ? "Completed ✓" : "Watched"}
               </button>
             )}
           </div>
@@ -115,7 +118,7 @@ export function MovieDiscussion({
             availability={details.justWatch}
             onRefresh={onRefreshJustWatch}
           />
-          {!nomination.completed && onMarkWatched && (
+          {!nomination.completedAt && onMarkWatched && (
             <div className={styles.movieActions}>
               <button
                 className={styles.watched}

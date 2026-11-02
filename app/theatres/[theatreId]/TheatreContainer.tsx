@@ -56,7 +56,10 @@ export function TheatreContainer() {
     },
     toggleCompleted: async (id) => {
       const nomination = noms.find((item) => item.id === id);
-      await client.nominations.setCompleted(id, !nomination?.completed);
+      await client.nominations.setCompleted(
+        id,
+        nomination?.completedAt ? null : new Date(),
+      );
     },
   };
 
