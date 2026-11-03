@@ -321,6 +321,7 @@ export interface MovieDetails extends _MovieDetails {
   posterUrl?: string | null;
   description?: string | null;
   year?: number | null;
+  wikipediaUrl?: string | null;
   justWatch?: JustWatchAvailability;
   boxOffice?: BoxOfficeData;
 }

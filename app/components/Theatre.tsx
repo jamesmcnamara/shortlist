@@ -190,7 +190,6 @@ export function Theatre({
       ),
     [nominees],
   );
-  console.log("watched", watched);
 
   const existing = useMemo(
     () =>

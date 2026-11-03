@@ -54,7 +54,10 @@ export function NominationForm({
           {candidate.details.overview && (
             <span>{candidate.details.overview}</span>
           )}
-          <Ratings services={candidate.ratings.services} />
+          <Ratings
+            services={candidate.ratings.services}
+            wikipediaUrl={candidate.details.wikipediaUrl}
+          />
         </div>
         <button
           className={styles.close}

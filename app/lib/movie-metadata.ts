@@ -12,6 +12,7 @@ import { TMDB } from "@lorenzopant/tmdb";
 import { eq } from "drizzle-orm";
 import { matching, set } from "shades";
 import * as justwatch from "./justwatch";
+import { getWikipediaUrl } from "./wikipedia";
 
 let client: TMDB | null = null;
 
@@ -105,21 +106,31 @@ export class ProdMovieProvider implements MovieMetadataProvider {
       api.movies.details({ movie_id: tmdbId }),
       getMdbRatings(tmdbId),
     ]);
-    const justWatch = await justwatch
-      .getAvailability(tmdbId, details.title)
-      .catch((error: unknown) => {
+    const [justWatch, wikipediaUrl] = await Promise.all([
+      justwatch
+        .getAvailability(tmdbId, details.title)
+        .catch((error: unknown) => {
+          console.error(
+            `Unable to load JustWatch for TMDB movie ${tmdbId}.`,
+            error,
+          );
+          return justwatch.unavailable();
+        }),
+      getWikipediaUrl(tmdbId, details.imdb_id).catch((error: unknown) => {
         console.error(
-          `Unable to load JustWatch for TMDB movie ${tmdbId}.`,
+          `Unable to load Wikipedia for TMDB movie ${tmdbId}.`,
           error,
         );
-        return justwatch.unavailable();
-      });
+        return null;
+      }),
+    ]);
 
     const values = {
       tmdbId: details.id,
       details: {
         ...details,
         justWatch,
+        wikipediaUrl,
         posterUrl: details.poster_path
           ? api.images.poster(details.poster_path, "w342")
           : null,

@@ -4,6 +4,7 @@ import styles from "./Ratings.module.css";
 
 interface RatingProps {
   services: MDBRating[];
+  wikipediaUrl?: string | null;
 }
 
 interface Rating {
@@ -14,7 +15,7 @@ interface Rating {
   value: string;
 }
 
-export function Ratings({ services }: RatingProps) {
+export function Ratings({ services, wikipediaUrl }: RatingProps) {
   const imdb = find({ source: "imdb" })(services);
   const letterboxd = find({ source: "letterboxd" })(services);
   const tomatoes = find({ source: "tomatoes" })(services);
@@ -53,7 +54,7 @@ export function Ratings({ services }: RatingProps) {
       rating.rating !== null && rating.url !== null && rating.value !== null,
   );
 
-  if (ratings.length === 0) return null;
+  if (ratings.length === 0 && !wikipediaUrl) return null;
 
   return (
     <div className={styles.ratings} aria-label="Movie ratings">
@@ -70,6 +71,18 @@ export function Ratings({ services }: RatingProps) {
           <span>{rating.value}</span>
         </a>
       ))}
+      {wikipediaUrl && (
+        <a
+          className={styles.rating}
+          href={wikipediaUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Read about this movie on Wikipedia"
+          title="Wikipedia"
+        >
+          <img src="/ratings/wikipedia.svg" alt="" />
+        </a>
+      )}
     </div>
   );
 }

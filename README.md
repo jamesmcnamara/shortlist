@@ -149,6 +149,19 @@ or automatic retry, and browser/OS settings can delay or prevent notifications.
 Without the VAPID configuration, movie additions work normally and the
 notification control explains that setup is still needed.
 
+### Wikipedia articles
+
+New movies resolve an English Wikipedia article through Wikidata, matching the
+TMDB movie ID first and falling back to the IMDb ID when no TMDB item exists.
+Only a unique matching item with an English article is linked; missing or
+ambiguous matches have no icon. The URL is stored in `movie.details.wikipediaUrl`
+and shown beside ratings in search details, nominations, and movie discussions.
+No API key or database migration is needed.
+
+Lookups have a four-second total timeout. Service failures are logged without
+blocking movie creation. Cached movies are not looked up again, so existing
+movies require a separate backfill to gain Wikipedia links.
+
 ### JustWatch streaming availability
 
 New movies fetch US availability from JustWatch's unofficial GraphQL endpoint

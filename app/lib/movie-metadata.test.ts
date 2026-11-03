@@ -52,6 +52,26 @@ beforeEach(async () => {
   vi.stubGlobal(
     "fetch",
     vi.fn((url: string, init?: RequestInit) => {
+      if (String(url).startsWith("https://query.wikidata.org/sparql?")) {
+        return Promise.resolve(
+          Response.json({
+            results: {
+              bindings: [
+                {
+                  item: {
+                    type: "uri",
+                    value: "https://www.wikidata.org/entity/Q1",
+                  },
+                  article: {
+                    type: "uri",
+                    value: "https://en.wikipedia.org/wiki/Test_film",
+                  },
+                },
+              ],
+            },
+          }),
+        );
+      }
       if (url === "https://apis.justwatch.com/graphql") {
         const { variables } = JSON.parse(String(init?.body));
         return Promise.resolve(
@@ -172,6 +192,7 @@ describe("ProdMovieProvider", () => {
         posterUrl: "https://image.test/w342/movie-11.jpg",
         description: "Overview 11",
         year: 2025,
+        wikipediaUrl: "https://en.wikipedia.org/wiki/Test_film",
         justWatch: {
           country: "US",
           status: "matched",
@@ -186,10 +207,33 @@ describe("ProdMovieProvider", () => {
       .where(eq(movies.tmdbId, 11));
     expect(stored.id).toBe(result.id);
     expect(tmdbApi.movies.details).toHaveBeenCalledOnce();
-    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect((stored.details as MovieDetails).wikipediaUrl).toBe(
+      result.details.wikipediaUrl,
+    );
     expect((stored.details as MovieDetails).justWatch).toEqual(
       result.details.justWatch,
     );
+  });
+
+  it("logs Wikipedia failures without blocking movie creation", async () => {
+    const fetchMetadata = fetch;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) =>
+        String(url).startsWith("https://query.wikidata.org/sparql?")
+          ? Promise.reject(new Error("Wikidata unavailable"))
+          : fetchMetadata(url, init),
+      ),
+    );
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const result = await new ProdMovieProvider().get(11);
+    expect(result.details.wikipediaUrl).toBeNull();
+    expect(log).toHaveBeenCalledWith(
+      "Unable to load Wikipedia for TMDB movie 11.",
+      expect.any(Error),
+    );
+    expect(await db.select().from(movies)).toHaveLength(1);
   });
 
   it("keeps movie creation working but records and logs unavailable JustWatch", async () => {

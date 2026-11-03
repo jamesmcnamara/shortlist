@@ -112,7 +112,10 @@ export function MovieDiscussion({
             )}
           </div>
           <Oscars movie={nomination.movie} />
-          <Ratings services={ratings.services} />
+          <Ratings
+            services={ratings.services}
+            wikipediaUrl={details.wikipediaUrl}
+          />
           <BoxOffice data={details.boxOffice} onRefresh={onRefreshBoxOffice} />
           <Streaming
             availability={details.justWatch}

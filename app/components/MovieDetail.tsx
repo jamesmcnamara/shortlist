@@ -96,7 +96,10 @@ export function MovieDetail({ movie, onBack, onAdd }: MovieDetailProps) {
 
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Ratings</h2>
-          <Ratings services={ratings.services} />
+          <Ratings
+            services={ratings.services}
+            wikipediaUrl={details.wikipediaUrl}
+          />
         </div>
 
         <Oscars movie={movie} variant="detail" />
