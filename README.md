@@ -116,12 +116,13 @@ away stops further requests but does not undo movies already added.
 
 ### Movie notifications
 
-Each list has a **Notify me when someone adds a movie** checkbox above the
-movie import control. Notifications are off by default. Enabling them requests
-browser permission and registers the current device; the list preference applies
-to all devices you have enabled. On another device, choose **Enable on this
-device** for a list you already follow. Turning off the checkbox stops alerts
-for that list on all your devices. Signing out disconnects the current browser.
+List members can toggle movie notifications using the small grey bell beside
+the theatre title. Notifications are off by default: an outlined bell means off,
+and a filled bell means on. Enabling them requests browser permission and
+registers the current device; the list preference applies to all devices you
+have enabled. On another device, choose **Enable on this device** below the title
+for a list you already follow. Turning off the bell stops alerts for that list
+on all your devices. Signing out disconnects the current browser.
 
 New nominations, including successful bulk imports, notify opted-in members
 other than the person adding the movie. Duplicate imports do not send alerts.

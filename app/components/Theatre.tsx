@@ -5,6 +5,7 @@ import type { AppMenuProps } from "@/app/components/AppMenu";
 import { BulkMovieImport } from "@/app/components/BulkMovieImport";
 import { CrossPost } from "@/app/components/CrossPost/CrossPost";
 import { MovieCard } from "@/app/components/MovieCard";
+import { NotificationBell } from "@/app/components/NotificationBell";
 import { EditableComment } from "@/app/components/MovieDiscussion/EditableComment";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
 import { PickerBar } from "@/app/components/PickerBar";
@@ -33,6 +34,7 @@ interface TheatreProps {
   description?: string | null;
   header?: AppMenuProps;
   isAdmin?: boolean;
+  isMember?: boolean;
   nominees: Nomination[];
   viewState: ViewState;
   setViewState: (next: ViewState) => void;
@@ -47,6 +49,7 @@ export function Theatre({
   description,
   header,
   isAdmin = false,
+  isMember = false,
   userId,
   api = READ_ONLY_API,
   viewState,
@@ -225,9 +228,14 @@ export function Theatre({
         className={styles.nominations}
         aria-labelledby="nominations-title"
       >
-        <h1 id="nominations-title" className={styles.sectionHeader}>
-          {name}
-        </h1>
+        <div className={styles.titleRow}>
+          <h1 id="nominations-title" className={styles.sectionHeader}>
+            {name}
+          </h1>
+          {theatreId && isMember && userId && (
+            <NotificationBell key={theatreId} theatreId={theatreId} />
+          )}
+        </div>
 
         {(description || canCurate) && (
           <div className={styles.description}>

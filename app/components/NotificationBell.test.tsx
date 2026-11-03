@@ -7,7 +7,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { NotificationSettings } from "./NotificationSettings";
+import { NotificationBell } from "./NotificationBell";
 
 const state = vi.hoisted(() => ({
   data: { enabled: false, configured: true },
@@ -39,6 +39,7 @@ beforeEach(() => {
   state.supported = true;
   state.enable.mockResolvedValue(undefined);
   state.set.mockResolvedValue({ enabled: true, configured: true });
+  state.retry.mockResolvedValue(undefined);
   vi.stubGlobal("Notification", { permission: "granted" });
   Object.defineProperty(navigator, "serviceWorker", {
     configurable: true,
@@ -54,10 +55,14 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("theatre notification settings", () => {
+describe("list notification bell", () => {
   it("enables the device before saving list opt-in", async () => {
-    render(<NotificationSettings theatreId="club" />);
-    fireEvent.click(screen.getByRole("checkbox"));
+    render(<NotificationBell theatreId="club" />);
+    const bell = screen.getByRole("button", {
+      name: "Notify me when someone adds a movie",
+    });
+    expect(bell.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(bell);
     await waitFor(() => expect(state.set).toHaveBeenCalledWith(true));
     expect(state.enable).toHaveBeenCalledOnce();
     expect(state.retry).toHaveBeenCalledOnce();
@@ -67,8 +72,8 @@ describe("theatre notification settings", () => {
     state.enable.mockRejectedValue(
       new Error("Allow notifications in site settings."),
     );
-    render(<NotificationSettings theatreId="club" />);
-    fireEvent.click(screen.getByRole("checkbox"));
+    render(<NotificationBell theatreId="club" />);
+    fireEvent.click(screen.getByRole("button"));
     expect((await screen.findByRole("alert")).textContent).toBe(
       "Allow notifications in site settings.",
     );
@@ -77,17 +82,21 @@ describe("theatre notification settings", () => {
 
   it("lets an already-followed list enable another device", async () => {
     state.data.enabled = true;
-    render(<NotificationSettings theatreId="club" />);
+    render(<NotificationBell theatreId="club" />);
     fireEvent.click(
-      screen.getByRole("button", { name: "Enable on this device" }),
+      await screen.findByRole("button", { name: "Enable on this device" }),
     );
     await waitFor(() => expect(state.enable).toHaveBeenCalledOnce());
   });
 
   it("disables a list without requesting browser permission", async () => {
     state.data.enabled = true;
-    render(<NotificationSettings theatreId="club" />);
-    fireEvent.click(screen.getByRole("checkbox"));
+    render(<NotificationBell theatreId="club" />);
+    const bell = screen.getByRole("button", {
+      name: "Disable list notifications",
+    });
+    expect(bell.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(bell);
     await waitFor(() => expect(state.set).toHaveBeenCalledWith(false));
     expect(state.enable).not.toHaveBeenCalled();
   });
@@ -97,8 +106,8 @@ describe("theatre notification settings", () => {
     (reason) => {
       if (reason === "unsupported") state.supported = false;
       else state.data.configured = false;
-      render(<NotificationSettings theatreId="club" />);
-      expect((screen.getByRole("checkbox") as HTMLInputElement).disabled).toBe(
+      render(<NotificationBell theatreId="club" />);
+      expect((screen.getByRole("button") as HTMLButtonElement).disabled).toBe(
         true,
       );
       expect(
@@ -114,8 +123,64 @@ describe("theatre notification settings", () => {
   it("allows opting out even when the current browser is unsupported", async () => {
     state.data.enabled = true;
     state.supported = false;
-    render(<NotificationSettings theatreId="club" />);
-    fireEvent.click(screen.getByRole("checkbox"));
+    render(<NotificationBell theatreId="club" />);
+    fireEvent.click(screen.getByRole("button"));
     await waitFor(() => expect(state.set).toHaveBeenCalledWith(false));
+  });
+
+  it("shows save errors without displaying an enabled bell", async () => {
+    state.set.mockRejectedValueOnce(new Error("Unable to save notifications."));
+    render(<NotificationBell theatreId="club" />);
+    fireEvent.click(screen.getByRole("button"));
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "Unable to save notifications.",
+    );
+    expect(
+      screen
+        .getByRole("button", {
+          name: "Notify me when someone adds a movie",
+        })
+        .getAttribute("aria-pressed"),
+    ).toBe("false");
+  });
+
+  it("disables the bell while saving", async () => {
+    let finish!: () => void;
+    state.enable.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    render(<NotificationBell theatreId="club" />);
+    const bell = screen.getByRole("button") as HTMLButtonElement;
+    fireEvent.click(bell);
+    expect(bell.disabled).toBe(true);
+    expect(screen.getByRole("status").textContent).toBe(
+      "Saving notifications...",
+    );
+    finish();
+    await waitFor(() => expect(bell.disabled).toBe(false));
+  });
+
+  it("offers a retry when settings fail to load", () => {
+    state.error = new Error("Unable to load notification settings.");
+    render(<NotificationBell theatreId="club" />);
+    expect(screen.getByRole("alert").textContent).toBe(state.error.message);
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(state.retry).toHaveBeenCalledOnce();
+  });
+
+  it("does not offer device setup when this device is already enabled", async () => {
+    state.data.enabled = true;
+    navigator.serviceWorker.getRegistration = vi.fn().mockResolvedValue({
+      pushManager: { getSubscription: vi.fn().mockResolvedValue({}) },
+    });
+    render(<NotificationBell theatreId="club" />);
+    await waitFor(() =>
+      expect(navigator.serviceWorker.getRegistration).toHaveBeenCalledOnce(),
+    );
+    expect(
+      screen.queryByRole("button", { name: "Enable on this device" }),
+    ).toBeNull();
   });
 });

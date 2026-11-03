@@ -70,10 +70,11 @@ export function TheatreContainer() {
       name={theatre.name}
       description={theatre.description}
       header={{
-        theatre: { id: theatre.id, isMember: Boolean(role) },
+        theatre: { id: theatre.id, isAdmin },
         showMyTheatres: true,
       }}
       isAdmin={isAdmin}
+      isMember={Boolean(role)}
       userId={userId}
       viewState={viewState}
       viewContext={viewContext}
