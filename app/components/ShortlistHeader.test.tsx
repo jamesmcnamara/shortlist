@@ -27,21 +27,6 @@ describe("ShortlistHeader", () => {
     expect(vi.mocked(AppMenu).mock.calls[0][0]).toEqual({});
   });
 
-  it.each([false, true])(
-    "preserves theatre menu options (showMyTheatres=%s)",
-    (showMyTheatres) => {
-      const theatre = { id: "theatre" };
-      render(
-        <ShortlistHeader theatre={theatre} showMyTheatres={showMyTheatres} />,
-      );
-
-      expect(vi.mocked(AppMenu).mock.calls[0][0]).toEqual({
-        theatre,
-        showMyTheatres,
-      });
-    },
-  );
-
   it("passes additional actions to the menu", () => {
     const additionalMenuItems = [
       { type: "button" as const, label: "Import Movies", onClick: vi.fn() },

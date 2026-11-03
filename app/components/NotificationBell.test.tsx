@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// @vitest-environment-options {"url":"https://shortlist.test"}
 import {
   cleanup,
   fireEvent,

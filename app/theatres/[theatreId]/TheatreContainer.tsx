@@ -71,7 +71,6 @@ export function TheatreContainer() {
       description={theatre.description}
       header={{
         theatre: { id: theatre.id, isAdmin },
-        showMyTheatres: true,
       }}
       isAdmin={isAdmin}
       isMember={Boolean(role)}

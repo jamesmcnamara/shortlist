@@ -117,6 +117,15 @@ describe("watchlist menu link", () => {
   });
 });
 
+it("does not offer bulk Wikipedia refresh", () => {
+  render(<AppMenu theatre={{ id: "ordinary" }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+  fireEvent.click(screen.getByRole("button", { name: "Extra Settings" }));
+  expect(
+    screen.queryByRole("button", { name: /Refresh Wikipedia/i }),
+  ).toBeNull();
+});
+
 describe("share menu item", () => {
   const writeText = vi.fn();
   Object.assign(navigator, { clipboard: { writeText } });

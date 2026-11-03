@@ -17,7 +17,6 @@ import { api } from "@/app/lib/api";
 export interface AppMenuProps {
   /** Omitted outside a theatre, which hides the theatre-scoped items. */
   theatre?: { id: string; isAdmin?: boolean };
-  showMyTheatres?: boolean;
   additionalMenuItems?: AdditionalMenuItem[];
 }
 
@@ -35,11 +34,7 @@ export type AdditionalMenuItem =
     };
 
 /** The account and navigation menu, shared by every header. */
-export function AppMenu({
-  theatre,
-  showMyTheatres = true,
-  additionalMenuItems,
-}: AppMenuProps) {
+export function AppMenu({ theatre, additionalMenuItems }: AppMenuProps) {
   const { data: session } = authClient.useSession();
   const { data: theatres } = useTheatres();
   const watchlist = theatres?.find(
@@ -113,7 +108,7 @@ export function AppMenu({
             Home Theatre
           </MenuLink>
         )}
-        {showMyTheatres && session?.user.id && (
+        {session?.user.id && (
           <MenuLink href={userPath(session.user.id)} onNavigate={close}>
             My Theatres
           </MenuLink>
@@ -159,19 +154,6 @@ export function AppMenu({
                 name: "boxOffice",
                 label: "Box office",
                 refresh: api.theatre(theatre.id).refreshBoxOffice,
-              }}
-              buttonClassName={styles.menuItem}
-              onStart={close}
-            />
-          )}
-          {name && theatre && (
-            <BulkMovieRefresh
-              key={`wikipedia-${theatre.id}`}
-              theatreId={theatre.id}
-              service={{
-                name: "wikipedia",
-                label: "Wikipedia",
-                refresh: api.theatre(theatre.id).refreshWikipedia,
               }}
               buttonClassName={styles.menuItem}
               onStart={close}

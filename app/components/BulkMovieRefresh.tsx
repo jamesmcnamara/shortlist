@@ -48,9 +48,9 @@ export function BulkMovieRefresh({
   const controller = useRef<AbortController | null>(null);
   const reducedMotion = useReducedMotion();
 
-  function refreshMovie(id: number, signal: AbortSignal) {
+  async function refreshMovie(id: number, signal: AbortSignal) {
     try {
-      return refresh(id, signal);
+      await refresh(id, signal);
     } catch (error) {
       setProgress(mod("failed")(inc));
       if (error instanceof ApiError && [401, 403, 404].includes(error.status)) {
@@ -68,7 +68,7 @@ export function BulkMovieRefresh({
     const current = new AbortController();
     controller.current = current;
     const client = api.theatre(theatreId);
-    setProgress(set("running")(true));
+    setProgress(set("running")(true)(INITIAL));
     try {
       const nominations = await client.nominations.list(current.signal);
       const ids = [...new Set(nominations.map(({ movieId }) => movieId))];
@@ -198,7 +198,7 @@ const getProgressPercent = (progress: Progress): number =>
 const getProgressStatus = (progress: Progress): string => {
   switch (true) {
     case !!progress.error:
-      return "An error occurred.";
+      return progress.error;
     case progress.total === 0:
       return "No movies to refresh.";
     case progress.failed > 0:

@@ -188,8 +188,8 @@ describe("Oscars", () => {
       }),
     ).getAllByRole("listitem");
     expect(others.map(({ textContent }) => textContent)).toEqual([
-      "Born YesterdayWinnerJudy Holliday — Billie Dawn",
-      "All about EveAnne Baxter — Eve Harrington",
+      "Judy Holliday — Billie DawnWinnerBorn Yesterday",
+      "Anne Baxter — Eve HarringtonAll about Eve",
     ]);
   });
 

@@ -2,12 +2,7 @@ import type {
   TheatreSummary,
   TheatreSummaryWithPosterPreviews,
 } from "@/app/lib/api";
-import {
-  findMembership,
-  findTheatreById,
-  type SafeTheatre,
-} from "@/lib/auth/require-theatre";
-import { requireUserId } from "@/lib/auth/require-user";
+import { type SafeTheatre } from "@/lib/auth/require-theatre";
 import { getDb } from "@/src/db/client";
 import {
   movies,

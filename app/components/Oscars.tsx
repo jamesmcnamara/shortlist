@@ -126,19 +126,23 @@ function OtherNominees({ entry, nominees, children }: OtherNomineesProps) {
           className={styles.otherNominees}
           aria-label={`Other nominees for ${formatCategory(entry.category)}, ${entry.year}`}
         >
-          {others.map((nominee) => (
-            <li key={nominee.id} className={styles.entry}>
-              <span className={styles.entryHeading}>
-                <span>{nominee.film ?? nominee.name}</span>
-                <WinnerBadge winner={nominee.winner} />
-              </span>
-              {formatNomineeDetail(nominee) && (
-                <span className={styles.nominee}>
-                  {formatNomineeDetail(nominee)}
+          {others.map((nominee) => {
+            const filmTitle = nominee.film ?? nominee.name;
+            const detail = formatNomineeDetail(nominee);
+            const isActingAward = /actor|actress/i.test(entry.category);
+            const [headline, lower] = isActingAward
+              ? [detail, filmTitle]
+              : [filmTitle, detail];
+            return (
+              <li key={nominee.id} className={styles.entry}>
+                <span className={styles.entryHeading}>
+                  <span>{headline}</span>
+                  <WinnerBadge winner={nominee.winner} />
                 </span>
-              )}
-            </li>
-          ))}
+                {lower && <span className={styles.nominee}>{lower}</span>}
+              </li>
+            );
+          })}
         </ol>
       </SlideOpen>
     </>

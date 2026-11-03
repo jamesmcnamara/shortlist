@@ -52,7 +52,7 @@ const openMenu = () =>
 const start = () => {
   openMenu();
   fireEvent.click(screen.getByRole("button", { name: "Extra Settings" }));
-  fireEvent.click(screen.getByRole("button", { name: "Refresh box office" }));
+  fireEvent.click(screen.getByRole("button", { name: /Refresh box office/i }));
 };
 const menu = () => render(<AppMenu theatre={{ id: "current-theatre" }} />);
 
@@ -88,12 +88,12 @@ describe("bulk box office refresh", () => {
       "0",
     );
     fireEvent.click(
-      screen.getByRole("button", { name: "Dismiss box office progress" }),
+      screen.getByRole("button", { name: /Dismiss box office progress/i }),
     );
     await waitFor(() => expect(screen.queryByRole("progressbar")).toBeNull());
     openMenu();
     fireEvent.click(
-      screen.getByRole("button", { name: "Show box office progress" }),
+      screen.getByRole("button", { name: /Show box office progress/i }),
     );
     expect(screen.getByRole("progressbar")).toBeTruthy();
     expect(mocks.list).toHaveBeenCalledOnce();
@@ -142,7 +142,9 @@ describe("bulk box office refresh", () => {
     );
     expect(mocks.refresh).not.toHaveBeenCalled();
     openMenu();
-    fireEvent.click(screen.getByRole("button", { name: "Refresh box office" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Refresh box office/i }),
+    );
     await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(2));
     expect(screen.queryByRole("alert")).toBeNull();
   });
