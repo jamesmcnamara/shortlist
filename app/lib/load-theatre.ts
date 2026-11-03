@@ -138,30 +138,3 @@ export async function listPublicTheatresWithPosterPreviews(
     };
   });
 }
-
-export type LoadTheatreResult =
-  { status: "ok"; data: LoadedTheatre } | { status: "not-found" };
-
-/**
- * Server-side data for a public theatre page. Membership is optional and only
- * affects the viewer's available controls.
- */
-export async function loadTheatre(
-  theatreId: string,
-): Promise<LoadTheatreResult> {
-  const userId = await requireUserId();
-  const theatre = await findTheatreById(theatreId);
-  if (!theatre) return { status: "not-found" };
-
-  const role = userId ? await findMembership(theatre.id, userId) : null;
-
-  return {
-    status: "ok",
-    data: {
-      theatre,
-      role,
-      theatres: userId ? await listPublicTheatres(userId) : [],
-      userId,
-    },
-  };
-}

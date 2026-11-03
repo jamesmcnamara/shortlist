@@ -38,6 +38,11 @@ runs in the background. Save failures still show an error.
 Undoing a watched marking or bulk-marking movies already seen does not celebrate.
 The animation respects the system's reduced-motion preference.
 
+Movie discussions open from the bottom. Scrolling moves the whole panel upward
+to fill the screen, with its content attached rather than scrolling inside a
+capped-height panel. Clicking above the panel or using its close button dismisses
+the discussion.
+
 The separate `/share/...` links have been removed and no longer work. Deploy
 the updated app before applying migration `0024_sticky_stardust.sql`, which
 drops the unused `theatres.share_code` column. Existing invite links and
@@ -160,7 +165,18 @@ No API key or database migration is needed.
 
 Lookups have a four-second total timeout. Service failures are logged without
 blocking movie creation. Cached movies are not looked up again, so existing
-movies require a separate backfill to gain Wikipedia links.
+movies can be backfilled using **Menu > Extra Settings > Refresh Wikipedia**.
+This checks every movie in the current theatre, including Watched, one at a
+time using the same progress drawer as the box-office refresh. Dismissing the
+drawer does not stop the job; reopen it from the menu to see progress. Keep the
+page open, since navigating away stops further requests. Individual failures
+are counted and other movies continue; lost access stops the batch. Restart
+from the menu to retry.
+
+Any signed-in user can run the refresh on a public theatre without joining.
+Successful lookups update the shared client cache and only replace the stored
+Wikipedia URL. A missing or ambiguous article stores `null`; lookup failures
+preserve the previous URL and appear in the progress drawer.
 
 ### JustWatch streaming availability
 

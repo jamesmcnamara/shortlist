@@ -418,6 +418,27 @@ describe("high-churn component smoke tests", () => {
     },
   );
 
+  it("only closes the discussion for pointer events outside the panel", () => {
+    const onClose = vi.fn();
+    render(
+      <MovieDiscussion
+        nomination={nomination}
+        hasSeen={false}
+        currentUserId="user"
+        onClose={onClose}
+      />,
+    );
+    const panel = screen.getByRole("region", {
+      name: "Discussion about A Movie",
+    });
+
+    fireEvent.pointerDown(screen.getByText("A description"));
+    expect(onClose).not.toHaveBeenCalled();
+
+    fireEvent.pointerDown(panel.parentElement!);
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it.each([false, true])(
     "keeps the admin completion toggle beside runtime when completed=%s",
     (completed) => {

@@ -11,7 +11,6 @@ import {
   seen,
 } from "@/src/db/schema";
 import { authUsers } from "@/src/db/neon-auth-schema";
-import { loadTheatre } from "@/app/lib/load-theatre";
 // One namespace import per route module, aliased `<name>Route`, so every
 // handler keeps its real export name (GET/POST/PATCH/DELETE) without
 // colliding across the many routes a single test file exercises.
@@ -512,16 +511,6 @@ describe("admin-only routes", () => {
     ).json();
     expect(asAdmin.inviteCode).toBe("invite-a");
     expect(asAdmin.adminInviteCode).toBe("invite-a-admin");
-  });
-
-  it("keeps the invite code out of the server-rendered theatre payload", async () => {
-    asUser(BOB);
-
-    const result = await loadTheatre(fixture.theatreA.id);
-    expect(result.status).toBe("ok");
-    if (result.status !== "ok") return;
-    // This object is serialized into the RSC payload for every member.
-    expect(JSON.stringify(result.data.theatre)).not.toContain("invite-a");
   });
 
   it("does not leak the invite code through a rename", async () => {

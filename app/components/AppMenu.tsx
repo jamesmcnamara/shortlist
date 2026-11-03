@@ -11,7 +11,8 @@ import { userPath } from "@/lib/user-path";
 import { useTheatres } from "@/app/lib/data/queries";
 import { disconnectDeviceNotifications } from "@/app/lib/push";
 import styles from "./AppMenu.module.css";
-import { BulkBoxOfficeRefresh } from "./BulkBoxOfficeRefresh";
+import { BulkMovieRefresh } from "./BulkMovieRefresh";
+import { api } from "@/app/lib/api";
 
 export interface AppMenuProps {
   /** Omitted outside a theatre, which hides the theatre-scoped items. */
@@ -151,9 +152,27 @@ export function AppMenu({
         <hr className={styles.divider} />
         <div className={styles.extraSettings} hidden={!isExpanded}>
           {name && theatre && (
-            <BulkBoxOfficeRefresh
+            <BulkMovieRefresh
               key={theatre.id}
               theatreId={theatre.id}
+              service={{
+                name: "boxOffice",
+                label: "Box office",
+                refresh: api.theatre(theatre.id).refreshBoxOffice,
+              }}
+              buttonClassName={styles.menuItem}
+              onStart={close}
+            />
+          )}
+          {name && theatre && (
+            <BulkMovieRefresh
+              key={`wikipedia-${theatre.id}`}
+              theatreId={theatre.id}
+              service={{
+                name: "wikipedia",
+                label: "Wikipedia",
+                refresh: api.theatre(theatre.id).refreshWikipedia,
+              }}
               buttonClassName={styles.menuItem}
               onStart={close}
             />

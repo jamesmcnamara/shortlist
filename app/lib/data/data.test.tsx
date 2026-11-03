@@ -98,6 +98,39 @@ afterEach(() => {
 });
 
 describe("shared data cache", () => {
+  it("revalidates nomination data after a Wikipedia refresh", async () => {
+    let wikipediaUrl: string | null = null;
+    fetchMock.mockImplementation(async (input, init) => {
+      if (input === `${base}/wikipedia` && init?.method === "POST") {
+        wikipediaUrl = "https://en.wikipedia.org/wiki/The_Matrix";
+        return json({ wikipediaUrl });
+      }
+      return json([{ id: 1, movie: { details: { wikipediaUrl } } }]);
+    });
+    const { result } = renderHook(() => useNominations(theatre.id), {
+      wrapper: Wrapper,
+    });
+    await waitFor(() =>
+      expect(result.current.data?.[0].movie.details.wikipediaUrl).toBeNull(),
+    );
+    const controller = new AbortController();
+    await act(async () => {
+      await api.theatre(theatre.id).refreshWikipedia(1, controller.signal);
+    });
+    await waitFor(() =>
+      expect(result.current.data?.[0].movie.details.wikipediaUrl).toBe(
+        "https://en.wikipedia.org/wiki/The_Matrix",
+      ),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(`${base}/wikipedia`, {
+      cache: "no-store",
+      method: "POST",
+      body: JSON.stringify({ movieId: 1 }),
+      signal: controller.signal,
+      headers: { "content-type": "application/json" },
+    });
+  });
+
   it("loads an empty personal theatre list while signed out", async () => {
     auth.data = null;
     fetchMock.mockResolvedValue(json([]));

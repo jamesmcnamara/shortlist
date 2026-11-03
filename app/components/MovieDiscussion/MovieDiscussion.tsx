@@ -47,10 +47,9 @@ export function MovieDiscussion({
     nominator,
     seenBy,
   } = nomination;
-  const drawerRef = useClickOutside<HTMLDivElement>(onClose);
+  const drawerRef = useClickOutside<HTMLElement>(onClose);
   return (
     <motion.div
-      ref={drawerRef}
       className={styles.discussionDrawer}
       initial={{ y: "100%" }}
       animate={{ y: 0 }}
@@ -58,6 +57,7 @@ export function MovieDiscussion({
       transition={{ type: "spring", stiffness: 380, damping: 38 }}
     >
       <section
+        ref={drawerRef}
         className={styles.expanded}
         aria-label={`Discussion about ${details.title}`}
       >

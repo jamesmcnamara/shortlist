@@ -186,6 +186,15 @@ export const api = {
           body: JSON.stringify({ movieId }),
           signal,
         }),
+      refreshWikipedia: (
+        movieId: number,
+        signal?: AbortSignal,
+      ): Promise<{ wikipediaUrl: string | null }> =>
+        request(`${base}/wikipedia`, {
+          method: "POST",
+          body: JSON.stringify({ movieId }),
+          signal,
+        }),
       update: (input: {
         name?: string;
         description?: string;

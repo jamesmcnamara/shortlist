@@ -73,12 +73,6 @@ export async function listNominations(
   return withSeenBy(rows);
 }
 
-export async function listNominationsByTheatreId(
-  theatreId: string,
-): Promise<Nomination[]> {
-  return listNominations(theatreId);
-}
-
 export async function getNomination(
   theatreId: string,
   nominationId: number,
