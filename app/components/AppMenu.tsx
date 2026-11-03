@@ -16,7 +16,7 @@ import { api } from "@/app/lib/api";
 
 export interface AppMenuProps {
   /** Omitted outside a theatre, which hides the theatre-scoped items. */
-  theatre?: { id: string; isMember?: boolean };
+  theatre?: { id: string; isAdmin?: boolean };
   showMyTheatres?: boolean;
   additionalMenuItems?: AdditionalMenuItem[];
 }
@@ -123,7 +123,7 @@ export function AppMenu({
             New Theatre
           </MenuLink>
         )}
-        {theatre?.isMember && (
+        {theatre?.isAdmin && (
           <MenuLink
             href={`${theatrePath(theatre)}/settings`}
             onNavigate={close}

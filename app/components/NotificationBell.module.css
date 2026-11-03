@@ -1,0 +1,61 @@
+.bell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.bell svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.bell:hover:not(:disabled) {
+  background: var(--surface-muted);
+  color: var(--text-soft);
+}
+
+.bell:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.feedback {
+  grid-column: 1 / -1;
+  display: grid;
+  justify-items: start;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.feedback p {
+  margin: 0;
+}
+
+.feedback button {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.625rem;
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  cursor: pointer;
+}
+
+.feedback button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.error {
+  color: var(--danger);
+}

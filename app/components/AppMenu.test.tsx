@@ -59,6 +59,14 @@ it("offers sign-in without a global directory to signed-out visitors", () => {
   expect(screen.queryByRole("menuitem", { name: "New Theatre" })).toBeNull();
 });
 
+it.each([true, false])("only shows settings to admins (%s)", (isAdmin) => {
+  render(<AppMenu theatre={{ id: "ordinary", isAdmin }} />);
+  fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+  expect(Boolean(screen.queryByRole("menuitem", { name: "Settings" }))).toBe(
+    isAdmin,
+  );
+});
+
 describe("watchlist menu link", () => {
   it("links to the user's theatres", () => {
     render(<AppMenu />);

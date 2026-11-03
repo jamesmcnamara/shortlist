@@ -77,6 +77,11 @@ vi.mock("./ViewControls", () => ({
     </div>
   ),
 }));
+vi.mock("./NotificationBell", () => ({
+  NotificationBell: ({ theatreId }: { theatreId: string }) => (
+    <button aria-label="List notifications" data-theatre-id={theatreId} />
+  ),
+}));
 vi.mock("./MovieCard", () => ({
   MovieCard: ({
     nomination,
@@ -147,6 +152,7 @@ function show(
   isAdmin = true,
   userId: string | null = "user",
   description: string | null = null,
+  isMember = false,
 ) {
   return render(
     <Theatre
@@ -155,6 +161,7 @@ function show(
       description={description}
       header={{}}
       isAdmin={isAdmin}
+      isMember={isMember}
       userId={userId ?? undefined}
       api={api ?? undefined}
       nominees={nominees}
@@ -164,6 +171,31 @@ function show(
     />,
   );
 }
+
+describe("list notification placement", () => {
+  it("shows a bell in the title row for members, including non-admins", () => {
+    show([], createApi(), false, "user", null, true);
+    const bell = screen.getByRole("button", { name: "List notifications" });
+    expect(bell.getAttribute("data-theatre-id")).toBe("theatre");
+    expect(bell.parentElement).toBe(
+      screen.getByRole("heading", { name: "Watchlist" }).parentElement,
+    );
+  });
+
+  it("hides the bell for non-members", () => {
+    show([], createApi(), false);
+    expect(
+      screen.queryByRole("button", { name: "List notifications" }),
+    ).toBeNull();
+  });
+
+  it("hides the bell for signed-out visitors", () => {
+    show([], null, false, null, null, true);
+    expect(
+      screen.queryByRole("button", { name: "List notifications" }),
+    ).toBeNull();
+  });
+});
 
 describe("list descriptions", () => {
   it("shows the description before the list controls with an admin edit action", () => {
