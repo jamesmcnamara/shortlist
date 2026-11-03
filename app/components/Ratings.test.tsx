@@ -17,6 +17,19 @@ const imdb: MDBRating = {
 const wikipediaUrl = "https://en.wikipedia.org/wiki/The_Matrix";
 
 describe("Ratings Wikipedia link", () => {
+  it("links to the IMDb trivia page", () => {
+    render(<Ratings services={[imdb]} />);
+    const link = screen.getByRole("link", {
+      name: "Read trivia about this movie on IMDb",
+    });
+    expect(link.getAttribute("href")).toBe(
+      "https://www.imdb.com/title/tt0133093/trivia/",
+    );
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+    expect(link.getAttribute("title")).toBe("IMDb trivia");
+  });
+
   it("shows the icon alongside existing ratings", () => {
     render(<Ratings services={[imdb]} wikipediaUrl={wikipediaUrl} />);
     expect(screen.getByText("8.7/10")).toBeTruthy();
@@ -40,7 +53,10 @@ describe("Ratings Wikipedia link", () => {
 
   it("preserves ratings without a Wikipedia URL", () => {
     render(<Ratings services={[imdb]} />);
-    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(screen.getAllByRole("link")).toHaveLength(2);
+    expect(
+      screen.getByRole("link", { name: "IMDb: 8.7/10. View on IMDb" }),
+    ).toBeTruthy();
     expect(screen.queryByTitle("Wikipedia")).toBeNull();
   });
 

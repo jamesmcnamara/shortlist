@@ -179,6 +179,56 @@ Successful lookups update the shared client cache and only replace the stored
 Wikipedia URL. A missing or ambiguous article stores `null`; lookup failures
 preserve the previous URL and appear in the progress drawer.
 
+### Command-line movie refresh
+
+The scripts in `refresh/` refresh Wikipedia articles or box-office data for one
+theatre or all theatres, including Watched. They run directly against the database; no running
+app, browser login, or additional API key is needed. The existing menu buttons
+remain available.
+
+With Node 24 and dependencies installed, preview the selected movies:
+
+```sh
+npm run refresh:wikipedia -- <theatre-id>
+npm run refresh:box-office -- <theatre-id>
+```
+
+Use the UUID from the theatre's URL. Node loads `.env.local` through the npm
+commands' `--env-file` option. Configure the database manually before running;
+the scripts never switch branches or change environment files. An exported
+`DATABASE_URL` takes precedence over the file, so check that too before adding
+`--apply`:
+
+```sh
+npm run refresh:wikipedia -- <theatre-id> --apply
+npm run refresh:box-office -- <theatre-id> --apply
+```
+
+Omit the theatre ID to refresh movies across all theatres. Shared movies are
+processed only once, and cached movies that are not on any theatre are excluded:
+
+```sh
+npm run refresh:wikipedia -- --apply
+npm run refresh:box-office -- --apply
+```
+
+Movies are refreshed once each, sequentially, using the same lookup and update
+logic as the menu buttons. Only the relevant metadata key is replaced; other
+metadata and nominations are preserved. Movie metadata is shared, so refreshed
+values also appear in other theatres containing the same movie.
+
+Each movie's result and a final summary are printed. Missing required IDs,
+removed nominations, and lookup failures are reported without stopping other
+movies; any failure gives exit code 1. Lookup failures preserve existing values,
+while a successful Wikipedia lookup with no unique article stores `null`.
+Rerun to retry, or press Ctrl+C to stop; completed updates are not rolled back.
+The preview does not fetch external data or write to the database.
+
+New refresh entry points can import their refresh function normally and call
+`runCli(refreshFunction)` from `refresh/cli.ts`. Commander handles arguments,
+`--help`, and usage errors; the CLI runs the refresh and reports failures through
+its exit code.
+
 ### JustWatch streaming availability
 
 New movies fetch US availability from JustWatch's unofficial GraphQL endpoint

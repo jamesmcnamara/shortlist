@@ -28,6 +28,7 @@
     "src",
     "app",
     "lib",
+    "refresh",
     "proxy.ts",
     "drizzle.config.ts",
     ".next/dev/types/**/*.ts"

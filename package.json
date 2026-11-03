@@ -22,6 +22,8 @@
     "db:migrate:prod": "npm run neon:prod; npm run db:migrate; npm run neon:dev",
     "db:migrate": "node --env-file=.env.local ./scripts/migrate.mjs",
     "data:oscars": "node scripts/update-oscar-data.mjs",
+    "refresh:wikipedia": "node --env-file=.env.local --import tsx refresh/wikipedia.ts",
+    "refresh:box-office": "node --env-file=.env.local --import tsx refresh/box-office.ts",
     "neon:prod": "neonctl checkout production",
     "neon:dev": "neonctl checkout dev"
   },
@@ -34,6 +36,7 @@
     "canvas-confetti": "^1.9.4",
     "cheerio": "^1.2.0",
     "classnames": "^2.5.1",
+    "commander": "^15.0.0",
     "drizzle-orm": "^0.44.2",
     "fp-ts": "^2.16.11",
     "lodash": "^4.18.1",
@@ -67,6 +70,7 @@
     "prettier": "^3.9.10",
     "stylelint": "^17.15.0",
     "typescript": "^5.8.3",
+    "tsx": "^4.20.6",
     "vitest": "^4.1.10"
   }
 }

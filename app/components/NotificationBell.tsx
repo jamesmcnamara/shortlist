@@ -72,6 +72,7 @@ export function NotificationBell({ theatreId }: NotificationBellProps) {
     : data && !data.configured
       ? "Notifications are not configured yet."
       : "";
+  const isLocalhost = window.location.hostname === "localhost";
   const needsDevice =
     data?.enabled && supported && data.configured && deviceEnabled === false;
 
@@ -105,7 +106,7 @@ export function NotificationBell({ theatreId }: NotificationBellProps) {
       {(unavailable || needsDevice || busy || error || loadError) && (
         <div className={styles.feedback}>
           {unavailable && <p>{unavailable}</p>}
-          {needsDevice && (
+          {needsDevice && !isLocalhost && (
             <button type="button" disabled={busy} onClick={() => change(true)}>
               Enable on this device
             </button>

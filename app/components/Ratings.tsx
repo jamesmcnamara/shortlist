@@ -17,6 +17,7 @@ interface Rating {
 
 export function Ratings({ services, wikipediaUrl }: RatingProps) {
   const imdb = find({ source: "imdb" })(services);
+  const imdbTriviaUrl = imdb?.url?.replace(/\/?$/, "/trivia/") ?? null;
   const letterboxd = find({ source: "letterboxd" })(services);
   const tomatoes = find({ source: "tomatoes" })(services);
   const popcorn = find({ source: "popcorn" })(services);
@@ -54,7 +55,7 @@ export function Ratings({ services, wikipediaUrl }: RatingProps) {
       rating.rating !== null && rating.url !== null && rating.value !== null,
   );
 
-  if (ratings.length === 0 && !wikipediaUrl) return null;
+  if (ratings.length === 0 && !wikipediaUrl && !imdbTriviaUrl) return null;
 
   return (
     <div className={styles.ratings} aria-label="Movie ratings">
@@ -71,6 +72,19 @@ export function Ratings({ services, wikipediaUrl }: RatingProps) {
           <span>{rating.value}</span>
         </a>
       ))}
+      {imdbTriviaUrl && (
+        <a
+          className={styles.rating}
+          href={imdbTriviaUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Read trivia about this movie on IMDb"
+          title="IMDb trivia"
+        >
+          <img src="/ratings/imdb.svg" alt="" />
+          <span>Trivia</span>
+        </a>
+      )}
       {wikipediaUrl && (
         <a
           className={styles.rating}
