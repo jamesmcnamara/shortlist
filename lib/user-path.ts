@@ -4,6 +4,9 @@ export const userPath = (username: string | null | undefined): string => {
   return `/u/@${encodeURIComponent(username)}`;
 };
 
+export const isUserTheatresPath = (pathname: string): boolean =>
+  /^\/u\/[^/]+\/?$/.test(pathname);
+
 export const HANDLE_PATTERN = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
 
 // Next's route params percent-encode the @ prefix; accept decoded params too.
