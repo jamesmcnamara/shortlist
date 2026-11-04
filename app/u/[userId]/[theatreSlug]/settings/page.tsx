@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { theatrePath } from "@/lib/theatre-path";
 import { useTheatre } from "../TheatreContext";
 import { AdminSettings } from "./AdminSettings";
 import styles from "./page.module.css";
@@ -16,7 +15,7 @@ export default function TheatreSettingsPage() {
           <h1 className={styles.title}>{theatre.name}</h1>
           <p className={styles.subtitle}>Theatre settings</p>
         </div>
-        <Link className={styles.back} href={theatrePath(theatre)}>
+        <Link className={styles.back} href={theatre.path}>
           Back to the list
         </Link>
       </header>

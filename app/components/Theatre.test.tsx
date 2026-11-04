@@ -124,7 +124,7 @@ const watched: Nomination = {
     ratings: { raw: {}, services: [] },
   },
   nomcoms: [],
-  nominator: { id: "user", name: "User" },
+  nominator: { id: "user", name: "User", username: "user" },
   seenBy: [],
 };
 
@@ -341,7 +341,7 @@ describe("theatre movie animations", () => {
         ...watched,
         completedAt: null,
         userId: "original",
-        nominator: { id: "original", name: "Original" },
+        nominator: { id: "original", name: "Original", username: "original" },
       },
     ]);
     fireEvent.click(screen.getByText("Watched movie"));

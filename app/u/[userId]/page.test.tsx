@@ -27,21 +27,27 @@ vi.mock("next/navigation", () => ({
   notFound: () => {
     throw new Error("NEXT_NOT_FOUND");
   },
+  redirect: (path: string) => {
+    throw new Error(`REDIRECT:${path}`);
+  },
 }));
 
 const USER = "11111111-1111-1111-1111-111111111111";
 const VIEWER = "22222222-2222-2222-2222-222222222222";
-const page = (userId = USER) =>
+const page = (userId = "@alice") =>
   UserTheatres({ params: Promise.resolve({ userId }) });
 
 beforeEach(() => {
   vi.resetAllMocks();
-  data.users.mockResolvedValue([{ name: "Alice" }]);
+  data.users.mockResolvedValue([
+    { id: USER, name: "Alice", username: "alice" },
+  ]);
   data.viewer.mockResolvedValue(null);
   data.theatres.mockResolvedValue([
     {
       id: "club",
       name: "Movie Club",
+      path: "/u/@alice/movie-club",
       posterUrls: ["/poster.jpg"],
       tags: [],
       createdAt: "2026-01-01T00:00:00Z",
@@ -61,7 +67,7 @@ it.each([null, VIEWER])(
     ).toBeTruthy();
     expect(
       screen.getByRole("link", { name: "Movie Club" }).getAttribute("href"),
-    ).toBe("/theatres/club");
+    ).toBe("/u/@alice/movie-club");
     expect(data.theatres).toHaveBeenCalledWith(USER, viewer);
   },
 );
@@ -83,4 +89,32 @@ it("returns not found for a missing user", async () => {
   data.users.mockResolvedValue([]);
   await expect(page()).rejects.toThrow("NEXT_NOT_FOUND");
   expect(data.theatres).not.toHaveBeenCalled();
+});
+
+it("rejects removed UUID profile URLs before querying", async () => {
+  await expect(
+    UserTheatres({
+      params: Promise.resolve({ userId: USER }),
+      searchParams: Promise.resolve({ tag: ["comedy", "2026"], q: "club" }),
+    }),
+  ).rejects.toThrow("NEXT_NOT_FOUND");
+  expect(data.users).not.toHaveBeenCalled();
+  expect(data.theatres).not.toHaveBeenCalled();
+});
+
+it("canonicalizes handle casing and preserves repeated query parameters", async () => {
+  await expect(
+    UserTheatres({
+      params: Promise.resolve({ userId: "@ALICE" }),
+      searchParams: Promise.resolve({ tag: ["comedy", "2026"], q: "club" }),
+    }),
+  ).rejects.toThrow("REDIRECT:/u/@alice?tag=comedy&tag=2026&q=club");
+});
+
+it("accepts Next's encoded @ parameter without a redirect loop", async () => {
+  render(await page("%40alice"));
+  expect(
+    screen.getByRole("heading", { name: "Alice's Theatres" }),
+  ).toBeTruthy();
+  expect(data.theatres).toHaveBeenCalledWith(USER, null);
 });

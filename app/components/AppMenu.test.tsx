@@ -15,9 +15,24 @@ const data = vi.hoisted(() => ({
   userId: "alice",
   userName: "Alice",
   theatres: [
-    { id: "ordinary", name: "Watchlist", watchlistFor: null },
-    { id: "bobs", name: "Watchlist", watchlistFor: "bob" },
-    { id: "alices", name: "Renamed movies", watchlistFor: "alice" },
+    {
+      id: "ordinary",
+      name: "Watchlist",
+      watchlistFor: null,
+      path: "/u/@alice/ordinary",
+    },
+    {
+      id: "bobs",
+      name: "Watchlist",
+      watchlistFor: "bob",
+      path: "/u/@bob/watchlist",
+    },
+    {
+      id: "alices",
+      name: "Renamed movies",
+      watchlistFor: "alice",
+      path: "/u/@alice/watchlist",
+    },
   ],
 }));
 
@@ -25,7 +40,13 @@ vi.mock("@/lib/auth/client", () => ({
   authClient: {
     useSession: () => ({
       data: data.userId
-        ? { user: { id: data.userId, name: data.userName } }
+        ? {
+            user: {
+              id: data.userId,
+              name: data.userName,
+              username: data.userId,
+            },
+          }
         : null,
     }),
     signOut: data.signOut,
@@ -60,7 +81,11 @@ it("offers sign-in without a global directory to signed-out visitors", () => {
 });
 
 it.each([true, false])("only shows settings to admins (%s)", (isAdmin) => {
-  render(<AppMenu theatre={{ id: "ordinary", isAdmin }} />);
+  render(
+    <AppMenu
+      theatre={{ id: "ordinary", path: "/u/@alice/ordinary", isAdmin }}
+    />,
+  );
   fireEvent.click(screen.getByRole("button", { name: "Menu" }));
   expect(Boolean(screen.queryByRole("menuitem", { name: "Settings" }))).toBe(
     isAdmin,
@@ -75,7 +100,7 @@ describe("watchlist menu link", () => {
       screen
         .getByRole("menuitem", { name: "My Theatres" })
         .getAttribute("href"),
-    ).toBe("/u/alice");
+    ).toBe("/u/@alice");
   });
 
   it("links to the current user's designated theatre even when renamed", () => {
@@ -85,7 +110,7 @@ describe("watchlist menu link", () => {
       screen
         .getByRole("menuitem", { name: "Home Theatre" })
         .getAttribute("href"),
-    ).toBe("/theatres/alices");
+    ).toBe("/u/@alice/watchlist");
     const link = screen.getByRole("menuitem", { name: "Home Theatre" });
     link.addEventListener("click", (event) => event.preventDefault());
     fireEvent.click(link);
@@ -118,7 +143,7 @@ describe("watchlist menu link", () => {
 });
 
 it("does not offer bulk Wikipedia refresh", () => {
-  render(<AppMenu theatre={{ id: "ordinary" }} />);
+  render(<AppMenu theatre={{ id: "ordinary", path: "/u/@alice/ordinary" }} />);
   fireEvent.click(screen.getByRole("button", { name: "Menu" }));
   fireEvent.click(screen.getByRole("button", { name: "Extra Settings" }));
   expect(
@@ -132,11 +157,13 @@ describe("share menu item", () => {
 
   it("copies the public list link, which does not grant membership", async () => {
     writeText.mockResolvedValue(undefined);
-    render(<AppMenu theatre={{ id: "ordinary" }} />);
+    render(
+      <AppMenu theatre={{ id: "ordinary", path: "/u/@alice/ordinary" }} />,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     expect(writeText).toHaveBeenCalledWith(
-      `${window.location.origin}/theatres/ordinary`,
+      `${window.location.origin}/u/@alice/ordinary`,
     );
   });
 
@@ -165,18 +192,22 @@ describe("share menu item", () => {
 
   it("shows a confirmation after copying the public link", async () => {
     writeText.mockResolvedValue(undefined);
-    render(<AppMenu theatre={{ id: "ordinary" }} />);
+    render(
+      <AppMenu theatre={{ id: "ordinary", path: "/u/@alice/ordinary" }} />,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     expect(writeText).toHaveBeenCalledWith(
-      `${window.location.origin}/theatres/ordinary`,
+      `${window.location.origin}/u/@alice/ordinary`,
     );
     await screen.findByRole("button", { name: "Link copied ✓" });
   });
 
   it("says so when copying fails", async () => {
     writeText.mockRejectedValue(new Error("denied"));
-    render(<AppMenu theatre={{ id: "ordinary" }} />);
+    render(
+      <AppMenu theatre={{ id: "ordinary", path: "/u/@alice/ordinary" }} />,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     await screen.findByRole("button", { name: "Couldn't copy link" });

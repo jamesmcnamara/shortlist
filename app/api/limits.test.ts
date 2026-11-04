@@ -185,7 +185,7 @@ describe("theatre creation", () => {
     expect(membership.userId).toBe(ALICE);
   });
 
-  it("allows duplicate names and gives theatres distinct ID URLs", async () => {
+  it("allows duplicate names and gives theatres distinct creator-scoped URLs", async () => {
     const { POST } = theatresRoute;
     asUser(ALICE);
     const first = await POST(post({ name: "Movie Club" }));
@@ -198,8 +198,8 @@ describe("theatre creation", () => {
     expect(first.status).toBe(201);
     expect(second.status).toBe(201);
     expect(firstTheatre.id).not.toBe(secondTheatre.id);
-    expect(firstTheatre.path).toBe(`/theatres/${firstTheatre.id}`);
-    expect(secondTheatre.path).toBe(`/theatres/${secondTheatre.id}`);
+    expect(firstTheatre.path).toBe("/u/@alice/movie-club");
+    expect(secondTheatre.path).toBe("/u/@alice/movie-club-2");
   });
 });
 

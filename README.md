@@ -7,13 +7,36 @@ A tiny Next.js + Vercel + Neon app for deciding what to watch, built on Drizzle 
 All content lives in a **theatre**, which is a shared watch list. Every list,
 including personal Watchlists, is public: anyone can open a list without signing
 in or joining. Clicking a nominator's name or a comment avatar opens
-`/u/<user-id>/`, showing the theatres that person belongs to. **My Theatres**
+`/u/@<handle>`, showing the theatres that person belongs to. **My Theatres**
 opens your own page; there is no global theatre directory. Movies, recommendation
 notes,
 discussion comments, and the names of people who marked a movie seen are
 visible to everyone, as are list creator and Watchlist owner IDs. Email addresses,
 member rosters, invite codes, and
 notification settings are not part of public list pages.
+
+Theatre URLs are `/u/@<creator-handle>/<theatre-slug>`, including Watchlists.
+Slugs come from the original theatre name; duplicates under the same creator
+get a numeric suffix. Renaming a theatre keeps its URL. User handles are chosen
+at sign-up and cannot be changed; existing users get handles generated from
+their display names, with numeric suffixes for duplicates. Handles use 3-30
+lowercase letters, numbers, or hyphens, starting and ending with a letter or
+number. No email addresses are used to generate public handles.
+Only handle-based profile and theatre URLs are supported. Old `/u/<user-id>`,
+`/theatres/<theatre-id>`, `/theatres`, `/rooms/...`, and `/api/rooms/...` links
+no longer work. Old notification destinations return to Search instead of
+opening a removed route. API routes continue using theatre IDs, theatre creation
+remains at `/theatres/new`, and `/join/<code>` invite links are unchanged.
+
+Movies have public detail pages at `/m/<movie-id>` (the stored movie ID, not
+the TMDB ID). Selecting a Search result updates the URL without reloading or
+discarding the search. Back and Forward restore the search or selected movie;
+refreshing or sharing the movie URL loads its standalone detail page.
+
+Apply migration `0028_rare_lady_bullseye.sql` before deploying these routes.
+It backfills handles and theatre slugs without changing names, memberships,
+invite links, or movie data. Auth tables are excluded from Drizzle generation,
+so this migration also explicitly adds the username plugin's columns and constraints.
 
 Admins curate a list: they can add or remove movies, import titles, mark entries
 completed, rename or delete the list, and manage its members and invite links.

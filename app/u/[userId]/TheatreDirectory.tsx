@@ -1,5 +1,21 @@
 "use client";
 
+import { CollectionViewControls } from "@/app/components/CollectionViewControls";
+import type { TheatreSummaryWithPosterPreviews } from "@/app/lib/api";
+import {
+  applyTheatreView,
+  parseTheatreView,
+  THEATRE_SORTS,
+  theatreViewParams,
+  type TheatreViewState,
+} from "@/app/lib/theatre-view";
+import { stopPropagation } from "@/app/lib/utils";
+import {
+  AnimatePresence,
+  motion,
+  useIsPresent,
+  useReducedMotion,
+} from "motion/react";
 import Link from "next/link";
 import {
   forwardRef,
@@ -8,24 +24,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import {
-  AnimatePresence,
-  motion,
-  useIsPresent,
-  useReducedMotion,
-} from "motion/react";
-import { CollectionViewControls } from "@/app/components/CollectionViewControls";
-import type { TheatreSummaryWithPosterPreviews } from "@/app/lib/api";
-import {
-  applyTheatreView,
-  parseTheatreView,
-  theatreViewParams,
-  THEATRE_SORTS,
-  type TheatreViewState,
-} from "@/app/lib/theatre-view";
-import { theatrePath } from "@/lib/theatre-path";
 import styles from "./page.module.css";
-import { stopPropagation } from "@/app/lib/utils";
 
 const VIEW_CHANGE = "theatre-view-change";
 const subscribe = (onChange: () => void) => {
@@ -116,11 +115,7 @@ export function TheatreDirectory({
           )}
           {visible.map((theatre) => (
             <TheatreListItem key={theatre.id} reducedMotion={reducedMotion}>
-              <Link
-                className={styles.theatreCard}
-                href={theatrePath(theatre)}
-                prefetch
-              >
+              <Link className={styles.theatreCard} href={theatre.path} prefetch>
                 <span className={styles.theatreName}>{theatre.name}</span>
                 {theatre.posterUrls.length > 0 && (
                   <span

@@ -3,7 +3,6 @@ import {
   findTheatreByInviteCode,
   withPublicTheatre,
 } from "@/lib/auth/require-theatre";
-import { theatrePath } from "@/lib/theatre-path";
 import { requireUserId, unauthorized } from "@/lib/auth/require-user";
 import { getDb } from "@/src/db/client";
 import { theatreMembers } from "@/src/db/schema";
@@ -69,7 +68,7 @@ export async function POST(
 
     return Response.json({
       name: theatre.name,
-      path: theatrePath(theatre),
+      path: theatre.path,
     });
   } catch (error) {
     console.error(error);

@@ -3,11 +3,23 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createCacheProvider } from "./cache-provider";
 
-const CACHE_KEY = "shortlist:swr-cache";
+const CACHE_KEY = "shortlist:swr-cache:v2";
 const aliceKey = `${CACHE_KEY}:alice`;
 
 describe("persistent SWR cache provider", () => {
   beforeEach(() => localStorage.clear());
+
+  it("discards the caller's old route data without reading another user's cache", () => {
+    const legacy = JSON.stringify([
+      ["/api/theatres", { data: [{ id: "old" }] }],
+    ]);
+    localStorage.setItem("shortlist:swr-cache:alice", legacy);
+    localStorage.setItem("shortlist:swr-cache:bob", legacy);
+
+    expect(createCacheProvider("alice").get("/api/theatres")).toBeUndefined();
+    expect(localStorage.getItem("shortlist:swr-cache:alice")).toBeNull();
+    expect(localStorage.getItem("shortlist:swr-cache:bob")).toBe(legacy);
+  });
 
   it("restores cached data after creating a new provider", () => {
     const firstCache = createCacheProvider("alice");

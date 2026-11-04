@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const CACHE_KEY = "shortlist:swr-cache";
+const CACHE_KEY = "shortlist:swr-cache:v2";
 // Search results are only useful for the current visit, and static data files
 // are too big for localStorage, so the browser's HTTP cache keeps them instead.
 const MEMORY_ONLY_PREFIXES = ["/api/tmdb/", "/data/"];
@@ -69,6 +69,16 @@ class LocalStorageCache extends Map<string, CacheLine> {
 }
 
 export function createCacheProvider(userId?: string) {
+  if (userId && typeof window !== "undefined") {
+    try {
+      // Discard API data saved before canonical profile and theatre routes.
+      window.localStorage.removeItem(
+        `shortlist:swr-cache:${encodeURIComponent(userId)}`,
+      );
+    } catch (error) {
+      console.error("Unable to discard the old SWR cache.", error);
+    }
+  }
   return new LocalStorageCache(
     userId ? `${CACHE_KEY}:${encodeURIComponent(userId)}` : undefined,
   );

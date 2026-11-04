@@ -4,12 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { withTargetValue } from "@/app/lib/utils";
 import { joinPath } from "@/lib/theatre-path";
+import { userPath } from "@/lib/user-path";
+import { authClient } from "@/lib/auth/client";
 import type { TheatreRole } from "@/src/db/schema";
 import { useTheatre } from "../TheatreContext";
 import styles from "./page.module.css";
 
 export function AdminSettings() {
   const { theatre, client, detail } = useTheatre();
+  const { data: session } = authClient.useSession();
   const router = useRouter();
 
   const [name, setName] = useState(theatre.name);
@@ -78,8 +81,9 @@ export function AdminSettings() {
     )
       return;
     try {
+      const destination = userPath(session?.user.username);
       await client.delete();
-      router.push("/theatres");
+      router.push(destination);
     } catch (error) {
       setError(
         error instanceof Error

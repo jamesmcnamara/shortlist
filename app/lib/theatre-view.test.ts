@@ -14,6 +14,7 @@ const row = (
   tags: string[],
 ): TheatreSummaryWithPosterPreviews => ({
   id,
+  path: `/u/@alice/theatre-${id}`,
   name,
   createdAt,
   updatedAt,

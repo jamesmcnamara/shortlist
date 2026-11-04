@@ -60,6 +60,7 @@ const heat = film(2, "Heat", null);
 
 const list = (id: string, name: string, movieIds: number[] = []) => ({
   id,
+  path: `/u/@alice/${id}`,
   name,
   watchlistFor: null,
   role: "member" as const,

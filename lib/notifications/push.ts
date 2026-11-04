@@ -12,7 +12,7 @@ import {
   theatreMembers,
   theatres,
 } from "@/src/db/schema";
-import { theatrePath } from "@/lib/theatre-path";
+import { findTheatreById } from "@/lib/auth/require-theatre";
 import type { NotificationPayload } from "./payload";
 
 interface PushConfiguration {
@@ -104,6 +104,8 @@ export async function sendNomNotys(theatreId: string, nominationId: number) {
       ),
     );
   if (!nomination) return;
+  const theatre = await findTheatreById(theatreId);
+  if (!theatre) return;
   const title = titled.safeParse(nomination.title).data?.title ?? "A movie";
   const recipients = await db
     .select({
@@ -130,7 +132,7 @@ export async function sendNomNotys(theatreId: string, nominationId: number) {
   const payload = JSON.stringify({
     title: nomination.theatreName.slice(0, 100),
     body: `${title.slice(0, 200)} was added to the list.`,
-    url: theatrePath({ id: theatreId }),
+    url: theatre.path,
     tag: `nomination-${nominationId}`,
   } satisfies NotificationPayload);
   await Promise.all(

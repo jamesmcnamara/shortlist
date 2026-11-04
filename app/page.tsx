@@ -7,7 +7,7 @@ import { DataBoundary } from "@/app/lib/data/DataBoundary";
 
 /**
  * Search is the landing surface: finding something to watch is the thing
- * people open the app to do. Theatres live at /theatres.
+ * people open the app to do.
  */
 export default function Home() {
   const { data: theatres, error, retry } = useTheatres();

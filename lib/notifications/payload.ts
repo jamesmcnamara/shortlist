@@ -1,17 +1,9 @@
 import { z } from "zod";
-import { isUuid } from "@/lib/theatre-path";
+import { HANDLE_PATTERN } from "@/lib/user-path";
 
-const THEATRE_PREFIX = "/theatres/";
-const LEGACY_THEATRE_PREFIX = "/rooms/";
-
-/** Accept old room URLs for notifications created before the rename. */
 export const theatreUrl = z.string().refine((path) => {
-  const prefix = path.startsWith(THEATRE_PREFIX)
-    ? THEATRE_PREFIX
-    : path.startsWith(LEGACY_THEATRE_PREFIX)
-      ? LEGACY_THEATRE_PREFIX
-      : null;
-  return prefix !== null && isUuid(path.slice(prefix.length));
+  const named = /^\/u\/@([^/]+)\/([a-z0-9]+(?:-[a-z0-9]+)*)$/.exec(path);
+  return named !== null && HANDLE_PATTERN.test(named[1]);
 });
 
 export const notificationPayload = z.object({

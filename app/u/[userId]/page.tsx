@@ -1,10 +1,11 @@
 import { eq } from "drizzle-orm";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { listPublicTheatresWithPosterPreviews } from "@/app/lib/load-theatre";
 import { getDb } from "@/src/db/client";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import { requireUserId } from "@/lib/auth/require-user";
-import { isUuid } from "@/lib/theatre-path";
+import { HANDLE_PATTERN, userPath, userRouteSegment } from "@/lib/user-path";
+import { toQueryString } from "@/lib/search-params";
 import { TheatreDirectory } from "./TheatreDirectory";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import styles from "./page.module.css";
@@ -17,24 +18,31 @@ export default async function UserTheatres({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { userId } = await params;
-  if (!isUuid(userId)) notFound();
+  const segment = userRouteSegment(userId);
+  if (!segment.startsWith("@")) notFound();
+  const username = segment.slice(1).toLowerCase();
+  if (!HANDLE_PATTERN.test(username)) notFound();
   const [user] = await getDb()
-    .select({ name: authUsers.name })
+    .select({
+      id: authUsers.id,
+      name: authUsers.name,
+      username: authUsers.username,
+    })
     .from(authUsers)
-    .where(eq(authUsers.id, userId))
+    .where(eq(authUsers.username, username))
     .limit(1);
   if (!user) notFound();
+  const initialSearch = toQueryString(await searchParams);
+  if (segment !== `@${user.username}`) {
+    redirect(
+      `${userPath(user.username)}${initialSearch ? `?${initialSearch}` : ""}`,
+    );
+  }
   const viewerUserId = await requireUserId();
   const theatres = await listPublicTheatresWithPosterPreviews(
-    userId,
+    user.id,
     viewerUserId,
   );
-  const initialParams = new URLSearchParams();
-  Object.entries(await searchParams).forEach(([key, value]) => {
-    (Array.isArray(value) ? value : value === undefined ? [] : [value]).forEach(
-      (entry) => initialParams.append(key, entry),
-    );
-  });
 
   return (
     <main className={styles.shell}>
@@ -42,10 +50,7 @@ export default async function UserTheatres({
         <ShortlistHeader />
         <h1 className={styles.title}>{user.name}&apos;s Theatres</h1>
 
-        <TheatreDirectory
-          theatres={theatres}
-          initialSearch={initialParams.toString()}
-        />
+        <TheatreDirectory theatres={theatres} initialSearch={initialSearch} />
       </div>
     </main>
   );

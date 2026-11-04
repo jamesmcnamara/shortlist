@@ -271,7 +271,7 @@ describe("best-effort delivery", () => {
     expect(JSON.parse(payload as string)).toMatchObject({
       title: "Movie club",
       body: "Arrival was added to the list.",
-      url: `/theatres/${THEATRE}`,
+      url: "/u/@alice/movie-club",
     });
     expect(options).toMatchObject({ timeout: 5000, TTL: 3600 });
   });

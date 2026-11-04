@@ -1,22 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth/client";
-import { useClickOutside } from "@/app/lib/useClickOutside";
-import { FilmReelIcon } from "./FilmReelIcon";
-import { theatrePath } from "@/lib/theatre-path";
-import { userPath } from "@/lib/user-path";
+import { api } from "@/app/lib/api";
 import { useTheatres } from "@/app/lib/data/queries";
 import { disconnectDeviceNotifications } from "@/app/lib/push";
+import { useClickOutside } from "@/app/lib/useClickOutside";
+import { authClient } from "@/lib/auth/client";
+import { userPath } from "@/lib/user-path";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import styles from "./AppMenu.module.css";
 import { BulkMovieRefresh } from "./BulkMovieRefresh";
-import { api } from "@/app/lib/api";
+import { FilmReelIcon } from "./FilmReelIcon";
 
 export interface AppMenuProps {
   /** Omitted outside a theatre, which hides the theatre-scoped items. */
-  theatre?: { id: string; isAdmin?: boolean };
+  theatre?: { id: string; path: string; isAdmin?: boolean };
   additionalMenuItems?: AdditionalMenuItem[];
 }
 
@@ -69,10 +68,11 @@ export function AppMenu({ theatre, additionalMenuItems }: AppMenuProps) {
     }
   }
 
-  async function copyShareLink(theatreId: string) {
+  async function copyShareLink() {
+    if (!theatre) return;
     try {
       await navigator.clipboard.writeText(
-        `${window.location.origin}${theatrePath({ id: theatreId })}`,
+        `${window.location.origin}${theatre.path}`,
       );
       setShareStatus("copied");
     } catch {
@@ -104,12 +104,12 @@ export function AppMenu({ theatre, additionalMenuItems }: AppMenuProps) {
           </p>
         )}
         {watchlist && (
-          <MenuLink href={theatrePath(watchlist)} onNavigate={close}>
+          <MenuLink href={watchlist.path} onNavigate={close}>
             Home Theatre
           </MenuLink>
         )}
         {session?.user.id && (
-          <MenuLink href={userPath(session.user.id)} onNavigate={close}>
+          <MenuLink href={userPath(session.user.username)} onNavigate={close}>
             My Theatres
           </MenuLink>
         )}
@@ -119,15 +119,12 @@ export function AppMenu({ theatre, additionalMenuItems }: AppMenuProps) {
           </MenuLink>
         )}
         {theatre?.isAdmin && (
-          <MenuLink
-            href={`${theatrePath(theatre)}/settings`}
-            onNavigate={close}
-          >
+          <MenuLink href={`${theatre.path}/settings`} onNavigate={close}>
             Settings
           </MenuLink>
         )}
         {theatre && (
-          <MenuButton onClick={() => copyShareLink(theatre.id)}>
+          <MenuButton onClick={copyShareLink}>
             {SHARE_LABELS[shareStatus]}
           </MenuButton>
         )}

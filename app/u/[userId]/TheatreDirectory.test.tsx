@@ -15,6 +15,7 @@ import { TheatreDirectory } from "./TheatreDirectory";
 const theatres: TheatreSummaryWithPosterPreviews[] = [
   {
     id: "zombies",
+    path: "/u/@alice/zombies",
     name: "Zombies",
     tags: ["horror", "2026"],
     posterUrls: ["/poster.jpg"],
@@ -25,6 +26,7 @@ const theatres: TheatreSummaryWithPosterPreviews[] = [
   },
   {
     id: "aliens",
+    path: "/u/@alice/aliens",
     name: "Aliens",
     tags: ["scifi", "2026"],
     posterUrls: [],
@@ -35,6 +37,7 @@ const theatres: TheatreSummaryWithPosterPreviews[] = [
   },
   {
     id: "halloween",
+    path: "/u/@alice/halloween",
     name: "Halloween",
     tags: [],
     posterUrls: [],
@@ -48,7 +51,7 @@ const names = () =>
   screen
     .queryAllByRole("link")
     .map((link) => link.querySelector("[class*='theatreName']")?.textContent);
-beforeEach(() => window.history.replaceState(null, "", "/u/user"));
+beforeEach(() => window.history.replaceState(null, "", "/u/@alice"));
 afterEach(cleanup);
 
 it("shows sorted chips inside the single card link, including lists without posters", () => {

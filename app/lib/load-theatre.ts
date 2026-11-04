@@ -3,7 +3,9 @@ import type {
   TheatreSummaryWithPosterPreviews,
 } from "@/app/lib/api";
 import { type SafeTheatre } from "@/lib/auth/require-theatre";
+import { namedTheatrePath } from "@/lib/theatre-path";
 import { getDb } from "@/src/db/client";
+import { authUsers } from "@/src/db/neon-auth-schema";
 import {
   movies,
   nominations,
@@ -41,12 +43,15 @@ async function listPublicTheatreRows(
     .select({
       id: theatres.id,
       name: theatres.name,
+      slug: theatres.slug,
+      username: authUsers.username,
       watchlistFor: theatres.watchlistFor,
       role: theatreMembers.role,
       createdAt: theatres.createdAt,
       updatedAt: theatres.updatedAt,
     })
     .from(theatres)
+    .innerJoin(authUsers, eq(authUsers.id, theatres.createdBy))
     .leftJoin(theatreMembers, viewerMembership)
     .where(
       inArray(
@@ -59,7 +64,14 @@ async function listPublicTheatreRows(
     )
     .orderBy(...recentActivityOrder);
 
-  return rows as (TheatreSummary & { createdAt: Date; updatedAt: Date })[];
+  return rows.map(({ slug, username, ...theatre }) => {
+    if (!username) throw new Error("The theatre creator has no handle.");
+    return {
+      ...theatre,
+      role: theatre.role as TheatreRole | null,
+      path: namedTheatrePath(username, slug),
+    };
+  });
 }
 
 /** A user's theatres, with the current viewer's membership role. */

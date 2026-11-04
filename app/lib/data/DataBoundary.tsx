@@ -37,7 +37,9 @@ export function DataBoundary({
       <main className={styles.message} role="alert">
         <p>{error.message}</p>
         {session.userId && (
-          <Link href={userPath(session.userId)}>Back to My Theatres</Link>
+          <Link href={userPath(session.username)}>
+            Back to My Theatres
+          </Link>
         )}
       </main>
     );

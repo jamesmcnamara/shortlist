@@ -34,7 +34,7 @@ beforeEach(async () => {
 });
 
 describe("push notifications", () => {
-  const path = "/theatres/44444444-4444-4444-4444-444444444444";
+  const path = "/u/@alice/movie-club";
   function listener(name: string) {
     const handler = addEventListener.mock.calls.find(
       ([event]) => event === name,
@@ -86,22 +86,25 @@ describe("push notifications", () => {
     log.mockRestore();
   });
 
-  it.each([path, "https://evil.test", "//evil.test"])(
-    "opens only a same-origin destination for %s",
-    async (url) => {
-      const waitUntil = vi.fn();
-      const close = vi.fn();
-      listener("notificationclick")({
-        notification: { close, data: { url } },
-        waitUntil,
-      });
-      await waitUntil.mock.calls[0][0];
-      expect(close).toHaveBeenCalledOnce();
-      expect(openWindow).toHaveBeenCalledWith(
-        `https://shortlist.test${url === path ? path : "/"}`,
-      );
-    },
-  );
+  it.each([
+    path,
+    "https://evil.test",
+    "//evil.test",
+    "/rooms/44444444-4444-4444-4444-444444444444",
+    "/theatres/44444444-4444-4444-4444-444444444444",
+  ])("opens only a same-origin destination for %s", async (url) => {
+    const waitUntil = vi.fn();
+    const close = vi.fn();
+    listener("notificationclick")({
+      notification: { close, data: { url } },
+      waitUntil,
+    });
+    await waitUntil.mock.calls[0][0];
+    expect(close).toHaveBeenCalledOnce();
+    expect(openWindow).toHaveBeenCalledWith(
+      `https://shortlist.test${url === path ? path : "/"}`,
+    );
+  });
 
   it("focuses an already-open list", async () => {
     matchAll.mockResolvedValue([

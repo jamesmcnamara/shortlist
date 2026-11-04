@@ -42,7 +42,7 @@ const nomination: Nomination = {
     ratings: { raw: {}, services: [] },
   },
   nomcoms: [],
-  nominator: { id: "user", name: "Alice" },
+  nominator: { id: "user", name: "Alice", username: "alice" },
   seenBy: [],
 };
 
@@ -167,7 +167,7 @@ describe("high-churn component smoke tests", () => {
       screen
         .getByRole("link", { name: "Nominated by Alice" })
         .getAttribute("href"),
-    ).toBe("/u/user");
+    ).toBe("/u/@alice");
     expect(screen.getByRole("img", { name: "Watched" })).toBeTruthy();
     expect(screen.getByAltText("").parentElement?.className).toContain(
       "watchedPoster",
@@ -411,7 +411,7 @@ describe("high-churn component smoke tests", () => {
         screen
           .getByRole("link", { name: "Nominated by Alice" })
           .getAttribute("href"),
-      ).toBe("/u/user");
+      ).toBe("/u/@alice");
       expect(screen.getByText("A description").parentElement).not.toBe(
         heading.parentElement,
       );
@@ -568,6 +568,7 @@ describe("high-churn component smoke tests", () => {
               commenter: {
                 id: "user",
                 name: "Alice",
+                username: "alice",
               },
             },
           ],
@@ -588,8 +589,8 @@ describe("high-churn component smoke tests", () => {
     });
     expect(profiles).toHaveLength(2);
     expect(profiles.map((link) => link.getAttribute("href"))).toEqual([
-      "/u/user",
-      "/u/user",
+      "/u/@alice",
+      "/u/@alice",
     ]);
     fireEvent.change(screen.getByRole("textbox", { name: "Add a comment" }), {
       target: { value: "Count me in" },

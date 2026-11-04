@@ -42,6 +42,7 @@ export const GET = withTheatreViewer({
     .select({
       id: authUsers.id,
       name: authUsers.name,
+      username: authUsers.username,
       email: authUsers.email,
       role: theatreMembers.role,
       joinedAt: theatreMembers.joinedAt,

@@ -23,7 +23,9 @@ vi.mock("@/app/lib/api", async (original) => ({
 }));
 vi.mock("@/lib/auth/client", () => ({
   authClient: {
-    useSession: () => ({ data: { user: { id: "user", name: "User" } } }),
+    useSession: () => ({
+      data: { user: { id: "user", name: "User", username: "user" } },
+    }),
   },
 }));
 vi.mock("@/app/lib/data/queries", () => ({
@@ -54,7 +56,10 @@ const start = () => {
   fireEvent.click(screen.getByRole("button", { name: "Extra Settings" }));
   fireEvent.click(screen.getByRole("button", { name: /Refresh box office/i }));
 };
-const menu = () => render(<AppMenu theatre={{ id: "current-theatre" }} />);
+const menu = () =>
+  render(
+    <AppMenu theatre={{ id: "current-theatre", path: "/u/@user/club" }} />,
+  );
 
 describe("bulk box office refresh", () => {
   it("runs once per movie, including Watched, and survives closing the menu", async () => {

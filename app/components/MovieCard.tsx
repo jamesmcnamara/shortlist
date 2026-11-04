@@ -90,7 +90,7 @@ export function MovieCard({
         {showMeta && (
           <div className={styles.meta}>
             <Link
-              href={userPath(nominator.id)}
+              href={userPath(nominator.username)}
               className={`avatar avatar-${getColor(details.title)}`}
               title={`Nominated by ${nominator.name}`}
               aria-label={`Nominated by ${nominator.name}`}

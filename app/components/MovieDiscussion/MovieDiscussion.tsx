@@ -71,7 +71,7 @@ export function MovieDiscussion({
             <div className={styles.discussionHeading}>
               <h2>{details.title}</h2>
               <Link
-                href={userPath(nominator.id)}
+                href={userPath(nominator.username)}
                 className={styles.discussionMeta}
               >
                 Nominated by {nominator.name}
@@ -151,7 +151,7 @@ export function MovieDiscussion({
         </div>
         <div className={styles.nominationQuote}>
           <Link
-            href={userPath(nominator.id)}
+            href={userPath(nominator.username)}
             className={`avatar avatar-${getColor(nominator.name)}`}
             aria-label={`View ${nominator.name}'s theatres`}
           >

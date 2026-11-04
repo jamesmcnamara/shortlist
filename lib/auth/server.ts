@@ -1,6 +1,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { username } from "better-auth/plugins";
+import { HANDLE_PATTERN } from "@/lib/user-path";
 import { headers } from "next/headers";
 import { getDb } from "@/src/db/client";
 import { createWatchlist } from "./create-watchlist";
@@ -42,7 +44,12 @@ export const auth = betterAuth({
     updateAge: DAY,
   },
   advanced: { database: { generateId: "uuid" } },
-  plugins: [nextCookies()],
+  plugins: [
+    username({
+      usernameValidator: (value) => HANDLE_PATTERN.test(value.toLowerCase()),
+    }),
+    nextCookies(),
+  ],
 });
 
 /**

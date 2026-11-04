@@ -1,16 +1,17 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
-import { z } from "zod";
-import { requireUserId, unauthorized, withUser } from "@/lib/auth/require-user";
-import { generateInviteCode } from "@/app/lib/theatres";
-import { theatrePath } from "@/lib/theatre-path";
-import { getDb } from "@/src/db/client";
-import { nominations, theatreMembers, theatres } from "@/src/db/schema";
 import {
   listPublicTheatres,
   listPublicTheatresWithPosterPreviews,
   recentActivityOrder,
 } from "@/app/lib/load-theatre";
+import { generateInviteCode } from "@/app/lib/theatres";
+import { findTheatreById } from "@/lib/auth/require-theatre";
+import { requireUserId, unauthorized, withUser } from "@/lib/auth/require-user";
 import { badRequest, dbId, parseJson, requiredText } from "@/lib/validation";
+import { getDb } from "@/src/db/client";
+import { authUsers } from "@/src/db/neon-auth-schema";
+import { nominations, theatreMembers, theatres } from "@/src/db/schema";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { z } from "zod";
 
 export const runtime = "nodejs";
 
@@ -63,6 +64,7 @@ const listTheatresWithMovies = (userId: string, movieIds: number[]) =>
     .select({
       id: theatres.id,
       name: theatres.name,
+      path: sql<string>`'/u/@' || ${authUsers.username} || '/' || ${theatres.slug}`,
       watchlistFor: theatres.watchlistFor,
       role: theatreMembers.role,
       movieIds: sql<number[]>`coalesce((
@@ -74,6 +76,7 @@ const listTheatresWithMovies = (userId: string, movieIds: number[]) =>
     })
     .from(theatreMembers)
     .innerJoin(theatres, eq(theatres.id, theatreMembers.theatreId))
+    .innerJoin(authUsers, eq(authUsers.id, theatres.createdBy))
     .where(
       and(eq(theatreMembers.userId, userId), eq(theatreMembers.role, "admin")),
     )
@@ -101,15 +104,5 @@ export const POST = withUser({
     .insert(theatreMembers)
     .values({ theatreId: theatre.id, userId, role: "admin" });
 
-  // The creator is an admin and can read the code from the settings page; it
-  // is withheld here so no response carries it incidentally.
-  const {
-    inviteCode: _withheldMember,
-    adminInviteCode: _withheldAdmin,
-    ...safe
-  } = theatre;
-  return Response.json(
-    { ...safe, path: theatrePath(theatre) },
-    { status: 201 },
-  );
+  return Response.json(await findTheatreById(theatre.id), { status: 201 });
 });

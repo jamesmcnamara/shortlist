@@ -12,6 +12,7 @@ import { AnimatePresence } from "motion/react";
 import { useEffect, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import styles from "./Search.module.css";
+import { useMovieSearchHistory } from "@/app/lib/useMovieSearchHistory";
 
 /** Movie search with the add-to-lists sheet. */
 export function Search() {
@@ -19,7 +20,7 @@ export function Search() {
   const [results, setResults] = useState<Movie[]>([]);
   const [error, setError] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [selected, setSelected] = useState<Movie | null>(null);
+  const { selected, selectMovie, closeMovie } = useMovieSearchHistory();
   const [addingMovie, setAddingMovie] = useState<Movie | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
 
@@ -66,7 +67,7 @@ export function Search() {
       {selected ? (
         <MovieDetail
           movie={selected}
-          onBack={() => setSelected(null)}
+          onBack={closeMovie}
           onAdd={setAddingMovie}
         />
       ) : (
@@ -114,7 +115,7 @@ export function Search() {
               results={results}
               isLoading={isSearching}
               error={error}
-              onSelect={setSelected}
+              onSelect={selectMovie}
               onAdd={setAddingMovie}
             />
           </div>

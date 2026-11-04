@@ -417,7 +417,9 @@ describe("cross-theatre writes", () => {
     const body = await (
       await GET(new Request("http://test"), route("club"))
     ).json();
-    expect(body[0].seenBy).toEqual([{ id: MALLORY, name: "Mallory" }]);
+    expect(body[0].seenBy).toEqual([
+      { id: MALLORY, name: "Mallory", username: "mallory" },
+    ]);
   });
 
   it("lets any signed-in viewer mark a movie seen without joining", async () => {
@@ -561,7 +563,7 @@ describe("invites", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
-      path: `/theatres/${fixture.theatreB.id}`,
+      path: "/u/@mallory/club",
     });
   });
 
@@ -602,7 +604,7 @@ describe("invites", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
-      path: `/theatres/${fixture.theatreB.id}`,
+      path: "/u/@mallory/club",
     });
 
     const [membership] = await fixture.db

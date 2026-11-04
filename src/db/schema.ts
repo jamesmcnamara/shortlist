@@ -18,26 +18,33 @@ import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
 import type { BoxOfficeData } from "@/app/lib/box-office";
 
 /** A theatre is a shared watch list for a group. */
-export const theatres = pgTable("theatres", {
-  id: uuid().primaryKey().defaultRandom(),
-  name: text().notNull(),
-  watchlistFor: uuid("watchlist_for")
-    .unique()
-    .references(() => authUsers.id),
-  createdBy: uuid("created_by")
-    .notNull()
-    .references(() => authUsers.id),
-  inviteCode: text("invite_code").notNull().unique(),
-  // A separate link that grants the "admin" role on join instead of "member".
-  adminInviteCode: text("admin_invite_code").notNull().unique(),
-  description: text(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-});
+export const theatres = pgTable(
+  "theatres",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    name: text().notNull(),
+    slug: text().notNull().default(""),
+    watchlistFor: uuid("watchlist_for")
+      .unique()
+      .references(() => authUsers.id),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => authUsers.id),
+    inviteCode: text("invite_code").notNull().unique(),
+    // A separate link that grants the "admin" role on join instead of "member".
+    adminInviteCode: text("admin_invite_code").notNull().unique(),
+    description: text(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("theatres_creator_slug_idx").on(table.createdBy, table.slug),
+  ],
+);
 
 export const theatreMembers = pgTable(
   "theatre_members",
@@ -313,9 +320,10 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  username?: string | null;
 }
 
-export type Person = Pick<User, "id" | "name">;
+export type Person = Pick<User, "id" | "name" | "username">;
 
 export interface MovieDetails extends _MovieDetails {
   posterUrl?: string | null;

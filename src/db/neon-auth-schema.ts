@@ -17,6 +17,8 @@ const timestamps = {
 export const authUsers = neonAuth.table("user", {
   id: uuid("id").primaryKey(),
   name: text("name").notNull(),
+  username: text("username").unique(),
+  displayUsername: text("displayUsername"),
   email: text("email").notNull(),
   emailVerified: boolean("emailVerified")
     .notNull()

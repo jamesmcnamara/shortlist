@@ -80,6 +80,7 @@ export interface TheatreSummary {
   name: string;
   watchlistFor: string | null;
   role: TheatreRole | null;
+  path: string;
 }
 
 export interface TheatreSummaryWithPosterPreviews extends TheatreSummary {

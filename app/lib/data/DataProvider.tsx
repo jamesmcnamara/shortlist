@@ -17,6 +17,7 @@ import { useDevServiceWorkerReset } from "../useDevServiceWorkerReset";
 
 interface DataSession {
   userId?: string;
+  username?: string | null;
   isPending: boolean;
   error: { message?: string } | null;
   retry: () => unknown;
@@ -46,6 +47,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     <SessionContext.Provider
       value={{
         userId: session?.user.id,
+        username: session?.user.username,
         isPending,
         error,
         retry: refetch,

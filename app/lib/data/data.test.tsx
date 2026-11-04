@@ -24,13 +24,16 @@ import {
 import {
   TheatreProvider,
   useTheatre,
-} from "@/app/theatres/[theatreId]/TheatreContext";
+} from "@/app/u/[userId]/[theatreSlug]/TheatreContext";
 
 const auth = vi.hoisted(() => ({
   data: {
     session: { id: "session-alice" },
-    user: { id: "alice" },
-  } as { session: { id: string }; user: { id: string } } | null,
+    user: { id: "alice", username: "alice" },
+  } as {
+    session: { id: string };
+    user: { id: string; username: string };
+  } | null,
   isPending: false,
   error: null as { message: string } | null,
   refetch: vi.fn(),
@@ -83,7 +86,10 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 
 beforeEach(() => {
   localStorage.clear();
-  auth.data = { session: { id: "session-alice" }, user: { id: "alice" } };
+  auth.data = {
+    session: { id: "session-alice" },
+    user: { id: "alice", username: "alice" },
+  };
   auth.isPending = false;
   auth.error = null;
   navigation.pathname = `/theatres/${theatre.id}`;
@@ -462,7 +468,10 @@ describe("shared data cache", () => {
       wrapper: Wrapper,
     });
     expect(fetchMock).not.toHaveBeenCalled();
-    auth.data = { session: { id: "session-alice" }, user: { id: "alice" } };
+    auth.data = {
+      session: { id: "session-alice" },
+      user: { id: "alice", username: "alice" },
+    };
     auth.isPending = false;
     rerender();
     await waitFor(() => expect(result.current.data).toEqual([]));
@@ -481,7 +490,10 @@ describe("shared data cache", () => {
     rerender();
     expect(result.current.data).toBeUndefined();
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    auth.data = { session: { id: "new-session" }, user: { id: "alice" } };
+    auth.data = {
+      session: { id: "new-session" },
+      user: { id: "alice", username: "alice" },
+    };
     rerender();
     expect(result.current.data?.[0].name).toBe("Private");
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
@@ -506,7 +518,10 @@ describe("shared data cache", () => {
     const saving = api
       .theatre(theatre.id)
       .nominations.updateComment(1, "Alice update");
-    auth.data = { session: { id: "session-bob" }, user: { id: "bob" } };
+    auth.data = {
+      session: { id: "session-bob" },
+      user: { id: "bob", username: "bob" },
+    };
     rerender();
     expect(result.current.data).toBeUndefined();
     await waitFor(() => expect(result.current.data?.[0].comment).toBe("Bob"));
@@ -563,7 +578,7 @@ describe("data boundary", () => {
       screen
         .getByRole("link", { name: "Back to My Theatres" })
         .getAttribute("href"),
-    ).toBe("/u/alice");
+    ).toBe("/u/@alice");
   });
 
   it("redirects to sign-in with the return path", () => {

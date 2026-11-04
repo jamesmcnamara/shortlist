@@ -152,9 +152,17 @@ describe("GET /api/join/[code]", () => {
       expect(body.nominations).toHaveLength(1);
       const [nom] = body.nominations;
       expect(nom.movie.details.title).toBe("Shared");
-      expect(nom.nominator).toEqual({ id: ALICE, name: "Alice" });
-      expect(nom.nomcoms[0].commenter).toEqual({ id: BOB, name: "Bob" });
-      expect(nom.seenBy).toEqual([{ id: BOB, name: "Bob" }]);
+      expect(nom.nominator).toEqual({
+        id: ALICE,
+        name: "Alice",
+        username: "alice",
+      });
+      expect(nom.nomcoms[0].commenter).toEqual({
+        id: BOB,
+        name: "Bob",
+        username: "bob",
+      });
+      expect(nom.seenBy).toEqual([{ id: BOB, name: "Bob", username: "bob" }]);
     },
   );
 

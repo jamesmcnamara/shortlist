@@ -1,12 +1,13 @@
-import { and, eq, or } from "drizzle-orm";
-import { isUuid, theatrePath } from "@/lib/theatre-path";
+import { isUuid, namedTheatrePath } from "@/lib/theatre-path";
 import { getDb } from "@/src/db/client";
+import { authUsers } from "@/src/db/neon-auth-schema";
 import {
   theatreMembers,
   theatres,
   type Theatre,
   type TheatreRole,
 } from "@/src/db/schema";
+import { and, eq, or } from "drizzle-orm";
 import { requireUserId, unauthorized } from "./require-user";
 
 /**
@@ -21,6 +22,7 @@ export type SafeTheatre = Omit<Theatre, "inviteCode" | "adminInviteCode"> & {
 const THEATRE_COLUMNS = {
   id: theatres.id,
   name: theatres.name,
+  slug: theatres.slug,
   createdBy: theatres.createdBy,
   watchlistFor: theatres.watchlistFor,
   description: theatres.description,
@@ -56,28 +58,39 @@ export const forbidden = (message = "You are not a member of this theatre.") =>
 export async function findTheatreById(
   theatreId: string,
 ): Promise<SafeTheatre | null> {
+  if (!isUuid(theatreId)) return null;
   const [theatre] = await getDb()
-    .select(THEATRE_COLUMNS)
+    .select({ ...THEATRE_COLUMNS, username: authUsers.username })
     .from(theatres)
+    .innerJoin(authUsers, eq(authUsers.id, theatres.createdBy))
     .where(eq(theatres.id, theatreId))
     .limit(1);
-  return theatre ? { ...theatre, path: theatrePath(theatre) } : null;
+  if (!theatre) return null;
+  const { username, ...safe } = theatre;
+  if (!username) throw new Error("The theatre creator has no handle.");
+  return { ...safe, path: namedTheatrePath(username, safe.slug) };
 }
 
 export async function findTheatreByInviteCode(
   code: string,
 ): Promise<{ theatre: SafeTheatre; role: TheatreRole } | null> {
   const [row] = await getDb()
-    .select({ ...THEATRE_COLUMNS, adminInviteCode: theatres.adminInviteCode })
+    .select({
+      ...THEATRE_COLUMNS,
+      username: authUsers.username,
+      adminInviteCode: theatres.adminInviteCode,
+    })
     .from(theatres)
+    .innerJoin(authUsers, eq(authUsers.id, theatres.createdBy))
     .where(
       or(eq(theatres.inviteCode, code), eq(theatres.adminInviteCode, code)),
     )
     .limit(1);
   if (!row) return null;
-  const { adminInviteCode, ...theatre } = row;
+  const { adminInviteCode, username, ...theatre } = row;
+  if (!username) throw new Error("The theatre creator has no handle.");
   return {
-    theatre: { ...theatre, path: theatrePath(theatre) },
+    theatre: { ...theatre, path: namedTheatrePath(username, theatre.slug) },
     role: adminInviteCode === code ? "admin" : "member",
   };
 }

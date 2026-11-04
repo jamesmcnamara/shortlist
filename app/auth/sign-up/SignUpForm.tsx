@@ -38,6 +38,30 @@ export function SignUpForm() {
         </div>
 
         <div className={styles.field}>
+          <label className={styles.label} htmlFor="username">
+            Handle
+          </label>
+          <span className={styles.hint} id="username-hint">
+            Your public @handle. Come on, have some fun. I bet @hot-dog isn't
+            taken yet.
+          </span>
+          <input
+            className={styles.input}
+            id="username"
+            name="username"
+            aria-describedby="username-hint"
+            type="text"
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            minLength={3}
+            maxLength={30}
+            pattern={"[A-Za-z0-9][A-Za-z0-9\\-]{1,28}[A-Za-z0-9]"}
+            required
+          />
+        </div>
+
+        <div className={styles.field}>
           <label className={styles.label} htmlFor="email">
             Email
           </label>

@@ -45,7 +45,7 @@ export function NomComs({
           return (
             <div className={styles.nomcomItem} key={nomcom.id}>
               <Link
-                href={userPath(nomcom.commenter.id)}
+                href={userPath(nomcom.commenter.username)}
                 className={`avatar avatar-${getColor(nomcom.commenter.name)}`}
                 aria-label={`View ${nomcom.commenter.name}'s theatres`}
               >

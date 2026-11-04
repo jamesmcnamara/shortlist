@@ -60,6 +60,15 @@ const storedMovieSelection = {
   createdAt: movies.createdAt,
 };
 
+export async function findMovieById(id: number): Promise<Movie | null> {
+  const [row] = await getDb()
+    .select(storedMovieSelection)
+    .from(movies)
+    .where(eq(movies.id, id))
+    .limit(1);
+  return row ? movieFromRow(row) : null;
+}
+
 export class ProdMovieProvider implements MovieMetadataProvider {
   hasCredentials = () =>
     Boolean(

@@ -133,10 +133,31 @@ describe("GET /api/theatres", () => {
     expect(
       body.every(
         (theatre: Record<string, unknown>) =>
-          Object.keys(theatre).sort().join() === "id,name,role,watchlistFor",
+          Object.keys(theatre).sort().join() ===
+          "id,name,path,role,watchlistFor",
       ),
     ).toBe(true);
   });
+
+  it.each(["", "?previews=true", "?movieIds=1"])(
+    "includes canonical paths in every summary shape (%s)",
+    async (query) => {
+      asUser(CASEY);
+      const response = await theatresRoute.GET(
+        new Request(`http://test${query}`),
+      );
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body).toHaveLength(3);
+      expect(
+        body.map((theatre: { path: string }) => theatre.path).sort(),
+      ).toEqual([
+        "/u/@casey/club",
+        "/u/@casey/other-watchlist",
+        "/u/@casey/watchlist",
+      ]);
+    },
+  );
 
   describe("GET /api/theatres?previews=true", () => {
     it("returns the caller's theatre previews without invite codes", async () => {

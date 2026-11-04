@@ -5,9 +5,6 @@ import { getSessionCookie } from "better-auth/cookies";
 // validate the session itself.
 export default function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  if (/^\/theatres\/[0-9a-f-]+$/.test(pathname)) {
-    return NextResponse.next();
-  }
   if (getSessionCookie(request)) return NextResponse.next();
 
   const signIn = new URL("/auth/sign-in", request.url);
@@ -21,5 +18,5 @@ export default function proxy(request: NextRequest) {
 // still require a session. /join/[code] also supports public previews.
 // /compare is public too and must stay out of the matcher.
 export const config = {
-  matcher: ["/", "/r/:path*", "/rooms/:path*", "/theatres/:path*"],
+  matcher: ["/", "/theatres/new", "/u/:user/:theatre/settings"],
 };

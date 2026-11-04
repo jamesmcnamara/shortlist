@@ -8,7 +8,7 @@ import {
   type Person,
 } from "@/src/db/schema";
 
-const person = { columns: { id: true, name: true } } as const;
+const person = { columns: { id: true, name: true, username: true } } as const;
 
 const nominationRelations = {
   movie: true,
@@ -33,6 +33,7 @@ export async function seenByMovieIds(
       movieId: seen.movieId,
       id: authUsers.id,
       name: authUsers.name,
+      username: authUsers.username,
     })
     .from(seen)
     .innerJoin(authUsers, eq(authUsers.id, seen.userId))
