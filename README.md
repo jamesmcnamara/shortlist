@@ -99,6 +99,18 @@ Existing descriptions are preserved and get their tags extracted on their next
 save, or by the backfill below.
 Autocomplete and nomination tagging are not implemented yet.
 
+### Fantasy lists
+
+A list whose description has the `#fantasy` tag (a whole tag, so
+`#fantasyfootball` doesn't count) shows a dashboard below its movies. Each
+person's score is the sum of box office net (worldwide gross minus budget) of
+the movies they nominated. Flops subtract, and movies without numbers yet count
+$0 and are flagged. It shows the standings, where the lead comes from, the
+season race over release dates, every movie ranked, and what's still to come.
+Tapping a movie highlights it across all of them. It's built from data the
+movies already have, so nothing needs saving. The charts use visx and `motion`,
+load only for fantasy lists, and respect reduced motion.
+
 ### Finding theatres
 
 Each user's theatre page has title search, sorting, and tag filters below the

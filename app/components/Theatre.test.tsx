@@ -77,6 +77,11 @@ vi.mock("./ViewControls", () => ({
     </div>
   ),
 }));
+vi.mock("./Fantasy/FantasyDashboard", () => ({
+  FantasyDashboard: ({ nominees }: { nominees: Nomination[] }) => (
+    <section aria-label="Fantasy dashboard">{nominees.length} movies</section>
+  ),
+}));
 vi.mock("./NotificationBell", () => ({
   NotificationBell: ({ theatreId }: { theatreId: string }) => (
     <button aria-label="List notifications" data-theatre-id={theatreId} />
@@ -551,6 +556,46 @@ describe("read-only theatre", () => {
     expect(screen.getAllByRole("article")).toHaveLength(1);
     expect(screen.queryByRole("button", { name: /Import movies/i })).toBeNull();
     expect(screen.queryByRole("region", { name: "Movie titles" })).toBeNull();
+  });
+});
+
+describe("fantasy lists", () => {
+  const dashboard = () =>
+    screen.findByRole("region", { name: "Fantasy dashboard" });
+
+  it("shows the dashboard below the movies when the description has #fantasy", async () => {
+    show(
+      [{ ...watched, completedAt: null }],
+      createApi(),
+      true,
+      "user",
+      "Oscars #Fantasy",
+    );
+    const region = await dashboard();
+    expect(region.textContent).toBe("1 movies");
+    expect(
+      screen.getByRole("article").compareDocumentPosition(region) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("is also there for read-only viewers", async () => {
+    show([{ ...watched, completedAt: null }], null, false, null, "#fantasy");
+    await dashboard();
+  });
+
+  it("stays away from ordinary lists", async () => {
+    show(
+      [{ ...watched, completedAt: null }],
+      createApi(),
+      true,
+      "user",
+      "Just movies #fantasyfootball",
+    );
+    await screen.findByRole("article");
+    expect(
+      screen.queryByRole("region", { name: "Fantasy dashboard" }),
+    ).toBeNull();
   });
 });
 

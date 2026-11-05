@@ -21,12 +21,22 @@ import type { Movie, Nomination } from "@/src/db/schema";
 import classnames from "classnames";
 import { orderBy } from "lodash";
 import { AnimatePresence } from "motion/react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { all, filter, find, get, map, some } from "shades";
+import { isFantasyList } from "../lib/fantasy";
 import { when } from "../lib/utils";
 import { MovieGrid } from "./MovieGrid";
 import styles from "./Theatre.module.css";
+
+const FantasyDashboard = dynamic(
+  () =>
+    import("./Fantasy/FantasyDashboard").then(
+      ({ FantasyDashboard }) => FantasyDashboard,
+    ),
+  { ssr: false },
+);
 
 interface TheatreProps {
   theatreId?: string;
@@ -282,6 +292,10 @@ export function Theatre({
           )}
         </MovieGrid>
       </section>
+
+      {isFantasyList(description) && (
+        <FantasyDashboard nominees={nominees} onOpen={openDiscussion} />
+      )}
 
       {watched.length > 0 && (
         <section className={styles.nominations} aria-labelledby="watched-title">

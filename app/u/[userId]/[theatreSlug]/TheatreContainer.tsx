@@ -9,7 +9,7 @@ import { some } from "shades";
 import { useTheatre } from "./TheatreContext";
 
 export function TheatreContainer() {
-  const { theatre, theatres, isAdmin, role, client, noms } = useTheatre();
+  const { theatre, isAdmin, role, client, noms } = useTheatre();
   const { userId } = useDataSession();
   const viewContext = useMemo(() => ({ userId }), [userId]);
   const [viewState, setViewState] = useUrlViewState();
