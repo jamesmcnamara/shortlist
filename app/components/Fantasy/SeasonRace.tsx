@@ -18,60 +18,11 @@ import {
   type ModuleProps,
 } from "./shared";
 
-const DAY_MS = 86_400_000;
-const MARGIN = { top: 22, right: 92, bottom: 26, left: 44 };
-const LABEL_GAP = 28;
-
-type Step = { time: number; value: number };
-
-function useElementWidth<T extends Element>() {
-  const ref = useRef<T>(null);
-  const [width, setWidth] = useState(0);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    setWidth(element.getBoundingClientRect().width);
-    const observer = new ResizeObserver(([entry]) =>
-      setWidth(entry.contentRect.width),
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
-  return { ref, width };
-}
-
-/** Pushes labels apart top to bottom so none overlap. */
-const spreadLabels = (ys: number[]) =>
-  sortBy(
-    ys.map((y, index) => ({ y, index })),
-    "y",
-  )
-    .reduce<{ y: number; index: number }[]>(
-      (placed, { y, index }) => [
-        ...placed,
-        { index, y: Math.max(y, (placed.at(-1)?.y ?? -Infinity) + LABEL_GAP) },
-      ],
-      [],
-    )
-    .reduce<number[]>((byIndex, { y, index }) => {
-      byIndex[index] = y;
-      return byIndex;
-    }, []);
-
-const formatDay = (time: number, longSpan: boolean) =>
-  new Date(time).toLocaleDateString("en-US", {
-    timeZone: "UTC",
-    month: "short",
-    ...(longSpan ? { year: "2-digit" } : { day: "numeric" }),
-  });
-
-const onActivate = (action: () => void) => (event: KeyboardEvent) => {
-  if (event.key === "Enter" || event.key === " ") {
-    event.preventDefault();
-    action();
-  }
+type SeasonRaceProps = Pick<
+  ModuleProps,
+  "selection" | "onSelect" | "inspector"
+> & {
+  race: Race;
 };
 
 export function SeasonRace({
@@ -79,9 +30,7 @@ export function SeasonRace({
   selection,
   onSelect,
   inspector,
-}: Pick<ModuleProps, "selection" | "onSelect" | "inspector"> & {
-  race: Race;
-}) {
+}: SeasonRaceProps) {
   const { ref: boxRef, width } = useElementWidth<HTMLDivElement>();
   const { ref: revealRef, show, reduced } = useReveal<HTMLDivElement>();
 
@@ -135,39 +84,6 @@ export function SeasonRace({
           : [],
     };
   });
-
-  const path = (
-    data: Step[],
-    className: string,
-    delay: number,
-    dashed?: boolean,
-  ) => (
-    <LinePath<Step>
-      data={data}
-      x={(d) => x(d.time)}
-      y={(d) => y(d.value)}
-      curve={curveStepAfter}
-    >
-      {({ path: line }) => (
-        <motion.path
-          d={line(data) ?? ""}
-          className={className}
-          fill="none"
-          initial={
-            reduced ? false : dashed ? { opacity: 0 } : { pathLength: 0 }
-          }
-          animate={
-            dashed ? { opacity: show ? 1 : 0 } : { pathLength: show ? 1 : 0 }
-          }
-          transition={{
-            duration: dashed ? 0.4 : 1.1,
-            ease: EASE,
-            delay: dashed ? delay + 1 : delay,
-          }}
-        />
-      )}
-    </LinePath>
-  );
 
   return (
     <div className={styles.module}>
@@ -244,8 +160,25 @@ export function SeasonRace({
                     className={styles.series}
                     style={toneStyle(player.tone)}
                   >
-                    {path(solid, styles.line, index * 0.12)}
-                    {path(dashed, styles.lineAhead, index * 0.12, true)}
+                    <Path
+                      data={solid}
+                      className={styles.line}
+                      reduced={reduced}
+                      delay={index * 0.12}
+                      show={show}
+                      x={x}
+                      y={y}
+                    />
+                    <Path
+                      data={dashed}
+                      className={styles.lineAhead}
+                      reduced={reduced}
+                      delay={index * 0.12}
+                      show={show}
+                      dashed
+                      x={x}
+                      y={y}
+                    />
                   </g>
                 ))}
 
@@ -263,9 +196,7 @@ export function SeasonRace({
                         transform={`translate(${x(point.time)},${y(cumulative)})`}
                         className={styles.dot}
                         style={toneStyle(player.tone)}
-                        data-dim={
-                          (selection !== null && !selected) || undefined
-                        }
+                        data-dim={selection && !selected}
                         data-selected={selected || undefined}
                         role="button"
                         tabIndex={0}
@@ -330,3 +261,108 @@ export function SeasonRace({
     </div>
   );
 }
+
+interface PathProps {
+  data: Step[];
+  className: string;
+  delay: number;
+  show: boolean;
+  x: (time: number) => number;
+  y: (value: number) => number;
+  reduced: boolean;
+  dashed?: boolean;
+}
+
+const Path = ({
+  data,
+  className,
+  reduced,
+  delay,
+  show,
+  dashed,
+  x,
+  y,
+}: PathProps) => (
+  <LinePath<Step>
+    data={data}
+    x={(d) => x(d.time)}
+    y={(d) => y(d.value)}
+    curve={curveStepAfter}
+  >
+    {({ path: line }) => (
+      <motion.path
+        d={line(data) ?? ""}
+        className={className}
+        fill="none"
+        initial={reduced ? false : dashed ? { opacity: 0 } : { pathLength: 0 }}
+        animate={
+          dashed ? { opacity: show ? 1 : 0 } : { pathLength: show ? 1 : 0 }
+        }
+        transition={{
+          duration: dashed ? 0.4 : 1.1,
+          ease: EASE,
+          delay: dashed ? delay + 1 : delay,
+        }}
+      />
+    )}
+  </LinePath>
+);
+
+const DAY_MS = 86_400_000;
+const MARGIN = { top: 22, right: 92, bottom: 26, left: 44 };
+const LABEL_GAP = 28;
+
+interface Step {
+  time: number;
+  value: number;
+}
+
+function useElementWidth<T extends Element>() {
+  const ref = useRef<T>(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    setWidth(element.getBoundingClientRect().width);
+    const observer = new ResizeObserver(([entry]) =>
+      setWidth(entry.contentRect.width),
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return { ref, width };
+}
+
+/** Pushes labels apart top to bottom so none overlap. */
+const spreadLabels = (ys: number[]) =>
+  sortBy(
+    ys.map((y, index) => ({ y, index })),
+    "y",
+  )
+    .reduce<{ y: number; index: number }[]>(
+      (placed, { y, index }) => [
+        ...placed,
+        { index, y: Math.max(y, (placed.at(-1)?.y ?? -Infinity) + LABEL_GAP) },
+      ],
+      [],
+    )
+    .reduce<number[]>((byIndex, { y, index }) => {
+      byIndex[index] = y;
+      return byIndex;
+    }, []);
+
+const formatDay = (time: number, longSpan: boolean) =>
+  new Date(time).toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    month: "short",
+    ...(longSpan ? { year: "2-digit" } : { day: "numeric" }),
+  });
+
+const onActivate = (action: () => void) => (event: KeyboardEvent) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    action();
+  }
+};

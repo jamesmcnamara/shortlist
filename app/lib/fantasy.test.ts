@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  accumulate,
   buildLeadBreakdown,
   buildLedger,
   buildRace,
@@ -136,6 +137,30 @@ describe("buildStandings", () => {
       releaseDate: null,
       status: "missing",
     });
+  });
+});
+
+describe("accumulate", () => {
+  it("preserves each item while chaining signed deltas from zero", () => {
+    const items = [
+      { title: "Hit", delta: 30 },
+      { title: "Flop", delta: -50 },
+      { title: "Break-even", delta: 0 },
+      { title: "Recovery", delta: 40 },
+    ];
+    expect(accumulate(items)).toEqual([
+      { title: "Hit", delta: 30, from: 0, to: 30 },
+      { title: "Flop", delta: -50, from: 30, to: -20 },
+      { title: "Break-even", delta: 0, from: -20, to: -20 },
+      { title: "Recovery", delta: 40, from: -20, to: 20 },
+    ]);
+    expect(items.every((item) => !("from" in item) && !("to" in item))).toBe(
+      true,
+    );
+  });
+
+  it("returns no steps for no items", () => {
+    expect(accumulate([])).toEqual([]);
   });
 });
 

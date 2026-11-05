@@ -89,6 +89,7 @@ export function StillToCome({
         unreleased,
         true,
       )}
+      <br />
       {group(
         "Missing numbers",
         "Counted as $0 until budget and gross show up.",

@@ -19,6 +19,7 @@ export function TheatreContainer() {
       await client.update({ description });
     },
     importTitle: client.nominations.importTitle,
+    suggest: client.suggestions.create,
     refreshJustWatch: async (movieId: number) => {
       await client.refreshJustWatch(movieId);
     },

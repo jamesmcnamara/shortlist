@@ -1,11 +1,12 @@
 import { withTargetValue } from "@/app/lib/utils";
 import type { Movie } from "@/src/db/schema";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Ratings } from "./Ratings";
 import styles from "./NominationForm.module.css";
 
 type NominationFormProps = {
   candidate: Movie;
+  initialComment?: string;
   isSubmitting: boolean;
   onCancel: () => void;
   onSubmit: (comment: string) => void;
@@ -13,11 +14,13 @@ type NominationFormProps = {
 
 export function NominationForm({
   candidate,
+  initialComment = "",
   isSubmitting,
   onCancel,
   onSubmit,
 }: NominationFormProps) {
-  const [comment, setComment] = useState("");
+  const [comment, setComment] = useState(initialComment);
+  const commentId = useId();
 
   return (
     <form
@@ -69,11 +72,11 @@ export function NominationForm({
         </button>
       </div>
 
-      <label className={styles.label} htmlFor="nomination-comment">
+      <label className={styles.label} htmlFor={commentId}>
         Why should we watch it?
       </label>
       <textarea
-        id="nomination-comment"
+        id={commentId}
         className={styles.comment}
         autoFocus
         rows={4}

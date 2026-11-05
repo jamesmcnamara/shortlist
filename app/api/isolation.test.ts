@@ -524,6 +524,21 @@ describe("admin-only routes", () => {
     ).json();
     expect(body.inviteCode).toBeUndefined();
   });
+
+  it("keeps extension data on the server", async () => {
+    const { GET } = theatreRoute;
+    await fixture.db
+      .update(theatres)
+      .set({ extensions: { specific: { secret: "extension-only" } } })
+      .where(eq(theatres.id, fixture.theatreA.id));
+    asUser(ALICE);
+
+    const body = await (
+      await GET(new Request("http://test"), route("club"))
+    ).json();
+    expect(body.theatre).not.toHaveProperty("extensions");
+    expect(JSON.stringify(body)).not.toContain("extension-only");
+  });
 });
 
 describe("invites", () => {

@@ -102,6 +102,23 @@ vi.mock("./MovieCard", () => ({
     </article>
   ),
 }));
+vi.mock("./Suggestions", () => ({
+  Suggestions: ({
+    existing,
+    onSuggest,
+    onNominate,
+  }: {
+    existing: Set<number>;
+    onSuggest: (exclude: string[]) => Promise<unknown>;
+    onNominate: (movie: { id: number }, comment: string) => Promise<void>;
+  }) => (
+    <section aria-label="Suggestions">
+      <output aria-label="On the list">{[...existing].join(",")}</output>
+      <button onClick={() => onSuggest(["Heat"])}>Fake suggest</button>
+      <button onClick={() => onNominate({ id: 5 }, "Because")}>Fake add</button>
+    </section>
+  ),
+}));
 
 beforeEach(() => {
   window.history.replaceState(null, "", "/");
@@ -141,6 +158,7 @@ const createApi = (): TheatreAPI => ({
     status: "added",
     movie: { id: 2, title: "Arrival", year: 2016 },
   }),
+  suggest: vi.fn().mockResolvedValue([]),
   delete: vi.fn(),
   nominate: vi.fn(),
   updateNomRec: vi.fn(),
@@ -596,6 +614,84 @@ describe("fantasy lists", () => {
     expect(
       screen.queryByRole("region", { name: "Fantasy dashboard" }),
     ).toBeNull();
+  });
+});
+
+describe("suggestions on #specific lists", () => {
+  const active: Nomination = {
+    ...watched,
+    id: 2,
+    movieId: 2,
+    completedAt: null,
+    movie: {
+      ...watched.movie,
+      id: 2,
+      tmdbId: 456,
+      details: { title: "Active movie" } as Nomination["movie"]["details"],
+    },
+  };
+  const suggestions = () =>
+    screen.queryByRole("region", { name: "Suggestions" });
+  const watchedToggle = () => screen.queryByRole("button", { name: /Watched/ });
+
+  it("shows Suggestions after the list in place of Watched, hiding completed movies", () => {
+    show(
+      [watched, active],
+      createApi(),
+      true,
+      "user",
+      "Heists, very #Specific",
+    );
+    expect(
+      screen
+        .getByRole("heading", { name: "Watchlist" })
+        .compareDocumentPosition(suggestions()!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(watchedToggle()).toBeNull();
+    expect(screen.queryByText("Watched movie")).toBeNull();
+    expect(screen.getByText("Active movie")).toBeTruthy();
+  });
+
+  it("keeps Suggestions above the import panel", () => {
+    show([active], createApi(), true, "user", "#specific");
+    fireEvent.click(screen.getByRole("button", { name: "Import Movies" }));
+    expect(
+      suggestions()!.compareDocumentPosition(
+        screen.getByRole("region", { name: "Movie titles" }),
+      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("leaves other lists alone", () => {
+    show([watched, active], createApi(), true, "user", "Our #horror picks");
+    expect(suggestions()).toBeNull();
+    expect(watchedToggle()).toBeTruthy();
+  });
+
+  it.each([
+    ["non-admin members", createApi(), false, "user"],
+    ["signed-out visitors", null, false, null],
+    ["read-only views, even for an admin", null, true, "user"],
+  ])(
+    "shows neither Suggestions nor Watched to %s",
+    (_who, api, admin, user) => {
+      show([watched, active], api, admin, user, "#specific");
+      expect(suggestions()).toBeNull();
+      expect(watchedToggle()).toBeNull();
+      expect(screen.getByText("Active movie")).toBeTruthy();
+    },
+  );
+
+  it("gives Suggestions every movie on the list, watched or not, and the real API", async () => {
+    const api = createApi();
+    show([watched, active], api, true, "user", "#specific");
+    expect(screen.getByLabelText("On the list").textContent).toBe("123,456");
+
+    fireEvent.click(screen.getByRole("button", { name: "Fake suggest" }));
+    expect(api.suggest).toHaveBeenCalledWith(["Heat"]);
+    fireEvent.click(screen.getByRole("button", { name: "Fake add" }));
+    expect(api.nominate).toHaveBeenCalledWith({ id: 5 }, "Because");
   });
 });
 

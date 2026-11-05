@@ -8,12 +8,13 @@ import { userPath } from "@/lib/user-path";
 
 interface MovieCardProps {
   nomination: Nomination;
-  rank: number;
   hasSeen: boolean;
   showMeta: boolean;
   isExpanded: boolean;
   isCompleted?: boolean;
   isSelected?: boolean;
+  rank?: number;
+  label?: string;
   onClick: () => void;
   onLongPress: () => void;
 }
@@ -26,6 +27,7 @@ export function MovieCard({
   isExpanded,
   isCompleted = false,
   isSelected,
+  label,
   onClick,
   onLongPress,
 }: MovieCardProps) {
@@ -49,9 +51,10 @@ export function MovieCard({
           aria-expanded={isSelecting ? undefined : false}
           aria-pressed={isSelected}
           aria-label={
-            isSelecting
+            label ??
+            (isSelecting
               ? `Select ${details.title} to compare`
-              : `Expand details for ${details.title}`
+              : `Expand details for ${details.title}`)
           }
         >
           <div
@@ -65,7 +68,11 @@ export function MovieCard({
             ) : (
               <span>{details.title.slice(0, 1)}</span>
             )}
-            <span className={styles.rank}>{String(rank).padStart(2, "0")}</span>
+            {rank !== undefined && (
+              <span className={styles.rank}>
+                {String(rank).padStart(2, "0")}
+              </span>
+            )}
             <span className={styles.posterShade} />
             {(hasSeen || isCompleted) && (
               <span

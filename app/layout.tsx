@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { MotionProvider } from "./components/MotionProvider";
 import "./globals.css";
 import { DataProvider } from "./lib/data/DataProvider";
@@ -34,6 +35,7 @@ export default function RootLayout({
         <MotionProvider>
           <DataProvider>{children}</DataProvider>
         </MotionProvider>
+        <SpeedInsights />
       </body>
     </html>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  accumulate,
   signedMoney,
   type FantasyMovie,
   type FantasyPlayer,
@@ -17,32 +18,6 @@ import {
   useReveal,
   type ModuleProps,
 } from "./shared";
-
-type Segment = { movie: FantasyMovie; from: number; to: number };
-
-/** Stacks movies outward from the zero axis. Pass `sign` -1 to go left. */
-const stack = (movies: FantasyMovie[], sign: 1 | -1) =>
-  movies.reduce<Segment[]>((segments, movie) => {
-    const from = segments.at(-1)?.to ?? 0;
-    return [
-      ...segments,
-      { movie, from, to: from + sign * Math.abs(movie.net) },
-    ];
-  }, []);
-
-const scored = (movie: FantasyMovie) => movie.status === "scored";
-
-const segmentsFor = ({ movies }: FantasyPlayer) => [
-  ...stack(
-    movies.filter((movie) => scored(movie) && movie.net > 0),
-    1,
-  ),
-  // Biggest loss first, so it sits next to the axis like the biggest gain.
-  ...stack(
-    movies.filter((movie) => scored(movie) && movie.net < 0).reverse(),
-    -1,
-  ),
-];
 
 export function Standings({
   players,
@@ -152,3 +127,20 @@ export function Standings({
     </div>
   );
 }
+
+interface Segment {
+  movie: FantasyMovie;
+  from: number;
+  to: number;
+}
+
+const stack = (movies: FantasyMovie[]) =>
+  accumulate(movies.map((movie) => ({ movie, delta: movie.net })));
+
+const scored = (movie: FantasyMovie) => movie.status === "scored";
+
+const segmentsFor = ({ movies }: FantasyPlayer) => [
+  ...stack(movies.filter((movie) => scored(movie) && movie.net > 0)),
+  // Biggest loss first, so it sits next to the axis like the biggest gain.
+  ...stack(movies.filter((movie) => scored(movie) && movie.net < 0).reverse()),
+];

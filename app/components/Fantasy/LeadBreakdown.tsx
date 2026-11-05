@@ -43,13 +43,14 @@ export function LeadBreakdown({
   });
   const axis = scale(0);
 
-  const bar = (from: number, to: number, index: number) => {
+  const bar = (from: number, to: number, index: number, color?: string) => {
     const left = scale(Math.min(from, to));
     return {
       style: {
         left: `${left}%`,
         width: `max(0.1875rem, ${scale(Math.max(from, to)) - left}%)`,
         transformOrigin: to >= from ? "left" : "right",
+        background: color,
       },
       initial: reduced ? false : { scaleX: 0 },
       animate: { scaleX: show ? 1 : 0 },

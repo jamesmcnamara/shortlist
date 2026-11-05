@@ -51,3 +51,12 @@ landscape, rather than exact width/height or device-model matching. These
 viewports are priority checks, not exclusive targets: keep layouts usable at
 intermediate widths and on other phones, and do not assume viewport size
 reliably identifies the physical fold state.
+
+## Theatre extensions
+
+Build behavior for specially tagged lists as a theatre extension (see
+"Theatre extensions" in `README.md`). Keep its server code in
+`app/lib/extensions/<name>/`, its state in `theatres.extensions[name]` (written
+only with `mergeExtensionData`), and its API in the shared
+`/api/theatres/:theatreId/extensions/:name` route. Don't add per-extension
+columns or routes.

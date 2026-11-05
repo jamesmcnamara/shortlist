@@ -237,6 +237,55 @@ describe("high-churn component smoke tests", () => {
     expect(onClick).toHaveBeenCalledOnce();
   });
 
+  it("leaves off the rank badge for cards that aren't ranked", () => {
+    const { container, rerender } = render(
+      <MovieCard
+        nomination={nomination}
+        rank={3}
+        hasSeen={false}
+        showMeta={false}
+        isExpanded={false}
+        onClick={vi.fn()}
+        onLongPress={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("03")).toBeTruthy();
+
+    rerender(
+      <MovieCard
+        nomination={nomination}
+        hasSeen={false}
+        showMeta={false}
+        isExpanded={false}
+        onClick={vi.fn()}
+        onLongPress={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText("03")).toBeNull();
+    expect(container.querySelector('[class*="rank"]')).toBeNull();
+  });
+
+  it("lets a card replace its accessible name", () => {
+    render(
+      <MovieCard
+        nomination={nomination}
+        hasSeen={false}
+        showMeta={false}
+        isExpanded={false}
+        label="Review suggestion: A Movie"
+        onClick={vi.fn()}
+        onLongPress={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Review suggestion: A Movie" }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: "Expand details for A Movie" }),
+    ).toBeNull();
+  });
+
   it("marks an expanded card without adding an undefined class", () => {
     const { container } = render(
       <MovieCard
@@ -373,6 +422,48 @@ describe("high-churn component smoke tests", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /Add movie/ }));
     expect(onSubmit).toHaveBeenCalledWith("So good");
+  });
+
+  it("starts the comment with the text it was given", () => {
+    const onSubmit = vi.fn();
+
+    render(
+      <NominationForm
+        candidate={nomination.movie}
+        initialComment="A crew and a cop."
+        isSubmitting={false}
+        onCancel={vi.fn()}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    const comment = screen.getByRole("textbox", {
+      name: "Why should we watch it?",
+    });
+    expect((comment as HTMLTextAreaElement).value).toBe("A crew and a cop.");
+    fireEvent.click(screen.getByRole("button", { name: /Add movie/ }));
+    expect(onSubmit).toHaveBeenCalledWith("A crew and a cop.");
+  });
+
+  it("labels each textarea when two forms are open at once", () => {
+    render(
+      <>
+        {[1, 2].map((key) => (
+          <NominationForm
+            key={key}
+            candidate={nomination.movie}
+            isSubmitting={false}
+            onCancel={vi.fn()}
+            onSubmit={vi.fn()}
+          />
+        ))}
+      </>,
+    );
+
+    const [first, second] = screen.getAllByRole("textbox", {
+      name: "Why should we watch it?",
+    });
+    expect(first.id).not.toBe(second.id);
   });
 
   it.each([nomination.movie.details.posterUrl, null])(

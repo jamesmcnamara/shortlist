@@ -9,6 +9,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import styles from "./Fantasy.module.css";
 import { FantasyDashboard } from "./FantasyDashboard";
 
 const mocks = vi.hoisted(() => ({ reducedMotion: true }));
@@ -109,6 +110,29 @@ describe("standings", () => {
         .getAllByRole("button")
         .map((button) => button.getAttribute("aria-label")),
     ).toEqual(["Slow Burn, +$300m", "Big Flop, -$150m"]);
+  });
+
+  it("stacks gains and losses separately, biggest first on each side", () => {
+    show([
+      nomination(1, "maya", "Big gain", null, [100, 160]),
+      nomination(2, "maya", "Small gain", null, [100, 140]),
+      nomination(3, "maya", "Small loss", null, [100, 80]),
+      nomination(4, "maya", "Big loss", null, [100, 20]),
+      nomination(5, "maya", "Break-even", null, [100, 100]),
+      nomination(6, "maya", "Missing", null, null),
+    ]);
+    const segments = within(maya()).getAllByRole("button");
+    expect(segments.map((button) => button.getAttribute("aria-label"))).toEqual(
+      [
+        "Big gain, +$60",
+        "Small gain, +$40",
+        "Big loss, -$80",
+        "Small loss, -$20",
+      ],
+    );
+    expect(segments.map((button) => parseFloat(button.style.left))).toEqual([
+      50, 80, 10, 0,
+    ]);
   });
 
   it("calls a tie a tie", () => {
@@ -244,6 +268,16 @@ describe("where the lead comes from", () => {
     expect(screen.getByText("Lead").nextElementSibling?.textContent).toBe(
       "+$310m",
     );
+  });
+
+  it("leaves the total bar's background to its CSS rule", () => {
+    show();
+    const total = screen
+      .getByText("Lead")
+      .closest("li")!
+      .querySelector<HTMLSpanElement>(`.${styles.stepBar}`);
+    expect(total?.hasAttribute("data-total")).toBe(true);
+    expect(total?.style.background).toBe("");
   });
 
   it("switches opponents when there are three players", () => {

@@ -167,7 +167,7 @@ export interface LeadBreakdown {
   steps: LeadStep[];
 }
 
-const accumulate = <T extends { delta: number }>(items: T[]) =>
+export const accumulate = <T extends { delta: number }>(items: T[]) =>
   items.reduce<(T & { from: number; to: number })[]>((steps, item) => {
     const from = steps.at(-1)?.to ?? 0;
     return [...steps, { ...item, from, to: from + item.delta }];
@@ -193,9 +193,10 @@ export function buildLeadBreakdown(
   );
 
   // A lone leftover would read better as itself than as "1 other".
-  const split = contributions.length > maxMovies + 1 ? maxMovies : undefined;
+  const split =
+    contributions.length > maxMovies + 1 ? maxMovies : contributions.length;
   const shown = contributions.slice(0, split);
-  const rest = split === undefined ? [] : contributions.slice(split);
+  const rest = contributions.slice(split);
 
   const steps: (StepKind & { delta: number })[] = [
     ...shown.map((item) => ({ kind: "movie" as const, ...item })),

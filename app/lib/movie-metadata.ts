@@ -8,9 +8,9 @@ import type {
 } from "@/src/db/schema";
 import { movies } from "@/src/db/schema";
 import { getDb } from "@/src/db/client";
-import { TMDB } from "@lorenzopant/tmdb";
+import { TMDB, type MovieResultItem } from "@lorenzopant/tmdb";
 import { eq } from "drizzle-orm";
-import { matching, set } from "shades";
+import { find, matching, set } from "shades";
 import * as justwatch from "./justwatch";
 import { getWikipediaUrl } from "./wikipedia";
 
@@ -19,9 +19,34 @@ let client: TMDB | null = null;
 export interface MovieMetadataProvider {
   hasCredentials(): boolean;
   search(query: string): Promise<Movie[]>;
-  bestMatch(query: string): Promise<Movie | null>;
+  bestMatch(query: string, year?: number): Promise<Movie | null>;
   get(tmdbId: number): Promise<Movie>;
 }
+
+const comparableTitle = (title = "") =>
+  title
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+
+// Equal, or one is the other plus extra whole words ("Dune" / "Dune Part Two").
+const sameTitle = (a: string, b: string) => {
+  const [x, y] = [comparableTitle(a), comparableTitle(b)];
+  return (
+    Boolean(x && y) &&
+    (x === y || x.startsWith(`${y} `) || y.startsWith(`${x} `))
+  );
+};
+
+const isSameMovie =
+  (title: string, year: number) =>
+  (result: MovieResultItem): boolean =>
+    Math.abs(Number.parseInt(result.release_date, 10) - year) <= 1 &&
+    [result.title, result.original_title].some((candidate) =>
+      sameTitle(candidate, title),
+    );
 
 /**
  * Constructed on first use rather than at module load, so importing this
@@ -92,13 +117,16 @@ export class ProdMovieProvider implements MovieMetadataProvider {
     });
   };
 
-  bestMatch = async (query: string): Promise<Movie | null> => {
+  bestMatch = async (query: string, year?: number): Promise<Movie | null> => {
     const response = await tmdb().search.movies({
       query,
       include_adult: false,
     });
-    const first = response.results[0];
-    return first ? this.get(first.id) : null;
+    const match =
+      year === undefined
+        ? response.results[0]
+        : find(isSameMovie(query, year))(response.results);
+    return match ? this.get(match.id) : null;
   };
 
   get = async (tmdbId: number) => {

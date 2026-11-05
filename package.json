@@ -5,7 +5,7 @@
   "scripts": {
     "clean": "rm -rf .next",
     "predev": "rm -f public/sw.js public/sw.js.map",
-    "dev": "PORT=3031 next dev",
+    "dev": "PORT=3030 next dev",
     "dev:clean": "npm run clean && npm run dev",
     "dev:sync": "node scripts/dev-sync.mjs",
     "dev:seed": "node scripts/dev-sync.mjs --seed-only",
@@ -32,9 +32,11 @@
     "@neondatabase/serverless": "^1.0.2",
     "@serwist/next": "^9.5.12",
     "@types/lodash": "^4.17.24",
+    "@vercel/speed-insights": "^2.0.0",
     "@visx/curve": "^4.0.0",
     "@visx/scale": "^4.0.0",
     "@visx/shape": "^4.0.0",
+    "ai": "^7.0.156",
     "better-auth": "~1.4.22",
     "canvas-confetti": "^1.9.4",
     "cheerio": "^1.2.0",
@@ -72,8 +74,8 @@
     "postcss-preset-env": "^11.6.1",
     "prettier": "^3.9.10",
     "stylelint": "^17.15.0",
-    "typescript": "^5.8.3",
     "tsx": "^4.20.6",
+    "typescript": "^5.8.3",
     "vitest": "^4.1.10"
   }
 }

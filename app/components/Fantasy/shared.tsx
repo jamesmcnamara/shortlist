@@ -37,8 +37,14 @@ export interface ModuleProps {
   inspector: ReactNode;
 }
 
+export interface Reveal<T extends Element> {
+  ref: React.RefObject<T | null>;
+  show: boolean;
+  reduced: boolean;
+}
+
 /** True once scrolled into view. Reduced motion skips straight to the end. */
-export function useReveal<T extends Element>() {
+export function useReveal<T extends Element>(): Reveal<T> {
   const ref = useRef<T>(null);
   const reduced = !!useReducedMotion();
   const inView = useInView(ref, { once: true, amount: 0.2 });

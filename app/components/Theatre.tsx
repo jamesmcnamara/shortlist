@@ -15,6 +15,7 @@ import type { MovieImportResult } from "@/app/lib/bulk-movie-import";
 import { useAPIActions } from "@/app/lib/useAPIActions";
 import { useClickOutside } from "@/app/lib/useClickOutside";
 import { useConfetti } from "@/app/lib/useConfetti";
+import { hasExtension } from "@/app/lib/extensions";
 import { useMovieDiscussionHistory } from "@/app/lib/useMovieDiscussionHistory";
 import { applyView, ViewContext, ViewState } from "@/app/lib/view";
 import type { Movie, Nomination } from "@/src/db/schema";
@@ -28,6 +29,7 @@ import { all, filter, find, get, map, some } from "shades";
 import { isFantasyList } from "../lib/fantasy";
 import { when } from "../lib/utils";
 import { MovieGrid } from "./MovieGrid";
+import { Suggestions } from "./Suggestions";
 import styles from "./Theatre.module.css";
 
 const FantasyDashboard = dynamic(
@@ -70,6 +72,7 @@ export function Theatre({
   const isReadOnly = "isReadOnly" in api;
   const canParticipate = !isReadOnly && Boolean(userId);
   const canCurate = canParticipate && isAdmin;
+  const specific = hasExtension("specific", description);
   const { focusedId, closeDiscussion, openDiscussion } =
     useMovieDiscussionHistory();
   const [isWatchedOpen, setIsWatchedOpen] = useState(false);
@@ -297,7 +300,15 @@ export function Theatre({
         <FantasyDashboard nominees={nominees} onOpen={openDiscussion} />
       )}
 
-      {watched.length > 0 && (
+      {specific && canCurate && (
+        <Suggestions
+          existing={existing}
+          onSuggest={api.suggest}
+          onNominate={api.nominate}
+        />
+      )}
+
+      {!specific && watched.length > 0 && (
         <section className={styles.nominations} aria-labelledby="watched-title">
           <button
             type="button"
@@ -419,6 +430,7 @@ export function Theatre({
 export interface TheatreAPI {
   updateDescription: (description: string) => Promise<void>;
   importTitle: (title: string) => Promise<MovieImportResult>;
+  suggest: (exclude: string[]) => Promise<Nomination[]>;
   refreshJustWatch: (movieId: number) => Promise<void>;
   refreshBoxOffice: (movieId: number) => Promise<void>;
   delete: (nominationId: number) => Promise<void>;
@@ -440,6 +452,7 @@ const readOnly = () => Promise.reject(new Error("This theatre is read-only."));
 const READ_ONLY_API: ReadOnlyTheatreAPI = {
   updateDescription: readOnly,
   importTitle: readOnly,
+  suggest: readOnly,
   refreshJustWatch: readOnly,
   refreshBoxOffice: readOnly,
   delete: readOnly,
