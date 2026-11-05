@@ -12,7 +12,9 @@ import { forwardRef, useEffect, useRef, type ReactNode } from "react";
 import { map } from "shades";
 import styles from "./Theatre.module.css";
 
-export type MovieAnimation = "glide" | "spring" | "fade" | "off";
+export type MovieAnimation = "glide" | "spring" | "fade" | "slide" | "off";
+
+const SLIDE_OFFSET = 32;
 
 interface MovieGridProps {
   nominees: Nomination[];
@@ -74,6 +76,7 @@ const MovieSlot = forwardRef<HTMLDivElement, MovieSlotProps>(function MovieSlot(
 ) {
   const present = useIsPresent();
   const moves = animation === "glide" || animation === "spring";
+  const slides = animation === "slide";
   const transition: Transition =
     animation === "spring"
       ? { type: "spring", stiffness: 380, damping: 38 }
@@ -85,16 +88,23 @@ const MovieSlot = forwardRef<HTMLDivElement, MovieSlotProps>(function MovieSlot(
       ref={ref}
       className={styles.movieSlot}
       inert={!present}
-      layout={moves ? "position" : false}
+      layout={moves || slides ? "position" : false}
       initial={
-        animation === "off" ? false : { opacity: 0, scale: moves ? 0.96 : 1 }
+        animation === "off"
+          ? false
+          : {
+              opacity: 0,
+              scale: moves ? 0.96 : 1,
+              x: slides ? -SLIDE_OFFSET : 0,
+            }
       }
-      animate={{ opacity: 1, scale: 1 }}
+      animate={{ opacity: 1, scale: 1, x: 0 }}
       exit={{ opacity: 0, scale: moves ? 0.96 : 1 }}
       transition={{
         layout: transition,
-        opacity: { duration },
+        opacity: slides ? transition : { duration },
         scale: { duration },
+        x: transition,
       }}
     >
       {children}

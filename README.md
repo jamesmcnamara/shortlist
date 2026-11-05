@@ -87,6 +87,8 @@ quotes). Spaces and other punctuation end a tag. Bare `#`, Markdown headings
 such as `# Heading`, URL fragments, and hashes embedded in words are not tags.
 Descriptions remain plain text, not Markdown. Recognized hashtags appear in
 blue when displayed, without links or chips; the editor stays plain text.
+Some tags also turn on [theatre extensions](#theatre-extensions), like
+[movie suggestions](#movie-suggestions) for `#specific`.
 
 The canonical tag text (without `#`, normalized to Unicode NFC and lowercase)
 is its immutable primary key. The shared `tags` dictionary is insert-only in
@@ -365,6 +367,110 @@ are available without a session; list curation routes require admin membership, 
 comments, seen marks, and metadata refreshes require sign-in but not membership.
 The service worker caches assets, but API responses and page navigations use
 the network, leaving SWR as the only data cache.
+
+## LLM requests
+
+Server code can ask an LLM for structured data with `generate` from
+`app/lib/llm.ts`. It takes a Zod schema and returns a validated object:
+
+```ts
+const { movies } = await generate(
+  z.object({ movies: z.array(z.object({ title: z.string() })).max(5) }),
+  {
+    instructions: "Suggest up to five movies that fit the description.",
+    prompt: theatre.description,
+  },
+);
+```
+
+Requests go through [Vercel AI Gateway](https://vercel.com/docs/ai-gateway)
+using the [AI SDK](https://ai-sdk.dev). The default is
+[`google/gemini-2.5-flash-lite`](https://vercel.com/ai-gateway/models/gemini-2.5-flash-lite),
+set by `MODEL` in `llm.ts`. On November 4, 2026, Vercel's
+[live catalog](https://ai-gateway.vercel.sh/v1/models) confirmed its availability
+and structured-output support, and the
+[Free Tier catalog](https://vercel.com/ai-gateway/models?freeTier=true) explicitly
+marked it `availableToFreeTier: true`. Gemini 3.8 Flash was available but not
+free-credit eligible. Flash-Lite's listed rates are $0.10 per million input tokens
+and $0.40 per million output tokens: 2,000 input + 500 output tokens cost $0.0004.
+Availability, eligibility, and prices can change; recheck them when changing `MODEL`.
+
+Teams that have not purchased AI Gateway credits receive $5 of credit every
+30 days for eligible models. To stay free, do not buy credits or enable auto
+top-up; calls fail when the allowance runs out. Buying credits ends the recurring
+free allowance. Free-tier requests are also rate limited (`429`).
+See [Gateway pricing](https://vercel.com/docs/ai-gateway/pricing).
+
+On Vercel, the SDK uses the deployment's
+[OIDC token](https://vercel.com/docs/ai-gateway/authentication-and-byok/oidc)
+automatically. Project OIDC settings are under **Settings > Security > Secure
+backend access with OIDC federation**. Do not set `AI_GATEWAY_API_KEY` there:
+it takes priority over OIDC.
+For local development, create a key under **AI Gateway > API Keys** in the
+Vercel dashboard, give it a budget, and set `AI_GATEWAY_API_KEY` in `.env.local`.
+An API-key budget covers only that key, not deployed OIDC requests; use a
+team or project [budget](https://vercel.com/docs/ai-gateway/observability-and-spend/budgets)
+to limit those too. Budgets are soft caps checked before each request, not
+guaranteed exact spending limits.
+
+`generate` throws on network, auth, quota, or rate-limit errors, after 30 seconds,
+or when the response doesn't match the schema. It retries a retryable failure
+once and caps each response at 8,000 output tokens. Callers must handle failures
+explicitly and fall back without the result where appropriate.
+
+Put untrusted text, such as theatre descriptions or Wikipedia pages, only in
+`prompt`, never in `instructions`. Treat the output as untrusted too: it is
+schema-checked but can still be wrong or influenced by that text. The model gets
+no tools, and the app doesn't log prompts. Only call `generate` from server code.
+Check Vercel's and Google's data retention terms before sending anything private.
+
+## Theatre extensions
+
+Extensions are opt-in list behaviors kept out of the core app. Each one is named
+after the hashtag that turns it on, so `#specific` turns on `specific`. They're
+listed in `app/lib/extensions/index.ts`, which is safe to import in the browser,
+and each one's server code lives in `app/lib/extensions/<name>/`.
+
+They share one route, `POST /api/theatres/:theatreId/extensions/:name`, which
+runs the handler registered in `app/lib/extensions/server.ts`. Before calling
+it, the route answers `404` for unknown extensions, runs the usual theatre
+access checks (each handler says whether members or only admins can call it),
+and answers `400` when the list isn't tagged with the extension's name. A
+handler that needs several actions can switch on its request body.
+
+Their state lives in `theatres.extensions`, one JSON object keyed by extension
+name, like `{ "specific": { "suggestedAt": "…" } }`. Read an extension's object
+with `extensionData(name)` (always an object, `{}` if there's nothing usable)
+and write it only with `mergeExtensionData(name, patch)`, both in
+`app/lib/extensions/data.ts`. The merge happens in SQL and touches only that
+extension's key, so concurrent writes don't overwrite each other. This data
+never leaves the server: `SafeTheatre` omits it and client queries don't select
+it. Don't add columns or routes for an extension. Apply migration
+`0029_theatre_extensions.sql` before deploying this feature.
+
+### Movie suggestions
+
+A list tagged `#specific` gets a **Suggestions** section where Watched normally
+goes. Watched is hidden on those lists, so completed movies there stay out of
+sight until the tag is removed. Admins press **Suggest** to ask the model for up
+to five films that fit the description and aren't on the list yet. Each one is
+looked up on TMDB by title and year (give or take one year), and anything TMDB
+can't confirm is dropped. Tapping a suggestion opens the usual add form with the
+model's reason filled in as the note, which you can edit first.
+
+Suggestions only live in the page, so a refresh clears them. Pressing **Suggest**
+again adds more, and the titles already offered are sent along so the model
+doesn't repeat them. On these lists, everyone who isn't an admin, including
+signed-out visitors, sees neither the section nor Watched.
+
+`POST /api/theatres/:theatreId/extensions/specific` is admin-only and takes
+`{ "exclude": string[] }` (up to 100 titles, 200 characters each). It returns
+`{ suggestions }` shaped like nominations, with negative ids because nothing is
+saved until someone adds one. On top of the extension checks above, it answers
+`503` when TMDB credentials are missing, `429` inside a list's 10-second cooldown
+(kept in `theatres.extensions.specific.suggestedAt`, and a failed model call
+still uses it up), and `502` when the model call fails. It needs TMDB
+credentials as well as the AI Gateway setup above.
 
 ## Local development
 

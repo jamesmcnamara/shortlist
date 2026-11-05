@@ -13,9 +13,13 @@ import { requireUserId, unauthorized } from "./require-user";
 /**
  * The invite code is a capability, so it is never part of the theatre object that
  * gets handed to members or serialized into a page. Routes read codes
- * explicitly after checking membership or admin access.
+ * explicitly after checking membership or admin access. Extension data stays
+ * on the server too.
  */
-export type SafeTheatre = Omit<Theatre, "inviteCode" | "adminInviteCode"> & {
+export type SafeTheatre = Omit<
+  Theatre,
+  "inviteCode" | "adminInviteCode" | "extensions"
+> & {
   path: string;
 };
 
@@ -38,7 +42,9 @@ export interface TheatreContext {
 }
 
 /** Route params are async in Next 15+. */
-type RouteContext = { params: Promise<Record<string, string>> };
+export interface RouteContext {
+  params: Promise<Record<string, string>>;
+}
 
 type TheatreHandler = (
   request: Request,

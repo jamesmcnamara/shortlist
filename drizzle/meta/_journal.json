@@ -204,6 +204,13 @@
       "when": 1793751131148,
       "tag": "0028_rare_lady_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793842701325,
+      "tag": "0029_theatre_extensions",
+      "breakpoints": true
     }
   ]
 }

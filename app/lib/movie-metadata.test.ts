@@ -151,6 +151,95 @@ describe("ProdMovieProvider", () => {
       "Search unavailable",
     );
   });
+
+  describe("bestMatch with a year", () => {
+    const found = (
+      id: number,
+      title: string,
+      release_date: string,
+      original_title = title,
+    ) => ({ id, title, original_title, release_date });
+
+    const matchFor = async (
+      query: string,
+      year: number,
+      results: ReturnType<typeof found>[],
+    ) => {
+      tmdbApi.search.movies.mockResolvedValue({ results });
+      return new ProdMovieProvider().bestMatch(query, year);
+    };
+
+    it("skips a more popular result from the wrong year", async () => {
+      const result = await matchFor("Heat", 1995, [
+        found(1, "Heat", "1986-01-01"),
+        found(2, "Heat", "1995-12-15"),
+      ]);
+      expect(result?.tmdbId).toBe(2);
+      expect(tmdbApi.movies.details).toHaveBeenCalledOnce();
+      expect(tmdbApi.movies.details).toHaveBeenCalledWith({ movie_id: 2 });
+    });
+
+    it("returns null without hydrating when nothing fits", async () => {
+      const result = await matchFor("Heat 2", 2023, [
+        found(1, "Heat", "1995-12-15"),
+        found(2, "Heat 2", "1980-01-01"),
+      ]);
+      expect(result).toBeNull();
+      expect(tmdbApi.movies.details).not.toHaveBeenCalled();
+    });
+
+    it("allows a year of drift but not two", async () => {
+      expect(
+        (await matchFor("Tenet", 2020, [found(3, "Tenet", "2021-01-01")]))
+          ?.tmdbId,
+      ).toBe(3);
+      expect(
+        await matchFor("Tenet", 2020, [found(4, "Tenet", "2022-01-01")]),
+      ).toBeNull();
+    });
+
+    it("skips results with no release date", async () => {
+      expect(await matchFor("Tenet", 2020, [found(5, "Tenet", "")])).toBeNull();
+    });
+
+    it("ignores case, accents, and punctuation, and checks the original title", async () => {
+      expect(
+        (
+          await matchFor("amelie", 2001, [
+            found(6, "Amélie", "2001-04-25", "Le Fabuleux Destin d'Amélie"),
+          ])
+        )?.tmdbId,
+      ).toBe(6);
+      expect(
+        (
+          await matchFor("Mad Max Fury Road", 2015, [
+            found(7, "Mad Max: Fury Road", "2015-05-13"),
+          ])
+        )?.tmdbId,
+      ).toBe(7);
+      expect(
+        (
+          await matchFor("Le Fabuleux Destin d'Amélie", 2001, [
+            found(8, "Amélie", "2001-04-25", "Le Fabuleux Destin d'Amélie"),
+          ])
+        )?.tmdbId,
+      ).toBe(8);
+    });
+
+    it("accepts extra whole words but not a partial word", async () => {
+      expect(
+        (
+          await matchFor("Dune", 2024, [
+            found(9, "Dune: Part Two", "2024-02-27"),
+          ])
+        )?.tmdbId,
+      ).toBe(9);
+      expect(
+        await matchFor("It", 2017, [found(10, "Italian Job", "2017-01-01")]),
+      ).toBeNull();
+    });
+  });
+
   it("requires credentials for both metadata services", () => {
     const provider = new ProdMovieProvider();
 

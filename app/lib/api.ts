@@ -281,6 +281,16 @@ export const api = {
         delete: (movieId: number): Promise<SeenUpdate> =>
           request(`${base}/seen?movieId=${movieId}`, { method: "DELETE" }),
       },
+      suggestions: {
+        create: (exclude: string[]): Promise<Nomination[]> =>
+          request<{ suggestions: Nomination[] }>(
+            `${base}/extensions/specific`,
+            {
+              method: "POST",
+              body: JSON.stringify({ exclude }),
+            },
+          ).then(get("suggestions")),
+      },
     };
   },
   publicTheatre: (code: string): Promise<PublicTheatre> =>

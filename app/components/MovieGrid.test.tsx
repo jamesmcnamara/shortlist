@@ -35,7 +35,7 @@ const grid = (ids: number[], animation: MovieAnimation) => (
 );
 
 describe("movie grid animations", () => {
-  it.each(["glide", "spring", "fade", "off"] as const)(
+  it.each(["glide", "spring", "fade", "slide", "off"] as const)(
     "preserves movie identity through additions, sorting and filtering in %s mode",
     async (animation) => {
       const { rerender } = render(grid([1, 2, 3], animation));
@@ -87,5 +87,33 @@ describe("movie grid animations", () => {
     expect(screen.getByTestId("movie-2").parentElement?.style.opacity).toBe(
       "1",
     );
+  });
+
+  it("starts new movies off to the left and transparent in slide mode", () => {
+    const { rerender } = render(grid([], "slide"));
+    rerender(grid([1], "slide"));
+    const slot = screen.getByTestId("movie-1").parentElement;
+    expect(slot?.style.opacity).toBe("0");
+    expect(slot?.style.transform).toContain("translateX(-32px)");
+  });
+
+  it.each(["glide", "spring", "fade"] as const)(
+    "does not slide new movies in %s mode",
+    (animation) => {
+      const { rerender } = render(grid([], animation));
+      rerender(grid([1], animation));
+      expect(
+        screen.getByTestId("movie-1").parentElement?.style.transform,
+      ).not.toContain("translateX");
+    },
+  );
+
+  it("shows slide entrances in place for reduced motion", () => {
+    mocks.reducedMotion = true;
+    const { rerender } = render(grid([], "slide"));
+    rerender(grid([1], "slide"));
+    const slot = screen.getByTestId("movie-1").parentElement;
+    expect(slot?.style.opacity).toBe("1");
+    expect(slot?.style.transform).not.toContain("translateX(-32px)");
   });
 });
