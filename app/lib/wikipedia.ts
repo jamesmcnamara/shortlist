@@ -1,7 +1,10 @@
 import { z } from "zod";
 import { when } from "./utils";
 
-const articleUrl = z.url().refine((value) => {
+export const userAgent =
+  "Shortlist/1.0 (https://github.com/jamesmcnamara/shortlist)";
+
+export const articleUrl = z.url().refine((value) => {
   const url = new URL(value);
   return (
     url.protocol === "https:" &&
@@ -68,8 +71,7 @@ const lookup = async (property: "P4947" | "P345", id: string) => {
     signal,
     headers: {
       Accept: "application/sparql-results+json",
-      "User-Agent":
-        "Shortlist/1.0 (https://github.com/jamesmcnamara/shortlist)",
+      "User-Agent": userAgent,
     },
   });
   if (!response.ok) {

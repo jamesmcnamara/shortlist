@@ -221,6 +221,7 @@ describe("command-line theatre refresh", () => {
           boxOffice: {
             source: "boxofficemojo",
             budget: 1,
+            budgetSource: "tmdb",
             worldwideGross: 782_948_164,
           },
         },

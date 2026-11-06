@@ -216,6 +216,10 @@ Successful lookups update the shared client cache and only replace the stored
 Wikipedia URL. A missing or ambiguous article stores `null`; lookup failures
 preserve the previous URL and appear in the progress drawer.
 
+The stored article is also the last source for a movie's production budget when
+Box Office Mojo and TMDB have none; see
+[Box Office Mojo financial data](#box-office-mojo-financial-data).
+
 ### Command-line movie refresh
 
 The scripts in `refresh/` refresh Wikipedia articles or box-office data for one
@@ -304,23 +308,51 @@ Successful lookups store `movie.details.boxOffice`: USD production budget,
 domestic, international and worldwide lifetime grosses, the source URL, and
 `fetchedAt`. The scraper reads the **All Releases** summary, including re-releases,
 not an individual release's totals. Missing amounts are `null`, not zero.
-When Mojo omits the budget, enrichment fills `boxOffice.budget` from the saved
-TMDB budget if it is a positive whole-dollar amount. Mojo budgets always take
-priority, including an explicit zero. Gross receipts still come only from Mojo;
+`boxOffice.budget` comes from the first source that has one: Mojo (an explicit
+zero counts), then the saved TMDB budget if it is a positive whole-dollar amount,
+then the movie's Wikipedia article. `boxOffice.budgetSource` records which one
+(`boxofficemojo`, `tmdb` or `wikipedia`). It is absent when there is no budget
+and on records saved before it existed. Gross receipts still come only from Mojo;
 a failed scrape does not create or overwrite box office data.
 TMDB's `budget` and `revenue` are unchanged. Movie metadata is shared across
 theatres.
 
+The Wikipedia fallback only runs when `movie.details.wikipediaUrl` is set. It
+reads the article's lead section from the MediaWiki API (five-second timeout)
+and takes the infobox's **Budget** row. Only the budget is used; the article's
+box office row is ignored. The parser is strict and prefers no budget to a
+wrong one:
+
+- The first US-dollar amount wins. A foreign figure with a dollar conversion,
+  like `₩13.5 billion (US$11.4 million)`, uses the dollars. A cell with only
+  another currency (€, ₹, A$) gives no budget.
+- A range like `$14–25 million` uses its midpoint.
+- Bounds (`over`, `at least`, `$20 million+`), "equivalent to" inflation figures,
+  units it doesn't know (`$20M`), amounts under $1,000, and a missing or
+  duplicated Budget row all give no budget.
+
+If Wikipedia fails (an HTTP error, a timeout, or an unexpected response), the
+error is logged and Mojo's figures are still saved. A budget that an earlier
+refresh took from Wikipedia is kept through the outage; otherwise the budget is
+`null`. An article that loads without a usable budget also gives `null`.
+
+The Numbers isn't used: its API is paid and its terms ban scraping. There is no
+LLM fallback either. In a sample of Oscar films, every infobox with a USD Budget
+row parsed, and the rest had no budget row for an LLM to read.
+
 Missing IMDb IDs are logged and skipped. HTTP errors, timeouts, blocked pages,
 and unexpected markup are logged without preventing the nomination. Failed
-lookups leave any previously saved Mojo figures untouched. There is no scheduled
+Mojo lookups leave any previously saved figures untouched. There is no scheduled
 refresh or automatic retry; `fetchedAt` is when the page was read, not when Mojo
-last updated its numbers.
+last updated its numbers. Since a new nomination waits for the lookup, the worst
+case is Mojo's ten seconds plus Wikipedia's five.
 
 Movie discussions show a compact financial sentence: "Made $15.9m (1.59x) on $10m"
 or "Lost $5m (-0.5x) on $10m", with inline colors on the figures. Unknown returns
-use a neutral "Net" label instead. Dollar amounts are rounded down to three
-significant digits (for example, `$15.9m` or `$100k`). Net is worldwide gross minus
+use a neutral "Net" label instead. When the budget came from TMDB or Wikipedia
+rather than Mojo, the tooltip and screen-reader text say so. Dollar amounts are
+rounded down to three significant digits (for example, `$15.9m` or `$100k`).
+Net is worldwide gross minus
 production budget; the return multiplier is net divided by budget (150% is 1.5x).
 Multipliers are clipped toward zero to at most two decimal places, one above 2x,
 and none above 10x.

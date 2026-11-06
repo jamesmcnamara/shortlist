@@ -2,7 +2,8 @@ import { and, eq, exists, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/src/db/client";
 import { movies, nominations } from "@/src/db/schema";
-import { getBoxOffice, imdbId } from "./box-office";
+import { type BoxOfficeData, getBoxOffice, imdbId } from "./box-office";
+import { getWikipediaBudget } from "./wikipedia-budget";
 
 const detailsIds = z.object({ imdb_id: z.unknown().optional() });
 const ratingsIds = z.object({
@@ -11,6 +12,37 @@ const ratingsIds = z.object({
 const tmdbBudget = z.object({
   budget: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
 });
+const wikipediaDetails = z.object({ wikipediaUrl: z.string() });
+const savedWikipediaBudget = z.object({
+  boxOffice: tmdbBudget.extend({ budgetSource: z.literal("wikipedia") }),
+});
+
+async function wikipediaBudget(details: unknown): Promise<number | null> {
+  const { data } = wikipediaDetails.safeParse(details);
+  if (!data) return null;
+  try {
+    return await getWikipediaBudget(data.wikipediaUrl);
+  } catch (error) {
+    console.error(`Unable to load a budget from ${data.wikipediaUrl}.`, error);
+    // An outage shouldn't wipe a budget an earlier refresh found.
+    return (
+      savedWikipediaBudget.safeParse(details).data?.boxOffice.budget ?? null
+    );
+  }
+}
+
+async function findBudget(
+  mojo: BoxOfficeData,
+  details: unknown,
+): Promise<number | null> {
+  if (mojo.budget !== null) {
+    return mojo.budget;
+  }
+  const tmdb = tmdbBudget.safeParse(details).data?.budget;
+  if (tmdb !== undefined) return tmdb;
+  const wikipedia = await wikipediaBudget(details);
+  return wikipedia === null ? null : wikipedia;
+}
 
 export async function refreshBoxOffice(movieId: number, theatreId?: string) {
   const db = getDb();
@@ -45,11 +77,7 @@ export async function refreshBoxOffice(movieId: number, theatreId?: string) {
   if (!id) return { status: "missing_imdb" } as const;
 
   const mojo = await getBoxOffice(id);
-  const boxOffice = {
-    ...mojo,
-    budget:
-      mojo.budget ?? tmdbBudget.safeParse(movie.details).data?.budget ?? null,
-  };
+  const boxOffice = { ...mojo, budget: await findBudget(mojo, movie.details) };
   const [updated] = await db
     .update(movies)
     .set({

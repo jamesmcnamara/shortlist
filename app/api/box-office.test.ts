@@ -10,6 +10,7 @@ import {
   theatreMembers,
   theatres,
   type Movie,
+  type MovieDetails,
 } from "@/src/db/schema";
 import type { BoxOfficeData } from "@/app/lib/box-office";
 import { setMovieProviderForTesting } from "@/app/lib/movie-metadata";
@@ -104,7 +105,7 @@ afterEach(async () => {
 
 const storedDetails = async () => {
   const [row] = await db.select().from(movies).where(eq(movies.id, movie.id));
-  return row.details;
+  return row.details as MovieDetails;
 };
 
 describe("TMDB budget fallback", () => {
@@ -132,12 +133,19 @@ describe("TMDB budget fallback", () => {
             : await refresh(request({ movieId: movie.id }), context());
       expect(response.ok).toBe(true);
       if (mode === "refresh") {
-        expect(await response.json()).toMatchObject({ budget: 1 });
+        expect(await response.json()).toMatchObject({
+          budget: 1,
+          budgetSource: "tmdb",
+        });
       }
       expect(await storedDetails()).toMatchObject({
         budget: 1,
         revenue: 2,
-        boxOffice: { budget: 1, worldwideGross: 782_948_164 },
+        boxOffice: {
+          budget: 1,
+          budgetSource: "tmdb",
+          worldwideGross: 782_948_164,
+        },
       });
     },
   );
@@ -161,6 +169,9 @@ describe("TMDB budget fallback", () => {
         (await add(request({ movieId: movie.id }), context())).status,
       ).toBe(201);
       expect(await storedDetails()).toHaveProperty("boxOffice.budget", null);
+      expect(await storedDetails()).not.toHaveProperty(
+        "boxOffice.budgetSource",
+      );
     },
   );
 
@@ -175,6 +186,237 @@ describe("TMDB budget fallback", () => {
       201,
     );
     expect(await storedDetails()).toHaveProperty("boxOffice.budget", 0);
+    expect(await storedDetails()).toHaveProperty(
+      "boxOffice.budgetSource",
+      "boxofficemojo",
+    );
+  });
+});
+
+describe("Wikipedia budget fallback", () => {
+  const ARTICLE = "https://en.wikipedia.org/wiki/Interstellar_(film)";
+  const lead = (row: string) =>
+    Response.json({
+      parse: { text: `<table class="infobox"><tr>${row}</tr></table>` },
+    });
+  const budgetLead = (cell: string) => lead(`<th>Budget</th><td>${cell}</td>`);
+  const mojoWith = (budget: string) => () =>
+    new Response(html.replace("$165,000,000", budget), {
+      headers: { "Content-Type": "text/html" },
+    });
+  const serve = (
+    wikipedia: () => Response | Promise<Response>,
+    mojo = mojoWith("-"),
+  ) =>
+    fetch.mockImplementation(async (url) =>
+      String(url).startsWith("https://en.wikipedia.org/")
+        ? wikipedia()
+        : mojo(),
+    );
+  const wikipediaRequests = () =>
+    fetch.mock.calls.filter(([url]) =>
+      String(url).startsWith("https://en.wikipedia.org/"),
+    );
+  const setDetails = async (details: object) =>
+    db
+      .update(movies)
+      .set({ details: { ...(await storedDetails()), ...details } })
+      .where(eq(movies.id, movie.id));
+  const earlier = (changes: Partial<BoxOfficeData>) =>
+    setDetails({
+      boxOffice: {
+        source: "boxofficemojo",
+        url: "https://www.boxofficemojo.com/title/tt0816692/",
+        fetchedAt: "2026-01-01T00:00:00.000Z",
+        currency: "USD",
+        budget: null,
+        domesticGross: 1,
+        internationalGross: 2,
+        worldwideGross: 3,
+        ...changes,
+      } satisfies BoxOfficeData,
+    });
+  const enrich = async (mode: string) => {
+    if (mode === "refresh") {
+      await db
+        .insert(nominations)
+        .values({ theatreId: THEATRE, userId: USER, movieId: movie.id });
+    }
+    return mode === "normal"
+      ? add(request({ movieId: movie.id }), context())
+      : mode === "import"
+        ? importMovie(request({ title: "Interstellar" }), context())
+        : refresh(request({ movieId: movie.id }), context());
+  };
+
+  beforeEach(async () => {
+    await setDetails({ budget: 0, wikipediaUrl: ARTICLE });
+    serve(() => budgetLead("$165&#160;million"));
+  });
+
+  it.each(["normal", "import", "refresh"])(
+    "fills a budget missing from Mojo and TMDB during %s enrichment",
+    async (mode) => {
+      const response = await enrich(mode);
+      expect(response.ok).toBe(true);
+      if (mode === "refresh") {
+        expect(await response.json()).toMatchObject({
+          budget: 165_000_000,
+          budgetSource: "wikipedia",
+        });
+      }
+      expect(await storedDetails()).toMatchObject({
+        budget: 0,
+        boxOffice: {
+          budget: 165_000_000,
+          budgetSource: "wikipedia",
+          worldwideGross: 782_948_164,
+        },
+      });
+      const requests = wikipediaRequests();
+      expect(requests).toHaveLength(1);
+      expect(new URL(String(requests[0][0])).searchParams.get("page")).toBe(
+        "Interstellar_(film)",
+      );
+    },
+  );
+
+  it.each([
+    ["Mojo has a budget", mojoWith("$165,000,000"), 0, "boxofficemojo", 165e6],
+    ["Mojo reports a zero budget", mojoWith("$0"), 0, "boxofficemojo", 0],
+    ["TMDB has a budget", mojoWith("-"), 5e6, "tmdb", 5e6],
+  ])(
+    "skips Wikipedia when %s",
+    async (_name, mojo, tmdb, budgetSource, budget) => {
+      serve(() => budgetLead("$1 million"), mojo);
+      await setDetails({ budget: tmdb });
+      expect((await enrich("refresh")).status).toBe(200);
+      expect(wikipediaRequests()).toHaveLength(0);
+      expect(await storedDetails()).toMatchObject({
+        boxOffice: { budget, budgetSource },
+      });
+    },
+  );
+
+  it.each([undefined, null])(
+    "skips Wikipedia when the stored article is %s",
+    async (wikipediaUrl) => {
+      await setDetails({ wikipediaUrl });
+      expect((await enrich("refresh")).status).toBe(200);
+      expect(wikipediaRequests()).toHaveLength(0);
+      const { boxOffice } = await storedDetails();
+      expect(boxOffice).toMatchObject({
+        budget: null,
+        worldwideGross: 782_948_164,
+      });
+      expect(boxOffice).not.toHaveProperty("budgetSource");
+    },
+  );
+
+  it("never requests a stored URL that isn't an English Wikipedia article", async () => {
+    await setDetails({ wikipediaUrl: "https://example.com/wiki/Interstellar" });
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    expect((await enrich("refresh")).status).toBe(200);
+    expect(wikipediaRequests()).toHaveLength(0);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(log).toHaveBeenCalled();
+    expect(await storedDetails()).toHaveProperty("boxOffice.budget", null);
+  });
+
+  it("drops an earlier Wikipedia budget the article no longer lists", async () => {
+    await earlier({ budget: 99_000_000 });
+    serve(() => lead("<th>Box office</th><td>$782.9 million</td>"));
+    expect((await enrich("refresh")).status).toBe(200);
+    expect(wikipediaRequests()).toHaveLength(1);
+    const { boxOffice } = await storedDetails();
+    expect(boxOffice).toMatchObject({ budget: null });
+  });
+
+  it("prefers a Mojo budget over an earlier Wikipedia one", async () => {
+    await earlier({ budget: 99_000_000 });
+    serve(() => budgetLead("$1 million"), mojoWith("$165,000,000"));
+    expect((await enrich("refresh")).status).toBe(200);
+    expect(wikipediaRequests()).toHaveLength(0);
+    expect(await storedDetails()).toMatchObject({
+      boxOffice: { budget: 165_000_000 },
+    });
+  });
+
+  describe("when Wikipedia fails", () => {
+    const failures: [string, () => Response][] = [
+      ["an HTTP error", () => new Response("", { status: 503 })],
+      ["an API error", () => Response.json({ error: { code: "ratelimited" } })],
+      ["an unexpected body", () => new Response("<html>")],
+      [
+        "a timeout",
+        () => {
+          throw new DOMException("Timed out", "TimeoutError");
+        },
+      ],
+    ];
+
+    it.each(failures)(
+      "still saves Mojo's figures after %s",
+      async (_name, failure) => {
+        const log = vi
+          .spyOn(console, "error")
+          .mockImplementation(() => undefined);
+        serve(failure);
+        const response = await enrich("refresh");
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({
+          budget: null,
+          worldwideGross: 782_948_164,
+        });
+        const { boxOffice } = await storedDetails();
+        expect(boxOffice).toMatchObject({
+          budget: null,
+          worldwideGross: 782_948_164,
+        });
+        expect(boxOffice).not.toHaveProperty("budgetSource");
+        expect(log).toHaveBeenCalledWith(
+          expect.stringContaining(ARTICLE),
+          expect.any(Error),
+        );
+      },
+    );
+
+    it("keeps a budget an earlier refresh took from Wikipedia", async () => {
+      await earlier({ budget: 165_000_000 });
+      vi.spyOn(console, "error").mockImplementation(() => undefined);
+      serve(() => new Response("", { status: 503 }));
+      expect((await enrich("refresh")).status).toBe(200);
+      expect(await storedDetails()).toMatchObject({
+        boxOffice: {
+          budget: 165_000_000,
+          budgetSource: "wikipedia",
+          worldwideGross: 782_948_164,
+        },
+      });
+    });
+
+    it.each([{ budgetSource: "tmdb" }, {}] as const)(
+      "doesn't keep an earlier budget from elsewhere (%j)",
+      async (source) => {
+        await earlier({ budget: 7_000_000, ...source });
+        vi.spyOn(console, "error").mockImplementation(() => undefined);
+        serve(() => new Response("", { status: 503 }));
+        expect((await enrich("refresh")).status).toBe(200);
+        const { boxOffice } = await storedDetails();
+        expect(boxOffice).toMatchObject({ budget: null });
+        expect(boxOffice).not.toHaveProperty("budgetSource");
+      },
+    );
+
+    it("keeps the nomination when it fails while adding a movie", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => undefined);
+      serve(() => new Response("", { status: 503 }));
+      expect((await enrich("normal")).status).toBe(201);
+      expect(await db.select().from(nominations)).toHaveLength(1);
+      expect(await storedDetails()).toMatchObject({
+        boxOffice: { budget: null, worldwideGross: 782_948_164 },
+      });
+    });
   });
 });
 
