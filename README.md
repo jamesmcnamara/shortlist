@@ -302,20 +302,42 @@ change or stop working, and cached availability can become outdated.
 Each new nomination, including a successful bulk import, looks up the movie's
 Box Office Mojo title page by IMDb ID. The request waits for this lookup, with
 a ten-second network timeout. Duplicate imports and movie searches do not scrape.
-No additional API key or database migration is needed.
+No additional API key is needed.
 
-Successful lookups store `movie.details.boxOffice`: USD production budget,
-domestic, international and worldwide lifetime grosses, the source URL, and
-`fetchedAt`. The scraper reads the **All Releases** summary, including re-releases,
-not an individual release's totals. Missing amounts are `null`, not zero.
-`boxOffice.budget` comes from the first source that has one: Mojo (an explicit
-zero counts), then the saved TMDB budget if it is a positive whole-dollar amount,
-then the movie's Wikipedia article. `boxOffice.budgetSource` records which one
-(`boxofficemojo`, `tmdb` or `wikipedia`). It is absent when there is no budget
-and on records saved before it existed. Gross receipts still come only from Mojo;
-a failed scrape does not create or overwrite box office data.
+Financial data lives in the typed `movies.box_office` JSONB column, keyed by
+source: `boxofficemojo` holds the scraper's figures, `tmdb` and `wikipedia` hold
+their budgets, and `manual` holds `{ budget }`. Writers replace their source
+entries with a shallow JSONB merge; no merged financial blob is stored.
+`resolveBoxOffice` is a pure helper that resolves these snapshots into
+`movie.details.boxOffice` at the shared movie-read boundary, so discussions,
+standings, and comparisons use the same figures.
+
+Budget precedence is manual, Mojo (an explicit zero counts), positive
+whole-dollar TMDB budget, then Wikipedia. `budgetSource` identifies the winning
+source and is absent when no budget is available. Grosses, source URL, and fetch
+time come only from Mojo. Its scraper reads the **All Releases** summary,
+including re-releases, not an individual release's totals. Missing amounts are
+`null`, not zero. A failed Mojo scrape does not overwrite saved snapshots.
 TMDB's `budget` and `revenue` are unchanged. Movie metadata is shared across
 theatres.
+
+Migration `0030_flimsy_hitman.sql` adds the column, moves existing figures to
+their source entries using budget provenance, and removes `details.boxOffice`
+from stored metadata. Apply it with `npm run db:migrate` against the intended
+database when deploying this change; pause financial writes during the
+old-code/new-code transition so old writers do not recreate the legacy key.
+
+On fantasy lists, signed-in visitors can use **Add budget** in **Missing numbers**
+for movies without a budget. The inline form accepts a nonnegative whole-dollar
+USD amount and saves it through `PATCH /api/theatres/:theatreId/box-office`.
+Manual budgets survive subsequent box-office refreshes, which update only
+automatic sources. The API allows replacing a manual budget even when an
+automatic budget exists; there is no stale-form or historical-write guard.
+Saving preserves other movie metadata and
+grosses, and revalidates the list so standings update immediately. If no Mojo
+data exists yet, only the manual budget is stored. The resolved UI figures have
+null grosses and no fabricated fetch time; the movie remains unscored until
+worldwide gross is available.
 
 The Wikipedia fallback only runs when `movie.details.wikipediaUrl` is set. It
 reads the article's lead section from the MediaWiki API (five-second timeout)
@@ -332,9 +354,9 @@ wrong one:
   duplicated Budget row all give no budget.
 
 If Wikipedia fails (an HTTP error, a timeout, or an unexpected response), the
-error is logged and Mojo's figures are still saved. A budget that an earlier
-refresh took from Wikipedia is kept through the outage; otherwise the budget is
-`null`. An article that loads without a usable budget also gives `null`.
+error is logged and Mojo's figures are still saved with a null Wikipedia budget.
+No historical Wikipedia budget is preserved. An article that loads without a
+usable budget also gives `null`.
 
 The Numbers isn't used: its API is paid and its terms ban scraping. There is no
 LLM fallback either. In a sample of Oscar films, every infobox with a USD Budget

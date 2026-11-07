@@ -134,8 +134,7 @@ describe("command-line theatre refresh", () => {
       expect(
         after.every(
           (movie, index) =>
-            JSON.stringify(movie.details) !==
-            JSON.stringify(before[index].details),
+            JSON.stringify(movie) !== JSON.stringify(before[index]),
         ),
       ).toBe(true);
       expect(await db.select().from(nominations)).toEqual(beforeNominations);
@@ -216,12 +215,11 @@ describe("command-line theatre refresh", () => {
     for (const index of [0, 1]) {
       expect(after[index]).toMatchObject({
         ...before[index],
-        details: {
-          ...(before[index].details as object),
-          boxOffice: {
+        boxOffice: {
+          tmdb: { budget: 1 },
+          boxofficemojo: {
             source: "boxofficemojo",
-            budget: 1,
-            budgetSource: "tmdb",
+            budget: null,
             worldwideGross: 782_948_164,
           },
         },

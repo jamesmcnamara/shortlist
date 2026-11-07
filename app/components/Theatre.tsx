@@ -297,7 +297,11 @@ export function Theatre({
       </section>
 
       {isFantasyList(description) && (
-        <FantasyDashboard nominees={nominees} onOpen={openDiscussion} />
+        <FantasyDashboard
+          nominees={nominees}
+          onOpen={openDiscussion}
+          onSaveBudget={canParticipate ? api.saveBudget : undefined}
+        />
       )}
 
       {specific && canCurate && (
@@ -433,6 +437,7 @@ export interface TheatreAPI {
   suggest: (exclude: string[]) => Promise<Nomination[]>;
   refreshJustWatch: (movieId: number) => Promise<void>;
   refreshBoxOffice: (movieId: number) => Promise<void>;
+  saveBudget: (movieId: number, budget: number) => Promise<void>;
   delete: (nominationId: number) => Promise<void>;
   nominate: (candidate: Movie, comment: string) => Promise<void>;
   updateNomRec: (nominationId: number, comment: string) => Promise<void>;
@@ -455,6 +460,7 @@ const READ_ONLY_API: ReadOnlyTheatreAPI = {
   suggest: readOnly,
   refreshJustWatch: readOnly,
   refreshBoxOffice: readOnly,
+  saveBudget: readOnly,
   delete: readOnly,
   nominate: readOnly,
   updateNomRec: readOnly,

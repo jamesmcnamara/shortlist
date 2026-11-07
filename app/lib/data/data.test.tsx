@@ -104,6 +104,39 @@ afterEach(() => {
 });
 
 describe("shared data cache", () => {
+  it("revalidates nominations after saving a manual budget", async () => {
+    let budget: number | null = null;
+    fetchMock.mockImplementation(async (input, init) => {
+      if (input === `${base}/box-office` && init?.method === "PATCH") {
+        budget = JSON.parse(String(init.body)).budget;
+        return new Response(null, { status: 204 });
+      }
+      return json([{ id: 1, movie: { details: { boxOffice: { budget } } } }]);
+    });
+    const { result } = renderHook(() => useNominations(theatre.id), {
+      wrapper: Wrapper,
+    });
+    await waitFor(() =>
+      expect(
+        result.current.data?.[0].movie.details.boxOffice?.budget,
+      ).toBeNull(),
+    );
+    await act(async () => {
+      await api.theatre(theatre.id).saveBudget(1, 25_000_000);
+    });
+    await waitFor(() =>
+      expect(result.current.data?.[0].movie.details.boxOffice?.budget).toBe(
+        25_000_000,
+      ),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(`${base}/box-office`, {
+      cache: "no-store",
+      method: "PATCH",
+      body: JSON.stringify({ movieId: 1, budget: 25_000_000 }),
+      headers: { "content-type": "application/json" },
+    });
+  });
+
   it("revalidates nomination data after a Wikipedia refresh", async () => {
     let wikipediaUrl: string | null = null;
     fetchMock.mockImplementation(async (input, init) => {

@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { useAPICall } from "@/app/lib/useAPIActions";
 import {
   buildUpcoming,
   daysUntil,
@@ -22,15 +24,19 @@ const releaseLabel = (movie: FantasyMovie, today: string) => {
     : `${date} \u00b7 in ${days} days`;
 };
 
+interface StillToComeProps {
+  players: FantasyPlayer[];
+  today: string;
+  onOpen(id: number): void;
+  onSaveBudget?: (id: number, budget: number) => Promise<void>;
+}
+
 export function StillToCome({
   players,
   today,
   onOpen,
-}: {
-  players: FantasyPlayer[];
-  today: string;
-  onOpen: (id: number) => void;
-}) {
+  onSaveBudget,
+}: StillToComeProps) {
   const { unreleased, missing } = buildUpcoming(
     players.flatMap(({ movies }) => movies),
   );
@@ -73,6 +79,12 @@ export function StillToCome({
                     </span>
                   )}
                 </button>
+                {!dated && movie.boxOffice?.budget == null && onSaveBudget && (
+                  <BudgetEntry
+                    movie={movie}
+                    onSave={(budget) => onSaveBudget(movie.movie.id, budget)}
+                  />
+                )}
               </li>
             );
           })}
@@ -97,5 +109,107 @@ export function StillToCome({
         false,
       )}
     </div>
+  );
+}
+
+interface BudgetEntryProps {
+  movie: FantasyMovie;
+  onSave(budget: number): Promise<void>;
+}
+
+function BudgetEntry({ movie, onSave }: BudgetEntryProps) {
+  const [editing, setEditing] = useState(false);
+  const [budget, setBudget] = useState("");
+  const [validation, setValidation] = useState("");
+  const [saved, setSaved] = useState(false);
+  const { fromAPI, message, isSubmitting } = useAPICall();
+  const save = fromAPI({
+    api: onSave,
+    action: "save budget",
+    onSuccess: () => {
+      setEditing(false);
+      setSaved(true);
+    },
+  });
+
+  if (saved)
+    return (
+      <p className={styles.quiet} role="status">
+        Budget saved.
+      </p>
+    );
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        className={`${styles.budgetButton} ${styles.addBudgetButton}`}
+        aria-label={`Add budget for ${movie.title}`}
+        onClick={() => setEditing(true)}
+      >
+        Add budget
+      </button>
+    );
+  }
+
+  const error = validation || message;
+  const inputId = `budget-${movie.id}`;
+  return (
+    <form
+      className={styles.budgetForm}
+      aria-label={`Budget for ${movie.title}`}
+      onSubmit={(event) => {
+        event.preventDefault();
+        let amount: number;
+        if (budget.match(/m$/i)) {
+          amount = Number(budget.slice(0, -1)) * 1_000_000;
+          if (!Number.isSafeInteger(amount)) {
+            setValidation("Enter a budget in whole US dollars.");
+            return;
+          }
+        } else {
+          amount = Number(budget);
+          if (!/^\d+$/.test(budget) || !Number.isSafeInteger(amount)) {
+            setValidation("Enter a budget in whole US dollars.");
+            return;
+          }
+        }
+        setValidation("");
+        void save(amount);
+      }}
+    >
+      <label htmlFor={inputId}>Budget (USD)</label>
+      <input
+        id={inputId}
+        autoFocus
+        type="text"
+        inputMode="numeric"
+        value={budget}
+        onChange={(event) => {
+          setBudget(event.target.value);
+          setValidation("");
+        }}
+        aria-invalid={!!error}
+        aria-describedby={error ? `${inputId}-error` : undefined}
+        disabled={isSubmitting}
+      />
+      <div className={styles.budgetActions}>
+        <button className={styles.budgetButton} disabled={isSubmitting}>
+          {isSubmitting ? "Saving..." : "Save"}
+        </button>
+        <button
+          type="button"
+          className={styles.budgetButton}
+          disabled={isSubmitting}
+          onClick={() => setEditing(false)}
+        >
+          Cancel
+        </button>
+      </div>
+      {error && (
+        <p id={`${inputId}-error`} role="alert">
+          {error}
+        </p>
+      )}
+    </form>
   );
 }

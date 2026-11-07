@@ -1,11 +1,38 @@
 import { z } from "zod";
-import { refreshBoxOffice } from "@/app/lib/enrich-box-office";
+import {
+  refreshBoxOffice,
+  saveManualBudget,
+} from "@/app/lib/enrich-box-office";
 import { withTheatreUser } from "@/lib/auth/require-theatre";
 import { badRequest, dbId, parseJson } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
 const refreshBody = z.object({ movieId: dbId("A movie id is required.") });
+const manualBudgetBody = refreshBody.extend({
+  budget: z
+    .int("Enter a budget in whole US dollars.")
+    .nonnegative("Budget cannot be negative."),
+});
+
+export const PATCH = withTheatreUser({
+  error: "Unable to save budget.",
+})(async (request, { theatre }) => {
+  const parsed = await parseJson(request, manualBudgetBody);
+  if (!parsed.success) return badRequest(parsed.error);
+  const result = await saveManualBudget(
+    parsed.data.movieId,
+    theatre.id,
+    parsed.data.budget,
+  );
+  if (result.status === "not_found") {
+    return Response.json(
+      { error: "That movie is not on this list." },
+      { status: 404 },
+    );
+  }
+  return new Response(null, { status: 204 });
+});
 
 export const POST = withTheatreUser({
   error: "Unable to refresh Box Office Mojo.",

@@ -1,4 +1,4 @@
-import type { Nomination, Person } from "@/src/db/schema";
+import type { Movie, Nomination, Person } from "@/src/db/schema";
 import type { BoxOfficeData } from "./box-office";
 import {
   boxOfficeMetrics,
@@ -37,6 +37,7 @@ export interface FantasyMovie {
   multiplier: number | null;
   /** Heat score (0 is red, 0.5 is break-even, 1 is green). */
   score: number;
+  movie: Movie;
 }
 
 export interface FantasyPlayer extends Person {
@@ -68,7 +69,8 @@ const isoDay = (date: Date) => date.toISOString().slice(0, 10);
 
 const toMovie =
   (today: string) =>
-  ({ id, nominator, movie }: Nomination): FantasyMovie => {
+  (nom: Nomination): FantasyMovie => {
+    const { id, nominator, movie } = nom;
     const { details } = movie;
     const returns = calculateReturns(details.boxOffice);
     const releaseDate = ISO_DAY.test(details.release_date ?? "")
@@ -90,6 +92,7 @@ const toMovie =
       budget: returns ? (details.boxOffice?.budget ?? 0) : 0,
       multiplier: returns?.multiplier ?? null,
       score: boxOfficeMetrics(details.boxOffice).net.score ?? 0.5,
+      movie,
     };
   };
 
@@ -263,16 +266,8 @@ export function buildRace({ players, today }: FantasyStandings): Race {
   };
 }
 
-export type LedgerSort = "net" | "return";
-
-export const buildLedger = (movies: FantasyMovie[], sort: LedgerSort) =>
-  orderBy(
-    movies.filter(isScored),
-    sort === "net"
-      ? ["net", "title"]
-      : [({ multiplier }) => multiplier ?? -Infinity, "title"],
-    ["desc", "asc"],
-  );
+export const buildLedger = (movies: FantasyMovie[]) =>
+  orderBy(movies.filter(isScored), ["net", "title"], ["desc", "asc"]);
 
 export const buildUpcoming = (movies: FantasyMovie[]) => ({
   unreleased: orderBy(

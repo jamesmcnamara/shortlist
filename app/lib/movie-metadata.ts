@@ -2,7 +2,6 @@ import type {
   MDBRating,
   MDBResponse,
   Movie,
-  MovieDetails,
   MovieRatings,
   RatingSource,
 } from "@/src/db/schema";
@@ -13,6 +12,8 @@ import { eq } from "drizzle-orm";
 import { find, matching, set } from "shades";
 import * as justwatch from "./justwatch";
 import { getWikipediaUrl } from "./wikipedia";
+import { serializeMovie } from "./movie";
+import { validTmdbBudget } from "./box-office";
 
 let client: TMDB | null = null;
 
@@ -58,23 +59,14 @@ const tmdb = () =>
     { language: "en-US" },
   ));
 
-type StoredMovieRow = Pick<
-  typeof movies.$inferSelect,
-  "id" | "tmdbId" | "details" | "ratings" | "createdAt"
->;
+type StoredMovieRow = typeof movies.$inferSelect;
 
 const movieFromRow = (row: StoredMovieRow): Movie => {
   if (row.tmdbId === null) {
     throw new Error(`Stored movie ${row.id} has no TMDB id.`);
   }
 
-  return {
-    id: row.id,
-    tmdbId: row.tmdbId,
-    details: row.details as MovieDetails,
-    ratings: row.ratings as MovieRatings,
-    createdAt: row.createdAt,
-  };
+  return serializeMovie(row);
 };
 
 const storedMovieSelection = {
@@ -82,6 +74,7 @@ const storedMovieSelection = {
   tmdbId: movies.tmdbId,
   details: movies.details,
   ratings: movies.ratings,
+  boxOffice: movies.boxOffice,
   createdAt: movies.createdAt,
 };
 
@@ -177,6 +170,11 @@ export class ProdMovieProvider implements MovieMetadataProvider {
           : null,
       },
       ratings,
+      boxOffice: {
+        tmdb: {
+          budget: validTmdbBudget.safeParse(details.budget).data ?? null,
+        },
+      },
     };
 
     const [inserted] = await db

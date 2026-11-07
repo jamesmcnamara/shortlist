@@ -49,6 +49,23 @@ describe("financial row", () => {
     expect(screen.queryByText(/Made|Lost/)).toBeNull();
   });
 
+  it("labels a manual budget without attributing it to Mojo", () => {
+    render(
+      <BoxOffice
+        data={{
+          ...data,
+          source: "manual",
+          url: undefined,
+          budgetSource: "manual",
+          worldwideGross: null,
+        }}
+      />,
+    );
+    expect(screen.getByText("Manual budget")).toBeTruthy();
+    expect(screen.getByText("$10m")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Box Office Mojo" })).toBeNull();
+  });
+
   it("describes losses without a double negative and keeps inline heat colors", () => {
     render(<BoxOffice data={{ ...data, worldwideGross: 5_000_000 }} />);
     const net = screen.getByText("$5m");

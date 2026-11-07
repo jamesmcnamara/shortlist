@@ -15,7 +15,7 @@ import { relations } from "drizzle-orm";
 import { authUsers } from "./neon-auth-schema";
 import type { MovieDetails as _MovieDetails } from "@lorenzopant/tmdb";
 import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
-import type { BoxOfficeData } from "@/app/lib/box-office";
+import type { BoxOfficeData, BoxOfficeSources } from "@/app/lib/box-office";
 
 /** A theatre is a shared watch list for a group. */
 export const theatres = pgTable(
@@ -99,6 +99,10 @@ export const movies = pgTable("movies", {
   tmdbId: integer("tmdb_id").unique(),
   details: jsonb("details").notNull(),
   ratings: jsonb("ratings").notNull(),
+  boxOffice: jsonb("box_office")
+    .$type<BoxOfficeSources>()
+    .notNull()
+    .default({}),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -301,9 +305,9 @@ export type Theatre = typeof theatres.$inferSelect;
 export type TheatreMember = Omit<typeof theatreMembers.$inferSelect, "role"> & {
   role: TheatreRole;
 };
-export type Movie = Exclude<
+export type Movie = Omit<
   typeof movies.$inferSelect,
-  "details" | "ratings"
+  "details" | "ratings" | "boxOffice"
 > & {
   details: MovieDetails;
   ratings: MovieRatings;

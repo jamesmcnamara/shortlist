@@ -1,12 +1,7 @@
 "use client";
 
 import { formatMultiplier } from "@/app/lib/box-office-metrics";
-import {
-  buildLedger,
-  signedMoney,
-  type FantasyMovie,
-  type LedgerSort,
-} from "@/app/lib/fantasy";
+import { buildLedger, signedMoney, type FantasyMovie } from "@/app/lib/fantasy";
 import { heat } from "@/app/lib/heat";
 import { scaleLinear } from "@visx/scale";
 import { motion } from "motion/react";
@@ -24,11 +19,6 @@ import {
 
 const COLLAPSED = 8;
 
-const SORTS: { key: LedgerSort; label: string }[] = [
-  { key: "net", label: "Net" },
-  { key: "return", label: "Return" },
-];
-
 export function MovieLedger({
   players,
   selection,
@@ -36,13 +26,9 @@ export function MovieLedger({
   inspector,
 }: ModuleProps) {
   const { ref, show, reduced } = useReveal<HTMLOListElement>();
-  const [sort, setSort] = useState<LedgerSort>("net");
   const [expanded, setExpanded] = useState(false);
 
-  const movies = buildLedger(
-    players.flatMap(({ movies }) => movies),
-    sort,
-  );
+  const movies = buildLedger(players.flatMap(({ movies }) => movies));
   const visible = expanded ? movies : movies.slice(0, COLLAPSED);
   const ownerOf = (movie: FantasyMovie) =>
     players.find(({ id }) => id === movie.ownerId);
@@ -61,25 +47,12 @@ export function MovieLedger({
     <div className={styles.module}>
       <div className={styles.moduleHead}>
         <h3 className={styles.moduleTitle}>Every movie, ranked</h3>
-        <div className={styles.pills} role="group" aria-label="Sort by">
-          {SORTS.map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              className={styles.pill}
-              aria-pressed={sort === key}
-              onClick={() => setSort(key)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
       </div>
 
       <ol
         className={styles.ledger}
         ref={ref}
-        aria-label={`Movies ranked by ${sort}`}
+        aria-label={`Movies ranked by net`}
       >
         {visible.map((movie, index) => {
           const owner = ownerOf(movie);
@@ -107,7 +80,7 @@ export function MovieLedger({
                       <span className={styles.stepWho}>
                         <i style={toneStyle(owner.tone)} />
                         {firstName(owner.name)}
-                        {sort === "return" && movie.multiplier !== null && (
+                        {movie.multiplier !== null && (
                           <> &middot; {formatMultiplier(movie.multiplier)}</>
                         )}
                       </span>

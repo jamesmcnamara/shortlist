@@ -26,6 +26,7 @@ export function TheatreContainer() {
     refreshBoxOffice: async (movieId: number) => {
       await client.refreshBoxOffice(movieId);
     },
+    saveBudget: client.saveBudget,
     nominate: async (candidate, comment) => {
       await client.nominations.create({ movieId: candidate.id, comment });
     },

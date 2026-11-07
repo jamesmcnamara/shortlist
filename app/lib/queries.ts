@@ -3,10 +3,13 @@ import { getDb } from "@/src/db/client";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import {
   nominations,
+  movies,
   seen,
   type Nomination,
   type Person,
+  Movie,
 } from "@/src/db/schema";
+import { serializeMovie } from "./movie";
 
 const person = { columns: { id: true, name: true, username: true } } as const;
 
@@ -57,6 +60,10 @@ const withSeenBy = async <T extends { movieId: number }>(
   }));
 };
 
+type StoredNomination = Omit<Nomination, "seenBy" | "movie"> & {
+  movie: typeof movies.$inferSelect;
+};
+
 /**
  * Every read is scoped by theatre. Passing the theatre id explicitly, rather than
  * inferring it from the nomination, means a caller cannot accidentally return
@@ -69,9 +76,11 @@ export async function listNominations(
     where: (n, { eq }) => eq(n.theatreId, theatreId),
     with: nominationRelations,
     orderBy: (n, { desc }) => desc(n.createdAt),
-  })) as Omit<Nomination, "seenBy">[];
+  })) as StoredNomination[];
 
-  return withSeenBy(rows);
+  return withSeenBy(
+    rows.map((row) => ({ ...row, movie: serializeMovie(row.movie) })),
+  );
 }
 
 export async function getNomination(
@@ -82,10 +91,10 @@ export async function getNomination(
     where: (n, { and, eq }) =>
       and(eq(n.id, nominationId), eq(n.theatreId, theatreId)),
     with: nominationRelations,
-  })) as Omit<Nomination, "seenBy"> | undefined;
+  })) as StoredNomination | undefined;
 
   if (!row) return undefined;
-  return (await withSeenBy([row]))[0];
+  return (await withSeenBy([{ ...row, movie: serializeMovie(row.movie) }]))[0];
 }
 
 /** Bare existence check that respects theatre scoping. */

@@ -178,6 +178,11 @@ export const api = {
           method: "POST",
           body: JSON.stringify({ movieId }),
         }),
+      saveBudget: (movieId: number, budget: number): Promise<void> =>
+        request(`${base}/box-office`, {
+          method: "PATCH",
+          body: JSON.stringify({ movieId, budget }),
+        }),
       refreshBoxOffice: (
         movieId: number,
         signal?: AbortSignal,

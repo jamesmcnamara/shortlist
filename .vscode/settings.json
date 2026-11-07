@@ -3,5 +3,9 @@
     "**/*.js": true,
     "**/*.js.map": true,
     "**/.next": true
+  },
+  "chat.tools.terminal.autoApprove": {
+    ".github/skills/impeccable/scripts/impeccable": true,
+    "command": true
   }
 }

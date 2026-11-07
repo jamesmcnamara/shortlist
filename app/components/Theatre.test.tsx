@@ -154,6 +154,7 @@ const createApi = (): TheatreAPI => ({
   updateDescription: vi.fn().mockResolvedValue(undefined),
   refreshJustWatch: vi.fn(),
   refreshBoxOffice: vi.fn(),
+  saveBudget: vi.fn(),
   importTitle: vi.fn().mockResolvedValue({
     status: "added",
     movie: { id: 2, title: "Arrival", year: 2016 },

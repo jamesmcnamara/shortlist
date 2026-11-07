@@ -1,9 +1,10 @@
 "use client";
 
-import type { Nomination } from "@/src/db/schema";
 import { buildRace, buildStandings, signedMoney } from "@/app/lib/fantasy";
 import { heat } from "@/app/lib/heat";
+import type { Nomination } from "@/src/db/schema";
 import { useEffect, useMemo, useState } from "react";
+import { find } from "shades";
 import styles from "./Fantasy.module.css";
 import { LeadBreakdown } from "./LeadBreakdown";
 import { MovieLedger } from "./MovieLedger";
@@ -20,9 +21,14 @@ import {
 export interface FantasyDashboardProps {
   nominees: Nomination[];
   onOpen(id: number): void;
+  onSaveBudget?: (movieId: number, budget: number) => Promise<void>;
 }
 
-export function FantasyDashboard({ nominees, onOpen }: FantasyDashboardProps) {
+export function FantasyDashboard({
+  nominees,
+  onOpen,
+  onSaveBudget,
+}: FantasyDashboardProps) {
   const standings = useMemo(() => buildStandings(nominees), [nominees]);
   const { players, movies, today, asOf } = standings;
   const [selection, setSelection] = useState<Selection | undefined>(undefined);
@@ -42,7 +48,7 @@ export function FantasyDashboard({ nominees, onOpen }: FantasyDashboardProps) {
         : { id, source },
     );
 
-  const selected = movies.find(({ id }) => id === selection?.id);
+  const selected = find({ id: selection?.id })(movies);
   const inspectorFor = (source: ModuleKey) =>
     selected && selection?.source === source ? (
       <MovieInspector
@@ -127,7 +133,12 @@ export function FantasyDashboard({ nominees, onOpen }: FantasyDashboardProps) {
             />
           )}
           {hasScores && <MovieLedger {...moduleProps("ledger")} />}
-          <StillToCome players={players} today={today} onOpen={onOpen} />
+          <StillToCome
+            players={players}
+            today={today}
+            onOpen={onOpen}
+            onSaveBudget={onSaveBudget}
+          />
         </>
       )}
     </section>

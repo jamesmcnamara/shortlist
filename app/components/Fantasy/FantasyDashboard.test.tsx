@@ -3,6 +3,7 @@
 import { league, nomination } from "@/app/lib/fantasy-fixtures";
 import {
   cleanup,
+  act,
   fireEvent,
   render,
   screen,
@@ -429,6 +430,158 @@ describe("still to come", () => {
   it("is hidden when every movie has numbers", () => {
     show([nomination(1, "maya", "A", "2026-03-01", [10, 30])]);
     expect(screen.queryByText("Still to come")).toBeNull();
+  });
+
+  it("only offers budget entry for missing budgets to signed-in participants", () => {
+    const grossMissing = nomination(
+      8,
+      "maya",
+      "Budget known",
+      "2026-02-01",
+      [100, 200],
+    );
+    grossMissing.movie.details.boxOffice!.worldwideGross = null;
+    render(
+      <FantasyDashboard
+        nominees={[...league, grossMissing]}
+        onOpen={vi.fn()}
+        onSaveBudget={vi.fn()}
+      />,
+    );
+    expect(screen.getAllByRole("button", { name: /^Add budget/ })).toHaveLength(
+      1,
+    );
+    expect(
+      screen.getByRole("button", { name: "Add budget for No Numbers" }),
+    ).toBeTruthy();
+  });
+
+  it("hides budget entry for read-only visitors", () => {
+    show();
+    expect(screen.queryByRole("button", { name: /^Add budget/ })).toBeNull();
+  });
+
+  it("saves whole dollars using the movie id, not the nomination id", async () => {
+    const nom = nomination(99, "maya", "Missing budget", null, null);
+    nom.movieId = 123;
+    nom.movie.id = 123;
+    const save = vi.fn().mockResolvedValue(undefined);
+    render(
+      <FantasyDashboard
+        nominees={[nom]}
+        onOpen={vi.fn()}
+        onSaveBudget={save}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^Add budget/ }));
+    fireEvent.change(screen.getByLabelText("Budget (USD)"), {
+      target: { value: "25000000" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(save).toHaveBeenCalledWith(123, 25_000_000);
+    expect((await screen.findByRole("status")).textContent).toBe(
+      "Budget saved.",
+    );
+  });
+
+  it.each(["", "-1", "1.5", "100m", "9007199254740992"])(
+    "shows validation for %s without saving",
+    (value) => {
+      const save = vi.fn();
+      render(
+        <FantasyDashboard
+          nominees={league}
+          onOpen={vi.fn()}
+          onSaveBudget={save}
+        />,
+      );
+      fireEvent.click(screen.getByRole("button", { name: /^Add budget/ }));
+      fireEvent.change(screen.getByLabelText("Budget (USD)"), {
+        target: { value },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      expect(screen.getByRole("alert").textContent).toContain(
+        "whole US dollars",
+      );
+      expect(save).not.toHaveBeenCalled();
+    },
+  );
+
+  it("keeps input on failure and allows a zero-dollar retry", async () => {
+    const save = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("Couldn't save budget. Try again."))
+      .mockResolvedValue(undefined);
+    render(
+      <FantasyDashboard
+        nominees={league}
+        onOpen={vi.fn()}
+        onSaveBudget={save}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^Add budget/ }));
+    const input = screen.getByLabelText("Budget (USD)");
+    fireEvent.change(input, { target: { value: "0" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Try again.",
+    );
+    expect((input as HTMLInputElement).value).toBe("0");
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await screen.findByRole("status");
+    expect(save).toHaveBeenLastCalledWith(5, 0);
+  });
+
+  it("cancels without saving", () => {
+    const save = vi.fn();
+    render(
+      <FantasyDashboard
+        nominees={league}
+        onOpen={vi.fn()}
+        onSaveBudget={save}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^Add budget/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByLabelText("Budget (USD)")).toBeNull();
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it("disables entry and prevents duplicate submissions while saving", async () => {
+    let finish!: () => void;
+    const save = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    render(
+      <FantasyDashboard
+        nominees={league}
+        onOpen={vi.fn()}
+        onSaveBudget={save}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^Add budget/ }));
+    fireEvent.change(screen.getByLabelText("Budget (USD)"), {
+      target: { value: "100" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    const saving = screen.getByRole("button", { name: "Saving..." });
+    expect((saving as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      (screen.getByRole("button", { name: "Cancel" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByLabelText("Budget (USD)") as HTMLInputElement).disabled,
+    ).toBe(true);
+    fireEvent.click(saving);
+    expect(save).toHaveBeenCalledOnce();
+    await act(async () => {
+      finish();
+    });
+    await screen.findByRole("status");
   });
 });
 

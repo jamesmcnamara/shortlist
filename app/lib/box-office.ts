@@ -2,14 +2,61 @@ import { load } from "cheerio/slim";
 import { z } from "zod";
 
 export interface BoxOfficeData {
-  source: "boxofficemojo";
-  url: string;
-  fetchedAt: string;
+  source: keyof BoxOfficeSources;
+  url?: string;
+  fetchedAt?: string;
   currency: "USD";
   budget: number | null;
+  budgetSource?: keyof BoxOfficeSources;
   domesticGross: number | null;
   internationalGross: number | null;
   worldwideGross: number | null;
+}
+
+export interface MojoBoxOfficeData extends BoxOfficeData {
+  source: "boxofficemojo";
+  url: string;
+  fetchedAt: string;
+}
+
+export interface BoxOfficeSources {
+  boxofficemojo?: MojoBoxOfficeData;
+  tmdb?: { budget: number | null };
+  wikipedia?: { budget: number | null; url: string | null };
+  manual?: { budget: number };
+}
+
+export const validTmdbBudget = z
+  .number()
+  .int()
+  .positive()
+  .max(Number.MAX_SAFE_INTEGER);
+
+export function resolveBoxOffice(
+  sources: BoxOfficeSources,
+): BoxOfficeData | undefined {
+  const budgetSource = (
+    ["manual", "boxofficemojo", "tmdb", "wikipedia"] as const
+  ).find((source) => {
+    const budget = sources[source]?.budget;
+    return (
+      budget != null &&
+      (source !== "tmdb" || validTmdbBudget.safeParse(budget).success)
+    );
+  });
+  const mojo = sources.boxofficemojo;
+  if (!mojo && !budgetSource) return undefined;
+  return {
+    source: mojo ? "boxofficemojo" : budgetSource!,
+    currency: "USD",
+    url: mojo?.url,
+    fetchedAt: mojo?.fetchedAt,
+    budget: budgetSource ? sources[budgetSource]!.budget : null,
+    ...(budgetSource && { budgetSource }),
+    domesticGross: mojo?.domesticGross ?? null,
+    internationalGross: mojo?.internationalGross ?? null,
+    worldwideGross: mojo?.worldwideGross ?? null,
+  };
 }
 
 export const imdbId = z.string().regex(/^tt\d{7,10}$/);
@@ -32,7 +79,7 @@ function money(text: string): number | null {
   return amount;
 }
 
-export function parseBoxOffice(html: string, id: string): BoxOfficeData {
+export function parseBoxOffice(html: string, id: string): MojoBoxOfficeData {
   const url = titleUrl(id);
   const $ = load(html);
   if ($('link[rel="canonical"]').attr("href") !== url) {
@@ -87,7 +134,7 @@ export function parseBoxOffice(html: string, id: string): BoxOfficeData {
   };
 }
 
-export async function getBoxOffice(id: string): Promise<BoxOfficeData> {
+export async function getBoxOffice(id: string): Promise<MojoBoxOfficeData> {
   const response = await fetch(titleUrl(id), {
     headers: { Accept: "text/html" },
     signal: AbortSignal.timeout(10_000),

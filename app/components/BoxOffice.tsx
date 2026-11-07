@@ -15,6 +15,7 @@ interface BoxOfficeProps {
 export function BoxOffice({ data, onRefresh }: BoxOfficeProps) {
   const { isSubmitting: refreshing, message: error, fromAPI } = useAPICall();
   const { missing, verb, net, multiplier, budget } = boxOfficeMetrics(data);
+  const manual = data?.budgetSource === "manual";
 
   const refresh =
     onRefresh &&
@@ -29,7 +30,7 @@ export function BoxOffice({ data, onRefresh }: BoxOfficeProps) {
       aria-label="Box office"
       title="USD. Net = worldwide gross minus production budget, not studio profit. Return = net / budget."
     >
-      {missing ? (
+      {missing && data?.budget == null ? (
         <p className={styles.missing}>No box office data</p>
       ) : (
         <p className={styles.figures}>
@@ -50,19 +51,29 @@ export function BoxOffice({ data, onRefresh }: BoxOfficeProps) {
             }
           />
         )}
-        <a
-          href={data?.url ?? "https://www.boxofficemojo.com/"}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.attribution}
-          title={
-            data
-              ? `Fetched ${new Date(data.fetchedAt).toLocaleString()}`
-              : undefined
-          }
-        >
-          Box Office Mojo
-        </a>
+        {data && data.source !== "boxofficemojo" ? (
+          <span className={styles.attribution}>
+            {data.source === "manual"
+              ? "Manual budget"
+              : data.source === "tmdb"
+                ? "TMDB budget"
+                : "Wikipedia budget"}
+          </span>
+        ) : (
+          <a
+            href={data?.url ?? "https://www.boxofficemojo.com/"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.attribution}
+            title={
+              data?.fetchedAt
+                ? `Fetched ${new Date(data.fetchedAt).toLocaleString()}`
+                : undefined
+            }
+          >
+            Box Office Mojo
+          </a>
+        )}
       </div>
       <span className="srOnly">
         USD. Worldwide gross includes re-releases. Net is gross minus production
@@ -70,6 +81,9 @@ export function BoxOffice({ data, onRefresh }: BoxOfficeProps) {
         colors run from white at $0 to green at $1bn. Return colors run from red
         at -1x to green at +1x.
       </span>
+      {manual && data?.source !== "manual" && (
+        <span className={styles.attribution}>Manual budget (USD)</span>
+      )}
       {error && (
         <p className={styles.error} role="alert">
           {error}
