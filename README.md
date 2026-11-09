@@ -18,7 +18,7 @@ notification settings are not part of public list pages.
 Theatre URLs are `/u/@<creator-handle>/<theatre-slug>`, including Watchlists.
 Slugs come from the original theatre name; duplicates under the same creator
 get a numeric suffix. Renaming a theatre keeps its URL. User handles are chosen
-at sign-up and cannot be changed; existing users get handles generated from
+at sign-up and can be changed directly in the database; existing users get handles generated from
 their display names, with numeric suffixes for duplicates. Handles use 3-30
 lowercase letters, numbers, or hyphens, starting and ending with a letter or
 number. No email addresses are used to generate public handles.
@@ -37,6 +37,27 @@ Apply migration `0028_rare_lady_bullseye.sql` before deploying these routes.
 It backfills handles and theatre slugs without changing names, memberships,
 invite links, or movie data. Auth tables are excluded from Drizzle generation,
 so this migration also explicitly adds the username plugin's columns and constraints.
+
+Username redirects are managed directly in the `redirects` table, with no UI.
+Apply migration `0031_sparkling_blob.sql` before deploying this feature, then add
+lowercase handles without the `@` prefix:
+
+```sql
+INSERT INTO redirects (from_handle, to_handle) VALUES ('old-handle', 'current-handle');
+```
+
+If a profile or theatre URL would be a 404, the app looks up its handle and
+tries the mapped handle once. It redirects only if that replacement profile or
+theatre exists, preserving the theatre slug, settings suffix, and query string.
+Existing URLs take precedence. Missing targets and redirect chains still return
+404; mappings do not change accounts, permissions, or theatre ownership.
+
+Apply migration `0032_allow_handle_changes.sql` to allow username updates.
+The database still normalizes handles, enforces their format and uniqueness,
+and synchronizes `displayUsername` when `username` is updated. Changing a
+handle changes that user's profile and creator-based theatre URLs; add a
+redirect from the old handle to the new one manually to keep old links working.
+No account-editing UI or automatic redirect creation is added.
 
 Admins curate a list: they can add or remove movies, import titles, mark entries
 completed, rename or delete the list, and manage its members and invite links.

@@ -3,9 +3,9 @@ import { eq } from "drizzle-orm";
 import { createTestDb } from "@/src/db/test-db";
 import { setDbForTesting, type DB } from "@/src/db/client";
 import { authUsers } from "@/src/db/neon-auth-schema";
-import { theatres } from "@/src/db/schema";
+import { redirects, theatres } from "@/src/db/schema";
 import { findTheatreById } from "@/lib/auth/require-theatre";
-import { resolveNamedTheatre } from "./named-routes";
+import { resolveNamedTheatre, resolveUsernameRedirect } from "./named-routes";
 
 vi.mock("@/lib/auth/require-user", () => ({ requireUserId: vi.fn() }));
 
@@ -48,7 +48,7 @@ it("generates unique handles without exposing email addresses", async () => {
   ]);
 });
 
-it("normalizes chosen handles and rejects duplicates, invalid handles, and changes", async () => {
+it("normalizes chosen handles and rejects duplicates and invalid handles", async () => {
   await fixture.db.insert(authUsers).values({
     id: ALICE,
     name: "Alice",
@@ -72,12 +72,89 @@ it("normalizes chosen handles and rejects duplicates, invalid handles, and chang
       username: "../bob",
     }),
   ).rejects.toThrow();
+});
+
+it("allows handle changes, normalizes them, and synchronizes displayUsername", async () => {
+  await fixture.db.insert(authUsers).values({
+    id: ALICE,
+    name: "Alice",
+    email: "alice@example.com",
+  });
+  const [user] = await fixture.db
+    .update(authUsers)
+    .set({
+      name: "James McNamara",
+      username: " MAC-THE-SPORK ",
+      displayUsername: "different",
+    })
+    .where(eq(authUsers.id, ALICE))
+    .returning();
+  expect(user).toMatchObject({
+    name: "James McNamara",
+    username: "mac-the-spork",
+    displayUsername: "mac-the-spork",
+  });
+});
+
+it("rejects duplicate and invalid handles on update without changing the user", async () => {
+  await fixture.db.insert(authUsers).values([
+    { id: ALICE, name: "Alice", email: "alice@example.com" },
+    { id: BOB, name: "Bob", email: "bob@example.com" },
+  ]);
   await expect(
     fixture.db
       .update(authUsers)
-      .set({ username: "other" })
+      .set({ username: " BOB " })
       .where(eq(authUsers.id, ALICE)),
   ).rejects.toThrow();
+  await expect(
+    fixture.db
+      .update(authUsers)
+      .set({ username: "../alice" })
+      .where(eq(authUsers.id, ALICE)),
+  ).rejects.toThrow();
+  const [user] = await fixture.db
+    .select()
+    .from(authUsers)
+    .where(eq(authUsers.id, ALICE));
+  expect(user).toMatchObject({ username: "alice", displayUsername: "alice" });
+});
+
+it("uses the new handle for theatre links and supports a manually added redirect", async () => {
+  await fixture.db.insert(authUsers).values({
+    id: ALICE,
+    name: "Alice",
+    email: "alice@example.com",
+  });
+  const [theatre] = await fixture.db
+    .insert(theatres)
+    .values({
+      name: "Movie Club",
+      createdBy: ALICE,
+      inviteCode: "a",
+      adminInviteCode: "aa",
+    })
+    .returning();
+  await fixture.db
+    .update(authUsers)
+    .set({ username: "mac-the-spork" })
+    .where(eq(authUsers.id, ALICE));
+  expect(await resolveNamedTheatre("@alice", "movie-club")).toBeNull();
+  expect(await resolveUsernameRedirect("@alice")).toBeNull();
+  expect(await resolveNamedTheatre("@mac-the-spork", "movie-club")).toEqual({
+    id: theatre.id,
+  });
+  expect(await findTheatreById(theatre.id)).toMatchObject({
+    path: "/u/@mac-the-spork/movie-club",
+  });
+  await fixture.db.insert(redirects).values({
+    fromHandle: "alice",
+    toHandle: "mac-the-spork",
+  });
+  expect(await resolveUsernameRedirect("@alice")).toBe("mac-the-spork");
+  expect(await resolveUsernameRedirect("@alice", "movie-club")).toBe(
+    "mac-the-spork",
+  );
 });
 
 it("resolves theatres by creator rather than viewer, with stable collision-safe slugs", async () => {
@@ -158,3 +235,81 @@ it.each([
 it("rejects malformed legacy theatre IDs without an invalid UUID query", async () => {
   expect(await findTheatreById("not-a-uuid")).toBeNull();
 });
+
+it("resolves a mapped handle only when the replacement user and theatre exist", async () => {
+  await fixture.db.insert(authUsers).values({
+    id: BOB,
+    name: "Bob",
+    email: "bob@example.com",
+  });
+  await fixture.db.insert(theatres).values({
+    name: "Movie Club",
+    createdBy: BOB,
+    inviteCode: "b",
+    adminInviteCode: "bb",
+  });
+  await fixture.db.insert(redirects).values({
+    fromHandle: "alice",
+    toHandle: "bob",
+  });
+  expect(await resolveUsernameRedirect("@alice")).toBe("bob");
+  expect(await resolveUsernameRedirect("%40ALICE", "movie-club")).toBe("bob");
+  expect(await resolveUsernameRedirect("@alice", "missing")).toBeNull();
+  expect(await resolveUsernameRedirect("@alice", "../movie-club")).toBeNull();
+  expect(await resolveUsernameRedirect("@unknown")).toBeNull();
+  expect(await resolveUsernameRedirect("alice")).toBeNull();
+  expect(await resolveUsernameRedirect("@../alice")).toBeNull();
+});
+
+it("does not follow chains or cycles when the replacement is missing", async () => {
+  await fixture.db.insert(authUsers).values({
+    id: BOB,
+    name: "Bob",
+    email: "bob@example.com",
+  });
+  await fixture.db.insert(redirects).values([
+    { fromHandle: "alice", toHandle: "missing" },
+    { fromHandle: "missing", toHandle: "bob" },
+    { fromHandle: "cycle-one", toHandle: "cycle-two" },
+    { fromHandle: "cycle-two", toHandle: "cycle-one" },
+  ]);
+  expect(await resolveUsernameRedirect("@alice")).toBeNull();
+  expect(await resolveUsernameRedirect("@missing")).toBe("bob");
+  expect(await resolveUsernameRedirect("@cycle-one")).toBeNull();
+});
+
+it("does not follow a theatre redirect cycle even when both handles exist", async () => {
+  await fixture.db.insert(authUsers).values([
+    { id: ALICE, name: "Alice", email: "alice@example.com" },
+    { id: BOB, name: "Bob", email: "bob@example.com" },
+  ]);
+  await fixture.db.insert(theatres).values({
+    name: "Movie Club",
+    createdBy: BOB,
+    inviteCode: "b",
+    adminInviteCode: "bb",
+  });
+  await fixture.db.insert(redirects).values([
+    { fromHandle: "alice", toHandle: "bob" },
+    { fromHandle: "bob", toHandle: "alice" },
+  ]);
+  expect(await resolveNamedTheatre("@alice", "movie-club")).toBeNull();
+  expect(await resolveUsernameRedirect("@alice", "movie-club")).toBe("bob");
+  expect(await resolveUsernameRedirect("@bob", "movie-club")).toBeNull();
+  expect(await resolveUsernameRedirect("@alice", "missing")).toBeNull();
+});
+
+it.each([
+  { fromHandle: "alice", toHandle: "alice" },
+  { fromHandle: "@alice", toHandle: "bob" },
+  { fromHandle: "ALICE", toHandle: "bob" },
+  { fromHandle: "alice", toHandle: "../bob" },
+  { fromHandle: "alice", toHandle: "https://example.com" },
+])(
+  "rejects invalid redirect mappings $fromHandle -> $toHandle",
+  async (mapping) => {
+    await expect(
+      fixture.db.insert(redirects).values(mapping),
+    ).rejects.toThrow();
+  },
+);

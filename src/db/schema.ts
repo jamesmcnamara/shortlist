@@ -1,5 +1,6 @@
 import {
   boolean,
+  check,
   foreignKey,
   index,
   integer,
@@ -11,11 +12,29 @@ import {
   uuid,
   jsonb,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { authUsers } from "./neon-auth-schema";
 import type { MovieDetails as _MovieDetails } from "@lorenzopant/tmdb";
 import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
 import type { BoxOfficeData, BoxOfficeSources } from "@/app/lib/box-office";
+
+export const redirects = pgTable(
+  "redirects",
+  {
+    fromHandle: text("from_handle").primaryKey(),
+    toHandle: text("to_handle").notNull(),
+  },
+  (table) => [
+    check(
+      "redirects_handles_valid",
+      sql`${table.fromHandle} ~ '^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$' AND ${table.toHandle} ~ '^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$'`,
+    ),
+    check(
+      "redirects_handles_different",
+      sql`${table.fromHandle} <> ${table.toHandle}`,
+    ),
+  ],
+);
 
 /** A theatre is a shared watch list for a group. */
 export const theatres = pgTable(

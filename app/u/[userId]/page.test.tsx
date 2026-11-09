@@ -7,8 +7,12 @@ const data = vi.hoisted(() => ({
   viewer: vi.fn(),
   users: vi.fn(),
   theatres: vi.fn(),
+  redirect: vi.fn(),
 }));
 
+vi.mock("@/lib/named-routes", () => ({
+  resolveUsernameRedirect: data.redirect,
+}));
 vi.mock("@/src/db/client", () => ({
   getDb: () => ({
     select: () => ({
@@ -39,6 +43,7 @@ const page = (userId = "@alice") =>
 
 beforeEach(() => {
   vi.resetAllMocks();
+  data.redirect.mockResolvedValue(null);
   data.users.mockResolvedValue([
     { id: USER, name: "Alice", username: "alice" },
   ]);
@@ -89,6 +94,24 @@ it("returns not found for a missing user", async () => {
   data.users.mockResolvedValue([]);
   await expect(page()).rejects.toThrow("NEXT_NOT_FOUND");
   expect(data.theatres).not.toHaveBeenCalled();
+});
+
+it("redirects a missing handle and preserves repeated query parameters", async () => {
+  data.users.mockResolvedValue([]);
+  data.redirect.mockResolvedValue("bob");
+  await expect(
+    UserTheatres({
+      params: Promise.resolve({ userId: "%40alice" }),
+      searchParams: Promise.resolve({ tag: ["comedy", "2026"], q: "club" }),
+    }),
+  ).rejects.toThrow("REDIRECT:/u/@bob?tag=comedy&tag=2026&q=club");
+  expect(data.redirect).toHaveBeenCalledWith("@alice");
+  expect(data.theatres).not.toHaveBeenCalled();
+});
+
+it("does not check redirects for an existing profile", async () => {
+  await page();
+  expect(data.redirect).not.toHaveBeenCalled();
 });
 
 it("rejects removed UUID profile URLs before querying", async () => {

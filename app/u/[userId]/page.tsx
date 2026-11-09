@@ -6,6 +6,7 @@ import { authUsers } from "@/src/db/neon-auth-schema";
 import { requireUserId } from "@/lib/auth/require-user";
 import { HANDLE_PATTERN, userPath, userRouteSegment } from "@/lib/user-path";
 import { toQueryString } from "@/lib/search-params";
+import { resolveUsernameRedirect } from "@/lib/named-routes";
 import { TheatreDirectory } from "./TheatreDirectory";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import styles from "./page.module.css";
@@ -31,8 +32,12 @@ export default async function UserTheatres({
     .from(authUsers)
     .where(eq(authUsers.username, username))
     .limit(1);
-  if (!user) notFound();
   const initialSearch = toQueryString(await searchParams);
+  if (!user) {
+    const target = await resolveUsernameRedirect(segment);
+    if (!target) notFound();
+    redirect(`${userPath(target)}${initialSearch ? `?${initialSearch}` : ""}`);
+  }
   if (segment !== `@${user.username}`) {
     redirect(
       `${userPath(user.username)}${initialSearch ? `?${initialSearch}` : ""}`,
