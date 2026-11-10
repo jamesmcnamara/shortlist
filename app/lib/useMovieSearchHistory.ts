@@ -32,5 +32,5 @@ export function useMovieSearchHistory() {
     window.scrollTo(0, 0);
   };
 
-  return { selected, selectMovie, closeMovie: window.history.back };
+  return { selected, selectMovie, closeMovie: () => window.history.back() };
 }

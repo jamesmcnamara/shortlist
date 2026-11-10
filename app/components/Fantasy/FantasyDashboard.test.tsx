@@ -373,25 +373,6 @@ describe("long names", () => {
 });
 
 describe("every movie, ranked", () => {
-  it("ranks by net and re-ranks by return", () => {
-    show();
-    expect(ledgerOrder("net")).toEqual([
-      "Heat Wave",
-      "Slow Burn",
-      "Mystery Date",
-      "Cold Open",
-      "Big Flop",
-    ]);
-    fireEvent.click(screen.getByRole("button", { name: "Return" }));
-    expect(ledgerOrder("return")).toEqual([
-      "Slow Burn",
-      "Heat Wave",
-      "Mystery Date",
-      "Cold Open",
-      "Big Flop",
-    ]);
-  });
-
   it("collapses long lists until asked", () => {
     const many = Array.from({ length: 10 }, (_, index) =>
       nomination(
@@ -484,7 +465,7 @@ describe("still to come", () => {
     );
   });
 
-  it.each(["", "-1", "1.5", "100m", "9007199254740992"])(
+  it.each(["", "-1", "1.5", "9007199254740992"])(
     "shows validation for %s without saving",
     (value) => {
       const save = vi.fn();

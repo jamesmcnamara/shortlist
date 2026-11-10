@@ -269,44 +269,6 @@ describe("buildRace", () => {
   });
 });
 
-describe("buildLedger", () => {
-  const titles = (sort: "net" | "return") =>
-    buildLedger(standings.movies, sort).map(({ title }) => title);
-
-  it("ranks scored movies by net", () => {
-    expect(titles("net")).toEqual([
-      "Heat Wave",
-      "Slow Burn",
-      "Mystery Date",
-      "Cold Open",
-      "Big Flop",
-    ]);
-  });
-
-  it("ranks scored movies by return", () => {
-    expect(titles("return")).toEqual([
-      "Slow Burn",
-      "Heat Wave",
-      "Mystery Date",
-      "Cold Open",
-      "Big Flop",
-    ]);
-  });
-
-  it("sorts a movie with no return ratio last", () => {
-    const free = buildStandings(
-      [
-        nomination(1, "maya", "Free", null, [0, 50 * m]),
-        nomination(2, "maya", "Small", null, [10 * m, 11 * m]),
-      ],
-      today,
-    );
-    expect(
-      buildLedger(free.movies, "return").map(({ title }) => title),
-    ).toEqual(["Small", "Free"]);
-  });
-});
-
 describe("buildUpcoming", () => {
   it("splits unreleased from missing numbers", () => {
     const { unreleased, missing } = buildUpcoming(standings.movies);

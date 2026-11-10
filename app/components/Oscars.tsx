@@ -12,7 +12,7 @@ import {
 import type { Movie } from "@/src/db/schema";
 import classname from "classnames";
 import { useState, type ReactNode } from "react";
-import { every } from "shades";
+import { every, filter } from "shades";
 import styles from "./Oscars.module.css";
 import { OscarStatuette } from "./OscarStatuette";
 import { SlideOpen } from "./SlideOpen";
@@ -155,13 +155,14 @@ const WinnerBadge = ({ winner }: { winner: boolean }) => (
   </span>
 );
 
-const formatMultipleHeadline = ({ entries, wins, nominations }: OscarMovie) => {
+const formatMultipleHeadline = ({ entries, nominations }: OscarMovie) => {
   const majors = entries.filter(
     (entry) => entry.major ?? isMajorCategory(entry.category),
   );
-  if (wins > 0) {
-    const majorText = every("winner")(majors) ? "Major " : "";
-    return `Won ${wins} ${majorText}${wins === 1 ? "Oscar" : "Oscars"}`;
+  const wins = filter("winner")(entries);
+  if (wins.length > 0) {
+    const majorText = every("major")(wins) ? "Major " : "";
+    return `Won ${wins.length} ${majorText}${wins.length === 1 ? "Oscar" : "Oscars"}`;
   }
   const majorText = majors.length === entries.length ? "Major " : "";
   return `Nominated for ${nominations} ${majorText}Oscars`;
@@ -171,6 +172,7 @@ const formatMultipleDetail = (
   { wins, nominations }: OscarMovie,
   majorNominations: number,
 ) => {
+  if (wins === nominations) return ``;
   if (wins === 0 && nominations === majorNominations) return ``;
   return [
     majorNominations > 0
