@@ -3,6 +3,7 @@
 import { Movie } from "@/src/db/schema";
 import { filter, not } from "shades";
 import useSWR from "swr";
+import { useMemo } from "react";
 
 export interface OscarEntry {
   id: number;
@@ -25,6 +26,7 @@ export interface OscarNominee {
 export type OscarNominees = Partial<Record<string, OscarNominee[]>>;
 
 export interface OscarMovie {
+  shortlistId?: number;
   wins: number;
   nominations: number;
   entries: OscarEntry[];
@@ -47,11 +49,28 @@ export function useOscars() {
 }
 
 type OscarsData =
-  | { type: "success"; awards: OscarMovie; nominees: OscarNominees }
+  | {
+      type: "success";
+      awards: OscarMovie;
+      nominees: OscarNominees;
+      movieIds: Map<number, number[]>;
+    }
   | { type: "error"; error: Error };
 
 export function useOscarsFor(movie: Movie): OscarsData {
   const { data, error } = useOscars();
+  const movieIds = useMemo(() => {
+    const ids = new Map<number, number[]>();
+    Object.values(data?.movies ?? {}).forEach(({ shortlistId, entries }) => {
+      if (shortlistId === undefined) return;
+      entries.forEach(({ id }) => {
+        const existing = ids.get(id) ?? [];
+        if (!existing.includes(shortlistId))
+          ids.set(id, [...existing, shortlistId]);
+      });
+    });
+    return ids;
+  }, [data]);
   const imdbId = getImdbId(movie);
   if (error) return { type: "error", error };
   if (!imdbId || !data || !data.movies[imdbId])
@@ -60,6 +79,7 @@ export function useOscarsFor(movie: Movie): OscarsData {
     type: "success",
     awards: data.movies[imdbId] as OscarMovie,
     nominees: data.nominees,
+    movieIds,
   };
 }
 

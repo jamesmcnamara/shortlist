@@ -291,6 +291,39 @@ New refresh entry points can import their refresh function normally and call
 `--help`, and usage errors; the CLI runs the refresh and reports failures through
 its exit code.
 
+### Importing Oscar movies
+
+`npm run refresh:oscars` previews every IMDb-keyed movie in
+`public/data/oscars.json`, including movies that aren't on any theatre.
+`npm run refresh:oscars -- --apply` adds missing movies to the shared database
+and writes each movie's numeric `shortlistId` into the blob. It does not add
+nominations to any theatre. Existing movies and their metadata are reused.
+Both nomination routes and the Oscar importer call the backend `addMovie`
+helper, which resolves the movie and runs add-time enrichment, including
+Box Office Mojo. Changes to that shared pipeline apply to both flows.
+Optional enrichment failures are logged without discarding the imported movie,
+matching normal adds. Reruns skip movies that already have Box Office Mojo data
+and rerun the add pipeline for the rest, so they backfill failed enrichment.
+
+Like the other refresh scripts, this uses the configured `DATABASE_URL` from
+the environment or `.env.local` without switching database branches. Missing
+movies are matched by IMDb ID through TMDB and imported with the normal
+metadata provider, so TMDB and MDBList credentials are required for imports.
+The preview does not fetch external data or change the database or blob.
+
+Failures are reported per movie, other movies continue, and any failure gives
+exit code 1. Successful links are saved; failed movies have no `shortlistId`.
+An MDBList HTTP `429` pauses the Oscar importer for five minutes, then retries
+the same movie before continuing. Each further `429` starts another five-minute
+wait; press Ctrl+C to stop. This handles the short-term request limit, but a
+daily quota exhaustion may require waiting for the daily reset. Normal web
+requests do not wait or retry this way.
+Rerunning reuses completed imports and retries missing movies. IDs are always
+resolved against the configured database rather than trusted from a previous
+run, so the resulting blob belongs to that database. `npm run data:oscars`
+updates the Oscar awards from the source dataset while preserving existing
+Shortlist IDs; run `refresh:oscars -- --apply` afterward to import new movies.
+
 ### JustWatch streaming availability
 
 New movies fetch US availability from JustWatch's unofficial GraphQL endpoint
@@ -339,6 +372,9 @@ source and is absent when no budget is available. Grosses, source URL, and fetch
 time come only from Mojo. Its scraper reads the **All Releases** summary,
 including re-releases, not an individual release's totals. Missing amounts are
 `null`, not zero. A failed Mojo scrape does not overwrite saved snapshots.
+Mojo sometimes redirects older films to their own `/credits/` page. The scraper
+allows that single redirect and reads the same lifetime summary there, even
+when all figures are missing. Other redirect destinations and chains are rejected.
 TMDB's `budget` and `revenue` are unchanged. Movie metadata is shared across
 theatres.
 
@@ -573,6 +609,10 @@ That means push notifications only work in a production build
 
 Useful checks are `npm test`, `npm run typecheck` and `npm run build`. To create a
 new Drizzle migration after changing `src/db/schema.ts`, run `npm run db:generate`.
+
+The package uses ES modules (`"type": "module"`), including the TypeScript refresh
+commands run through `tsx`. Use ESM imports in scripts; files that specifically
+need CommonJS must use the `.cjs` extension.
 
 ### Refreshing dev and the browser test account
 

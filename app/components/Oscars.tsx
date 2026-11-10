@@ -11,6 +11,7 @@ import {
 } from "@/app/lib/data/oscars";
 import type { Movie } from "@/src/db/schema";
 import classname from "classnames";
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { every, filter } from "shades";
 import styles from "./Oscars.module.css";
@@ -26,7 +27,7 @@ export function Oscars({ movie, variant = "default" }: OscarsProps) {
   const result = useOscarsFor(movie);
   const [open, setOpen] = useState(false);
   if (result.type === "error") return null;
-  const { awards: oscars, nominees } = result;
+  const { awards: oscars, nominees, movieIds } = result;
 
   const singleEntry = oscars?.entries.length === 1 ? oscars.entries[0] : null;
   const majorNominations =
@@ -43,7 +44,11 @@ export function Oscars({ movie, variant = "default" }: OscarsProps) {
       <div className={styles.content}>
         {singleEntry ? (
           <div className={styles.single}>
-            <OtherNominees entry={singleEntry} nominees={nominees}>
+            <OtherNominees
+              entry={singleEntry}
+              nominees={nominees}
+              movieIds={movieIds}
+            >
               <span className={styles.headline}>
                 <strong>
                   {singleEntry.winner ? "Won" : "Nominated for"}{" "}
@@ -76,7 +81,11 @@ export function Oscars({ movie, variant = "default" }: OscarsProps) {
                     key={`${entry.year}-${entry.category}-${entry.name}-${index}`}
                     className={styles.entry}
                   >
-                    <OtherNominees entry={entry} nominees={nominees}>
+                    <OtherNominees
+                      entry={entry}
+                      nominees={nominees}
+                      movieIds={movieIds}
+                    >
                       <span className={styles.entryHeading}>
                         <span>
                           {entry.year} · {formatCategory(entry.category)}
@@ -102,10 +111,16 @@ export function Oscars({ movie, variant = "default" }: OscarsProps) {
 interface OtherNomineesProps {
   entry: OscarEntry;
   nominees: OscarNominees;
+  movieIds: Map<number, number[]>;
   children: ReactNode;
 }
 
-function OtherNominees({ entry, nominees, children }: OtherNomineesProps) {
+function OtherNominees({
+  entry,
+  nominees,
+  movieIds,
+  children,
+}: OtherNomineesProps) {
   const [open, setOpen] = useState(false);
   const others = getOtherNominees(nominees, entry);
   if (others.length === 0) return children;
@@ -133,13 +148,40 @@ function OtherNominees({ entry, nominees, children }: OtherNomineesProps) {
             const [headline, lower] = isActingAward
               ? [detail, filmTitle]
               : [filmTitle, detail];
-            return (
-              <li key={nominee.id} className={styles.entry}>
+            const ids = movieIds.get(nominee.id) ?? [];
+            const copy = (
+              <>
                 <span className={styles.entryHeading}>
                   <span>{headline}</span>
                   <WinnerBadge winner={nominee.winner} />
                 </span>
                 {lower && <span className={styles.nominee}>{lower}</span>}
+              </>
+            );
+            return (
+              <li key={nominee.id} className={styles.entry}>
+                {ids.length === 1 ? (
+                  <Link
+                    href={`/m/${ids[0]}`}
+                    className={styles.movieLink}
+                    prefetch={false}
+                  >
+                    {copy}
+                  </Link>
+                ) : (
+                  <>
+                    {copy}
+                    {ids.length > 1 && (
+                      <span className={styles.movieLinks}>
+                        {ids.map((id, index) => (
+                          <Link key={id} href={`/m/${id}`} prefetch={false}>
+                            View movie {index + 1}
+                          </Link>
+                        ))}
+                      </span>
+                    )}
+                  </>
+                )}
               </li>
             );
           })}

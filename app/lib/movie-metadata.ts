@@ -8,7 +8,7 @@ import type {
 import { movies } from "@/src/db/schema";
 import { getDb } from "@/src/db/client";
 import { TMDB, type MovieResultItem } from "@lorenzopant/tmdb";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { find, matching, set } from "shades";
 import * as justwatch from "./justwatch";
 import { getWikipediaUrl } from "./wikipedia";
@@ -49,10 +49,6 @@ const isSameMovie =
       sameTitle(candidate, title),
     );
 
-/**
- * Constructed on first use rather than at module load, so importing this
- * module does not require credentials to be present.
- */
 const tmdb = () =>
   (client ??= new TMDB(
     process.env.TMDB_API_READ_ACCESS_TOKEN ?? process.env.TMDB_API_KEY ?? "",
@@ -87,6 +83,38 @@ export async function findMovieById(id: number): Promise<Movie | null> {
   return row ? movieFromRow(row) : null;
 }
 
+export async function getMovieByImdbId(imdbId: string): Promise<Movie> {
+  const [cached] = await getDb()
+    .select(storedMovieSelection)
+    .from(movies)
+    .where(
+      eq(
+        sql`coalesce(nullif(${movies.details}->>'imdb_id', ''), ${movies.ratings}->'raw'->'ids'->>'imdb')`,
+        imdbId,
+      ),
+    )
+    .limit(1);
+  if (cached) return movieFromRow(cached);
+
+  const provider = getMovieProvider();
+  if (!provider.hasCredentials()) {
+    throw new Error("TMDB and MDBList credentials are required.");
+  }
+  const api = tmdb();
+  const { movie_results: matches } = await api.find.by_id({
+    external_id: imdbId,
+    external_source: "imdb_id",
+  });
+  if (matches.length !== 1) {
+    throw new Error(`Expected one TMDB movie, found ${matches.length}.`);
+  }
+  const movie = await provider.get(matches[0].id);
+  if (movie.details.imdb_id !== imdbId) {
+    throw new Error(`TMDB movie ${matches[0].id} has a different IMDb ID.`);
+  }
+  return movie;
+}
+
 export class ProdMovieProvider implements MovieMetadataProvider {
   hasCredentials = () =>
     Boolean(
@@ -95,7 +123,8 @@ export class ProdMovieProvider implements MovieMetadataProvider {
     );
 
   search = async (query: string) => {
-    const response = await tmdb().search.movies({
+    const api = tmdb();
+    const response = await api.search.movies({
       query,
       include_adult: false,
     });
@@ -111,7 +140,8 @@ export class ProdMovieProvider implements MovieMetadataProvider {
   };
 
   bestMatch = async (query: string, year?: number): Promise<Movie | null> => {
-    const response = await tmdb().search.movies({
+    const api = tmdb();
+    const response = await api.search.movies({
       query,
       include_adult: false,
     });
@@ -216,6 +246,13 @@ export const setMovieProviderForTesting = (next: MovieMetadataProvider) => {
 
 /** Movie metadata shaped for the (global) movies cache table. */
 
+export class MdbRateLimitError extends Error {
+  constructor() {
+    super("MDBList returned 429.");
+    this.name = "MdbRateLimitError";
+  }
+}
+
 async function getMdbRatings(tmdbId: number): Promise<MovieRatings> {
   const apiKey = process.env.MDB_API_KEY;
   if (!apiKey) throw new Error("MDB API credentials are not configured.");
@@ -223,6 +260,7 @@ async function getMdbRatings(tmdbId: number): Promise<MovieRatings> {
   const response = await fetch(
     `https://api.mdblist.com/tmdb/movie/${tmdbId}?apikey=${encodeURIComponent(apiKey)}`,
   );
+  if (response.status === 429) throw new MdbRateLimitError();
   if (!response.ok) {
     throw new Error(`MDBList returned ${response.status}.`);
   }

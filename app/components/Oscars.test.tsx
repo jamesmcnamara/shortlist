@@ -76,6 +76,54 @@ afterEach(() => {
 });
 
 describe("Oscars", () => {
+  it("links imported nominee rows to movie details without changing their text", async () => {
+    stubOscars({
+      ...interstellar,
+      movies: {
+        ...interstellar.movies,
+        tt2278388: {
+          shortlistId: 42,
+          entries: [{ id: 100 }, { id: 100 }],
+        },
+      },
+    });
+    renderMovieOscars();
+    fireEvent.click(await screen.findByText("Won 1 Major Oscar"));
+    fireEvent.click(screen.getByRole("button", { name: /Production Design/ }));
+    const list = within(
+      screen.getByRole("list", {
+        name: "Other nominees for Production Design, 2014",
+      }),
+    );
+    const link = list.getByRole("link", {
+      name: /The Grand Budapest Hotel.*Adam Stockhausen/,
+    });
+    expect(link.getAttribute("href")).toBe("/m/42");
+    expect(list.getAllByRole("link")).toHaveLength(1);
+    expect(list.getByText("Into the Woods").closest("a")).toBeNull();
+    expect(link.closest("button")).toBeNull();
+  });
+
+  it("provides separate detail links for nominations spanning multiple movies", async () => {
+    stubOscars({
+      ...interstellar,
+      movies: {
+        ...interstellar.movies,
+        tt0000001: { shortlistId: 42, entries: [{ id: 100 }] },
+        tt0000002: { shortlistId: 43, entries: [{ id: 100 }] },
+      },
+    });
+    renderMovieOscars();
+    fireEvent.click(await screen.findByText("Won 1 Major Oscar"));
+    fireEvent.click(screen.getByRole("button", { name: /Production Design/ }));
+    expect(
+      screen.getByRole("link", { name: "View movie 1" }).getAttribute("href"),
+    ).toBe("/m/42");
+    expect(
+      screen.getByRole("link", { name: "View movie 2" }).getAttribute("href"),
+    ).toBe("/m/43");
+  });
+
   it("shows an expandable summary for multiple nominations", async () => {
     stubOscars(interstellar);
 

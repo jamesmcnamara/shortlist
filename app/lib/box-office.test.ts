@@ -95,16 +95,104 @@ describe("Box Office Mojo parsing", () => {
 });
 
 describe("Box Office Mojo requests", () => {
-  it("fetches only the fixed IMDb title URL with a timeout and no redirects", async () => {
+  it("fetches the fixed IMDb title URL with a timeout and manual redirect checks", async () => {
     const fetch = vi.fn().mockResolvedValue(response());
     vi.stubGlobal("fetch", fetch);
     expect((await getBoxOffice(ID)).worldwideGross).toBe(782_948_164);
     expect(fetch).toHaveBeenCalledExactlyOnceWith(TITLE_URL, {
       headers: { Accept: "text/html" },
       signal: expect.any(AbortSignal),
-      redirect: "error",
+      redirect: "manual",
       cache: "no-store",
     });
+  });
+
+  it.each([`/title/${ID}/credits/`, `${TITLE_URL}credits/`])(
+    "accepts a redirect to this movie's credits page: %s",
+    async (location) => {
+      const fetch = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(null, {
+            status: 302,
+            headers: { Location: location },
+          }),
+        )
+        .mockResolvedValueOnce(
+          response(
+            html
+              .replaceAll(TITLE_URL, `${TITLE_URL}credits/`)
+              .replace("$203,227,580", "–")
+              .replace("$579,720,584", "–")
+              .replace("$782,948,164", "–")
+              .replace("$165,000,000", "–"),
+          ),
+        );
+      vi.stubGlobal("fetch", fetch);
+      expect(await getBoxOffice(ID)).toMatchObject({
+        url: `${TITLE_URL}credits/`,
+        budget: null,
+        domesticGross: null,
+        internationalGross: null,
+        worldwideGross: null,
+      });
+      expect(fetch).toHaveBeenCalledTimes(2);
+      expect(fetch).toHaveBeenNthCalledWith(
+        2,
+        `${TITLE_URL}credits/`,
+        expect.objectContaining({
+          redirect: "manual",
+          signal: fetch.mock.calls[0][1].signal,
+        }),
+      );
+    },
+  );
+
+  it.each([
+    "https://example.com/",
+    "//example.com/",
+    "/title/tt9999999/credits/",
+    "/title/tt0816692/credits/?next=elsewhere",
+    "/chart/",
+    null,
+  ])("rejects other redirects without following them: %s", async (location) => {
+    const fetch = vi.fn().mockResolvedValue(
+      new Response(null, {
+        status: 302,
+        headers: location ? { Location: location } : {},
+      }),
+    );
+    vi.stubGlobal("fetch", fetch);
+    await expect(getBoxOffice(ID)).rejects.toThrow("unexpected redirect");
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not follow a second redirect from the credits page", async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      new Response(null, {
+        status: 302,
+        headers: { Location: `${TITLE_URL}credits/` },
+      }),
+    );
+    vi.stubGlobal("fetch", fetch);
+    await expect(getBoxOffice(ID)).rejects.toThrow("returned 302");
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("still rejects a different movie after an allowed redirect", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(null, {
+            status: 302,
+            headers: { Location: `${TITLE_URL}credits/` },
+          }),
+        )
+        .mockResolvedValueOnce(response(html.replaceAll(ID, "tt9999999"))),
+    );
+    await expect(getBoxOffice(ID)).rejects.toThrow("different title");
   });
 
   it.each([

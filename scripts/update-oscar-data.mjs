@@ -1,8 +1,14 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 
 const SOURCE =
   "https://raw.githubusercontent.com/DLu/oscar_data/main/oscars.csv";
 const OUTPUT = new URL("../public/data/oscars.json", import.meta.url);
+const previous = await readFile(OUTPUT, "utf8")
+  .then(JSON.parse)
+  .catch((error) => {
+    if (error.code === "ENOENT") return { movies: {} };
+    throw error;
+  });
 const ACTING_CATEGORIES = new Set([
   "ACTOR IN A LEADING ROLE",
   "ACTOR IN A SUPPORTING ROLE",
@@ -98,6 +104,9 @@ const output = {
       return [
         imdbId,
         {
+          ...(previous.movies[imdbId]?.shortlistId !== undefined
+            ? { shortlistId: previous.movies[imdbId].shortlistId }
+            : {}),
           wins: unique.filter(({ winner }) => winner).length,
           nominations: unique.length,
           entries: unique,

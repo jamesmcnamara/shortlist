@@ -2,6 +2,7 @@
   "name": "movie-shortlist",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "clean": "rm -rf .next",
     "predev": "rm -f public/sw.js public/sw.js.map",
@@ -22,6 +23,7 @@
     "db:migrate:prod": "npm run neon:prod; npm run db:migrate; npm run neon:dev",
     "db:migrate": "node --env-file=.env.local ./scripts/migrate.mjs",
     "data:oscars": "node scripts/update-oscar-data.mjs",
+    "refresh:oscars": "node --env-file=.env.local --import tsx refresh/oscars.ts",
     "refresh:wikipedia": "node --env-file=.env.local --import tsx refresh/wikipedia.ts",
     "refresh:box-office": "node --env-file=.env.local --import tsx refresh/box-office.ts",
     "neon:prod": "neonctl checkout production",

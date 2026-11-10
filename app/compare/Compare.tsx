@@ -5,6 +5,7 @@ import { heat } from "@/app/lib/heat";
 import { useMovieSearch } from "@/app/lib/useMovieSearch";
 import { capitalize, when, withTargetValue } from "@/app/lib/utils";
 import type { Movie } from "@/src/db/schema";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { filter, find, not, some } from "shades";
 import {
@@ -113,14 +114,20 @@ export function Compare({ initialMovies, userId }: CompareProps) {
                   {shown.map((movie) => (
                     <th key={movie.id} scope="col">
                       <div className={styles.poster}>
-                        {movie.details.posterUrl ? (
-                          <img src={movie.details.posterUrl} alt="" />
-                        ) : (
-                          <span className={styles.posterFallback} aria-hidden>
-                            {movie.details.title}
-                          </span>
-                        )}
-                        <span className="srOnly">{movie.details.title}</span>
+                        <Link
+                          href={`/m/${movie.id}`}
+                          className={styles.posterLink}
+                          prefetch={false}
+                        >
+                          {movie.details.posterUrl ? (
+                            <img src={movie.details.posterUrl} alt="" />
+                          ) : (
+                            <span className={styles.posterFallback} aria-hidden>
+                              {movie.details.title}
+                            </span>
+                          )}
+                          <span className="srOnly">{movie.details.title}</span>
+                        </Link>
                         <button
                           type="button"
                           className={styles.remove}

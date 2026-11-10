@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
-import { ProdMovieProvider } from "@/app/lib/movie-metadata";
+import { MdbRateLimitError, ProdMovieProvider } from "@/app/lib/movie-metadata";
 import { setDbForTesting, type DB } from "@/src/db/client";
 import { createTestDb } from "@/src/db/test-db";
 import { movies, type MovieDetails } from "@/src/db/schema";
@@ -113,6 +113,15 @@ afterEach(async () => {
 });
 
 describe("ProdMovieProvider", () => {
+  it("surfaces MDBList 429 as a rate-limit error without retrying", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response("", { status: 429 }));
+    await expect(new ProdMovieProvider().get(11)).rejects.toBeInstanceOf(
+      MdbRateLimitError,
+    );
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(await db.select().from(movies)).toEqual([]);
+  });
+
   it("hydrates only the first raw search match for import", async () => {
     const provider = new ProdMovieProvider();
     tmdbApi.search.movies.mockResolvedValue({

@@ -82,7 +82,8 @@ function money(text: string): number | null {
 export function parseBoxOffice(html: string, id: string): MojoBoxOfficeData {
   const url = titleUrl(id);
   const $ = load(html);
-  if ($('link[rel="canonical"]').attr("href") !== url) {
+  const canonical = $('link[rel="canonical"]').attr("href");
+  if (canonical !== url && canonical !== `${url}credits/`) {
     throw new Error(
       "Box Office Mojo returned a different title or an invalid page.",
     );
@@ -124,7 +125,7 @@ export function parseBoxOffice(html: string, id: string): MojoBoxOfficeData {
 
   return {
     source: "boxofficemojo",
-    url,
+    url: canonical,
     fetchedAt: new Date().toISOString(),
     currency: "USD",
     budget: budget.length ? money(budget.children("span").last().text()) : null,
@@ -135,12 +136,21 @@ export function parseBoxOffice(html: string, id: string): MojoBoxOfficeData {
 }
 
 export async function getBoxOffice(id: string): Promise<MojoBoxOfficeData> {
-  const response = await fetch(titleUrl(id), {
+  const url = titleUrl(id);
+  const options = {
     headers: { Accept: "text/html" },
     signal: AbortSignal.timeout(10_000),
-    redirect: "error",
+    redirect: "manual",
     cache: "no-store",
-  });
+  } satisfies RequestInit;
+  let response = await fetch(url, options);
+  if ([301, 302, 303, 307, 308].includes(response.status)) {
+    const location = response.headers.get("location");
+    if (!location || new URL(location, url).href !== `${url}credits/`) {
+      throw new Error("Box Office Mojo returned an unexpected redirect.");
+    }
+    response = await fetch(`${url}credits/`, options);
+  }
   if (!response.ok) {
     throw new Error(`Box Office Mojo returned ${response.status}.`);
   }
