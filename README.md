@@ -92,6 +92,26 @@ the updated app before applying migration `0024_sticky_stardust.sql`, which
 drops the unused `theatres.share_code` column. Existing invite links and
 memberships are preserved.
 
+### Rating colors
+
+Rating pills use the compare page's absolute heat map: IMDb 5.5–7.5,
+Letterboxd 3–4, and both Rotten Tomatoes scores 50–95%. Scores below or
+above those ranges stay at the red or green end of the scale. Trivia and
+other non-rating links keep their existing backgrounds.
+
+### 6 Degrees links
+
+A small **6 Degrees** icon appears in the ratings row, including movie details
+and expanded discussions, only when signed in as `mac-the-spork`. The username
+and destination are hard-coded in `app/components/Ratings.tsx`; this is a UI
+visibility check, not a way to keep the destination secret.
+
+The icon links directly to
+`https://p0wd43vp2t.local:3001/open/movie?title=<URL-encoded movie.details.title>`
+in the current context. It stays outside poster buttons, so selection and long
+press are unchanged. Android handoff to the installed Chrome PWA needs phone-side
+verification, a resolvable host, and a trusted HTTPS certificate.
+
 ### Descriptions and tags
 
 Admins can edit a list's description above its search controls. Descriptions

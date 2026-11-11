@@ -97,6 +97,7 @@ export function MovieDetail({ movie, onBack, onAdd }: MovieDetailProps) {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Ratings</h2>
           <Ratings
+            movieTitle={details.title}
             services={ratings.services}
             wikipediaUrl={details.wikipediaUrl}
           />

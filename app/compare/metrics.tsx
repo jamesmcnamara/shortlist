@@ -4,6 +4,7 @@ import {
   formatMultiplier,
 } from "@/app/lib/box-office-metrics";
 import { getImdbId, type OscarEntry, type Oscars } from "@/app/lib/data/oscars";
+import { RATING_RANGES } from "@/app/lib/heat";
 import type { Movie, RatingSource } from "@/src/db/schema";
 import countBy from "lodash/fp/countBy";
 import React from "react";
@@ -71,7 +72,7 @@ export const METRICS: Metric[] = [
   {
     name: "IMDb",
     logo: "/ratings/imdb.svg",
-    range: [5.5, 7.5],
+    range: RATING_RANGES.imdb,
     lowerIsBetter: false,
     read: rating("imdb"),
     format: toFixed(1),
@@ -79,7 +80,7 @@ export const METRICS: Metric[] = [
   {
     name: "Letterboxd",
     logo: "/ratings/letterboxd.svg",
-    range: [3, 4],
+    range: RATING_RANGES.letterboxd,
     lowerIsBetter: false,
     read: rating("letterboxd"),
     format: toFixed(1),
@@ -87,7 +88,7 @@ export const METRICS: Metric[] = [
   {
     name: "Rotten Tomatoes",
     logo: "/ratings/rottentomatoes.svg",
-    range: [50, 95],
+    range: RATING_RANGES.tomatoes,
     lowerIsBetter: false,
     read: rating("tomatoes"),
     format: toPct,
@@ -95,7 +96,7 @@ export const METRICS: Metric[] = [
   {
     name: "Rotten Tomatoes audience",
     logo: "/ratings/rottentomatoes-popcorn.svg",
-    range: [50, 95],
+    range: RATING_RANGES.popcorn,
     lowerIsBetter: false,
     read: rating("popcorn"),
     format: toPct,

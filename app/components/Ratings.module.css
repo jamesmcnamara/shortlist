@@ -30,6 +30,25 @@
   height: 0.875rem;
 }
 
+.scored {
+  color: var(--text);
+}
+
+.sixDegrees {
+  min-width: 1.625rem;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+}
+
+.sixDegrees img {
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 50%;
+}
+
 .rating:hover,
 .rating:focus-visible {
   border-color: var(--accent-light);

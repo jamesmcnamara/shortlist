@@ -58,6 +58,7 @@ export function NominationForm({
             <span>{candidate.details.overview}</span>
           )}
           <Ratings
+            movieTitle={candidate.details.title}
             services={candidate.ratings.services}
             wikipediaUrl={candidate.details.wikipediaUrl}
           />

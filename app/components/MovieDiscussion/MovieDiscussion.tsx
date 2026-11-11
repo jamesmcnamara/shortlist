@@ -113,6 +113,7 @@ export function MovieDiscussion({
           </div>
           <Oscars movie={nomination.movie} />
           <Ratings
+            movieTitle={details.title}
             services={ratings.services}
             wikipediaUrl={details.wikipediaUrl}
           />
