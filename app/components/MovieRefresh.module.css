@@ -9,6 +9,11 @@
   pointer-events: none;
 }
 
+/* The library resets inline overflow after a pull; keep page/drawer scrolling. */
+.pull > :global(.ptr__children) {
+  overflow: visible !important;
+}
+
 .hint {
   display: block;
   padding: 0.625rem 1rem;

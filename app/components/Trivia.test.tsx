@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Trivia } from "./Trivia";
 import { MovieDetail } from "./MovieDetail";
 import { MovieDiscussion } from "./MovieDiscussion/MovieDiscussion";
@@ -21,6 +27,11 @@ const movie = {
   ...nominated.movie,
   details: { ...nominated.movie.details, genres: [], trivia },
 };
+const scrollIntoView = vi.fn();
+beforeEach(() => {
+  scrollIntoView.mockClear();
+  Element.prototype.scrollIntoView = scrollIntoView;
+});
 afterEach(cleanup);
 
 describe("trivia disclosure", () => {
@@ -46,6 +57,26 @@ describe("trivia disclosure", () => {
     view.rerender(<Trivia trivia={{ ...trivia, items: [] }} />);
     expect(screen.getByText("No IMDb trivia found.")).toBeTruthy();
     expect(screen.queryByText(/hasn't been loaded/)).toBeNull();
+  });
+
+  it("keeps the summary in view after closing, without moving the page on open", async () => {
+    const { container } = render(<Trivia trivia={trivia} />);
+    const summary = container.querySelector("summary")!;
+    const details = container.querySelector("details")!;
+    expect(getComputedStyle(screen.getByText("Collapse")).display).toBe("none");
+    fireEvent.click(summary);
+    await waitFor(() => {
+      expect(details.open).toBe(true);
+      expect(getComputedStyle(screen.getByText("Collapse")).display).toBe(
+        "inline",
+      );
+    });
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("Collapse"));
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());
+    expect(details.open).toBe(false);
+    expect(scrollIntoView.mock.contexts).toEqual([summary]);
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest" });
   });
 
   it("appears in movie details without adding a signed-out refresh action", () => {

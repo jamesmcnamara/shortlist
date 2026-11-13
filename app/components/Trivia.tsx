@@ -9,7 +9,8 @@ export function Trivia({ trivia }: TriviaProps) {
   return (
     <details className={styles.trivia}>
       <summary>
-        Trivia <span className={styles.note}>(may contain spoilers)</span>
+        Trivia
+        <span className={styles.collapse}>Collapse</span>
       </summary>
       {trivia ? (
         <>

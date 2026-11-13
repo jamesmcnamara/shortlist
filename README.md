@@ -386,7 +386,9 @@ are kept, with whitespace trimmed and duplicate entries removed; there is no
 Movie details and discussions share a collapsed **Trivia (may contain spoilers)**
 section with an IMDb attribution link. All entries stay behind the disclosure;
 there is no per-entry spoiler classification. A successful empty collection is
-different from trivia that has never been loaded.
+different from trivia that has never been loaded. While open, its header stays
+visible with a **Collapse** label so it can be closed mid-list. Closing keeps
+the collapsed header in view, in both movie details and discussions.
 
 Requests time out after 30 seconds and are not retried. Missing credentials,
 HTTP/API errors, mismatched movie IDs and unrecognized payloads are logged
