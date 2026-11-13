@@ -101,6 +101,12 @@ export const SORTS: SortOption[] = [
   },
 ];
 
+export const sortOptions = (additionalSorts: readonly SortOption[] = []) => [
+  SORTS[0],
+  ...additionalSorts,
+  ...SORTS.slice(1),
+];
+
 export const FILTERS: FilterOption[] = [
   {
     id: "unwatched",
@@ -143,7 +149,6 @@ const inServiceIds = SERVICE_IDS.has.bind(SERVICE_IDS);
 const byId = <T extends { id: string }>(options: T[]) =>
   new Map(options.map((option) => [option.id, option]));
 
-export const SORTS_BY_ID = byId(SORTS);
 export const FILTERS_BY_ID = byId(FILTERS);
 
 export const DEFAULT_VIEW_STATE: ViewState = { sort: "recent", filters: [] };
@@ -156,6 +161,7 @@ export function applyView(
   nominations: Nomination[],
   state: ViewState,
   context: ViewContext,
+  additionalSorts: readonly SortOption[] = [],
 ): Nomination[] {
   const filters = state.filters
     .map((id) => FILTERS_BY_ID.get(id))
@@ -165,20 +171,26 @@ export function applyView(
     filters.every((filter) => filter.predicate(nomination, context)),
   );
 
-  const sort = SORTS_BY_ID.get(state.sort);
+  const sort = sortOptions(additionalSorts).find(({ id }) => id === state.sort);
   if (!sort) return filtered;
 
   return [...filtered].sort((a, b) => sort.compare(a, b, context));
 }
 
-export function parseViewState(params: URLSearchParams): ViewState {
+export function parseViewState(
+  params: URLSearchParams,
+  additionalSorts: readonly SortOption[] = [],
+): ViewState {
   const sort = params.get("sort");
   const filters = (params.get("filters") ?? "")
     .split(",")
     .filter((id) => FILTERS_BY_ID.has(id));
 
   return {
-    sort: sort && SORTS_BY_ID.has(sort) ? sort : DEFAULT_VIEW_STATE.sort,
+    sort:
+      sort && sortOptions(additionalSorts).some(({ id }) => id === sort)
+        ? sort
+        : DEFAULT_VIEW_STATE.sort,
     filters,
   };
 }

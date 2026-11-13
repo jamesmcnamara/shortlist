@@ -296,6 +296,16 @@ export const api = {
             },
           ).then(get("suggestions")),
       },
+      movieClub: {
+        vote: (
+          nominationId: number,
+          action: "vote" | "unvote",
+        ): Promise<{ votesLeft: number }> =>
+          request(`${base}/extensions/movieclub`, {
+            method: "POST",
+            body: JSON.stringify({ action, nominationId }),
+          }),
+      },
     };
   },
   publicTheatre: (code: string): Promise<PublicTheatre> =>

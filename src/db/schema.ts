@@ -337,6 +337,7 @@ export type Nomination = RawNomination & {
   nomcoms: NomCom[];
   nominator: Person;
   seenBy: Person[];
+  extensions?: Record<string, unknown>;
 };
 export type NomCom = typeof nomcoms.$inferSelect & { commenter: Person };
 export type Seen = typeof seen.$inferSelect;

@@ -1,8 +1,13 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import {
+  decorateNominations,
+  refuseNomination,
+} from "@/app/lib/extensions/server";
 import { getNomination, listNominations } from "@/app/lib/queries";
 import {
   withTheatreAdmin,
+  withTheatreMember,
   withTheatreViewer,
   type TheatreContext,
   type TheatreViewerContext,
@@ -37,42 +42,47 @@ const updateBody = z
 
 export const GET = withTheatreViewer({ error: "Unable to load nominations" })(
   async (_request: Request, { theatre }: TheatreViewerContext) =>
-    Response.json(await listNominations(theatre.id)),
+    Response.json(
+      await decorateNominations(theatre, await listNominations(theatre.id)),
+    ),
 );
 
-export const POST = withTheatreAdmin({ error: "Unable to create nomination." })(
-  async (request: Request, { theatre, userId }: TheatreContext) => {
-    const parsed = await parseJson(request, createBody);
-    if (!parsed.success) return badRequest(parsed.error);
-    const { movieId, comment } = parsed.data;
+export const POST = withTheatreMember({
+  error: "Unable to create nomination.",
+})(async (request: Request, { theatre, userId }: TheatreContext) => {
+  const parsed = await parseJson(request, createBody);
+  if (!parsed.success) return badRequest(parsed.error);
+  const { movieId, comment } = parsed.data;
 
-    const db = getDb();
+  const refusal = await refuseNomination(theatre, userId);
+  if (refusal) return Response.json({ error: refusal }, { status: 409 });
 
-    const [movie] = await db
-      .select({ id: movies.id })
-      .from(movies)
-      .where(eq(movies.id, movieId))
-      .limit(1);
-    if (!movie) {
-      return Response.json(
-        { error: "That movie is no longer available." },
-        { status: 400 },
-      );
-    }
+  const db = getDb();
 
-    const [inserted] = await db
-      .insert(nominations)
-      .values({ theatreId: theatre.id, userId, movieId, comment })
-      .returning({ id: nominations.id });
+  const [movie] = await db
+    .select({ id: movies.id })
+    .from(movies)
+    .where(eq(movies.id, movieId))
+    .limit(1);
+  if (!movie) {
+    return Response.json(
+      { error: "That movie is no longer available." },
+      { status: 400 },
+    );
+  }
 
-    await addMovie({ kind: "shortlist", id: movieId });
-    const nomination = await getNomination(theatre.id, inserted.id);
-    scheduleNomNotys(theatre.id, inserted.id);
-    return Response.json(nomination, {
-      status: 201,
-    });
-  },
-);
+  const [inserted] = await db
+    .insert(nominations)
+    .values({ theatreId: theatre.id, userId, movieId, comment })
+    .returning({ id: nominations.id });
+
+  await addMovie({ kind: "shortlist", id: movieId });
+  const nomination = await getNomination(theatre.id, inserted.id);
+  scheduleNomNotys(theatre.id, inserted.id);
+  return Response.json(nomination, {
+    status: 201,
+  });
+});
 
 export const PATCH = withTheatreAdmin({
   error: "Unable to update the nomination.",
@@ -112,18 +122,27 @@ export const PATCH = withTheatreAdmin({
   return Response.json(await getNomination(theatre.id, id), { status: 200 });
 });
 
-export const DELETE = withTheatreAdmin({
+export const DELETE = withTheatreMember({
   error: "Unable to delete the nomination.",
-})(async (request: Request, { theatre }: TheatreContext) => {
+})(async (request: Request, { theatre, userId, role }: TheatreContext) => {
   const parsed = dbIdParam(NOMINATION_ID).safeParse(
     new URL(request.url).searchParams.get("id"),
   );
   if (!parsed.success) return badRequest(parsed.error);
   const id = parsed.data;
 
+  const memberLimits =
+    role === "admin" ? undefined : eq(nominations.userId, userId);
+
   const deleted = await getDb()
     .delete(nominations)
-    .where(and(eq(nominations.id, id), eq(nominations.theatreId, theatre.id)))
+    .where(
+      and(
+        eq(nominations.id, id),
+        eq(nominations.theatreId, theatre.id),
+        memberLimits,
+      ),
+    )
     .returning({ id: nominations.id });
   if (deleted.length === 0)
     return Response.json(

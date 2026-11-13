@@ -318,6 +318,7 @@
 
 .voters {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.875rem;
@@ -334,8 +335,32 @@
 
 .voterList {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.3125rem;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.upvoter {
+  position: relative;
+  display: flex;
+}
+
+.voteBadge {
+  position: absolute;
+  right: -0.25rem;
+  bottom: -0.125rem;
+  display: grid;
+  place-items: center;
+  min-width: 0.875rem;
+  height: 0.875rem;
+  border-radius: var(--radius-pill);
+  background: var(--text);
+  color: var(--page);
+  font-size: 0.7188rem;
+  font-weight: 800;
 }
 
 .voter {

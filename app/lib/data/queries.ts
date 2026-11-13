@@ -22,6 +22,7 @@ function useQuery<T>(
     data: isAccessError(query.error) ? undefined : query.data,
     error: query.error,
     isLoading: query.isLoading,
+    mutate: query.mutate,
     retry: () => query.mutate(),
   };
 }

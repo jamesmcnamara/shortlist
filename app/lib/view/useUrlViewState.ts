@@ -2,15 +2,24 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
-import { parseViewState, toSearchParams, type ViewState } from "./index";
+import {
+  parseViewState,
+  toSearchParams,
+  type SortOption,
+  type ViewState,
+} from "./index";
 
 /** Keeps the sort and filters in the URL so a view can be linked to. */
-export function useUrlViewState() {
+export function useUrlViewState(additionalSorts?: readonly SortOption[]) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const viewState = useMemo(
-    () => parseViewState(new URLSearchParams(searchParams.toString())),
-    [searchParams],
+    () =>
+      parseViewState(
+        new URLSearchParams(searchParams.toString()),
+        additionalSorts,
+      ),
+    [searchParams, additionalSorts],
   );
   const setViewState = useCallback(
     (next: ViewState) => {

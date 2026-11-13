@@ -1,0 +1,76 @@
+.controls {
+  display: grid;
+  grid-template-columns: minmax(1.5rem, 1fr) minmax(0, auto) minmax(1.5rem, 1fr);
+  align-items: center;
+  min-height: 2.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.readOnly {
+  grid-template-columns: 1fr;
+}
+
+.adjust {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.adjust svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.adjust:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.adjust:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+  border-radius: var(--radius-pill);
+}
+
+.count {
+  min-width: 0;
+  padding: 0.25rem 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: center;
+}
+
+.count small {
+  display: block;
+  margin-top: 0.125rem;
+  color: var(--muted);
+  font-size: 0.7188rem;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.voted {
+  border-color: var(--accent-light);
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+
+@media (hover: hover) {
+  .adjust:hover:not(:disabled) {
+    background: var(--accent-wash);
+  }
+}

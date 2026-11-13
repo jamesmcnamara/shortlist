@@ -255,6 +255,10 @@ describe("cross-theatre writes", () => {
 
   it("cannot delete another theatre's nomination", async () => {
     const { DELETE } = nominationsRoute;
+    await fixture.db
+      .update(nominations)
+      .set({ userId: BOB })
+      .where(eq(nominations.id, fixture.nominationInB));
     asUser(BOB);
 
     const response = await DELETE(
@@ -264,7 +268,7 @@ describe("cross-theatre writes", () => {
       route("club"),
     );
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(404);
     expect(await fixture.db.select().from(nominations)).toHaveLength(2);
   });
 
@@ -279,7 +283,7 @@ describe("cross-theatre writes", () => {
       route("club"),
     );
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(404);
   });
 
   it("lets a nominator update and clear their own nomination comment", async () => {

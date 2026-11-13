@@ -3,16 +3,22 @@
 import type { TheatreAPI } from "@/app/components/Theatre";
 import { Theatre } from "@/app/components/Theatre";
 import { useDataSession } from "@/app/lib/data/DataProvider";
+import { useNominations } from "@/app/lib/data/queries";
+import { votersOf } from "@/app/lib/extensions/movieclub/shared";
+import { movieClubSorts } from "@/app/lib/extensions/movieclub/view";
 import { useUrlViewState } from "@/app/lib/view/useUrlViewState";
 import { useMemo } from "react";
-import { some } from "shades";
+import { find, some, set, mod, matching } from "shades";
 import { useTheatre } from "./TheatreContext";
+import type { Nomination } from "@/src/db/schema";
 
 export function TheatreContainer() {
-  const { theatre, isAdmin, role, client, noms } = useTheatre();
+  const { theatre, isAdmin, role, client, noms, detail } = useTheatre();
+  const { mutate } = useNominations(theatre.id);
   const { userId } = useDataSession();
   const viewContext = useMemo(() => ({ userId }), [userId]);
-  const [viewState, setViewState] = useUrlViewState();
+  const additionalSorts = movieClubSorts(theatre.description);
+  const [viewState, setViewState] = useUrlViewState(additionalSorts);
 
   const api: TheatreAPI = {
     updateDescription: async (description) => {
@@ -63,6 +69,37 @@ export function TheatreContainer() {
         nomination?.completedAt ? null : new Date(),
       );
     },
+    vote: async (id, action) => {
+      const member = find({ id: userId })(detail.members ?? []);
+      if (!member) {
+        throw new Error(
+          "Your membership could not be loaded. Refresh and try again.",
+        );
+      }
+      const { name, username } = member;
+      const voter = { id: member.id, name, username };
+      await mutate(
+        async () => {
+          await client.movieClub.vote(id, action);
+          return noms;
+        },
+        {
+          optimisticData: mod(matching({ id }))((nom: Nomination) => {
+            const voters = votersOf(nom);
+            const voteIndex = voters.findIndex(({ id }) => id === userId);
+            const next =
+              action === "unvote"
+                ? voters.filter((_, index) => index !== voteIndex)
+                : [...voters, voter].sort((a, b) =>
+                    (a.username ?? a.name).localeCompare(b.username ?? b.name),
+                  );
+            return set("extensions", "movieclub", "voters")(next)(nom);
+          })(noms),
+          populateCache: false,
+          rollbackOnError: true,
+        },
+      );
+    },
   };
 
   return (
@@ -79,6 +116,7 @@ export function TheatreContainer() {
       userId={userId}
       viewState={viewState}
       viewContext={viewContext}
+      additionalSorts={additionalSorts}
       setViewState={setViewState}
       api={api}
       nominees={noms}

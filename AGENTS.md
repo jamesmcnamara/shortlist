@@ -59,4 +59,6 @@ Build behavior for specially tagged lists as a theatre extension (see
 `app/lib/extensions/<name>/`, its state in `theatres.extensions[name]` (written
 only with `mergeExtensionData`), and its API in the shared
 `/api/theatres/:theatreId/extensions/:name` route. Don't add per-extension
-columns or routes.
+columns or routes. When an extension has to change a core route (like enforcing
+nomination limits), register a hook on its handler in
+`app/lib/extensions/server.ts` instead of naming the extension in that route.

@@ -91,4 +91,16 @@ describe("ShortlistHeader", () => {
       additionalMenuItems,
     });
   });
+
+  it("renders center content in the header without forwarding it to the menu", () => {
+    render(
+      <ShortlistHeader>
+        <p role="status">2 votes left</p>
+      </ShortlistHeader>,
+    );
+    expect(screen.getByRole("status").closest("header")).toBe(
+      screen.getByRole("link", { name: "Shortlist" }).closest("header"),
+    );
+    expect(vi.mocked(AppMenu).mock.calls[0][0]).toEqual({});
+  });
 });

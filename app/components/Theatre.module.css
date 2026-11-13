@@ -70,6 +70,18 @@
   text-align: center;
 }
 
+.votesLeft {
+  margin: 0;
+  padding: 0.3125rem 0.875rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-size: 0.875rem;
+  font-weight: 800;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
 .movieList {
   position: relative;
   display: grid;

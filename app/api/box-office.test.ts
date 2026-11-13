@@ -656,21 +656,16 @@ describe("theatre-scoped box office refresh", () => {
     ).toHaveLength(0);
   });
 
-  it("keeps nomination creation admin-only", async () => {
-    const member = "44444444-4444-4444-4444-444444444444";
+  it("keeps nomination creation restricted to list members", async () => {
+    const outsider = "44444444-4444-4444-4444-444444444444";
     await db.insert(authUsers).values({
-      id: member,
-      name: "Member",
-      email: "member@example.com",
+      id: outsider,
+      name: "Outsider",
+      email: "outsider@example.com",
     });
-    await db.insert(theatreMembers).values({
-      theatreId: THEATRE,
-      userId: member,
-      role: "member",
-    });
-    auth.userId = member;
+    auth.userId = outsider;
     expect((await add(request({ movieId: movie.id }), context())).status).toBe(
-      403,
+      404,
     );
     expect(fetch).not.toHaveBeenCalled();
   });
