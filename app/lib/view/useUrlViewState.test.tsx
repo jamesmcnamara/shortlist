@@ -1,16 +1,52 @@
 // @vitest-environment jsdom
 
-import { cleanup, renderHook } from "@testing-library/react";
-import { afterEach, expect, it, vi } from "vitest";
+import { act, cleanup, renderHook } from "@testing-library/react";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useUrlViewState } from "./useUrlViewState";
 import type { SortOption } from "./index";
 
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: vi.fn() }),
-  useSearchParams: () => new URLSearchParams("sort=custom&filters=mine"),
+const navigation = vi.hoisted(() => ({
+  query: "sort=custom&filters=mine",
+  replace: vi.fn(),
 }));
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: navigation.replace }),
+  useSearchParams: () => new URLSearchParams(navigation.query),
+}));
+
+beforeEach(() => {
+  navigation.query = "sort=custom&filters=mine";
+  navigation.replace.mockReset();
+});
 afterEach(cleanup);
+
+it("re-reads a saved default when theatre data arrives", () => {
+  navigation.query = "";
+  const { result, rerender } = renderHook(
+    ({ defaultSort }: { defaultSort: string | null }) =>
+      useUrlViewState([], defaultSort),
+    { initialProps: { defaultSort: null as string | null } },
+  );
+  expect(result.current[0].sort).toBe("recent");
+  rerender({ defaultSort: "title" });
+  expect(result.current[0].sort).toBe("title");
+  navigation.query = "sort=recent";
+  rerender({ defaultSort: "title" });
+  expect(result.current[0].sort).toBe("recent");
+});
+
+it("keeps an explicit recent sort in the URL when the saved default differs", () => {
+  navigation.query = "";
+  const { result } = renderHook(() => useUrlViewState([], "title"));
+  act(() => result.current[1]({ sort: "recent", filters: ["mine"] }));
+  expect(navigation.replace).toHaveBeenLastCalledWith(
+    "?sort=recent&filters=mine",
+    { scroll: false },
+  );
+  act(() => result.current[1]({ sort: "title", filters: [] }));
+  expect(navigation.replace).toHaveBeenLastCalledWith("?", { scroll: false });
+});
 
 it("re-reads a URL sort when additional options arrive or disappear", () => {
   const custom: SortOption = {

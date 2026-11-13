@@ -15,6 +15,8 @@ import { theatreMembers, theatres } from "@/src/db/schema";
 import { authUsers } from "@/src/db/neon-auth-schema";
 import { badRequest, parseJson, requiredText } from "@/lib/validation";
 import { listTheatreTags, updateTheatre } from "@/app/lib/theatre-tags";
+import { extensionSorts } from "@/app/lib/extensions/view";
+import { sortOptions } from "@/app/lib/view";
 
 export const runtime = "nodejs";
 
@@ -22,9 +24,13 @@ const updateBody = z
   .object({
     name: requiredText("A theatre name is required.").optional(),
     description: z.string().trim().optional(),
+    defaultSort: z.string().nullable().optional(),
   })
   .refine(
-    ({ name, description }) => name !== undefined || description !== undefined,
+    ({ name, description, defaultSort }) =>
+      name !== undefined ||
+      description !== undefined ||
+      defaultSort !== undefined,
     "Nothing to update.",
   );
 
@@ -65,7 +71,18 @@ export const GET = withTheatreViewer({
 export const PATCH = withTheatreAdmin({
   error: "Unable to update the theatre.",
 })(async (request: Request, { theatre }: TheatreContext) => {
-  const parsed = await parseJson(request, updateBody);
+  const parsed = await parseJson(
+    request,
+    updateBody.refine(
+      ({ defaultSort, description }) =>
+        defaultSort === undefined ||
+        defaultSort === null ||
+        sortOptions(extensionSorts(description ?? theatre.description)).some(
+          ({ id }) => id === defaultSort,
+        ),
+      "Choose an available sort.",
+    ),
+  );
   if (!parsed.success) return badRequest(parsed.error);
   await updateTheatre(theatre.id, parsed.data);
   const updated = await findTheatreById(theatre.id);

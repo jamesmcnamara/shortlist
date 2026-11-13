@@ -148,7 +148,11 @@ describe("GET /api/join/[code]", () => {
       expect(response.status).toBe(200);
 
       const body = await response.json();
-      expect(body.theatre).toEqual({ name: "Club", description: null });
+      expect(body.theatre).toEqual({
+        name: "Club",
+        description: null,
+        defaultSort: null,
+      });
       expect(body.nominations).toHaveLength(1);
       const [nom] = body.nominations;
       expect(nom.movie.details.title).toBe("Shared");
@@ -205,7 +209,11 @@ describe("GET /api/join/[code]", () => {
 
   it("keeps reads isolated to the theatre behind the invite", async () => {
     const body = await (await preview(secret.inviteCode)).json();
-    expect(body.theatre).toEqual({ name: "Secret", description: null });
+    expect(body.theatre).toEqual({
+      name: "Secret",
+      description: null,
+      defaultSort: null,
+    });
     expect(body.nominations).toHaveLength(1);
     expect(body.nominations[0].movie.details.title).toBe("Hidden");
   });

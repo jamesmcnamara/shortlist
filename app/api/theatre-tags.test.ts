@@ -71,6 +71,56 @@ afterEach(async () => {
   await fixture.client.close();
 });
 
+describe("theatre default sort", () => {
+  it("defaults to null, persists sort-only saves, and can be cleared", async () => {
+    expect((await storedTheatre())?.defaultSort).toBeNull();
+    const response = await patch({ defaultSort: "title" });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ defaultSort: "title" });
+    await patch({ name: "Renamed" });
+    expect(await storedTheatre()).toMatchObject({
+      name: "Renamed",
+      defaultSort: "title",
+    });
+    expect(
+      (
+        await fixture.db.query.theatres.findFirst({
+          where: eq(theatres.id, otherId),
+        })
+      )?.defaultSort,
+    ).toBeNull();
+    expect((await patch({ defaultSort: null })).status).toBe(200);
+    expect((await storedTheatre())?.defaultSort).toBeNull();
+  });
+
+  it("validates extension sorts against the description being saved", async () => {
+    expect((await patch({ defaultSort: "votes" })).status).toBe(400);
+    expect(
+      (await patch({ description: "#movie-club", defaultSort: "votes" }))
+        .status,
+    ).toBe(200);
+    expect(
+      (await patch({ description: "", defaultSort: "votes" })).status,
+    ).toBe(400);
+    expect((await storedTheatre())?.description).toBe("#movie-club");
+    expect((await patch({ description: "" })).status).toBe(200);
+    expect((await patch({ defaultSort: "title" })).status).toBe(200);
+  });
+
+  it("rejects unknown sorts and invalid types without changing the theatre", async () => {
+    for (const defaultSort of ["missing", "", 1, false, {}]) {
+      expect((await patch({ name: "Invalid", defaultSort })).status).toBe(400);
+    }
+    expect(await storedTheatre()).toMatchObject({
+      name: "Club",
+      defaultSort: null,
+    });
+    currentUserId.value = MEMBER;
+    expect((await patch({ defaultSort: "title" })).status).toBe(403);
+    expect((await storedTheatre())?.defaultSort).toBeNull();
+  });
+});
+
 describe("theatre descriptions and tags", () => {
   it("saves trimmed descriptions with canonical, deduplicated text-keyed tags", async () => {
     const response = await patch({
@@ -183,13 +233,14 @@ describe("theatre descriptions and tags", () => {
   });
 
   it("shows descriptions and tags publicly without exposing membership or invite details", async () => {
-    await patch({ description: "Our #Horror films" });
+    await patch({ description: "Our #Horror films", defaultSort: "title" });
     for (const userId of ["", OUTSIDER, MEMBER, ADMIN]) {
       currentUserId.value = userId;
       const body = await (
         await theatreRoute.GET(new Request("http://test"), route())
       ).json();
       expect(body.theatre.description).toBe("Our #Horror films");
+      expect(body.theatre.defaultSort).toBe("title");
       expect(body.tags).toEqual(["horror"]);
       expect(body.theatre).not.toHaveProperty("inviteCode");
       expect(body.theatre).not.toHaveProperty("adminInviteCode");
@@ -206,6 +257,7 @@ describe("theatre descriptions and tags", () => {
     expect((await preview.json()).theatre).toEqual({
       name: "Club",
       description: "Our #Horror films",
+      defaultSort: "title",
     });
   });
 

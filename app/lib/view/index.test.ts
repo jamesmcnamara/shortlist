@@ -305,6 +305,42 @@ describe("applyView filtering", () => {
 });
 
 describe("URL state", () => {
+  it("uses a saved default unless a valid URL sort overrides it", () => {
+    expect(parseViewState(new URLSearchParams(), [], "title").sort).toBe(
+      "title",
+    );
+    expect(
+      parseViewState(new URLSearchParams("sort=recent"), [], "title").sort,
+    ).toBe("recent");
+    expect(
+      parseViewState(new URLSearchParams("sort=unknown"), [], "title").sort,
+    ).toBe("title");
+  });
+
+  it("falls back to recently added for null or unavailable defaults", () => {
+    expect(parseViewState(new URLSearchParams(), [], null).sort).toBe("recent");
+    expect(parseViewState(new URLSearchParams(), [], "votes").sort).toBe(
+      "recent",
+    );
+    expect(
+      parseViewState(
+        new URLSearchParams(),
+        movieClubSorts("#movieclub"),
+        "votes",
+      ).sort,
+    ).toBe("votes");
+  });
+
+  it("round-trips an explicit recent sort and filters with a different default", () => {
+    const state = { sort: "recent", filters: ["mine"] };
+    const params = toSearchParams(state, "title");
+    expect(params.get("sort")).toBe("recent");
+    expect(parseViewState(params, [], "title")).toEqual(state);
+    expect(
+      toSearchParams({ sort: "title", filters: [] }, "title").toString(),
+    ).toBe("");
+  });
+
   it("reads sort and filters from the query string", () => {
     const state = parseViewState(
       new URLSearchParams("sort=title&filters=mine,unwatched"),

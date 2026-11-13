@@ -180,7 +180,12 @@ export function applyView(
 export function parseViewState(
   params: URLSearchParams,
   additionalSorts: readonly SortOption[] = [],
+  defaultSort?: string | null,
 ): ViewState {
+  const availableSorts = sortOptions(additionalSorts);
+  const fallbackSort =
+    availableSorts.find(({ id }) => id === defaultSort)?.id ??
+    DEFAULT_VIEW_STATE.sort;
   const sort = params.get("sort");
   const filters = (params.get("filters") ?? "")
     .split(",")
@@ -188,16 +193,19 @@ export function parseViewState(
 
   return {
     sort:
-      sort && sortOptions(additionalSorts).some(({ id }) => id === sort)
+      sort && availableSorts.some(({ id }) => id === sort)
         ? sort
-        : DEFAULT_VIEW_STATE.sort,
+        : fallbackSort,
     filters,
   };
 }
 
-export function toSearchParams(state: ViewState): URLSearchParams {
+export function toSearchParams(
+  state: ViewState,
+  defaultSort = DEFAULT_VIEW_STATE.sort,
+): URLSearchParams {
   const params = new URLSearchParams();
-  if (state.sort !== DEFAULT_VIEW_STATE.sort) params.set("sort", state.sort);
+  if (state.sort !== defaultSort) params.set("sort", state.sort);
   if (state.filters.length) params.set("filters", state.filters.join(","));
   return params;
 }

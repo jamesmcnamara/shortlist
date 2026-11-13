@@ -5,7 +5,7 @@ import { Theatre } from "@/app/components/Theatre";
 import { useDataSession } from "@/app/lib/data/DataProvider";
 import { useNominations } from "@/app/lib/data/queries";
 import { votersOf } from "@/app/lib/extensions/movieclub/shared";
-import { movieClubSorts } from "@/app/lib/extensions/movieclub/view";
+import { extensionSorts } from "@/app/lib/extensions/view";
 import { useUrlViewState } from "@/app/lib/view/useUrlViewState";
 import { useMemo } from "react";
 import { find, some, set, mod, matching } from "shades";
@@ -17,8 +17,11 @@ export function TheatreContainer() {
   const { mutate } = useNominations(theatre.id);
   const { userId } = useDataSession();
   const viewContext = useMemo(() => ({ userId }), [userId]);
-  const additionalSorts = movieClubSorts(theatre.description);
-  const [viewState, setViewState] = useUrlViewState(additionalSorts);
+  const additionalSorts = extensionSorts(theatre.description);
+  const [viewState, setViewState] = useUrlViewState(
+    additionalSorts,
+    theatre.defaultSort,
+  );
 
   const api: TheatreAPI = {
     updateDescription: async (description) => {

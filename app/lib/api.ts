@@ -117,7 +117,7 @@ export interface TheatreDetail {
 
 /** What anyone with an invite link can see: read-only, and no member details. */
 export interface PublicTheatre {
-  theatre: { name: string; description: string | null };
+  theatre: Pick<SafeTheatre, "name" | "description" | "defaultSort">;
   nominations: Nomination[];
 }
 
@@ -204,6 +204,7 @@ export const api = {
       update: (input: {
         name?: string;
         description?: string;
+        defaultSort?: string | null;
       }): Promise<SafeTheatre> =>
         request(base, { method: "PATCH", body: JSON.stringify(input) }),
       delete: (): Promise<void> => request(base, { method: "DELETE" }),

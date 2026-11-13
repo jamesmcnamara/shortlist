@@ -125,6 +125,17 @@ Existing descriptions are preserved and get their tags extracted on their next
 save, or by the backfill below.
 Autocomplete and nomination tagging are not implemented yet.
 
+### Default movie sort
+
+Admins can choose a **Default sort** in theatre settings from the same options
+as the list's sort menu, including sorts supplied by enabled extensions.
+**App default** stores `null` in `theatres.default_sort` and uses Recently added.
+The saved default applies to public and member views unless the URL specifies
+another available sort. If a saved extension sort becomes unavailable, the list
+falls back to Recently added.
+
+Apply migration `0033_theatre_default_sort.sql` before deploying this feature.
+
 ### Fantasy lists
 
 A list whose description has the `#fantasy` tag (a whole tag, so

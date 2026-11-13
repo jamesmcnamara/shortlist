@@ -5,7 +5,7 @@ import { Theatre } from "@/app/components/Theatre";
 import { DataBoundary } from "@/app/lib/data/DataBoundary";
 import { useDataSession } from "@/app/lib/data/DataProvider";
 import { usePublicTheatre } from "@/app/lib/data/queries";
-import { movieClubSorts } from "@/app/lib/extensions/movieclub/view";
+import { extensionSorts } from "@/app/lib/extensions/view";
 import { useUrlViewState } from "@/app/lib/view/useUrlViewState";
 
 interface PublicTheatreContainerProps {
@@ -18,8 +18,11 @@ export function PublicTheatreContainer({
   const { data, error, retry } = usePublicTheatre(inviteCode);
   const { userId } = useDataSession();
   const viewContext = useMemo(() => ({ userId }), [userId]);
-  const additionalSorts = movieClubSorts(data?.theatre.description);
-  const [viewState, setViewState] = useUrlViewState(additionalSorts);
+  const additionalSorts = extensionSorts(data?.theatre.description);
+  const [viewState, setViewState] = useUrlViewState(
+    additionalSorts,
+    data?.theatre.defaultSort,
+  );
 
   return (
     <DataBoundary

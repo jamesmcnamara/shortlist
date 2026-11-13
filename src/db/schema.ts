@@ -53,6 +53,7 @@ export const theatres = pgTable(
     // A separate link that grants the "admin" role on join instead of "member".
     adminInviteCode: text("admin_invite_code").notNull().unique(),
     description: text(),
+    defaultSort: text("default_sort"),
     // Server-only state for opt-in behaviors, keyed by extension name.
     extensions: jsonb("extensions")
       .$type<Record<string, unknown>>()

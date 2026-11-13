@@ -1,0 +1,1 @@
+ALTER TABLE "theatres" ADD COLUMN "default_sort" text;
