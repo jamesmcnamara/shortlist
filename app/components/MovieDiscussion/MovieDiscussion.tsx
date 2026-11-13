@@ -59,124 +59,125 @@ export function MovieDiscussion({
         className={styles.expanded}
         aria-label={`Discussion about ${details.title}`}
       >
-        <div className={styles.expandedHeader}>
-          <div className={styles.discussionTitleRow}>
-            {details.posterUrl ? (
-              <img src={details.posterUrl} alt="" className={styles.poster} />
-            ) : (
-              <div className={styles.poster} aria-hidden="true" />
-            )}
-            <div className={styles.discussionHeading}>
-              <h2>{details.title}</h2>
-              <Link
-                href={userPath(nominator.username)}
-                className={styles.discussionMeta}
-              >
-                Nominated by {nominator.name}
-              </Link>
-            </div>
-            <button
-              className={styles.closeDiscussion}
-              type="button"
-              onClick={onClose}
-              aria-label="Close discussion"
-            >
-              ✕
-            </button>
-          </div>
-          {details.overview && (
-            <p className={styles.recommendation}>{details.overview}</p>
-          )}
-          <div className={styles.runtimeRow}>
-            <p className={styles.runtime}>
-              {details.year ?? "Unknown"} • {toHrs(details.runtime)}
-            </p>
-            {onToggleCompleted && (
-              <button
-                className={classnames(styles.completeToggle, {
-                  [styles.completeToggleActive]: nomination.completedAt,
-                })}
-                type="button"
-                onClick={onToggleCompleted}
-                aria-pressed={Boolean(nomination.completedAt)}
-                aria-label={
-                  nomination.completedAt
-                    ? `Move ${details.title} out of Watched`
-                    : `Mark ${details.title} as Watched`
-                }
-              >
-                {nomination.completedAt ? "Completed ✓" : "Watched"}
-              </button>
-            )}
-          </div>
-          <Oscars movie={nomination.movie} />
-          <Ratings
-            movieTitle={details.title}
-            services={ratings.services}
-            wikipediaUrl={details.wikipediaUrl}
-          />
-          <BoxOffice data={details.boxOffice} />
-          <Streaming availability={details.justWatch} />
-          <Trivia trivia={details.trivia} />
-          {currentUserId && <MovieRefresh movieId={nomination.movieId} />}
-          {!nomination.completedAt && onMarkWatched && (
-            <div className={styles.movieActions}>
-              <button
-                className={styles.watched}
-                type="button"
-                onClick={onMarkWatched}
-                aria-pressed={hasSeen}
-                aria-label={
-                  hasSeen
-                    ? `Unmark ${details.title} as seen`
-                    : `Mark ${details.title} as seen`
-                }
-              >
-                {hasSeen ? "Seen it ✓" : "Seen it"}
-              </button>
-              {onDelete && (
-                <button
-                  className={styles.deleteMovie}
-                  type="button"
-                  onClick={onDelete}
-                  aria-label={`Delete ${details.title} from the watchlist`}
+        <MovieRefresh key={nomination.movieId} movieId={nomination.movieId}>
+          <div className={styles.expandedHeader}>
+            <div className={styles.discussionTitleRow}>
+              {details.posterUrl ? (
+                <img src={details.posterUrl} alt="" className={styles.poster} />
+              ) : (
+                <div className={styles.poster} aria-hidden="true" />
+              )}
+              <div className={styles.discussionHeading}>
+                <h2>{details.title}</h2>
+                <Link
+                  href={userPath(nominator.username)}
+                  className={styles.discussionMeta}
                 >
-                  Delete
+                  Nominated by {nominator.name}
+                </Link>
+              </div>
+              <button
+                className={styles.closeDiscussion}
+                type="button"
+                onClick={onClose}
+                aria-label="Close discussion"
+              >
+                ✕
+              </button>
+            </div>
+            {details.overview && (
+              <p className={styles.recommendation}>{details.overview}</p>
+            )}
+            <div className={styles.runtimeRow}>
+              <p className={styles.runtime}>
+                {details.year ?? "Unknown"} • {toHrs(details.runtime)}
+              </p>
+              {onToggleCompleted && (
+                <button
+                  className={classnames(styles.completeToggle, {
+                    [styles.completeToggleActive]: nomination.completedAt,
+                  })}
+                  type="button"
+                  onClick={onToggleCompleted}
+                  aria-pressed={Boolean(nomination.completedAt)}
+                  aria-label={
+                    nomination.completedAt
+                      ? `Move ${details.title} out of Watched`
+                      : `Mark ${details.title} as Watched`
+                  }
+                >
+                  {nomination.completedAt ? "Completed ✓" : "Watched"}
                 </button>
               )}
             </div>
-          )}
-        </div>
-        <div className={styles.nominationQuote}>
-          <Link
-            href={userPath(nominator.username)}
-            className={`avatar avatar-${getColor(nominator.name)}`}
-            aria-label={`View ${nominator.name}'s theatres`}
-          >
-            {getInitials(nominator.name)}
-          </Link>
-          <div className={styles.commentContent}>
-            <strong>{nominator.name}</strong>
-            <EditableComment
-              value={nomination.comment ?? ""}
-              allowBlank
-              emptyText=""
-              editLabel={`Edit ${details.title} nomination comment`}
-              inputLabel={`Nomination comment for ${details.title}`}
-              onSave={when(nomination.userId === currentUserId)(
-                onUpdateComment,
-              )}
+            <Oscars movie={nomination.movie} />
+            <Ratings
+              movieTitle={details.title}
+              services={ratings.services}
+              wikipediaUrl={details.wikipediaUrl}
             />
+            <BoxOffice data={details.boxOffice} />
+            <Streaming availability={details.justWatch} />
+            <Trivia trivia={details.trivia} />
+            {!nomination.completedAt && onMarkWatched && (
+              <div className={styles.movieActions}>
+                <button
+                  className={styles.watched}
+                  type="button"
+                  onClick={onMarkWatched}
+                  aria-pressed={hasSeen}
+                  aria-label={
+                    hasSeen
+                      ? `Unmark ${details.title} as seen`
+                      : `Mark ${details.title} as seen`
+                  }
+                >
+                  {hasSeen ? "Seen it ✓" : "Seen it"}
+                </button>
+                {onDelete && (
+                  <button
+                    className={styles.deleteMovie}
+                    type="button"
+                    onClick={onDelete}
+                    aria-label={`Delete ${details.title} from the watchlist`}
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-        </div>
-        <SeenByList seenBy={seenBy} />
-        <NomComs
-          nominationId={nomination.id}
-          nomcoms={nomination.nomcoms}
-          currentUserId={currentUserId}
-          onAddComment={onAddNomCom}
-          onUpdateComment={onUpdateNomCom}
-        />
+          <div className={styles.nominationQuote}>
+            <Link
+              href={userPath(nominator.username)}
+              className={`avatar avatar-${getColor(nominator.name)}`}
+              aria-label={`View ${nominator.name}'s theatres`}
+            >
+              {getInitials(nominator.name)}
+            </Link>
+            <div className={styles.commentContent}>
+              <strong>{nominator.name}</strong>
+              <EditableComment
+                value={nomination.comment ?? ""}
+                allowBlank
+                emptyText=""
+                editLabel={`Edit ${details.title} nomination comment`}
+                inputLabel={`Nomination comment for ${details.title}`}
+                onSave={when(nomination.userId === currentUserId)(
+                  onUpdateComment,
+                )}
+              />
+            </div>
+          </div>
+          <SeenByList seenBy={seenBy} />
+          <NomComs
+            nominationId={nomination.id}
+            nomcoms={nomination.nomcoms}
+            currentUserId={currentUserId}
+            onAddComment={onAddNomCom}
+            onUpdateComment={onUpdateNomCom}
+          />
+        </MovieRefresh>
       </section>
     </motion.div>
   );

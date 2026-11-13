@@ -103,6 +103,15 @@ describe("high-churn component smoke tests", () => {
     );
   });
 
+  it("supports a translucent loading overlay without changing the default", () => {
+    const { rerender } = render(<LoadingOverlay translucent />);
+    const loader = screen.getByRole("status");
+    expect(loader.className).toContain(loadingStyles.overlay);
+    expect(loader.className).toContain(loadingStyles.translucent);
+    rerender(<LoadingOverlay />);
+    expect(loader.className).toBe(loadingStyles.overlay);
+  });
+
   it("shows a compact loader only while quick-adding a search result", async () => {
     let finishAdding!: () => void;
     const pendingAdd = new Promise<void>((resolve) => {

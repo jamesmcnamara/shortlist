@@ -6,12 +6,14 @@ interface LoadingOverlayProps {
   label?: string;
   fullscreen?: boolean;
   inline?: boolean;
+  translucent?: boolean;
 }
 
 export function LoadingOverlay({
   label = "Loading...",
   fullscreen = true,
   inline = false,
+  translucent = false,
 }: LoadingOverlayProps) {
   return (
     <div
@@ -21,6 +23,7 @@ export function LoadingOverlay({
         [styles.overlay]: fullscreen && !inline,
         [styles.contained]: !fullscreen && !inline,
         [styles.inline]: inline,
+        [styles.translucent]: translucent,
       })}
       role="status"
     >

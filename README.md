@@ -403,20 +403,27 @@ check applicable terms before using or redistributing its data.
 
 ### Refreshing movie data
 
-Signed-in users get one **Refresh movie** action in movie details and
-discussions. It calls `POST /api/movies/:movieId/refresh`, refreshing TMDB,
+Signed-in users can **pull down at the top** of movie details or discussions
+to refresh. The gesture is provided by `react-simple-pull-to-refresh`: pulling
+80 CSS pixels arms the refresh, which runs on release. Short pulls and gestures
+starting on controls, selected text or partway down the scrollable view do not
+refresh. Mouse dragging is disabled to preserve desktop text selection.
+A release hint appears while pulling, and a translucent
+`LoadingOverlay` keeps the movie visible while refreshing. Keyboard users can
+focus the movie content and press Enter. It calls
+`POST /api/movies/:movieId/refresh`, refreshing TMDB,
 MDBList ratings, JustWatch, Wikipedia, IMDb trivia and Box Office Mojo. TMDB
 and Wikipedia finish before the financial lookup so budget fallbacks use their
 fresh values. Manual budgets and unrelated JSON keys are preserved.
 
 Movie metadata is public and shared across theatres: any signed-in user can
 refresh it without joining a list. Signed-out requests are rejected and hide
-the control. No owner-only setting is needed. TMDB and MDBList use their existing
+the gesture. No owner-only setting is needed. TMDB and MDBList use their existing
 credentials; trivia requires the server-side `CRAWLORA_API_KEY`.
 
 The response is `{ movie, failed }`. Successful integrations save their updates
 even if another fails; failed integrations retain their saved snapshots.
-Partial failures are named beside the action, not presented as complete
+Partial failures are named in the movie view, not presented as complete
 success. The existing Wikipedia-budget fallback behavior described below
 still applies. Details update directly from the response, and theatre data
 revalidates through the shared client cache.

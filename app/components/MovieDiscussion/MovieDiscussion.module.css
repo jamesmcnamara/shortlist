@@ -1,3 +1,7 @@
+:global(html):has(.discussionDrawer) {
+  overflow-y: hidden;
+}
+
 .discussionDrawer {
   position: fixed;
   z-index: 40;

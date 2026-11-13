@@ -34,6 +34,15 @@
   animation: spin 1.1s linear infinite;
 }
 
+.translucent {
+  background: color-mix(in srgb, var(--surface) 65%, transparent);
+}
+
+.translucent .reel {
+  color: var(--text);
+  filter: none;
+}
+
 .centeredRotation {
   overflow: visible;
   transform-box: view-box;

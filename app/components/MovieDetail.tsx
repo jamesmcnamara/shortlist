@@ -28,7 +28,12 @@ export function MovieDetail({
   const year = details.release_date ? details.release_date.slice(0, 4) : null;
 
   return (
-    <div className={styles.detail}>
+    <MovieRefresh
+      key={movie.id}
+      movieId={movie.id}
+      onRefreshed={setMovie}
+      className={styles.detail}
+    >
       <div
         className={styles.backdrop}
         style={
@@ -124,9 +129,8 @@ export function MovieDetail({
           <Streaming availability={details.justWatch} />
         </div>
         <Trivia trivia={details.trivia} />
-        <MovieRefresh movieId={movie.id} onRefreshed={setMovie} />
       </div>
-    </div>
+    </MovieRefresh>
   );
 }
 

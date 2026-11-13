@@ -122,6 +122,12 @@ export function FantasyDashboard({
             Net is worldwide gross minus budget
             {asOf ? `, as of ${dateLabel(asOf)}` : ""}.
           </p>
+          <StillToCome
+            players={players}
+            today={today}
+            onOpen={onOpen}
+            onSaveBudget={onSaveBudget}
+          />
 
           {hasScores && second && <LeadBreakdown {...moduleProps("lead")} />}
           {hasScores && racePoints >= 2 && (
@@ -133,12 +139,6 @@ export function FantasyDashboard({
             />
           )}
           {hasScores && <MovieLedger {...moduleProps("ledger")} />}
-          <StillToCome
-            players={players}
-            today={today}
-            onOpen={onOpen}
-            onSaveBudget={onSaveBudget}
-          />
         </>
       )}
     </section>
