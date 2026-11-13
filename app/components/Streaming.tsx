@@ -9,7 +9,6 @@ import type {
 } from "@/app/lib/justwatch-types";
 import { STREAMING_SERVICES } from "@/app/lib/streaming-services";
 import { useState } from "react";
-import { RefreshButton } from "./RefreshButton";
 import styles from "./Streaming.module.css";
 
 const LABELS: Record<StreamingType, string> = {
@@ -28,29 +27,13 @@ const PRIORITY: Record<StreamingType, number> = {
 interface StreamingProps {
   availability?: JustWatchAvailability;
   services?: readonly StreamingService[];
-  onRefresh?: () => Promise<unknown>;
 }
 
 export function Streaming({
   availability,
   services = STREAMING_SERVICES,
-  onRefresh,
 }: StreamingProps) {
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [refreshFailed, setRefreshFailed] = useState(false);
   const offers = getOffers(services, availability);
-  const refresh = async () => {
-    if (!onRefresh || isRefreshing) return;
-    setIsRefreshing(true);
-    setRefreshFailed(false);
-    try {
-      await onRefresh();
-    } catch {
-      setRefreshFailed(true);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
   const attribution =
     httpsUrl(availability?.url) ?? "https://www.justwatch.com/us";
 
@@ -88,30 +71,17 @@ export function Streaming({
       ) : (
         <>
           <p className={styles.empty} role="status">
-            {refreshFailed
-              ? "Couldn't check JustWatch. Try again tomorrow."
-              : !availability
-                ? ""
-                : availability.status === "unavailable"
-                  ? "Streaming availability is temporarily unavailable."
-                  : availability.status === "not_found"
-                    ? "Couldn't find it, man."
-                    : "It's fuckin' nowhere. Ghost town."}
+            {!availability
+              ? ""
+              : availability.status === "unavailable"
+                ? "Streaming availability is temporarily unavailable."
+                : availability.status === "not_found"
+                  ? "Couldn't find it, man."
+                  : "It's fuckin' nowhere. Ghost town."}
           </p>
         </>
       )}
       <div className={styles.controls}>
-        {onRefresh &&
-          !(availability?.status === "matched" && offers.length > 0) && (
-            <RefreshButton
-              onClick={refresh}
-              busy={isRefreshing}
-              label={isRefreshing ? "Checking…" : "Check JustWatch"}
-              title={
-                isRefreshing ? "Checking JustWatch..." : "Refresh JustWatch"
-              }
-            />
-          )}
         <a
           className={styles.attribution}
           href={attribution}

@@ -244,13 +244,10 @@ No API key or database migration is needed.
 
 Lookups have a four-second total timeout. Service failures are logged without
 blocking movie creation. Cached movies are not looked up again, so existing
-movies can be backfilled using **Menu > Extra Settings > Refresh Wikipedia**.
-This checks every movie in the current theatre, including Watched, one at a
-time using the same progress drawer as the box-office refresh. Dismissing the
-drawer does not stop the job; reopen it from the menu to see progress. Keep the
-page open, since navigating away stops further requests. Individual failures
-are counted and other movies continue; lost access stops the batch. Restart
-from the menu to retry.
+movies can be backfilled using **Refresh movie** on details or a discussion,
+or **Menu > Extra Settings > Refresh movies** for the whole theatre. These
+actions refresh all integrations, not just Wikipedia; see
+[Refreshing movie data](#refreshing-movie-data).
 
 Any signed-in user can run the refresh on a public theatre without joining.
 Successful lookups update the shared client cache and only replace the stored
@@ -320,7 +317,8 @@ and writes each movie's numeric `shortlistId` into the blob. It does not add
 nominations to any theatre. Existing movies and their metadata are reused.
 Both nomination routes and the Oscar importer call the backend `addMovie`
 helper, which resolves the movie and runs add-time enrichment, including
-Box Office Mojo. Changes to that shared pipeline apply to both flows.
+Box Office Mojo and IMDb trivia in parallel. Changes to that shared pipeline
+apply to both flows.
 Optional enrichment failures are logged without discarding the imported movie,
 matching normal adds. Reruns skip movies that already have Box Office Mojo data
 and rerun the add pipeline for the rest, so they backfill failed enrichment.
@@ -370,6 +368,65 @@ Bulk refresh failures preserve previous data. Movies are matched by their TMDB
 ID, never just their title; unmatched movies are reported separately.
 The row links to JustWatch for attribution. This undocumented endpoint may
 change or stop working, and cached availability can become outdated.
+
+### IMDb trivia
+
+The common add flow fetches IMDb trivia through
+[Crawlora's trivia API](https://crawlora.net/docs/imdb/imdb-title-trivia).
+Set `CRAWLORA_API_KEY` in `.env.local` and in the deployment's server environment.
+The key is sent only from the server in the `x-api-key` header. No new dependency,
+column or migration is needed. The IMDb ID comes from TMDB details, falling
+back to the cached MDBList ID.
+
+Trivia lives under `movie.details.trivia` as `{ url, fetchedAt, items }`;
+items are plain text, rendered without interpreting HTML. All returned entries
+are kept, with whitespace trimmed and duplicate entries removed; there is no
+50-entry cap.
+
+Movie details and discussions share a collapsed **Trivia (may contain spoilers)**
+section with an IMDb attribution link. All entries stay behind the disclosure;
+there is no per-entry spoiler classification. A successful empty collection is
+different from trivia that has never been loaded.
+
+Requests time out after 30 seconds and are not retried. Missing credentials,
+HTTP/API errors, mismatched movie IDs and unrecognized payloads are logged
+without blocking an add or clearing earlier trivia. Incomplete responses
+(`has_more: true` or `total` greater than the returned count) are also treated
+as failures: Crawlora does not document trivia pagination. Search alone does
+not fetch trivia. Re-adding a cached movie also attempts enrichment.
+
+Direct requests to IMDb's internal GraphQL endpoint returned HTTP 403, so the
+app no longer calls it. Crawlora retrieval was verified with 245 entries for
+The Shawshank Redemption. Automated tests use synthetic contract fixtures.
+Crawlora is a third-party service with its own pricing and availability;
+check applicable terms before using or redistributing its data.
+
+### Refreshing movie data
+
+Signed-in users get one **Refresh movie** action in movie details and
+discussions. It calls `POST /api/movies/:movieId/refresh`, refreshing TMDB,
+MDBList ratings, JustWatch, Wikipedia, IMDb trivia and Box Office Mojo. TMDB
+and Wikipedia finish before the financial lookup so budget fallbacks use their
+fresh values. Manual budgets and unrelated JSON keys are preserved.
+
+Movie metadata is public and shared across theatres: any signed-in user can
+refresh it without joining a list. Signed-out requests are rejected and hide
+the control. No owner-only setting is needed. TMDB and MDBList use their existing
+credentials; trivia requires the server-side `CRAWLORA_API_KEY`.
+
+The response is `{ movie, failed }`. Successful integrations save their updates
+even if another fails; failed integrations retain their saved snapshots.
+Partial failures are named beside the action, not presented as complete
+success. The existing Wikipedia-budget fallback behavior described below
+still applies. Details update directly from the response, and theatre data
+revalidates through the shared client cache.
+
+**Menu > Extra Settings > Refresh movies** applies the same action once per
+movie in the current theatre, including Watched. The bottom drawer shows real,
+sequential completion progress. Partial failures count as failed movies; other
+movies continue, while lost access stops the batch. Dismiss and reopen the
+drawer without stopping it. Keep the page open: navigating away stops further
+requests. Restart from the menu to retry.
 
 ### Box Office Mojo financial data
 
@@ -467,18 +524,11 @@ green, starting at white for `$0` and getting greener on a logarithmic scale up
 to `$1bn`. Net and multiplier use return on budget, with red at
 `-1x`, neutral at break-even, and green at `+1x` (clamped beyond those limits).
 
-Choose the circular-arrow refresh button on the row to update a single movie. The membership-protected
-`POST /api/theatres/:theatreId/box-office` endpoint accepts `{ movieId }`, rejects
-movies outside that theatre, and reports failures without clearing saved data.
-Successful refreshes update the shared client cache.
-
-In a theatre, **Menu > Extra Settings > Refresh box office** checks every movie
-in that theatre, including Watched, one at a time. The bottom drawer shows real
-completion progress using the heat map's green. Dismiss it without stopping the
-update; reopen it from the menu while running. Individual failures are counted
-and other movies continue; lost access stops the batch. Keep the page open:
-navigating away stops further requests. A finished run can be restarted from the
-menu, including to backfill older nominations. Errors appear in the drawer.
+Use **Refresh movie**, or **Menu > Extra Settings > Refresh movies** for a
+theatre-wide refresh of all integrations. There are no separate streaming or
+box-office refresh controls. Legacy theatre-scoped refresh APIs and the
+focused command-line scripts remain available; the manual-budget PATCH API
+is unchanged.
 
 This is an unofficial scraper of public pages and can break if Mojo changes its
 site. It does not bypass login, paywalls, or anti-bot challenges. Check Box Office

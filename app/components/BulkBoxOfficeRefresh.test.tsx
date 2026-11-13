@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/app/lib/api", async (original) => ({
   ...(await original<typeof import("@/app/lib/api")>()),
-  api: { theatre: mocks.theatre },
+  api: { theatre: mocks.theatre, movies: { refresh: mocks.refresh } },
 }));
 vi.mock("@/lib/auth/client", () => ({
   authClient: {
@@ -41,10 +41,9 @@ beforeEach(() => {
     { movieId: 2, completed: true },
     { movieId: 1, completed: true },
   ]);
-  mocks.refresh.mockReset().mockResolvedValue({});
+  mocks.refresh.mockReset().mockResolvedValue({ failed: [] });
   mocks.theatre.mockReset().mockReturnValue({
     nominations: { list: mocks.list },
-    refreshBoxOffice: mocks.refresh,
   });
 });
 afterEach(cleanup);
@@ -54,14 +53,14 @@ const openMenu = () =>
 const start = () => {
   openMenu();
   fireEvent.click(screen.getByRole("button", { name: "Extra Settings" }));
-  fireEvent.click(screen.getByRole("button", { name: /Refresh box office/i }));
+  fireEvent.click(screen.getByRole("button", { name: /Refresh movies/i }));
 };
 const menu = () =>
   render(
     <AppMenu theatre={{ id: "current-theatre", path: "/u/@user/club" }} />,
   );
 
-describe("bulk box office refresh", () => {
+describe("bulk movie refresh", () => {
   it("runs once per movie, including Watched, and survives closing the menu", async () => {
     menu();
     start();
@@ -79,10 +78,10 @@ describe("bulk box office refresh", () => {
   });
 
   it("shows real sequential progress and can be dismissed and reopened without starting another job", async () => {
-    let finish!: () => void;
+    let finish!: (value: { failed: string[] }) => void;
     mocks.refresh.mockImplementationOnce(
       () =>
-        new Promise<void>((resolve) => {
+        new Promise<{ failed: string[] }>((resolve) => {
           finish = resolve;
         }),
     );
@@ -93,17 +92,17 @@ describe("bulk box office refresh", () => {
       "0",
     );
     fireEvent.click(
-      screen.getByRole("button", { name: /Dismiss box office progress/i }),
+      screen.getByRole("button", { name: /Dismiss movies progress/i }),
     );
     await waitFor(() => expect(screen.queryByRole("progressbar")).toBeNull());
     openMenu();
     fireEvent.click(
-      screen.getByRole("button", { name: /Show box office progress/i }),
+      screen.getByRole("button", { name: /Show movies progress/i }),
     );
     expect(screen.getByRole("progressbar")).toBeTruthy();
     expect(mocks.list).toHaveBeenCalledOnce();
     await act(async () => {
-      finish();
+      finish({ failed: [] });
     });
     await waitFor(() =>
       expect(
@@ -115,6 +114,21 @@ describe("bulk box office refresh", () => {
 
   it("continues after an individual failure and reports it instead of claiming complete success", async () => {
     mocks.refresh.mockRejectedValueOnce(new ApiError("No IMDb ID", 400));
+    menu();
+    start();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("progressbar").getAttribute("aria-valuenow"),
+      ).toBe("100"),
+    );
+    expect(mocks.refresh).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole("alert").textContent).toContain(
+      "1 movie couldn't be refreshed",
+    );
+  });
+
+  it("counts partial integration failures and continues with the next movie", async () => {
+    mocks.refresh.mockResolvedValueOnce({ failed: ["IMDb trivia"] });
     menu();
     start();
     await waitFor(() =>
@@ -147,9 +161,7 @@ describe("bulk box office refresh", () => {
     );
     expect(mocks.refresh).not.toHaveBeenCalled();
     openMenu();
-    fireEvent.click(
-      screen.getByRole("button", { name: /Refresh box office/i }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: /Refresh movies/i }));
     await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(2));
     expect(screen.queryByRole("alert")).toBeNull();
   });
@@ -191,8 +203,6 @@ describe("bulk box office refresh", () => {
     render(<AppMenu />);
     openMenu();
     fireEvent.click(screen.getByRole("button", { name: "Extra Settings" }));
-    expect(
-      screen.queryByRole("button", { name: "Refresh box office" }),
-    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Refresh movies" })).toBeNull();
   });
 });

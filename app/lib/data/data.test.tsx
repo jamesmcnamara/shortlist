@@ -137,12 +137,15 @@ describe("shared data cache", () => {
     });
   });
 
-  it("revalidates nomination data after a Wikipedia refresh", async () => {
+  it("revalidates theatre data after a global movie refresh with partial failure", async () => {
     let wikipediaUrl: string | null = null;
     fetchMock.mockImplementation(async (input, init) => {
-      if (input === `${base}/wikipedia` && init?.method === "POST") {
+      if (input === "/api/movies/1/refresh" && init?.method === "POST") {
         wikipediaUrl = "https://en.wikipedia.org/wiki/The_Matrix";
-        return json({ wikipediaUrl });
+        return json({
+          movie: { details: { wikipediaUrl } },
+          failed: ["IMDb trivia"],
+        });
       }
       return json([{ id: 1, movie: { details: { wikipediaUrl } } }]);
     });
@@ -154,19 +157,19 @@ describe("shared data cache", () => {
     );
     const controller = new AbortController();
     await act(async () => {
-      await api.theatre(theatre.id).refreshWikipedia(1, controller.signal);
+      const result = await api.movies.refresh(1, controller.signal);
+      expect(result.failed).toEqual(["IMDb trivia"]);
     });
     await waitFor(() =>
       expect(result.current.data?.[0].movie.details.wikipediaUrl).toBe(
         "https://en.wikipedia.org/wiki/The_Matrix",
       ),
     );
-    expect(fetchMock).toHaveBeenCalledWith(`${base}/wikipedia`, {
+    expect(fetchMock).toHaveBeenCalledWith("/api/movies/1/refresh", {
       cache: "no-store",
       method: "POST",
-      body: JSON.stringify({ movieId: 1 }),
       signal: controller.signal,
-      headers: { "content-type": "application/json" },
+      headers: undefined,
     });
   });
 

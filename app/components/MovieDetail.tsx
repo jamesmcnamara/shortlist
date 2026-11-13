@@ -1,10 +1,13 @@
-import type { Movie } from "@/src/db/schema";
 import { tmdbImageUrl } from "@/app/lib/utils";
+import type { Movie } from "@/src/db/schema";
+import { useEffect, useState } from "react";
 import { BoxOffice } from "./BoxOffice";
+import styles from "./MovieDetail.module.css";
+import { MovieRefresh } from "./MovieRefresh";
 import { Oscars } from "./Oscars";
 import { Ratings } from "./Ratings";
 import { Streaming } from "./Streaming";
-import styles from "./MovieDetail.module.css";
+import { Trivia } from "./Trivia";
 
 interface MovieDetailProps {
   movie: Movie;
@@ -13,7 +16,13 @@ interface MovieDetailProps {
 }
 
 /** Full-screen, richly rendered view of a single movie's details. */
-export function MovieDetail({ movie, onBack, onAdd }: MovieDetailProps) {
+export function MovieDetail({
+  movie: initialMovie,
+  onBack,
+  onAdd,
+}: MovieDetailProps) {
+  const [movie, setMovie] = useState(initialMovie);
+  useEffect(() => setMovie(initialMovie), [initialMovie]);
   const { details, ratings } = movie;
   const backdropUrl = tmdbImageUrl(details.backdrop_path, "w1280");
   const year = details.release_date ? details.release_date.slice(0, 4) : null;
@@ -114,6 +123,8 @@ export function MovieDetail({ movie, onBack, onAdd }: MovieDetailProps) {
           <h2 className={styles.sectionTitle}>Where to watch</h2>
           <Streaming availability={details.justWatch} />
         </div>
+        <Trivia trivia={details.trivia} />
+        <MovieRefresh movieId={movie.id} onRefreshed={setMovie} />
       </div>
     </div>
   );

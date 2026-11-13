@@ -17,6 +17,7 @@ import { authUsers } from "./neon-auth-schema";
 import type { MovieDetails as _MovieDetails } from "@lorenzopant/tmdb";
 import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
 import type { BoxOfficeData, BoxOfficeSources } from "@/app/lib/box-office";
+import type { MovieTrivia } from "@/app/lib/trivia";
 
 export const redirects = pgTable(
   "redirects",
@@ -354,6 +355,7 @@ export interface User {
 export type Person = Pick<User, "id" | "name" | "username">;
 
 export interface MovieDetails extends _MovieDetails {
+  trivia?: MovieTrivia;
   posterUrl?: string | null;
   description?: string | null;
   year?: number | null;

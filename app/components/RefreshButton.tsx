@@ -1,19 +1,22 @@
 import styles from "./RefreshButton.module.css";
+import classnames from "classnames";
 
 export function RefreshButton({
   onClick,
   busy,
   label,
   title,
+  showLabel = false,
 }: {
   onClick: () => void;
   busy: boolean;
   label: string;
   title: string;
+  showLabel?: boolean;
 }) {
   return (
     <button
-      className={styles.refresh}
+      className={classnames(styles.refresh, { [styles.labeled]: showLabel })}
       type="button"
       onClick={onClick}
       disabled={busy}
@@ -36,6 +39,7 @@ export function RefreshButton({
         <path d="M20 11a8 8 0 1 0-2.3 6.7" />
         <path d="M20 4v7h-7" />
       </svg>
+      {showLabel && label}
     </button>
   );
 }

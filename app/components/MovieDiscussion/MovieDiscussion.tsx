@@ -8,6 +8,8 @@ import classnames from "classnames";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { BoxOffice } from "../BoxOffice";
+import { MovieRefresh } from "../MovieRefresh";
+import { Trivia } from "../Trivia";
 import { Oscars } from "../Oscars";
 import { EditableComment } from "./EditableComment";
 import styles from "./MovieDiscussion.module.css";
@@ -23,8 +25,6 @@ interface MovieDiscussionProps {
   onMarkWatched?: () => void;
   onDelete?: () => void;
   onToggleCompleted?: () => void;
-  onRefreshJustWatch?: () => Promise<void>;
-  onRefreshBoxOffice?: () => Promise<void>;
   onClose: () => void;
 }
 
@@ -38,8 +38,6 @@ export function MovieDiscussion({
   onMarkWatched,
   onDelete,
   onToggleCompleted,
-  onRefreshJustWatch,
-  onRefreshBoxOffice,
   onClose,
 }: MovieDiscussionProps) {
   const {
@@ -117,11 +115,10 @@ export function MovieDiscussion({
             services={ratings.services}
             wikipediaUrl={details.wikipediaUrl}
           />
-          <BoxOffice data={details.boxOffice} onRefresh={onRefreshBoxOffice} />
-          <Streaming
-            availability={details.justWatch}
-            onRefresh={onRefreshJustWatch}
-          />
+          <BoxOffice data={details.boxOffice} />
+          <Streaming availability={details.justWatch} />
+          <Trivia trivia={details.trivia} />
+          {currentUserId && <MovieRefresh movieId={nomination.movieId} />}
           {!nomination.completedAt && onMarkWatched && (
             <div className={styles.movieActions}>
               <button

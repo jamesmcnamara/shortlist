@@ -62,8 +62,21 @@ beforeEach(async () => {
   close = () => created.client.close();
   setDbForTesting(() => db as unknown as DB);
   auth.userId = USER;
+  vi.stubEnv("CRAWLORA_API_KEY", "test");
   fetch.mockReset().mockImplementation(async () => page());
-  vi.stubGlobal("fetch", fetch);
+  vi.stubGlobal(
+    "fetch",
+    async (
+      input: Parameters<typeof globalThis.fetch>[0],
+      init?: RequestInit,
+    ) =>
+      String(input).startsWith("https://api.crawlora.net/")
+        ? Response.json({
+            code: 200,
+            data: { id: "tt0816692", type: "trivia", facts: [], total: 0 },
+          })
+        : fetch(input, init),
+  );
   await db.insert(authUsers).values({
     id: USER,
     name: "User",
@@ -109,6 +122,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
   vi.restoreAllMocks();
   await close();
 });

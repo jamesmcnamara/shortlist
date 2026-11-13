@@ -65,6 +65,7 @@ beforeEach(async () => {
   vi.clearAllMocks();
   vi.stubEnv("TMDB_API_KEY", "test-key");
   vi.stubEnv("MDB_API_KEY", "test-key");
+  vi.stubEnv("CRAWLORA_API_KEY", "test-key");
   const created = await createTestDb();
   db = created.db;
   close = () => created.client.close();
@@ -87,6 +88,17 @@ beforeEach(async () => {
   vi.stubGlobal(
     "fetch",
     vi.fn().mockImplementation(async (url: string) => {
+      if (url.startsWith("https://api.crawlora.net/")) {
+        return Response.json({
+          code: 200,
+          data: {
+            id: new URL(url).searchParams.get("id"),
+            type: "trivia",
+            facts: [],
+            total: 0,
+          },
+        });
+      }
       if (url.startsWith("https://www.boxofficemojo.com/")) {
         const imdbId = new URL(url).pathname.split("/")[2];
         return new Response(boxOfficeHtml.replaceAll("tt0816692", imdbId), {
@@ -253,7 +265,7 @@ describe("Oscar movie refresh", () => {
       0,
       2,
     );
-    expect(reused.map(({ boxOffice, ...movie }) => movie)).toEqual(
+    expect(reused).toMatchObject(
       stored.map(({ boxOffice, ...movie }) => movie),
     );
     expect(
@@ -272,7 +284,7 @@ describe("Oscar movie refresh", () => {
     const added = await addMovie({ kind: "shortlist", id: imported.id });
     expect(added.id).toBe(imported.id);
     expect(added.details.boxOffice?.worldwideGross).toBe(782_948_164);
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledTimes(2);
     expect(tmdbApi.movies.details).not.toHaveBeenCalled();
     expect(tmdbApi.find.by_id).not.toHaveBeenCalled();
     expect(await db.select().from(nominations)).toEqual([]);

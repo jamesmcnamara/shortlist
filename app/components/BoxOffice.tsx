@@ -1,28 +1,17 @@
 "use client";
 
-import { useAPICall } from "@/app/lib/useAPIActions";
 import type { BoxOfficeData } from "@/app/lib/box-office";
 import { boxOfficeMetrics } from "@/app/lib/box-office-metrics";
 import { heat } from "@/app/lib/heat";
-import { RefreshButton } from "./RefreshButton";
 import styles from "./BoxOffice.module.css";
 
 interface BoxOfficeProps {
   data?: BoxOfficeData;
-  onRefresh?: () => Promise<void>;
 }
 
-export function BoxOffice({ data, onRefresh }: BoxOfficeProps) {
-  const { isSubmitting: refreshing, message: error, fromAPI } = useAPICall();
+export function BoxOffice({ data }: BoxOfficeProps) {
   const { missing, verb, net, multiplier, budget } = boxOfficeMetrics(data);
   const manual = data?.budgetSource === "manual";
-
-  const refresh =
-    onRefresh &&
-    fromAPI({
-      api: onRefresh,
-      action: "refresh Box Office Mojo",
-    });
 
   return (
     <div
@@ -39,18 +28,6 @@ export function BoxOffice({ data, onRefresh }: BoxOfficeProps) {
         </p>
       )}
       <div className={styles.controls}>
-        {refresh && (
-          <RefreshButton
-            onClick={refresh}
-            busy={refreshing}
-            label={refreshing ? "Refreshing..." : "Refresh"}
-            title={
-              refreshing
-                ? "Refreshing Box Office Mojo..."
-                : "Refresh Box Office Mojo"
-            }
-          />
-        )}
         {data && data.source !== "boxofficemojo" ? (
           <span className={styles.attribution}>
             {data.source === "manual"
@@ -83,11 +60,6 @@ export function BoxOffice({ data, onRefresh }: BoxOfficeProps) {
       </span>
       {manual && data?.source !== "manual" && (
         <span className={styles.attribution}>Manual budget (USD)</span>
-      )}
-      {error && (
-        <p className={styles.error} role="alert">
-          {error}
-        </p>
       )}
     </div>
   );

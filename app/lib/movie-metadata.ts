@@ -2,6 +2,7 @@ import type {
   MDBRating,
   MDBResponse,
   Movie,
+  MovieDetails,
   MovieRatings,
   RatingSource,
 } from "@/src/db/schema";
@@ -73,6 +74,42 @@ const storedMovieSelection = {
   boxOffice: movies.boxOffice,
   createdAt: movies.createdAt,
 };
+
+async function getTmdbDetails(tmdbId: number): Promise<MovieDetails> {
+  const api = tmdb();
+  const details = await api.movies.details({ movie_id: tmdbId });
+  return {
+    ...details,
+    posterUrl: details.poster_path
+      ? api.images.poster(details.poster_path, "w342")
+      : null,
+    description: details.overview ?? null,
+    year: details.release_date
+      ? Number(details.release_date.slice(0, 4)) || null
+      : null,
+  };
+}
+
+export async function refreshTmdbMetadata(movie: Movie) {
+  if (movie.tmdbId === null) throw new Error("That movie has no TMDB id.");
+  const details = await getTmdbDetails(movie.tmdbId);
+  const sources = {
+    tmdb: { budget: validTmdbBudget.safeParse(details.budget).data ?? null },
+  };
+  await getDb()
+    .update(movies)
+    .set({
+      details: sql`${movies.details} || ${JSON.stringify(details)}::jsonb`,
+      boxOffice: sql`${movies.boxOffice} || ${JSON.stringify(sources)}::jsonb`,
+    })
+    .where(eq(movies.id, movie.id));
+}
+
+export async function refreshRatings(movie: Movie) {
+  if (movie.tmdbId === null) throw new Error("That movie has no TMDB id.");
+  const ratings = await getMdbRatings(movie.tmdbId);
+  await getDb().update(movies).set({ ratings }).where(eq(movies.id, movie.id));
+}
 
 export async function findMovieById(id: number): Promise<Movie | null> {
   const [row] = await getDb()
@@ -161,9 +198,8 @@ export class ProdMovieProvider implements MovieMetadataProvider {
       .limit(1);
     if (cached) return movieFromRow(cached);
 
-    const api = tmdb();
     const [details, ratings] = await Promise.all([
-      api.movies.details({ movie_id: tmdbId }),
+      getTmdbDetails(tmdbId),
       getMdbRatings(tmdbId),
     ]);
     const [justWatch, wikipediaUrl] = await Promise.all([
@@ -191,13 +227,6 @@ export class ProdMovieProvider implements MovieMetadataProvider {
         ...details,
         justWatch,
         wikipediaUrl,
-        posterUrl: details.poster_path
-          ? api.images.poster(details.poster_path, "w342")
-          : null,
-        description: details.overview ?? null,
-        year: details.release_date
-          ? Number(details.release_date.slice(0, 4)) || null
-          : null,
       },
       ratings,
       boxOffice: {

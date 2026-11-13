@@ -13,6 +13,7 @@ import type { Movie } from "@/src/db/schema";
 import type { MovieImportResult } from "./bulk-movie-import";
 import type { JustWatchAvailability } from "./justwatch-types";
 import type { BoxOfficeData } from "./box-office";
+import type { MovieRefreshResult } from "./refresh-movie";
 
 export const errorResponse = z.object({ error: z.string() });
 
@@ -126,6 +127,13 @@ export interface PublicTheatre {
  * every call site.
  */
 export const api = {
+  movies: {
+    refresh: (
+      movieId: number,
+      signal?: AbortSignal,
+    ): Promise<MovieRefreshResult> =>
+      request(`/api/movies/${movieId}/refresh`, { method: "POST", signal }),
+  },
   push: {
     subscribe: (subscription: PushSubscriptionJSON): Promise<void> =>
       request("/api/push", {

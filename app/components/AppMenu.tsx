@@ -148,9 +148,9 @@ export function AppMenu({ theatre, additionalMenuItems }: AppMenuProps) {
               key={theatre.id}
               theatreId={theatre.id}
               service={{
-                name: "boxOffice",
-                label: "Box office",
-                refresh: api.theatre(theatre.id).refreshBoxOffice,
+                name: "movies",
+                label: "movies",
+                refresh: (id, signal) => api.movies.refresh(id, signal),
               }}
               buttonClassName={styles.menuItem}
               onStart={close}

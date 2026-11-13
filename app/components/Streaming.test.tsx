@@ -229,39 +229,8 @@ describe("streaming service row", () => {
     ).toBeTruthy();
   });
 
-  it("checks JustWatch from the empty state and reports failures", async () => {
-    let fail!: (error: Error) => void;
-    const onRefresh = vi.fn(
-      () =>
-        new Promise((_, reject) => {
-          fail = reject;
-        }),
-    );
-    render(<Streaming onRefresh={onRefresh} />);
-    const button = screen.getByRole("button", { name: "Check JustWatch" });
-    expect(button.textContent).toBe("");
-    expect(button.querySelector('svg[aria-hidden="true"]')).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Check JustWatch" }));
-    const checking = await screen.findByRole("button", { name: "Checking…" });
-    expect(checking.hasAttribute("disabled")).toBe(true);
-    expect(checking.getAttribute("aria-busy")).toBe("true");
-    fireEvent.click(checking);
-    expect(onRefresh).toHaveBeenCalledTimes(1);
-    fail(new Error("Down"));
-    expect(
-      await screen.findByText("Couldn't check JustWatch. Try again tomorrow."),
-    ).toBeTruthy();
-    expect(
-      screen
-        .getByRole("button", { name: "Check JustWatch" })
-        .hasAttribute("disabled"),
-    ).toBe(false);
-  });
-
-  it("hides the check button when there are offers or no refresh handler", () => {
-    render(
-      <Streaming availability={availability([offer(8)])} onRefresh={vi.fn()} />,
-    );
+  it("leaves refreshing to the shared movie action", () => {
+    render(<Streaming availability={availability([offer(8)])} />);
     expect(
       screen.queryByRole("button", { name: "Check JustWatch" }),
     ).toBeNull();

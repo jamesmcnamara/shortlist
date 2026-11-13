@@ -177,10 +177,6 @@ export function Theatre({
       },
       action: "update the completed status",
     },
-    refreshJustWatch: {
-      api: api.refreshJustWatch,
-      action: "refresh Just Watch data",
-    },
   });
 
   const visible = useMemo(
@@ -411,12 +407,6 @@ export function Theatre({
             onMarkWatched={when(canParticipate)(() =>
               actions.toggleWatched(focused.movieId),
             )}
-            onRefreshJustWatch={when(canParticipate)(() =>
-              api.refreshJustWatch(focused.movieId),
-            )}
-            onRefreshBoxOffice={when(canParticipate)(() =>
-              api.refreshBoxOffice(focused.movieId),
-            )}
             onDelete={when(canCurate)(() => actions.delete(focused.id))}
             onToggleCompleted={when(canCurate)(async () => {
               if (await actions.toggleCompleted(focused.id)) {
@@ -435,8 +425,6 @@ export interface TheatreAPI {
   updateDescription: (description: string) => Promise<void>;
   importTitle: (title: string) => Promise<MovieImportResult>;
   suggest: (exclude: string[]) => Promise<Nomination[]>;
-  refreshJustWatch: (movieId: number) => Promise<void>;
-  refreshBoxOffice: (movieId: number) => Promise<void>;
   saveBudget: (movieId: number, budget: number) => Promise<void>;
   delete: (nominationId: number) => Promise<void>;
   nominate: (candidate: Movie, comment: string) => Promise<void>;
@@ -458,8 +446,6 @@ const READ_ONLY_API: ReadOnlyTheatreAPI = {
   updateDescription: readOnly,
   importTitle: readOnly,
   suggest: readOnly,
-  refreshJustWatch: readOnly,
-  refreshBoxOffice: readOnly,
   saveBudget: readOnly,
   delete: readOnly,
   nominate: readOnly,

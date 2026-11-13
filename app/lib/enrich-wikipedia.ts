@@ -6,19 +6,22 @@ import { getWikipediaUrl } from "./wikipedia";
 
 const detailsSchema = z.object({ imdb_id: z.string().nullish() });
 
-export async function refreshWikipedia(movieId: number, theatreId: string) {
+export async function refreshWikipedia(movieId: number, theatreId?: string) {
   const db = getDb();
-  const belongsToTheatre = exists(
-    db
-      .select({ id: nominations.id })
-      .from(nominations)
-      .where(
-        and(
-          eq(nominations.theatreId, theatreId),
-          eq(nominations.movieId, movies.id),
-        ),
-      ),
-  );
+  const belongsToTheatre =
+    theatreId === undefined
+      ? undefined
+      : exists(
+          db
+            .select({ id: nominations.id })
+            .from(nominations)
+            .where(
+              and(
+                eq(nominations.theatreId, theatreId),
+                eq(nominations.movieId, movies.id),
+              ),
+            ),
+        );
   const condition = and(eq(movies.id, movieId), belongsToTheatre);
   const [movie] = await db
     .select({ tmdbId: movies.tmdbId, details: movies.details })
