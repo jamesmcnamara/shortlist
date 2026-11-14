@@ -14,14 +14,15 @@ export async function listTheatreTags(theatreId: string): Promise<string[]> {
 
 export async function updateTheatre(
   theatreId: string,
-  input: { name?: string; description?: string },
+  input: { name?: string; description?: string; defaultSort?: string | null },
 ): Promise<void> {
   const db = getDb();
-  const { name, description } = input;
+  const { name, description, defaultSort } = input;
   const update = db
     .update(theatres)
     .set({
       ...(name !== undefined ? { name } : {}),
+      ...(defaultSort !== undefined ? { defaultSort } : {}),
       ...(description !== undefined
         ? { description: description || null }
         : {}),

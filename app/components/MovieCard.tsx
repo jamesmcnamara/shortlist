@@ -1,4 +1,5 @@
 import type { Nomination } from "@/src/db/schema";
+import type { ReactNode } from "react";
 import styles from "./MovieCard.module.css";
 import { getColor, getInitials } from "@/app/lib/utils";
 import classnames from "classnames";
@@ -15,6 +16,8 @@ interface MovieCardProps {
   isSelected?: boolean;
   rank?: number;
   label?: string;
+  /** Extra controls under the poster. Keep them outside the poster button. */
+  footer?: ReactNode;
   onClick: () => void;
   onLongPress: () => void;
 }
@@ -28,6 +31,7 @@ export function MovieCard({
   isCompleted = false,
   isSelected,
   label,
+  footer,
   onClick,
   onLongPress,
 }: MovieCardProps) {
@@ -114,6 +118,7 @@ export function MovieCard({
             )}
           </div>
         )}
+        {footer && <div className={styles.footer}>{footer}</div>}
       </article>
     </>
   );

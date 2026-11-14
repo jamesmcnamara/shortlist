@@ -54,6 +54,7 @@ export const theatres = pgTable(
     // A separate link that grants the "admin" role on join instead of "member".
     adminInviteCode: text("admin_invite_code").notNull().unique(),
     description: text(),
+    defaultSort: text("default_sort"),
     // Server-only state for opt-in behaviors, keyed by extension name.
     extensions: jsonb("extensions")
       .$type<Record<string, unknown>>()
@@ -338,6 +339,7 @@ export type Nomination = RawNomination & {
   nomcoms: NomCom[];
   nominator: Person;
   seenBy: Person[];
+  extensions?: Record<string, unknown>;
 };
 export type NomCom = typeof nomcoms.$inferSelect & { commenter: Person };
 export type Seen = typeof seen.$inferSelect;

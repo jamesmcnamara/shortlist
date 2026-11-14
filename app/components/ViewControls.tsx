@@ -3,7 +3,12 @@
 import { NominationForm } from "@/app/components/NominationForm";
 import { SearchResults } from "@/app/components/SearchResults";
 import { useMovieSearch } from "@/app/lib/useMovieSearch";
-import { FILTERS, SORTS, type ViewState } from "@/app/lib/view";
+import {
+  FILTERS,
+  sortOptions,
+  type SortOption,
+  type ViewState,
+} from "@/app/lib/view";
 import type { Movie } from "@/src/db/schema";
 import { useRef, useState } from "react";
 import { CollectionViewControls } from "./CollectionViewControls";
@@ -16,6 +21,7 @@ interface ViewControlsProps {
   existing: Set<number>;
   isSubmitting: boolean;
   onNominate?: (movie: Movie, comment: string) => Promise<boolean>;
+  additionalSorts?: readonly SortOption[];
 }
 
 export function ViewControls({
@@ -24,6 +30,7 @@ export function ViewControls({
   existing,
   isSubmitting,
   onNominate,
+  additionalSorts,
 }: ViewControlsProps) {
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState("");
@@ -69,7 +76,7 @@ export function ViewControls({
     <CollectionViewControls
       state={state}
       onChange={onChange}
-      sorts={SORTS}
+      sorts={sortOptions(additionalSorts)}
       filters={FILTERS}
       expandSearch
       search={

@@ -150,7 +150,12 @@ export function AppMenu({ theatre, additionalMenuItems }: AppMenuProps) {
               service={{
                 name: "movies",
                 label: "movies",
-                refresh: (id, signal) => api.movies.refresh(id, signal),
+                refresh: async (id, signal) => {
+                  const { failed } = await api.movies.refresh(id, signal);
+                  if (failed.length) {
+                    throw new Error(`Couldn't refresh ${failed.join(", ")}.`);
+                  }
+                },
               }}
               buttonClassName={styles.menuItem}
               onStart={close}

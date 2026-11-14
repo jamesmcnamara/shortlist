@@ -59,8 +59,10 @@ handle changes that user's profile and creator-based theatre URLs; add a
 redirect from the old handle to the new one manually to keep old links working.
 No account-editing UI or automatic redirect creation is added.
 
-Admins curate a list: they can add or remove movies, import titles, mark entries
-completed, rename or delete the list, and manage its members and invite links.
+Members can nominate movies and remove their own nominations from any list,
+including watched nominations. Admins can also remove anyone's nominations,
+import titles, mark entries completed, rename or delete the list, and manage its
+members and invite links.
 Recommendation notes can only be changed by their original nominator, who must
 also be an admin of that list. Any signed-in user can add discussion comments,
 edit their own discussion comments, mark movies seen, and refresh shared
@@ -129,7 +131,8 @@ such as `# Heading`, URL fragments, and hashes embedded in words are not tags.
 Descriptions remain plain text, not Markdown. Recognized hashtags appear in
 blue when displayed, without links or chips; the editor stays plain text.
 Some tags also turn on [theatre extensions](#theatre-extensions), like
-[movie suggestions](#movie-suggestions) for `#specific`.
+[movie suggestions](#movie-suggestions) for `#specific` and a
+[movie club](#movie-club) for `#movieclub`.
 
 The canonical tag text (without `#`, normalized to Unicode NFC and lowercase)
 is its immutable primary key. The shared `tags` dictionary is insert-only in
@@ -141,6 +144,17 @@ Apply migration `0025_petite_colossus.sql` before deploying this feature.
 Existing descriptions are preserved and get their tags extracted on their next
 save, or by the backfill below.
 Autocomplete and nomination tagging are not implemented yet.
+
+### Default movie sort
+
+Admins can choose a **Default sort** in theatre settings from the same options
+as the list's sort menu, including sorts supplied by enabled extensions.
+**App default** stores `null` in `theatres.default_sort` and uses Recently added.
+The saved default applies to public and member views unless the URL specifies
+another available sort. If a saved extension sort becomes unavailable, the list
+falls back to Recently added.
+
+Apply migration `0033_theatre_default_sort.sql` before deploying this feature.
 
 ### Fantasy lists
 
@@ -628,25 +642,37 @@ Check Vercel's and Google's data retention terms before sending anything private
 ## Theatre extensions
 
 Extensions are opt-in list behaviors kept out of the core app. Each one is named
-after the hashtag that turns it on, so `#specific` turns on `specific`. They're
-listed in `app/lib/extensions/index.ts`, which is safe to import in the browser,
-and each one's server code lives in `app/lib/extensions/<name>/`.
+after the hashtag that turns it on, so `#specific` turns on `specific`, though
+an extension can list other hashtags too (`#movie-club` also turns on
+`movieclub`). They're listed in `app/lib/extensions/index.ts`, which is safe to
+import in the browser, and each one's server code lives in
+`app/lib/extensions/<name>/`.
 
 They share one route, `POST /api/theatres/:theatreId/extensions/:name`, which
 runs the handler registered in `app/lib/extensions/server.ts`. Before calling
 it, the route answers `404` for unknown extensions, runs the usual theatre
 access checks (each handler says whether members or only admins can call it),
-and answers `400` when the list isn't tagged with the extension's name. A
-handler that needs several actions can switch on its request body.
+and answers `400` when the list doesn't have the extension's tag. A handler
+that needs several actions can switch on its request body.
+
+An extension that has to change the core nominations routes does it through
+`hooks` on its handler, so those routes never name an extension. Hooks only run
+on lists that have the extension's tag, and each one is optional:
+
+- `beforeNominate({ theatre, userId })` returns the reason this user can't
+  nominate right now, or `null`. `POST /nominations` answers `409` with it.
+- `decorate(theatre, nominations)` adds the extension's data to the nominations
+  a list shows, under `nomination.extensions[name]`.
 
 Their state lives in `theatres.extensions`, one JSON object keyed by extension
 name, like `{ "specific": { "suggestedAt": "…" } }`. Read an extension's object
 with `extensionData(name)` (always an object, `{}` if there's nothing usable)
 and write it only with `mergeExtensionData(name, patch)`, both in
 `app/lib/extensions/data.ts`. The merge happens in SQL and touches only that
-extension's key, so concurrent writes don't overwrite each other. This data
-never leaves the server: `SafeTheatre` omits it and client queries don't select
-it. Don't add columns or routes for an extension. Apply migration
+extension's key, so concurrent writes don't overwrite each other. The blob
+itself never leaves the server: `SafeTheatre` omits it and client queries don't
+select it, so send anything the client needs through `decorate`. Don't add
+columns or routes for an extension. Apply migration
 `0029_theatre_extensions.sql` before deploying this feature.
 
 ### Movie suggestions
@@ -672,6 +698,51 @@ saved until someone adds one. On top of the extension checks above, it answers
 (kept in `theatres.extensions.specific.suggestedAt`, and a failed model call
 still uses it up), and `502` when the model call fails. It needs TMDB
 credentials as well as the AI Gateway setup above.
+
+### Movie club
+
+A list tagged `#movieclub` (or `#movie-club`) runs like a monthly club. Every
+member gets one nomination and five votes a month, and the month rolls over at
+midnight Pacific time on the 1st. Members can add their own nomination and
+remove it again, and admins keep everything they can do on any list. You can't
+vote for your own nomination, and votes start fresh each month. You can spend
+several votes on one movie, up to your five-vote monthly budget. Each movie card
+shows a compact voting widget, and a centered "{n} votes left" bubble in the
+Shortlist header shows your remaining votes.
+The sort menu gets **Most upvotes**. Signed-out and read-only viewers see the
+counts but can't vote.
+
+The **+** and **−** controls add or remove one vote at a time. The number between
+them counts everyone's votes, with "{n} from you" below it when you're signed
+in. Voter avatars are in the movie's discussion, alongside its nomination
+details. Each voter appears once, with a badge when they've given the movie
+multiple votes.
+
+Voting and removing a vote update the count, avatars, votes remaining, and sort
+order immediately. Voting is disabled while the save is pending. A failed save
+rolls the change back and shows an error; the list refreshes from the server
+afterward.
+
+A second nomination in the same month is refused with "You can only nominate one
+per month, remove _title_." The limit isn't kept in the extension's state. It
+counts the user's open (not yet watched) nominations created this month, so
+removing the movie or marking it watched frees the slot. Bulk import isn't
+limited.
+
+Votes live in `theatres.extensions.movieclub` as `{ cycle, votes }`. `cycle` is
+the month, like `"2026-03"`, and `votes` maps each user id to the nomination ids
+they voted for, with one entry per vote (including repeated ids). Votes from an
+earlier month are ignored, and the first vote of a
+new month starts everyone over. Votes for movies that were removed or watched are
+given back. Each nomination a list shows carries its voters in
+`nomination.extensions.movieclub.voters`, with one person entry per vote.
+
+`POST /api/theatres/:theatreId/extensions/movieclub` is open to any member and
+takes `{ "action": "vote" | "unvote", "nominationId": number }`. It returns
+`{ votesLeft }`. On top of the extension checks above, it answers `404` when the
+nomination is gone, `400` for your own nomination, and `409` when you're out of
+votes. Every `"vote"` spends one vote, and `"unvote"` returns one vote (or does
+nothing if you have no votes on that movie).
 
 ## Local development
 

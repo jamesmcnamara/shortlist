@@ -1,3 +1,4 @@
+import { decorateNominations } from "@/app/lib/extensions/server";
 import { listNominations } from "@/app/lib/queries";
 import {
   findTheatreByInviteCode,
@@ -13,8 +14,15 @@ export const GET = withPublicTheatre({
   error: "Unable to load the theatre.",
 })(async (_, { theatre }) =>
   Response.json({
-    theatre: { name: theatre.name, description: theatre.description },
-    nominations: await listNominations(theatre.id),
+    theatre: {
+      name: theatre.name,
+      description: theatre.description,
+      defaultSort: theatre.defaultSort,
+    },
+    nominations: await decorateNominations(
+      theatre,
+      await listNominations(theatre.id),
+    ),
   }),
 );
 

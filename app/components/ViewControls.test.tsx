@@ -95,3 +95,20 @@ it("keeps movie sorting and filtering available without nomination access", () =
   fireEvent.click(screen.getByRole("button", { name: "Title" }));
   expect(change).toHaveBeenCalledWith({ sort: "title", filters: [] });
 });
+
+it("offers an additional sort alongside the standard sorts", () => {
+  const change = vi.fn();
+  render(
+    <ViewControls
+      {...props}
+      onChange={change}
+      additionalSorts={[
+        { id: "custom", label: "Custom sort", compare: () => 0 },
+      ]}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Sort by" }));
+  expect(screen.getByRole("button", { name: "Title" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Custom sort" }));
+  expect(change).toHaveBeenCalledWith({ sort: "custom", filters: [] });
+});

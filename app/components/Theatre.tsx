@@ -5,6 +5,7 @@ import type { AppMenuProps } from "@/app/components/AppMenu";
 import { BulkMovieImport } from "@/app/components/BulkMovieImport";
 import { CrossPost } from "@/app/components/CrossPost/CrossPost";
 import { MovieCard } from "@/app/components/MovieCard";
+import { MovieClubVotes } from "@/app/components/MovieClubVotes";
 import { NotificationBell } from "@/app/components/NotificationBell";
 import { EditableComment } from "@/app/components/MovieDiscussion/EditableComment";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
@@ -16,8 +17,19 @@ import { useAPIActions } from "@/app/lib/useAPIActions";
 import { useClickOutside } from "@/app/lib/useClickOutside";
 import { useConfetti } from "@/app/lib/useConfetti";
 import { hasExtension } from "@/app/lib/extensions";
+import {
+  isMovieClub,
+  VOTES_PER_MONTH,
+  votersOf,
+  type VoteAction,
+} from "@/app/lib/extensions/movieclub/shared";
 import { useMovieDiscussionHistory } from "@/app/lib/useMovieDiscussionHistory";
-import { applyView, ViewContext, ViewState } from "@/app/lib/view";
+import {
+  applyView,
+  type SortOption,
+  type ViewContext,
+  type ViewState,
+} from "@/app/lib/view";
 import type { Movie, Nomination } from "@/src/db/schema";
 import classnames from "classnames";
 import { orderBy } from "lodash";
@@ -25,7 +37,7 @@ import { AnimatePresence } from "motion/react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { all, filter, find, get, map, some } from "shades";
+import { all, filter, find, get, map, some, has } from "shades";
 import { isFantasyList } from "../lib/fantasy";
 import { when } from "../lib/utils";
 import { MovieGrid } from "./MovieGrid";
@@ -51,6 +63,7 @@ interface TheatreProps {
   viewState: ViewState;
   setViewState: (next: ViewState) => void;
   viewContext: ViewContext;
+  additionalSorts?: readonly SortOption[];
   userId: string | undefined;
   api?: TheatreAPI;
 }
@@ -67,12 +80,16 @@ export function Theatre({
   viewState,
   setViewState,
   viewContext,
+  additionalSorts,
   nominees,
 }: TheatreProps) {
   const isReadOnly = "isReadOnly" in api;
   const canParticipate = !isReadOnly && Boolean(userId);
   const canCurate = canParticipate && isAdmin;
   const specific = hasExtension("specific", description);
+  const isClub = isMovieClub(description);
+  const canNominate = canParticipate && (isAdmin || isMember);
+  const canVote = canParticipate && isMember && isClub;
   const { focusedId, closeDiscussion, openDiscussion } =
     useMovieDiscussionHistory();
   const [isWatchedOpen, setIsWatchedOpen] = useState(false);
@@ -177,6 +194,10 @@ export function Theatre({
       },
       action: "update the completed status",
     },
+    vote: {
+      api: api.vote,
+      action: "update your vote",
+    },
   });
 
   const visible = useMemo(
@@ -185,8 +206,9 @@ export function Theatre({
         nominees.filter((nom) => !nom.completedAt),
         viewState,
         viewContext,
+        additionalSorts,
       ),
-    [nominees, viewState, viewContext],
+    [nominees, viewState, viewContext, additionalSorts],
   );
 
   const visibleIds = filter(Boolean)(
@@ -211,7 +233,10 @@ export function Theatre({
     [nominees],
   );
 
-  const showMeta = new Set(map("userId")(nominees)).size > 2;
+  const showMeta = !isClub && new Set(map("userId")(nominees)).size > 2;
+  const votesLeft =
+    VOTES_PER_MONTH -
+    nominees.flatMap(votersOf).filter(has({ id: userId })).length;
 
   const additionalMenuItems = [
     {
@@ -230,7 +255,13 @@ export function Theatre({
       <ShortlistHeader
         {...header}
         additionalMenuItems={canCurate ? additionalMenuItems : []}
-      />
+      >
+        {canVote && (
+          <p className={styles.votesLeft} role="status">
+            {votesLeft} {votesLeft === 1 ? "vote" : "votes"} left
+          </p>
+        )}
+      </ShortlistHeader>
 
       <section
         className={styles.nominations}
@@ -263,7 +294,8 @@ export function Theatre({
           onChange={setViewState}
           existing={existing}
           isSubmitting={isSubmitting}
-          onNominate={when(canCurate)(actions.nominate)}
+          onNominate={when(canNominate)(actions.nominate)}
+          additionalSorts={additionalSorts}
         />
 
         {(message || notice) && (
@@ -274,7 +306,7 @@ export function Theatre({
         {visible.length === 0 && (
           <p className={styles.message} role="status">
             {nominees.length === 0
-              ? `Nothing here yet.${canCurate ? " Add the first movie." : ""}`
+              ? `Nothing here yet.${canNominate ? " Add the first movie." : ""}`
               : "No movies match these filters."}
           </p>
         )}
@@ -286,6 +318,17 @@ export function Theatre({
               hasSeen={some({ id: userId })(nom.seenBy)}
               isExpanded={focused === nom}
               showMeta={showMeta}
+              footer={when(isClub)(
+                <MovieClubVotes
+                  nomination={nom}
+                  userId={userId}
+                  votesLeft={votesLeft}
+                  disabled={isSubmitting}
+                  onVote={when(canVote && nom.userId !== userId)(
+                    (action: VoteAction) => actions.vote(nom.id, action),
+                  )}
+                />,
+              )}
               {...cardProps(nom)}
             />
           )}
@@ -407,7 +450,9 @@ export function Theatre({
             onMarkWatched={when(canParticipate)(() =>
               actions.toggleWatched(focused.movieId),
             )}
-            onDelete={when(canCurate)(() => actions.delete(focused.id))}
+            onDelete={when(
+              canCurate || (canNominate && focused.userId === userId),
+            )(() => actions.delete(focused.id))}
             onToggleCompleted={when(canCurate)(async () => {
               if (await actions.toggleCompleted(focused.id)) {
                 closeDiscussion();
@@ -434,6 +479,7 @@ export interface TheatreAPI {
   toggleWatched: (movieId: number) => Promise<void>;
   markWatched: (movieIds: number[]) => Promise<void>;
   toggleCompleted: (nominationId: number) => Promise<void>;
+  vote: (nominationId: number, action: VoteAction) => Promise<void>;
 }
 
 interface ReadOnlyTheatreAPI extends TheatreAPI {
@@ -455,6 +501,7 @@ const READ_ONLY_API: ReadOnlyTheatreAPI = {
   toggleWatched: readOnly,
   markWatched: readOnly,
   toggleCompleted: readOnly,
+  vote: readOnly,
   isReadOnly: true,
 };
 

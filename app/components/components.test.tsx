@@ -539,6 +539,25 @@ describe("high-churn component smoke tests", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it.each([{ voters: undefined }, { voters: [] }])(
+    "omits the voter row without votes ($voters)",
+    ({ voters }) => {
+      render(
+        <MovieDiscussion
+          nomination={{
+            ...nomination,
+            extensions: voters ? { movieclub: { voters } } : undefined,
+          }}
+          hasSeen={false}
+          currentUserId={null}
+          onClose={vi.fn()}
+        />,
+      );
+      expect(screen.queryByText("Upvoted by")).toBeNull();
+      expect(screen.queryByRole("list", { name: "Upvoted by" })).toBeNull();
+    },
+  );
+
   it.each([false, true])(
     "keeps the admin completion toggle beside runtime when completed=%s",
     (completed) => {
@@ -584,18 +603,15 @@ describe("high-churn component smoke tests", () => {
         expect(runtimeRow.contains(seen)).toBe(false);
         fireEvent.click(seen);
         expect(onMarkWatched).toHaveBeenCalledTimes(1);
-        fireEvent.click(
-          screen.getByRole("button", {
-            name: "Delete A Movie from the watchlist",
-          }),
-        );
-        expect(onDelete).toHaveBeenCalledTimes(1);
       } else {
         expect(screen.queryByRole("button", { name: /as seen/ })).toBeNull();
-        expect(
-          screen.queryByRole("button", { name: /Delete A Movie/ }),
-        ).toBeNull();
       }
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "Delete A Movie from the watchlist",
+        }),
+      );
+      expect(onDelete).toHaveBeenCalledTimes(1);
       fireEvent.click(screen.getByRole("button", { name: "Close discussion" }));
       expect(onClose).toHaveBeenCalledTimes(1);
     },

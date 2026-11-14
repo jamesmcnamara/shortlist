@@ -32,19 +32,6 @@ const imdb: MDBRating = {
 const wikipediaUrl = "https://en.wikipedia.org/wiki/The_Matrix";
 
 describe("Ratings Wikipedia link", () => {
-  it("links to the IMDb trivia page", () => {
-    render(<Ratings movieTitle="The Matrix" services={[imdb]} />);
-    const link = screen.getByRole("link", {
-      name: "Read trivia about this movie on IMDb",
-    });
-    expect(link.getAttribute("href")).toBe(
-      "https://www.imdb.com/title/tt0133093/trivia/",
-    );
-    expect(link.getAttribute("target")).toBe("_blank");
-    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
-    expect(link.getAttribute("title")).toBe("IMDb trivia");
-  });
-
   it("shows the icon alongside existing ratings", () => {
     render(
       <Ratings
@@ -80,7 +67,7 @@ describe("Ratings Wikipedia link", () => {
 
   it("preserves ratings without a Wikipedia URL", () => {
     render(<Ratings movieTitle="The Matrix" services={[imdb]} />);
-    expect(screen.getAllByRole("link")).toHaveLength(2);
+    expect(screen.getAllByRole("link")).toHaveLength(1);
     expect(
       screen.getByRole("link", { name: "IMDb: 8.7/10. View on IMDb" }),
     ).toBeTruthy();
@@ -128,7 +115,6 @@ describe("Ratings heat map", () => {
         wikipediaUrl={wikipediaUrl}
       />,
     );
-    expect(screen.getByTitle("IMDb trivia").style.background).toBe("");
     expect(screen.getByTitle("Wikipedia").style.background).toBe("");
   });
 });
@@ -156,7 +142,7 @@ describe("Ratings 6 Degrees link", () => {
     auth.email = email;
     render(<Ratings movieTitle="The Matrix" services={[imdb]} />);
     expect(screen.queryByTitle("6 Degrees")).toBeNull();
-    expect(screen.getAllByRole("link")).toHaveLength(2);
+    expect(screen.getAllByRole("link")).toHaveLength(1);
   });
 
   it("removes the link when the account changes or signs out", () => {

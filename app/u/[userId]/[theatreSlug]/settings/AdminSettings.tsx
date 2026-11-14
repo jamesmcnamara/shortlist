@@ -6,6 +6,8 @@ import { withTargetValue } from "@/app/lib/utils";
 import { joinPath } from "@/lib/theatre-path";
 import { userPath } from "@/lib/user-path";
 import { authClient } from "@/lib/auth/client";
+import { extensionSorts } from "@/app/lib/extensions/view";
+import { sortOptions } from "@/app/lib/view";
 import type { TheatreRole } from "@/src/db/schema";
 import { useTheatre } from "../TheatreContext";
 import styles from "./page.module.css";
@@ -16,6 +18,10 @@ export function AdminSettings() {
   const router = useRouter();
 
   const [name, setName] = useState(theatre.name);
+  const availableSorts = sortOptions(extensionSorts(theatre.description));
+  const [defaultSort, setDefaultSort] = useState(
+    () => availableSorts.find(({ id }) => id === theatre.defaultSort)?.id ?? "",
+  );
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -28,7 +34,10 @@ export function AdminSettings() {
     setMessage("");
     setIsSaving(true);
     try {
-      await client.update({ name: name.trim() });
+      await client.update({
+        name: name.trim(),
+        defaultSort: defaultSort || null,
+      });
       setMessage("Saved.");
     } catch (error) {
       setError(error instanceof Error ? error.message : "Unable to save.");
@@ -123,6 +132,22 @@ export function AdminSettings() {
             onChange={withTargetValue(setName)}
             required
           />
+        </label>
+
+        <label className={styles.field}>
+          <span className={styles.label}>Default sort</span>
+          <select
+            className={styles.input}
+            value={defaultSort}
+            onChange={withTargetValue(setDefaultSort)}
+          >
+            <option value="">App default</option>
+            {availableSorts.map(({ id, label }) => (
+              <option key={id} value={id}>
+                {label}
+              </option>
+            ))}
+          </select>
         </label>
 
         <button className={styles.submit} type="submit" disabled={isSaving}>

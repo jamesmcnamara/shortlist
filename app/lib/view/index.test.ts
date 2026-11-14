@@ -7,6 +7,7 @@ import {
 } from "./index";
 import type { Nomination, RatingSource } from "@/src/db/schema";
 import type { BoxOfficeData } from "../box-office";
+import { VOTES_SORT, movieClubSorts } from "../extensions/movieclub/view";
 
 const user = (id: string) => ({ id, name: id, email: `${id}@example.com` });
 
@@ -22,6 +23,7 @@ interface NominationOverrides {
   movieId?: number;
   seenBy?: string[];
   boxOffice?: BoxOfficeData;
+  voters?: string[];
 }
 
 const nomination = ({
@@ -36,6 +38,7 @@ const nomination = ({
   movieId = id,
   seenBy = [],
   boxOffice,
+  voters,
 }: NominationOverrides): Nomination =>
   ({
     id,
@@ -44,6 +47,7 @@ const nomination = ({
     movieId,
     comment: null,
     createdAt: new Date(createdAt),
+    extensions: voters && { movieclub: { voters: voters.map(user) } },
     movie: {
       id: movieId,
       tmdbId: movieId,
@@ -206,6 +210,31 @@ describe("applyView sorting", () => {
     },
   );
 
+  it("sorts by upvotes, newest first among ties", () => {
+    const list = [
+      nomination({ id: 1, createdAt: "2024-01-01T00:00:00Z", voters: ["bob"] }),
+      nomination({ id: 2, createdAt: "2024-02-01T00:00:00Z" }),
+      nomination({
+        id: 3,
+        createdAt: "2024-03-01T00:00:00Z",
+        voters: ["bob", "carol"],
+      }),
+      nomination({ id: 4, createdAt: "2024-04-01T00:00:00Z", voters: ["bob"] }),
+      nomination({
+        id: 5,
+        createdAt: "2024-01-01T00:00:00Z",
+        voters: ["bob", "bob", "bob"],
+      }),
+    ];
+    expect(
+      ids(
+        applyView(list, { sort: "votes", filters: [] }, context(), [
+          VOTES_SORT,
+        ]),
+      ),
+    ).toEqual([5, 3, 4, 1, 2]);
+  });
+
   it("falls back to the filtered list for an unknown sort", () => {
     const list = [nomination({ id: 1 }), nomination({ id: 2 })];
     expect(
@@ -276,6 +305,42 @@ describe("applyView filtering", () => {
 });
 
 describe("URL state", () => {
+  it("uses a saved default unless a valid URL sort overrides it", () => {
+    expect(parseViewState(new URLSearchParams(), [], "title").sort).toBe(
+      "title",
+    );
+    expect(
+      parseViewState(new URLSearchParams("sort=recent"), [], "title").sort,
+    ).toBe("recent");
+    expect(
+      parseViewState(new URLSearchParams("sort=unknown"), [], "title").sort,
+    ).toBe("title");
+  });
+
+  it("falls back to recently added for null or unavailable defaults", () => {
+    expect(parseViewState(new URLSearchParams(), [], null).sort).toBe("recent");
+    expect(parseViewState(new URLSearchParams(), [], "votes").sort).toBe(
+      "recent",
+    );
+    expect(
+      parseViewState(
+        new URLSearchParams(),
+        movieClubSorts("#movieclub"),
+        "votes",
+      ).sort,
+    ).toBe("votes");
+  });
+
+  it("round-trips an explicit recent sort and filters with a different default", () => {
+    const state = { sort: "recent", filters: ["mine"] };
+    const params = toSearchParams(state, "title");
+    expect(params.get("sort")).toBe("recent");
+    expect(parseViewState(params, [], "title")).toEqual(state);
+    expect(
+      toSearchParams({ sort: "title", filters: [] }, "title").toString(),
+    ).toBe("");
+  });
+
   it("reads sort and filters from the query string", () => {
     const state = parseViewState(
       new URLSearchParams("sort=title&filters=mine,unwatched"),
@@ -311,4 +376,15 @@ describe("URL state", () => {
       expect(parseViewState(toSearchParams(state))).toEqual(state);
     },
   );
+
+  it("only accepts an externally supplied sort while it is available", () => {
+    const state = { sort: "votes", filters: ["mine", "unwatched"] };
+    const params = toSearchParams(state);
+    expect(parseViewState(params, movieClubSorts("#movie-club"))).toEqual(
+      state,
+    );
+    expect(parseViewState(params, movieClubSorts("ordinary")).sort).toBe(
+      "recent",
+    );
+  });
 });

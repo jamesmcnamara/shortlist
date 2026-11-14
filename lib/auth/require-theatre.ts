@@ -30,6 +30,7 @@ const THEATRE_COLUMNS = {
   createdBy: theatres.createdBy,
   watchlistFor: theatres.watchlistFor,
   description: theatres.description,
+  defaultSort: theatres.defaultSort,
   createdAt: theatres.createdAt,
   updatedAt: theatres.updatedAt,
 };

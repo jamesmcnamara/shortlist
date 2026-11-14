@@ -1,13 +1,14 @@
 import { Ratings } from "@/app/components/Ratings";
 import { Streaming } from "@/app/components/Streaming";
+import { votersOf } from "@/app/lib/extensions/movieclub/shared";
 import { useClickOutside } from "@/app/lib/useClickOutside";
 import { getColor, getInitials, when } from "@/app/lib/utils";
 import { userPath } from "@/lib/user-path";
 import type { Nomination, Person } from "@/src/db/schema";
 import classnames from "classnames";
+import { groupBy } from "lodash";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { BoxOffice } from "../BoxOffice";
 import { MovieRefresh } from "../MovieRefresh";
 import { Trivia } from "../Trivia";
 import { Oscars } from "../Oscars";
@@ -118,21 +119,23 @@ export function MovieDiscussion({
             />
             <Streaming availability={details.justWatch} />
             <Trivia trivia={details.trivia} boxOffice={details.boxOffice} />
-            {!nomination.completedAt && onMarkWatched && (
+            {(onDelete || (!nomination.completedAt && onMarkWatched)) && (
               <div className={styles.movieActions}>
-                <button
-                  className={styles.watched}
-                  type="button"
-                  onClick={onMarkWatched}
-                  aria-pressed={hasSeen}
-                  aria-label={
-                    hasSeen
-                      ? `Unmark ${details.title} as seen`
-                      : `Mark ${details.title} as seen`
-                  }
-                >
-                  {hasSeen ? "Seen it ✓" : "Seen it"}
-                </button>
+                {!nomination.completedAt && onMarkWatched && (
+                  <button
+                    className={styles.watched}
+                    type="button"
+                    onClick={onMarkWatched}
+                    aria-pressed={hasSeen}
+                    aria-label={
+                      hasSeen
+                        ? `Unmark ${details.title} as seen`
+                        : `Mark ${details.title} as seen`
+                    }
+                  >
+                    {hasSeen ? "Seen it ✓" : "Seen it"}
+                  </button>
+                )}
                 {onDelete && (
                   <button
                     className={styles.deleteMovie}
@@ -168,6 +171,7 @@ export function MovieDiscussion({
               />
             </div>
           </div>
+          <UpvotedByList voters={votersOf(nomination)} />
           <SeenByList seenBy={seenBy} />
           <NomComs
             nominationId={nomination.id}
@@ -179,6 +183,39 @@ export function MovieDiscussion({
         </MovieRefresh>
       </section>
     </motion.div>
+  );
+}
+
+function UpvotedByList({ voters }: { voters: Person[] }) {
+  if (voters.length === 0) return null;
+  return (
+    <div className={styles.voters}>
+      <span className={styles.voterCount}>Upvoted by</span>
+      <ul className={styles.voterList} aria-label="Upvoted by">
+        {Object.entries(groupBy(voters, "id")).map(([id, votes]) => {
+          const { name } = votes[0];
+          const label =
+            votes.length > 1 ? `${name}, ${votes.length} votes` : name;
+          return (
+            <li key={id} className={styles.upvoter}>
+              <span
+                className={`${styles.voter} avatar avatar-${getColor(name)}`}
+                role="img"
+                aria-label={label}
+                title={label}
+              >
+                {getInitials(name)}
+              </span>
+              {votes.length > 1 && (
+                <span className={styles.voteBadge} aria-hidden="true">
+                  {votes.length}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
