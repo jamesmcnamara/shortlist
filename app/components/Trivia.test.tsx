@@ -48,7 +48,7 @@ describe("trivia disclosure", () => {
   it("distinguishes never-loaded trivia from a successful empty lookup", () => {
     const view = render(<Trivia />);
     expect(screen.getByText(/hasn't been loaded/)).toBeTruthy();
-    expect(screen.getByText("Show")).toBeTruthy();
+    expect(screen.queryByText("Show")).toBeNull();
     view.rerender(<Trivia trivia={{ ...trivia, items: [] }} />);
     expect(screen.getByText("No IMDb trivia found.")).toBeTruthy();
     expect(screen.getByText("0 entries")).toBeTruthy();
