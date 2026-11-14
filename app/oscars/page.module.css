@@ -1,0 +1,167 @@
+.shell {
+  width: min(100% - 2rem, 44rem);
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 1.5rem 0 4rem;
+}
+
+.heading {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.75rem;
+  letter-spacing: -0.03em;
+}
+
+.intro {
+  margin: 0 0 2rem;
+  color: var(--muted);
+  font-size: 0.9344rem;
+  line-height: 1.5;
+}
+
+.list,
+.nested,
+.nominees {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list {
+  border-top: 1px solid var(--border-strong);
+  background: var(--surface);
+}
+
+.decade {
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.nested,
+.nominees {
+  margin-left: clamp(0.5rem, 2vw, 1rem);
+  border-top: 1px solid var(--border);
+}
+
+.entry + .entry,
+.nominee + .nominee {
+  border-top: 1px solid var(--border);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.toggle,
+.staticCopy {
+  flex: 1;
+  min-width: 0;
+  padding: 0.875rem 0.25rem;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  border: 0;
+  background: none;
+  color: var(--text);
+  text-align: left;
+}
+
+.toggle:hover {
+  color: var(--accent);
+}
+
+.toggle[aria-expanded="true"] > :last-child {
+  transform: rotate(225deg);
+}
+
+.copy,
+.staticCopy {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.decadeTitle {
+  font-size: 1.0781rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.year,
+.category {
+  color: var(--muted);
+  font-size: 0.7906rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.winnerTitle {
+  font-size: 0.9344rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.detail {
+  color: var(--muted);
+  font-size: 0.7906rem;
+  line-height: 1.5;
+}
+
+.movieLinks {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  max-width: 6rem;
+  font-size: 0.7906rem;
+}
+
+.movieLinks a {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+}
+
+.movieLinks a,
+.nomineeLink {
+  color: var(--accent);
+  text-underline-offset: 0.1875rem;
+}
+
+.movieLinks a:hover,
+.nomineeLink:hover .winnerTitle,
+.nomineeLink:focus-visible .winnerTitle {
+  text-decoration: underline;
+  text-decoration-thickness: 0.125rem;
+}
+
+.nominee {
+  padding: 0.75rem 0.25rem;
+}
+
+.nomineeLink {
+  display: block;
+  text-decoration: none;
+}
+
+.reveal {
+  overflow: hidden;
+}
+
+.error {
+  color: var(--danger);
+}
+
+.error button {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.625rem;
+  background: var(--surface);
+  color: var(--text);
+}

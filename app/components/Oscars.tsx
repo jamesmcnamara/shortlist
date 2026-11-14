@@ -1,12 +1,13 @@
 "use client";
 
 import {
+  formatOscarCategory as formatCategory,
+  formatOscarNomineeDetail as formatNomineeDetail,
   getOtherNominees,
   isMajorCategory,
   useOscarsFor,
   type OscarEntry,
   type OscarMovie,
-  type OscarNominee,
   type OscarNominees,
 } from "@/app/lib/data/oscars";
 import type { Movie } from "@/src/db/schema";
@@ -233,13 +234,5 @@ const formatMultipleDetail = (
     .join(" · ");
 };
 
-const formatCategory = (category: string) =>
-  category
-    .toLocaleLowerCase("en-US")
-    .replace(/\b\p{L}/gu, (letter) => letter.toLocaleUpperCase("en-US"));
-
 const formatEntryDetail = (entry: OscarEntry) =>
   [entry.year, entry.name, entry.detail].filter(Boolean).join(" · ");
-
-const formatNomineeDetail = ({ film, name, detail }: OscarNominee) =>
-  [film ? name : null, detail].filter(Boolean).join(" — ");

@@ -324,6 +324,12 @@ its exit code.
 
 ### Importing Oscar movies
 
+The `/oscars` page (Menu → Extra Settings → Oscars) browses the archive by
+decade, award year, category winner, and other nominees. Decades start collapsed;
+years use the dataset's film award years rather than ceremony dates. Separate
+“View movie” links on winner rows and linked nominee titles open imported
+movies without toggling the accordions. Unimported titles remain plain text.
+
 `npm run refresh:oscars` previews every IMDb-keyed movie in
 `public/data/oscars.json`, including movies that aren't on any theatre.
 `npm run refresh:oscars -- --apply` adds missing movies to the shared database

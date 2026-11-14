@@ -151,6 +151,18 @@ it("does not offer bulk Wikipedia refresh", () => {
   ).toBeNull();
 });
 
+it("always includes the Oscars archive in Extra Settings outside a theatre", () => {
+  render(<AppMenu />);
+  fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+  expect(screen.queryByRole("menuitem", { name: "Oscars" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Extra Settings" }));
+  const link = screen.getByRole("menuitem", { name: "Oscars" });
+  expect(link.getAttribute("href")).toBe("/oscars");
+  link.addEventListener("click", (event) => event.preventDefault());
+  fireEvent.click(link);
+  expect(screen.queryByRole("menu")).toBeNull();
+});
+
 describe("share menu item", () => {
   const writeText = vi.fn();
   Object.assign(navigator, { clipboard: { writeText } });

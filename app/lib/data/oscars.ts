@@ -59,18 +59,7 @@ type OscarsData =
 
 export function useOscarsFor(movie: Movie): OscarsData {
   const { data, error } = useOscars();
-  const movieIds = useMemo(() => {
-    const ids = new Map<number, number[]>();
-    Object.values(data?.movies ?? {}).forEach(({ shortlistId, entries }) => {
-      if (shortlistId === undefined) return;
-      entries.forEach(({ id }) => {
-        const existing = ids.get(id) ?? [];
-        if (!existing.includes(shortlistId))
-          ids.set(id, [...existing, shortlistId]);
-      });
-    });
-    return ids;
-  }, [data]);
+  const movieIds = useMemo(() => getOscarMovieIds(data), [data]);
   const imdbId = getImdbId(movie);
   if (error) return { type: "error", error };
   if (!imdbId || !data || !data.movies[imdbId])
@@ -82,6 +71,33 @@ export function useOscarsFor(movie: Movie): OscarsData {
     movieIds,
   };
 }
+
+export function getOscarMovieIds(data?: Oscars) {
+  const ids = new Map<number, number[]>();
+  Object.values(data?.movies ?? {}).forEach(({ shortlistId, entries }) => {
+    if (shortlistId === undefined) return;
+    entries.forEach(({ id }) => {
+      const existing = ids.get(id) ?? [];
+      if (!existing.includes(shortlistId))
+        ids.set(id, [...existing, shortlistId]);
+    });
+  });
+  return ids;
+}
+
+// Matches word initials, e.g. "BEST PICTURE" -> "Best Picture".
+const WORD_INITIAL = /\b\p{L}/gu;
+
+export const formatOscarCategory = (category: string) =>
+  category
+    .toLocaleLowerCase("en-US")
+    .replace(WORD_INITIAL, (letter) => letter.toLocaleUpperCase("en-US"));
+
+export const formatOscarNomineeDetail = ({
+  film,
+  name,
+  detail,
+}: OscarNominee) => [film ? name : null, detail].filter(Boolean).join(" — ");
 
 export const getOtherNominees = (nominees: OscarNominees, entry: OscarEntry) =>
   filter(not({ id: entry.id }))(
@@ -112,7 +128,9 @@ export const compareOscarEntries = (left: OscarEntry, right: OscarEntry) =>
   right.year.localeCompare(left.year) ||
   Number(right.winner) - Number(left.winner);
 
-export const oscarsCategoryRank = (entry: OscarEntry) => {
+export const oscarsCategoryRank = (
+  entry: Pick<OscarEntry, "category" | "major">,
+) => {
   if (entry.category === "BEST PICTURE") return 0;
   if (entry.category.startsWith("DIRECTING")) return 1;
   return (entry.major ?? isMajorCategory(entry.category)) ? 2 : 3;

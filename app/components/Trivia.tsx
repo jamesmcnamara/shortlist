@@ -59,6 +59,7 @@ export function Trivia({ trivia, boxOffice, titleClassName }: TriviaProps) {
           )}
         </span>
         <span className={styles.action}>
+          {!trivia && <span className={styles.count}>Show</span>}
           <span className={styles.collapse}>Collapse</span>
           <span
             className={`${chevronStyles.chevron} ${styles.chevron}`}

@@ -143,6 +143,9 @@ export function AppMenu({ theatre, additionalMenuItems }: AppMenuProps) {
         )}
         <hr className={styles.divider} />
         <div className={styles.extraSettings} hidden={!isExpanded}>
+          <MenuLink href="/oscars" onNavigate={close}>
+            Oscars
+          </MenuLink>
           {name && theatre && (
             <BulkMovieRefresh
               key={theatre.id}

@@ -107,4 +107,37 @@ describe("trivia disclosure", () => {
       "uppercase",
     );
   });
+
+  it.each(["details", "discussion"])(
+    "keeps the sticky trivia header opaque and matched to its %s panel",
+    async (context) => {
+      const { container } = render(
+        context === "details" ? (
+          <MovieDetail movie={movie} onBack={vi.fn()} />
+        ) : (
+          <MovieDiscussion
+            nomination={{ ...nominated, movie }}
+            hasSeen={false}
+            currentUserId={null}
+            onClose={vi.fn()}
+          />
+        ),
+      );
+      const panel =
+        context === "details"
+          ? container.firstElementChild!
+          : screen.getByRole("region", {
+              name: `Discussion about ${movie.details.title}`,
+            });
+      const summary = container.querySelector("details > summary")!;
+      fireEvent.click(summary);
+
+      await waitFor(() => {
+        const header = getComputedStyle(summary);
+        expect(header.position).toBe("sticky");
+        expect(header.background).not.toBe("transparent");
+        expect(header.background).toBe(getComputedStyle(panel).background);
+      });
+    },
+  );
 });
