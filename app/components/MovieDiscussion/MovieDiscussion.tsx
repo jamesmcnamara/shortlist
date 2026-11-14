@@ -116,9 +116,8 @@ export function MovieDiscussion({
               services={ratings.services}
               wikipediaUrl={details.wikipediaUrl}
             />
-            <BoxOffice data={details.boxOffice} />
             <Streaming availability={details.justWatch} />
-            <Trivia trivia={details.trivia} />
+            <Trivia trivia={details.trivia} boxOffice={details.boxOffice} />
             {!nomination.completedAt && onMarkWatched && (
               <div className={styles.movieActions}>
                 <button

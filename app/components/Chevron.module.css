@@ -1,0 +1,15 @@
+.chevron {
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 0.125rem solid var(--accent);
+  border-bottom: 0.125rem solid var(--accent);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}

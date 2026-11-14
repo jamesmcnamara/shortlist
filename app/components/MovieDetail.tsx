@@ -128,7 +128,7 @@ export function MovieDetail({
           <h2 className={styles.sectionTitle}>Where to watch</h2>
           <Streaming availability={details.justWatch} />
         </div>
-        <Trivia trivia={details.trivia} />
+        <Trivia trivia={details.trivia} titleClassName={styles.sectionTitle} />
       </div>
     </MovieRefresh>
   );

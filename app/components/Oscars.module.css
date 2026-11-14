@@ -75,15 +75,6 @@
   line-height: 1.4;
 }
 
-.chevron {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-right: 0.125rem solid var(--accent);
-  border-bottom: 0.125rem solid var(--accent);
-  transform: rotate(45deg);
-  transition: transform 0.15s ease;
-}
-
 .entries {
   display: grid;
   gap: 0;
@@ -227,11 +218,5 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 0.375rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .chevron {
-    transition: none;
   }
 }

@@ -14,6 +14,7 @@ import classname from "classnames";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { every, filter } from "shades";
+import chevronStyles from "./Chevron.module.css";
 import styles from "./Oscars.module.css";
 import { OscarStatuette } from "./OscarStatuette";
 import { SlideOpen } from "./SlideOpen";
@@ -72,7 +73,10 @@ export function Oscars({ movie, variant = "default" }: OscarsProps) {
                 <strong>{formatMultipleHeadline(oscars)}</strong>
                 <span>{formatMultipleDetail(oscars, majorNominations)}</span>
               </span>
-              <span className={styles.chevron} aria-hidden="true" />
+              <span
+                className={classname(chevronStyles.chevron, styles.chevron)}
+                aria-hidden="true"
+              />
             </button>
             <SlideOpen open={open} className={styles.reveal}>
               <ol className={styles.entries}>
@@ -87,9 +91,7 @@ export function Oscars({ movie, variant = "default" }: OscarsProps) {
                       movieIds={movieIds}
                     >
                       <span className={styles.entryHeading}>
-                        <span>
-                          {entry.year} · {formatCategory(entry.category)}
-                        </span>
+                        <span>{formatCategory(entry.category)}</span>
                         <WinnerBadge winner={entry.winner} />
                       </span>
                       <span className={styles.nominee}>
@@ -134,7 +136,10 @@ function OtherNominees({
         onClick={() => setOpen((wasOpen) => !wasOpen)}
       >
         <span className={styles.toggleCopy}>{children}</span>
-        <span className={styles.chevron} aria-hidden="true" />
+        <span
+          className={classname(chevronStyles.chevron, styles.chevron)}
+          aria-hidden="true"
+        />
       </button>
       <SlideOpen open={open} className={styles.reveal}>
         <ol
