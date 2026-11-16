@@ -1,10 +1,16 @@
 import { z } from "zod";
+import { uniqBy } from "lodash";
 import { imdbId } from "./box-office";
 
 export interface MovieTrivia {
   url: string;
   fetchedAt: string;
-  items: string[];
+  items: TriviaSnippet[];
+}
+
+export interface TriviaSnippet {
+  text: string;
+  spoiler: boolean;
 }
 
 const responseSchema = z.object({
@@ -12,7 +18,9 @@ const responseSchema = z.object({
   data: z.object({
     id: imdbId,
     type: z.literal("trivia"),
-    facts: z.array(z.object({ text: z.string().trim().min(1) })),
+    facts: z.array(
+      z.object({ text: z.string().trim().min(1), spoiler: z.boolean() }),
+    ),
     total: z.number().int().nonnegative().optional(),
     has_more: z.boolean().optional(),
   }),
@@ -32,7 +40,7 @@ export function parseTrivia(data: unknown, id: string): MovieTrivia {
   return {
     url: `https://www.imdb.com/title/${id}/trivia/`,
     fetchedAt: new Date().toISOString(),
-    items: [...new Set(trivia.facts.map(({ text }) => text))],
+    items: uniqBy(trivia.facts, ({ text, spoiler }) => `${spoiler}:${text}`),
   };
 }
 

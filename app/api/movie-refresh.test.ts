@@ -31,16 +31,20 @@ const ARTICLE = "https://en.wikipedia.org/wiki/Interstellar_(film)";
 const trivia = {
   url: `https://www.imdb.com/title/${ID}/trivia/`,
   fetchedAt: "2026-01-01T00:00:00Z",
-  items: ["Previously saved trivia."],
+  items: [{ text: "Previously saved trivia.", spoiler: false }],
 };
+const refreshedTrivia = [
+  { text: "A new & interesting fact.", spoiler: false },
+  { text: "An ending-revealing fact.", spoiler: true },
+];
 const triviaResponse = () =>
   Response.json({
     code: 200,
     data: {
       id: ID,
       type: "trivia",
-      facts: [{ text: "A new & interesting fact.", spoiler: false }],
-      total: 1,
+      facts: refreshedTrivia,
+      total: refreshedTrivia.length,
     },
   });
 let db: TestDb;
@@ -157,7 +161,7 @@ describe("unified movie refresh", () => {
           title: "Refreshed title",
           customKey: "keep me",
           wikipediaUrl: ARTICLE,
-          trivia: { items: ["A new & interesting fact."] },
+          trivia: { items: refreshedTrivia },
           justWatch: { status: "matched" },
           boxOffice: {
             budget: 25,
@@ -170,9 +174,9 @@ describe("unified movie refresh", () => {
     });
     expect(fetchMock).toHaveBeenCalledTimes(5);
     expect(mocks.tmdb).toHaveBeenCalledOnce();
-    expect((await findMovieById(movieId))?.details.trivia?.items).toEqual([
-      "A new & interesting fact.",
-    ]);
+    expect((await findMovieById(movieId))?.details.trivia?.items).toEqual(
+      refreshedTrivia,
+    );
   });
 
   it("reports partial failures, preserves those values and still saves other updates", async () => {
@@ -301,7 +305,7 @@ describe("add-time trivia enrichment", () => {
       })
       .where(eq(movies.id, movieId));
     const movie = await addMovie({ kind: "shortlist", id: movieId });
-    expect(movie.details.trivia?.items).toEqual(["A new & interesting fact."]);
+    expect(movie.details.trivia?.items).toEqual(refreshedTrivia);
   });
   it.each(["shortlist", "imdb"] as const)(
     "saves trivia through the common %s add flow",
@@ -309,9 +313,7 @@ describe("add-time trivia enrichment", () => {
       const movie = await addMovie(
         kind === "shortlist" ? { kind, id: movieId } : { kind, id: ID },
       );
-      expect(movie.details.trivia?.items).toEqual([
-        "A new & interesting fact.",
-      ]);
+      expect(movie.details.trivia?.items).toEqual(refreshedTrivia);
       expect(movie.details.title).toBe("Old title");
       const [stored] = await db
         .select()
@@ -350,7 +352,7 @@ describe("add-time trivia enrichment", () => {
             data: {
               id: ID,
               type: "trivia",
-              facts: [{ text: "Only one fact." }],
+              facts: [{ text: "Only one fact.", spoiler: false }],
               total: 245,
             },
           })

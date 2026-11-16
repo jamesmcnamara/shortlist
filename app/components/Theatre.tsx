@@ -6,23 +6,23 @@ import { BulkMovieImport } from "@/app/components/BulkMovieImport";
 import { CrossPost } from "@/app/components/CrossPost/CrossPost";
 import { MovieCard } from "@/app/components/MovieCard";
 import { MovieClubVotes } from "@/app/components/MovieClubVotes";
-import { NotificationBell } from "@/app/components/NotificationBell";
 import { EditableComment } from "@/app/components/MovieDiscussion/EditableComment";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
+import { NotificationBell } from "@/app/components/NotificationBell";
 import { PickerBar } from "@/app/components/PickerBar";
 import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import { ViewControls } from "@/app/components/ViewControls";
 import type { MovieImportResult } from "@/app/lib/bulk-movie-import";
-import { useAPIActions } from "@/app/lib/useAPIActions";
-import { useClickOutside } from "@/app/lib/useClickOutside";
-import { useConfetti } from "@/app/lib/useConfetti";
 import { hasExtension } from "@/app/lib/extensions";
 import {
   isMovieClub,
-  VOTES_PER_MONTH,
   votersOf,
+  VOTES_PER_MONTH,
   type VoteAction,
 } from "@/app/lib/extensions/movieclub/shared";
+import { useAPIActions } from "@/app/lib/useAPIActions";
+import { useClickOutside } from "@/app/lib/useClickOutside";
+import { useConfetti } from "@/app/lib/useConfetti";
 import { useMovieDiscussionHistory } from "@/app/lib/useMovieDiscussionHistory";
 import {
   applyView,
@@ -32,12 +32,13 @@ import {
 } from "@/app/lib/view";
 import type { Movie, Nomination } from "@/src/db/schema";
 import classnames from "classnames";
+import Fuse from "fuse.js";
 import { orderBy } from "lodash";
 import { AnimatePresence } from "motion/react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { all, filter, find, get, map, some, has } from "shades";
+import { all, filter, find, get, has, map, some } from "shades";
 import { isFantasyList } from "../lib/fantasy";
 import { when } from "../lib/utils";
 import { MovieGrid } from "./MovieGrid";
@@ -86,12 +87,13 @@ export function Theatre({
   const isReadOnly = "isReadOnly" in api;
   const canParticipate = !isReadOnly && Boolean(userId);
   const canCurate = canParticipate && isAdmin;
-  const specific = hasExtension("specific", description);
+  const isSpecific = hasExtension("specific", description);
   const isClub = isMovieClub(description);
   const canNominate = canParticipate && (isAdmin || isMember);
   const canVote = canParticipate && isMember && isClub;
   const { focusedId, closeDiscussion, openDiscussion } =
     useMovieDiscussionHistory();
+  const [query, setQuery] = useState("");
   const [isWatchedOpen, setIsWatchedOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   // TMDB ids picked for compare or other bulk actions, or null when not picking.
@@ -140,9 +142,11 @@ export function Theatre({
 
   const focused = when(focusedId)(find({ id: focusedId })(nominees));
 
-  const pickedNoms = nominees.filter(
-    ({ movie }) => movie.tmdbId !== null && picked?.includes(movie.tmdbId),
-  );
+  const pickedNoms = filter({
+    movie: {
+      tmdbId: (tmdbId: number | null) => picked?.includes(tmdbId ?? -1),
+    },
+  })(nominees);
 
   const { actions, message, isSubmitting } = useAPIActions({
     updateDescription: {
@@ -200,15 +204,23 @@ export function Theatre({
     },
   });
 
+  const fuse = new Fuse(nominees, {
+    keys: ["movie.details.title"],
+    threshold: 0.3,
+  });
+
   const visible = useMemo(
     () =>
       applyView(
-        nominees.filter((nom) => !nom.completedAt),
+        fuse
+          .search(query)
+          .map(({ item }) => item)
+          .filter((nom) => !nom.completedAt),
         viewState,
         viewContext,
         additionalSorts,
       ),
-    [nominees, viewState, viewContext, additionalSorts],
+    [nominees, query, viewState, viewContext, additionalSorts],
   );
 
   const visibleIds = filter(Boolean)(
@@ -290,6 +302,8 @@ export function Theatre({
         )}
 
         <ViewControls
+          query={query}
+          setQuery={setQuery}
           state={viewState}
           onChange={setViewState}
           existing={existing}
@@ -343,7 +357,7 @@ export function Theatre({
         />
       )}
 
-      {specific && canCurate && (
+      {isSpecific && canCurate && (
         <Suggestions
           existing={existing}
           onSuggest={api.suggest}
@@ -351,7 +365,7 @@ export function Theatre({
         />
       )}
 
-      {!specific && watched.length > 0 && (
+      {!isSpecific && watched.length > 0 && (
         <section className={styles.nominations} aria-labelledby="watched-title">
           <button
             type="button"

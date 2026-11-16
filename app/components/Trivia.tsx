@@ -1,8 +1,9 @@
 import type { MovieTrivia } from "@/app/lib/trivia";
-import chevronStyles from "./Chevron.module.css";
-import styles from "./Trivia.module.css";
+import { filter, not } from "shades";
 import { BoxOfficeData } from "../lib/box-office";
 import { BoxOffice } from "./BoxOffice";
+import chevronStyles from "./Chevron.module.css";
+import styles from "./Trivia.module.css";
 
 interface TriviaProps {
   trivia?: MovieTrivia;
@@ -11,18 +12,34 @@ interface TriviaProps {
 }
 
 export function Trivia({ trivia, boxOffice, titleClassName }: TriviaProps) {
+  const items = trivia?.items ?? [];
+  const nonSpoilers = filter(not("spoiler"))(items);
+  const spoilers = filter("spoiler")(items);
   const content = trivia ? (
     <>
       {boxOffice && <BoxOffice data={boxOffice} />}
-      {trivia.items.length > 0 ? (
+      {nonSpoilers.length > 0 && (
         <ul className={styles.items}>
-          {trivia.items.map((text, index) => (
+          {nonSpoilers.map(({ text }, index) => (
             <li key={index}>{text}</li>
           ))}
         </ul>
-      ) : (
-        <p>No IMDb trivia found.</p>
       )}
+      {spoilers.length > 0 && (
+        <details className={styles.spoilers} key={trivia.url}>
+          <summary>
+            <span className={styles.spoilerLabel}>
+              Spoilers ({spoilers.length})
+            </span>
+          </summary>
+          <ul className={styles.items}>
+            {spoilers.map(({ text }, index) => (
+              <li key={index}>{text}</li>
+            ))}
+          </ul>
+        </details>
+      )}
+      {trivia.items.length === 0 && <p>No IMDb trivia found.</p>}
       <a
         href={trivia.url}
         target="_blank"

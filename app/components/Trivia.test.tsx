@@ -20,7 +20,10 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 const trivia = {
   url: "https://www.imdb.com/title/tt0133093/trivia/",
   fetchedAt: "2026-01-01T00:00:00Z",
-  items: ["A behind-the-scenes fact.", "<img src=x onerror=alert(1)>"],
+  items: [
+    { text: "A behind-the-scenes fact.", spoiler: false },
+    { text: "<img src=x onerror=alert(1)>", spoiler: false },
+  ],
 };
 const nominated = nomination(1, "maya", "Test Movie", "2026-01-01", null);
 const movie = {
@@ -38,7 +41,7 @@ describe("trivia disclosure", () => {
     expect(details.open).toBe(true);
     expect(screen.getByText("A behind-the-scenes fact.")).toBeTruthy();
     expect(container.querySelector("img")).toBeNull();
-    expect(screen.getByText(trivia.items[1])).toBeTruthy();
+    expect(screen.getByText(trivia.items[1].text)).toBeTruthy();
     expect(
       screen.getByRole("link", { name: "IMDb trivia" }).getAttribute("href"),
     ).toBe(trivia.url);
@@ -48,13 +51,104 @@ describe("trivia disclosure", () => {
   it("distinguishes never-loaded trivia from a successful empty lookup", () => {
     const view = render(<Trivia />);
     expect(screen.getByText(/hasn't been loaded/)).toBeTruthy();
-    expect(screen.queryByText("Show")).toBeNull();
+    expect(screen.getByText("Show")).toBeTruthy();
     view.rerender(<Trivia trivia={{ ...trivia, items: [] }} />);
     expect(screen.getByText("No IMDb trivia found.")).toBeTruthy();
     expect(screen.getByText("0 entries")).toBeTruthy();
     expect(screen.queryByText(/hasn't been loaded/)).toBeNull();
-    view.rerender(<Trivia trivia={{ ...trivia, items: ["One fact."] }} />);
+    view.rerender(
+      <Trivia
+        trivia={{ ...trivia, items: [{ text: "One fact.", spoiler: false }] }}
+      />,
+    );
     expect(screen.getByText("1 entry")).toBeTruthy();
+  });
+
+  it("shows non-spoilers first and requires a separate click to reveal spoilers", () => {
+    const { container } = render(
+      <Trivia
+        trivia={{
+          ...trivia,
+          items: [
+            { text: "The ending.", spoiler: true },
+            { text: "A filming location.", spoiler: false },
+            { text: "<img src=x onerror=alert(1)>", spoiler: true },
+            { text: "A casting fact.", spoiler: false },
+          ],
+        }}
+      />,
+    );
+    fireEvent.click(container.querySelector("summary")!);
+    const spoilerSummary = screen.getByText("Spoilers (2)");
+    const spoilerDetails = spoilerSummary.closest("details")!;
+    expect(spoilerDetails.open).toBe(false);
+    expect(
+      Array.from(
+        container.querySelector("details > ul")!.children,
+        (item) => item.textContent,
+      ),
+    ).toEqual(["A filming location.", "A casting fact."]);
+    expect(screen.getByText("The ending.").closest("details")).toBe(
+      spoilerDetails,
+    );
+    fireEvent.click(spoilerSummary);
+    expect(spoilerDetails.open).toBe(true);
+    expect(
+      screen.getAllByRole("listitem").map((item) => item.textContent),
+    ).toEqual([
+      "A filming location.",
+      "A casting fact.",
+      "The ending.",
+      "<img src=x onerror=alert(1)>",
+    ]);
+    expect(container.querySelector("img")).toBeNull();
+    fireEvent.click(spoilerSummary);
+    expect(spoilerDetails.open).toBe(false);
+  });
+
+  it("keeps an all-spoiler collection hidden without calling it empty", () => {
+    const { container } = render(
+      <Trivia
+        trivia={{
+          ...trivia,
+          items: [{ text: "The ending.", spoiler: true }],
+        }}
+      />,
+    );
+    fireEvent.click(container.querySelector("summary")!);
+    expect(screen.getByText("The ending.").closest("details")!.open).toBe(
+      false,
+    );
+    expect(screen.queryByText("No IMDb trivia found.")).toBeNull();
+    fireEvent.click(screen.getByText("Spoilers (1)"));
+    expect(screen.getByRole("listitem").textContent).toBe("The ending.");
+  });
+
+  it("does not offer a spoiler disclosure when every entry is safe", () => {
+    const { container } = render(<Trivia trivia={trivia} />);
+    expect(container.querySelectorAll("details")).toHaveLength(1);
+  });
+
+  it("collapses spoilers when switching to another movie", () => {
+    const items = [{ text: "The ending.", spoiler: true }];
+    const { container, rerender } = render(
+      <Trivia trivia={{ ...trivia, items }} />,
+    );
+    fireEvent.click(container.querySelector("summary")!);
+    fireEvent.click(screen.getByText("Spoilers (1)"));
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+    rerender(
+      <Trivia
+        trivia={{
+          ...trivia,
+          url: "https://www.imdb.com/title/tt0816692/trivia/",
+          items,
+        }}
+      />,
+    );
+    expect(screen.getByText("Spoilers (1)").closest("details")!.open).toBe(
+      false,
+    );
   });
 
   it("swaps the entry count for Collapse while open and closes from its label", async () => {

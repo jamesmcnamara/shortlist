@@ -276,7 +276,7 @@ describe("shared movie pull-to-refresh", () => {
           trivia: {
             url: "https://www.imdb.com/title/tt0133093/trivia/",
             fetchedAt: "2026-01-01T00:00:00Z",
-            items: ["A new fact."],
+            items: [{ text: "A new fact.", spoiler: false }],
           },
         },
       },

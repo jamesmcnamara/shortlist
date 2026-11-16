@@ -5,9 +5,7 @@ import { useAPICall } from "@/app/lib/useAPIActions";
 import { authClient } from "@/lib/auth/client";
 import type { Movie } from "@/src/db/schema";
 import { useId, useRef, type ReactNode } from "react";
-import { createPortal } from "react-dom";
 import PullToRefresh from "react-simple-pull-to-refresh";
-import { LoadingOverlay } from "./LoadingOverlay";
 import styles from "./MovieRefresh.module.css";
 
 interface MovieRefreshProps {
@@ -91,13 +89,6 @@ export function MovieRefresh({
       >
         <div>{children}</div>
       </PullToRefresh>
-      {isSubmitting &&
-        createPortal(
-          <div onPointerDown={(event) => event.stopPropagation()}>
-            <LoadingOverlay label="Refreshing movie..." translucent />
-          </div>,
-          document.body,
-        )}
       {message && (
         <p className={styles.error} role="alert">
           {message}

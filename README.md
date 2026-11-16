@@ -394,18 +394,22 @@ change or stop working, and cached availability can become outdated.
 The common add flow fetches IMDb trivia through
 [Crawlora's trivia API](https://crawlora.net/docs/imdb/imdb-title-trivia).
 Set `CRAWLORA_API_KEY` in `.env.local` and in the deployment's server environment.
-The key is sent only from the server in the `x-api-key` header. No new dependency,
-column or migration is needed. The IMDb ID comes from TMDB details, falling
+The key is sent only from the server in the `x-api-key` header. No new dependency
+or column is needed. The IMDb ID comes from TMDB details, falling
 back to the cached MDBList ID.
 
 Trivia lives under `movie.details.trivia` as `{ url, fetchedAt, items }`;
-items are plain text, rendered without interpreting HTML. All returned entries
-are kept, with whitespace trimmed and duplicate entries removed; there is no
-50-entry cap.
+items are `{ text, spoiler }` objects carrying Crawlora's boolean spoiler flag.
+Text is rendered without interpreting HTML. All returned entries are kept,
+with whitespace trimmed and duplicate text/flag pairs removed; there is no
+50-entry cap. Migration `0034_trivia_spoilers.sql` converts existing string
+entries to objects with `spoiler: false`, preserving any already-classified
+entries. Apply it before deploying the new trivia renderer.
 
 Movie details and discussions share a collapsed **Trivia**
-section with an IMDb attribution link. All entries stay behind the disclosure;
-there is no per-entry spoiler classification. A successful empty collection is
+section with an IMDb attribution link. Non-spoilers appear first; spoilers stay
+behind a separate, collapsed **Spoilers** disclosure with an entry count.
+A successful empty collection is
 different from trivia that has never been loaded. While open, its header stays
 visible with a **Collapse** label so it can be closed mid-list.
 

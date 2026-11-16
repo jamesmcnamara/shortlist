@@ -16,6 +16,8 @@ import { SlideOpen } from "./SlideOpen";
 import styles from "./ViewControls.module.css";
 
 interface ViewControlsProps {
+  query: string;
+  setQuery: (query: string) => void;
   state: ViewState;
   onChange: (state: ViewState) => void;
   existing: Set<number>;
@@ -25,6 +27,8 @@ interface ViewControlsProps {
 }
 
 export function ViewControls({
+  query,
+  setQuery,
   state,
   onChange,
   existing,
@@ -32,7 +36,6 @@ export function ViewControls({
   onNominate,
   additionalSorts,
 }: ViewControlsProps) {
-  const [query, setQuery] = useState("");
   const [notice, setNotice] = useState("");
   const [candidate, setCandidate] = useState<Movie | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);

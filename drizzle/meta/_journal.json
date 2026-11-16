@@ -239,6 +239,13 @@
       "when": 1794535786509,
       "tag": "0033_theatre_default_sort",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794856220086,
+      "tag": "0034_trivia_spoilers",
+      "breakpoints": true
     }
   ]
 }

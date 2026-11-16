@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getTrivia, parseTrivia } from "./trivia";
+import { getTrivia, parseTrivia, type TriviaSnippet } from "./trivia";
 
 const ID = "tt0133093";
-const data = (items: string[] = []) => ({
+const data = (items: TriviaSnippet[] = []) => ({
   code: 200,
   data: {
     id: ID,
     type: "trivia",
-    facts: items.map((text) => ({ text, spoiler: false })),
+    facts: items,
     total: items.length,
   },
 });
@@ -21,22 +21,28 @@ describe("IMDb trivia", () => {
   it("keeps Crawlora's plain text and paragraph breaks without interpreting markup", () => {
     const trivia = parseTrivia(
       data([
-        "  A performer & a prop.\nAnother paragraph.  ",
-        "A second fact with <literal> text.",
+        {
+          text: "  A performer & a prop.\nAnother paragraph.  ",
+          spoiler: false,
+        },
+        { text: "A second fact with <literal> text.", spoiler: true },
       ]),
       ID,
     );
     expect(trivia.items).toEqual([
-      "A performer & a prop.\nAnother paragraph.",
-      "A second fact with <literal> text.",
+      { text: "A performer & a prop.\nAnother paragraph.", spoiler: false },
+      { text: "A second fact with <literal> text.", spoiler: true },
     ]);
     expect(trivia.url).toBe(`https://www.imdb.com/title/${ID}/trivia/`);
     expect(Number.isNaN(Date.parse(trivia.fetchedAt))).toBe(false);
   });
 
   it("deduplicates entries and accepts an explicitly empty collection", () => {
-    expect(parseTrivia(data(["A fact.", "A fact."]), ID).items).toEqual([
-      "A fact.",
+    const fact = { text: "A fact.", spoiler: false };
+    const spoiler = { text: "A fact.", spoiler: true };
+    expect(parseTrivia(data([fact, fact, spoiler]), ID).items).toEqual([
+      fact,
+      spoiler,
     ]);
     expect(parseTrivia(data(), ID).items).toEqual([]);
   });
@@ -47,7 +53,15 @@ describe("IMDb trivia", () => {
     { code: 200, data: null },
     { code: 200, data: { id: ID, type: "trivia" } },
     { ...data(), data: { ...data().data, type: "goofs" } },
-    data(["   "]),
+    data([{ text: "   ", spoiler: false }]),
+    { ...data(), data: { ...data().data, facts: [{ text: "No flag." }] } },
+    {
+      ...data(),
+      data: {
+        ...data().data,
+        facts: [{ text: "Bad flag.", spoiler: "false" }],
+      },
+    },
   ])(
     "rejects invalid or failed responses instead of saving empty trivia",
     (response) => {
@@ -60,13 +74,16 @@ describe("IMDb trivia", () => {
   });
 
   it("keeps more than 50 entries", () => {
-    const items = Array.from({ length: 245 }, (_, i) => `Fact ${i}.`);
+    const items = Array.from({ length: 245 }, (_, i) => ({
+      text: `Fact ${i}.`,
+      spoiler: i % 2 === 0,
+    }));
     expect(parseTrivia(data(items), ID).items).toEqual(items);
   });
 
   it.each([
-    { ...data(["A fact."]).data, total: 245 },
-    { ...data(["A fact."]).data, has_more: true },
+    { ...data([{ text: "A fact.", spoiler: false }]).data, total: 245 },
+    { ...data([{ text: "A fact.", spoiler: false }]).data, has_more: true },
   ])("rejects incomplete collections", (partial) => {
     expect(() => parseTrivia({ code: 200, data: partial }, ID)).toThrow(
       "incomplete",
@@ -74,9 +91,10 @@ describe("IMDb trivia", () => {
   });
 
   it("fetches from Crawlora with server credentials, a validated ID and a timeout", async () => {
-    const fetch = vi.fn().mockResolvedValue(Response.json(data(["A fact."])));
+    const items = [{ text: "A fact.", spoiler: true }];
+    const fetch = vi.fn().mockResolvedValue(Response.json(data(items)));
     vi.stubGlobal("fetch", fetch);
-    expect((await getTrivia(ID)).items).toEqual(["A fact."]);
+    expect((await getTrivia(ID)).items).toEqual(items);
     const [url, options] = fetch.mock.calls[0];
     expect(url).toBe(
       `https://api.crawlora.net/api/v1/imdb/title/trivia?id=${ID}`,

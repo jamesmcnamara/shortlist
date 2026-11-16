@@ -9,6 +9,17 @@ import {
 import { afterEach, expect, it, vi } from "vitest";
 import { ViewControls } from "./ViewControls";
 import type { Movie } from "@/src/db/schema";
+import { useState, type ComponentProps } from "react";
+
+interface TestViewControlsProps extends Omit<
+  ComponentProps<typeof ViewControls>,
+  "query" | "setQuery"
+> {}
+
+function TestViewControls(props: TestViewControlsProps) {
+  const [query, setQuery] = useState("");
+  return <ViewControls {...props} query={query} setQuery={setQuery} />;
+}
 
 const movie = {
   id: 1,
@@ -49,7 +60,11 @@ const props = {
 
 it("preserves expanding movie search, duplicate notices and Escape", async () => {
   render(
-    <ViewControls {...props} existing={new Set([123])} onNominate={vi.fn()} />,
+    <TestViewControls
+      {...props}
+      existing={new Set([123])}
+      onNominate={vi.fn()}
+    />,
   );
   const input = screen.getByRole("textbox");
   fireEvent.focus(input);
@@ -68,7 +83,7 @@ it("preserves expanding movie search, duplicate notices and Escape", async () =>
 
 it("keeps movie quick-add and recommendation submission in the wrapper", async () => {
   const nominate = vi.fn().mockResolvedValue(true);
-  render(<ViewControls {...props} onNominate={nominate} />);
+  render(<TestViewControls {...props} onNominate={nominate} />);
   const input = screen.getByRole("textbox");
   fireEvent.change(input, { target: { value: "Alien" } });
   fireEvent.click(screen.getByRole("button", { name: "Quick add Alien" }));
@@ -89,7 +104,7 @@ it("keeps movie quick-add and recommendation submission in the wrapper", async (
 
 it("keeps movie sorting and filtering available without nomination access", () => {
   const change = vi.fn();
-  render(<ViewControls {...props} onChange={change} />);
+  render(<TestViewControls {...props} onChange={change} />);
   expect(screen.queryByRole("textbox")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Sort by" }));
   fireEvent.click(screen.getByRole("button", { name: "Title" }));
@@ -99,7 +114,7 @@ it("keeps movie sorting and filtering available without nomination access", () =
 it("offers an additional sort alongside the standard sorts", () => {
   const change = vi.fn();
   render(
-    <ViewControls
+    <TestViewControls
       {...props}
       onChange={change}
       additionalSorts={[

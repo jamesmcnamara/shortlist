@@ -319,6 +319,8 @@ describe("high-churn component smoke tests", () => {
   it("expands the search bar over the sort and filter toggles", async () => {
     render(
       <ViewControls
+        query=""
+        setQuery={vi.fn()}
         state={{ sort: "newest", filters: [] }}
         onChange={vi.fn()}
         existing={new Set()}
@@ -354,6 +356,8 @@ describe("high-churn component smoke tests", () => {
     const onChange = vi.fn();
     render(
       <ViewControls
+        query=""
+        setQuery={vi.fn()}
         state={{ sort: "recent", filters: ["mine"] }}
         onChange={onChange}
         existing={new Set()}
@@ -375,6 +379,8 @@ describe("high-churn component smoke tests", () => {
   it("opens and closes the sort and filter option panels", async () => {
     render(
       <ViewControls
+        query=""
+        setQuery={vi.fn()}
         state={{ sort: "newest", filters: [] }}
         onChange={vi.fn()}
         existing={new Set()}
@@ -403,6 +409,8 @@ describe("high-churn component smoke tests", () => {
   it("keeps bulk import out of the top list controls", () => {
     render(
       <ViewControls
+        query=""
+        setQuery={vi.fn()}
         state={{ sort: "newest", filters: [] }}
         onChange={vi.fn()}
         existing={new Set()}

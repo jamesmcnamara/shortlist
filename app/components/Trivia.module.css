@@ -57,8 +57,42 @@
   display: none;
 }
 
-.trivia[open] .chevron {
+.trivia[open] > summary .chevron {
   transform: rotate(225deg);
+}
+
+.spoilers > summary {
+  justify-content: center;
+  min-height: 3rem;
+  margin-block: 0.75rem;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--danger);
+  border-radius: 0.625rem;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--danger) 0 0.625rem,
+    var(--surface) 0.625rem 1.25rem
+  );
+  color: var(--danger);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.spoilerLabel {
+  padding: 0.25rem 0.5rem;
+  background: var(--surface);
+}
+
+.spoilers > summary:hover,
+.spoilers > summary:focus-visible {
+  color: var(--danger);
+  outline-color: var(--danger);
+}
+
+.spoilers > summary:hover .spoilerLabel {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 .collapse {
