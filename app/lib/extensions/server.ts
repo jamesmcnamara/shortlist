@@ -1,23 +1,37 @@
+import { inArray } from "drizzle-orm";
 import {
   EXTENSIONS,
+  extensionTags,
   hasExtension,
   isExtension,
   type ExtensionName,
 } from "@/app/lib/extensions";
 import {
+  findTheatreById,
   withTheatreAdmin,
   withTheatreMember,
   type RouteContext,
   type SafeTheatre,
   type TheatreContext,
 } from "@/lib/auth/require-theatre";
-import type { Nomination } from "@/src/db/schema";
+import { getDb } from "@/src/db/client";
+import {
+  theatreTags,
+  type Nomination,
+  type RawNomination,
+} from "@/src/db/schema";
 import { movieclub } from "./movieclub/handler";
 import { specific } from "./specific/handler";
 
+export interface NominationChange {
+  before?: RawNomination;
+  after?: RawNomination;
+}
+
 /**
- * How an extension takes part in the nominations routes, which don't know about
- * any one extension. Hooks only run on lists tagged with the extension.
+ * How an extension takes part in the nominations routes and the daily cron,
+ * which don't know about any one extension. Hooks only run on lists tagged
+ * with the extension.
  */
 export interface ExtensionHooks {
   /** Why this user can't nominate right now, or null to allow it. */
@@ -30,6 +44,12 @@ export interface ExtensionHooks {
     theatre: SafeTheatre,
     nominations: Nomination[],
   ) => Promise<Nomination[]>;
+  /** Receives the nomination before and after a saved change; null means absent. */
+  afterNominationChange?: (
+    context: NominationChange & { theatre: SafeTheatre; userId: string },
+  ) => Promise<void>;
+  /** Runs once a day, in the early evening Pacific. */
+  daily?: (context: { theatre: SafeTheatre; now: Date }) => Promise<void>;
 }
 
 export interface ExtensionHandler {
@@ -72,6 +92,48 @@ export const decorateNominations = (
       hooks.decorate ? hooks.decorate(theatre, await list) : list,
     Promise.resolve(nominations),
   );
+
+/** Lets extensions react to a change. The change is already saved, so hook failures are only logged. */
+export async function nominationChanged(
+  theatre: SafeTheatre,
+  userId: string,
+  change: NominationChange,
+) {
+  await Promise.all(
+    hooksFor(theatre).map(async (hooks) => {
+      try {
+        await hooks.afterNominationChange?.({ theatre, userId, ...change });
+      } catch (error) {
+        console.error("Unable to run a nomination change hook.", error);
+      }
+    }),
+  );
+}
+
+/** Runs every daily hook on each list tagged with its extension. */
+export async function runDailyHooks(now: Date) {
+  const tags = EXTENSIONS.filter((name) => HANDLERS[name].hooks?.daily).flatMap(
+    extensionTags,
+  );
+  if (!tags.length) return;
+  const tagged = await getDb()
+    .selectDistinct({ id: theatreTags.theatreId })
+    .from(theatreTags)
+    .where(inArray(theatreTags.tag, tags));
+  await Promise.all(
+    tagged.map(async ({ id }) => {
+      try {
+        const theatre = await findTheatreById(id);
+        if (!theatre) return;
+        await Promise.all(
+          hooksFor(theatre).map((hooks) => hooks.daily?.({ theatre, now })),
+        );
+      } catch (error) {
+        console.error(`Unable to run daily hooks for list ${id}.`, error);
+      }
+    }),
+  );
+}
 
 /**
  * Runs the extension named in the URL, after the usual theatre access checks,

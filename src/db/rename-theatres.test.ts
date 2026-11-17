@@ -79,7 +79,7 @@ describe("theatre rename migration", () => {
         }),
       ]);
       expect(await fixture.db.select().from(notifications)).toEqual([
-        { theatreId: theatre.id, userId },
+        expect.objectContaining({ theatreId: theatre.id, userId }),
       ]);
     } finally {
       await fixture.client.close();

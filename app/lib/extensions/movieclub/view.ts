@@ -1,5 +1,5 @@
 import type { SortOption } from "@/app/lib/view";
-import { isMovieClub, votersOf } from "./shared";
+import { CLUB_NOTIFICATIONS, isMovieClub, votersOf } from "./shared";
 
 export const VOTES_SORT: SortOption = {
   id: "votes",
@@ -14,3 +14,6 @@ const NO_SORTS: SortOption[] = [];
 
 export const movieClubSorts = (description?: string | null) =>
   isMovieClub(description) ? CLUB_SORTS : NO_SORTS;
+
+export const movieClubNotifications = (description?: string | null) =>
+  isMovieClub(description) ? { movieclub: CLUB_NOTIFICATIONS } : {};

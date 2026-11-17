@@ -147,6 +147,12 @@ export const notifications = pgTable(
   {
     theatreId: uuid("theatre_id").notNull(),
     userId: uuid("user_id").notNull(),
+    newMovies: boolean("new_movies").notNull().default(true),
+    // Opt-outs from extension notifications, like `{ movieclub: { lead: false } }`.
+    extensions: jsonb("extensions")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
   },
   (table) => [
     primaryKey({ columns: [table.theatreId, table.userId] }),

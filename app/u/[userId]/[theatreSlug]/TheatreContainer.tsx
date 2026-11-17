@@ -106,7 +106,11 @@ export function TheatreContainer() {
       name={theatre.name}
       description={theatre.description}
       header={{
-        theatre: { id: theatre.id, path: theatre.path, isAdmin },
+        theatre: {
+          id: theatre.id,
+          path: theatre.path,
+          isMember: Boolean(role),
+        },
       }}
       isAdmin={isAdmin}
       isMember={Boolean(role)}

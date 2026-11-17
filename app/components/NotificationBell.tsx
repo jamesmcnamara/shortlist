@@ -66,7 +66,7 @@ export function NotificationBell({ theatreId }: NotificationBellProps) {
 
   const label = data?.enabled
     ? "Disable list notifications"
-    : "Notify me when someone adds a movie";
+    : "Turn on list notifications";
   const unavailable = !supported
     ? "Push notifications need a supported browser and a secure connection."
     : data && !data.configured
@@ -84,7 +84,7 @@ export function NotificationBell({ theatreId }: NotificationBellProps) {
         aria-label={label}
         aria-pressed={data?.enabled ?? false}
         aria-busy={busy}
-        title={`${label}. ${unavailable || "Applies to this list on your enabled devices. Your own additions are excluded."}`}
+        title={`${label}. ${unavailable || "Applies to this list on your enabled devices. Choose which ones you get in Settings."}`}
         disabled={
           busy || !data || (!data.enabled && (!supported || !data.configured))
         }

@@ -60,7 +60,7 @@ describe("list notification bell", () => {
   it("enables the device before saving list opt-in", async () => {
     render(<NotificationBell theatreId="club" />);
     const bell = screen.getByRole("button", {
-      name: "Notify me when someone adds a movie",
+      name: "Turn on list notifications",
     });
     expect(bell.getAttribute("aria-pressed")).toBe("false");
     fireEvent.click(bell);
@@ -139,7 +139,7 @@ describe("list notification bell", () => {
     expect(
       screen
         .getByRole("button", {
-          name: "Notify me when someone adds a movie",
+          name: "Turn on list notifications",
         })
         .getAttribute("aria-pressed"),
     ).toBe("false");

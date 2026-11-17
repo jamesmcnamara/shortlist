@@ -141,7 +141,12 @@ describe("push subscriptions and preferences", () => {
       new Request("https://test"),
       context(),
     );
-    expect(await response.json()).toEqual({ enabled: false, configured: true });
+    expect(await response.json()).toEqual({
+      enabled: false,
+      configured: true,
+      newMovies: true,
+      extensions: {},
+    });
     await register();
     await register();
     expect(await db.select().from(subscriptions)).toHaveLength(1);
@@ -246,6 +251,62 @@ describe("push subscriptions and preferences", () => {
           .status,
       ).toBe(400);
     }
+  });
+});
+
+describe("notification categories", () => {
+  const choose = (body: unknown) =>
+    preferencesRoute.PATCH(request(body, "PATCH"), context());
+
+  it("waits for the bell before saving categories", async () => {
+    const response = await choose({ newMovies: false });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "Turn on notifications for this list first.",
+    });
+  });
+
+  it("stops new movie notifications for members who turn them off", async () => {
+    await register();
+    const response = await choose({ newMovies: false });
+    expect(await response.json()).toMatchObject({
+      enabled: true,
+      newMovies: false,
+    });
+    await addMovie();
+    await state.tasks[0]();
+    expect(webpush.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it("starts over with every category on when the bell is turned back on", async () => {
+    await register();
+    await choose({ newMovies: false });
+    await preferencesRoute.PUT(request({ enabled: false }, "PUT"), context());
+    const response = await preferencesRoute.PUT(
+      request({ enabled: true }, "PUT"),
+      context(),
+    );
+    expect(await response.json()).toMatchObject({ newMovies: true });
+  });
+
+  it.each([
+    [{}],
+    [{ extensions: {} }],
+    [{ newMovies: "no" }],
+    [{ enabled: false }],
+    [{ extensions: { movieclub: { lead: false } } }],
+    [JSON.parse('{ "extensions": { "__proto__": { "lead": false } } }')],
+  ])("rejects %j", async (body) => {
+    await register();
+    expect((await choose(body)).status).toBe(400);
+    expect(
+      await db
+        .select({
+          newMovies: notifications.newMovies,
+          extensions: notifications.extensions,
+        })
+        .from(notifications),
+    ).toEqual([{ newMovies: true, extensions: {} }]);
   });
 });
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useTheatre } from "../TheatreContext";
 import { AdminSettings } from "./AdminSettings";
+import { ListNotifications } from "./ListNotifications";
 import styles from "./page.module.css";
 
 export default function TheatreSettingsPage() {
@@ -20,11 +21,11 @@ export default function TheatreSettingsPage() {
         </Link>
       </header>
 
-      {!isAdmin && (
+      {role ? (
+        <ListNotifications />
+      ) : (
         <p className={styles.subtitle} role="alert">
-          {role
-            ? "Only list admins can change these settings."
-            : "You need a list invitation to open its settings."}
+          You need a list invitation to open its settings.
         </p>
       )}
       {isAdmin && <AdminSettings />}

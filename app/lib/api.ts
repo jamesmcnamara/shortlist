@@ -9,6 +9,10 @@ import type {
   User,
 } from "@/src/db/schema";
 import type { SafeTheatre } from "@/lib/auth/require-theatre";
+import type {
+  NotificationChanges,
+  NotificationSettings,
+} from "@/lib/notifications/settings";
 import type { Movie } from "@/src/db/schema";
 import type { MovieImportResult } from "./bulk-movie-import";
 import type { JustWatchAvailability } from "./justwatch-types";
@@ -170,14 +174,17 @@ export const api = {
     const base = `/api/theatres/${encodeURIComponent(theatreId)}`;
     return {
       notifications: {
-        get: (): Promise<{ enabled: boolean; configured: boolean }> =>
+        get: (): Promise<NotificationSettings> =>
           request(`${base}/notifications`),
-        set: (
-          enabled: boolean,
-        ): Promise<{ enabled: boolean; configured: boolean }> =>
+        set: (enabled: boolean): Promise<NotificationSettings> =>
           request(`${base}/notifications`, {
             method: "PUT",
             body: JSON.stringify({ enabled }),
+          }),
+        choose: (changes: NotificationChanges): Promise<NotificationSettings> =>
+          request(`${base}/notifications`, {
+            method: "PATCH",
+            body: JSON.stringify(changes),
           }),
       },
       get: (): Promise<TheatreDetail> => request(base),

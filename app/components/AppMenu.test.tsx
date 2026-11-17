@@ -80,15 +80,15 @@ it("offers sign-in without a global directory to signed-out visitors", () => {
   expect(screen.queryByRole("menuitem", { name: "New Theatre" })).toBeNull();
 });
 
-it.each([true, false])("only shows settings to admins (%s)", (isAdmin) => {
+it.each([true, false])("only shows settings to members (%s)", (isMember) => {
   render(
     <AppMenu
-      theatre={{ id: "ordinary", path: "/u/@alice/ordinary", isAdmin }}
+      theatre={{ id: "ordinary", path: "/u/@alice/ordinary", isMember }}
     />,
   );
   fireEvent.click(screen.getByRole("button", { name: "Menu" }));
   expect(Boolean(screen.queryByRole("menuitem", { name: "Settings" }))).toBe(
-    isAdmin,
+    isMember,
   );
 });
 

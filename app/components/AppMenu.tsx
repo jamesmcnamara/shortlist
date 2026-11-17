@@ -15,7 +15,7 @@ import { FilmReelIcon } from "./FilmReelIcon";
 
 export interface AppMenuProps {
   /** Omitted outside a theatre, which hides the theatre-scoped items. */
-  theatre?: { id: string; path: string; isAdmin?: boolean };
+  theatre?: { id: string; path: string; isMember?: boolean };
   additionalMenuItems?: AdditionalMenuItem[];
 }
 
@@ -118,7 +118,7 @@ export function AppMenu({ theatre, additionalMenuItems }: AppMenuProps) {
             New Theatre
           </MenuLink>
         )}
-        {theatre?.isAdmin && (
+        {theatre?.isMember && (
           <MenuLink href={`${theatre.path}/settings`} onNavigate={close}>
             Settings
           </MenuLink>

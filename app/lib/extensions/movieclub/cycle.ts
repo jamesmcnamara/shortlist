@@ -11,3 +11,10 @@ export function cycleOf(date: Date): string {
   );
   return `${year}-${month}`;
 }
+
+const DAY = 24 * 60 * 60 * 1000;
+
+/** Whether tomorrow, Pacific, is the last day of the month, when nominations close. */
+export const closesTomorrow = (now: Date) =>
+  cycleOf(new Date(now.getTime() + DAY)) === cycleOf(now) &&
+  cycleOf(new Date(now.getTime() + 2 * DAY)) !== cycleOf(now);

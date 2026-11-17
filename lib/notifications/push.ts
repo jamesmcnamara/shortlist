@@ -1,5 +1,5 @@
 import { ECDH } from "node:crypto";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
 import webpush from "web-push";
 import { after } from "next/server";
 import { z } from "zod";
@@ -10,9 +10,10 @@ import {
   notifications,
   subscriptions,
   theatreMembers,
-  theatres,
 } from "@/src/db/schema";
-import { findTheatreById } from "@/lib/auth/require-theatre";
+import type { ExtensionName } from "@/app/lib/extensions";
+import { extensionData } from "@/app/lib/extensions/data";
+import { findTheatreById, type SafeTheatre } from "@/lib/auth/require-theatre";
 import type { NotificationPayload } from "./payload";
 
 interface PushConfiguration {
@@ -84,29 +85,36 @@ export const pushSubscription = z.object(
 
 const titled = z.object({ title: z.string() });
 
-export async function sendNomNotys(theatreId: string, nominationId: number) {
+/** Which members get a notification, beyond having the list's bell on. */
+export interface Audience {
+  /** The kind of notification, which members can turn off in Settings. */
+  wants: "newMovies" | { extension: ExtensionName; category: string };
+  /** Only these members. */
+  only?: string[];
+  /** Everyone but these members. */
+  except?: string[];
+}
+
+export interface Notice {
+  body: string;
+  tag: string;
+}
+
+// A missing extension preference counts as on.
+const wanting = (wants: Audience["wants"]) =>
+  wants === "newMovies"
+    ? eq(notifications.newMovies, true)
+    : sql`${extensionData(wants.extension, notifications.extensions)} -> ${wants.category}::text is distinct from 'false'::jsonb`;
+
+/** Pushes a notice about a list to each of the audience's devices. */
+export async function notifyMembers(
+  theatre: Pick<SafeTheatre, "id" | "name" | "path">,
+  { wants, only, except }: Audience,
+  { body, tag }: Notice,
+) {
   const config = pushConfiguration();
-  if (!config) return;
+  if (!config || only?.length === 0) return;
   const db = getDb();
-  const [nomination] = await db
-    .select({
-      userId: nominations.userId,
-      title: movies.details,
-      theatreName: theatres.name,
-    })
-    .from(nominations)
-    .innerJoin(movies, eq(movies.id, nominations.movieId))
-    .innerJoin(theatres, eq(theatres.id, nominations.theatreId))
-    .where(
-      and(
-        eq(nominations.theatreId, theatreId),
-        eq(nominations.id, nominationId),
-      ),
-    );
-  if (!nomination) return;
-  const theatre = await findTheatreById(theatreId);
-  if (!theatre) return;
-  const title = titled.safeParse(nomination.title).data?.title ?? "A movie";
   const recipients = await db
     .select({
       endpoint: subscriptions.endpoint,
@@ -125,15 +133,17 @@ export async function sendNomNotys(theatreId: string, nominationId: number) {
     )
     .where(
       and(
-        eq(notifications.theatreId, theatreId),
-        ne(subscriptions.userId, nomination.userId),
+        eq(notifications.theatreId, theatre.id),
+        wanting(wants),
+        only ? inArray(subscriptions.userId, only) : undefined,
+        except?.length ? notInArray(subscriptions.userId, except) : undefined,
       ),
     );
   const payload = JSON.stringify({
-    title: nomination.theatreName.slice(0, 100),
-    body: `${title.slice(0, 200)} was added to the list.`,
+    title: theatre.name.slice(0, 100),
+    body,
     url: theatre.path,
-    tag: `nomination-${nominationId}`,
+    tag,
   } satisfies NotificationPayload);
   await Promise.all(
     recipients.map(async (subscription) => {
@@ -173,13 +183,43 @@ export async function sendNomNotys(theatreId: string, nominationId: number) {
   );
 }
 
-export function scheduleNomNotys(theatreId: string, nominationId: number) {
+/** Sends notifications after the response, so push services never slow a request down. */
+export function scheduleNotification(send: () => Promise<void>) {
   if (!pushConfiguration()) return;
   after(async () => {
     try {
-      await sendNomNotys(theatreId, nominationId);
+      await send();
     } catch {
       console.error("Unable to prepare movie notifications");
     }
   });
 }
+
+export async function sendNomNotys(theatreId: string, nominationId: number) {
+  if (!pushConfiguration()) return;
+  const [nomination] = await getDb()
+    .select({ userId: nominations.userId, title: movies.details })
+    .from(nominations)
+    .innerJoin(movies, eq(movies.id, nominations.movieId))
+    .where(
+      and(
+        eq(nominations.theatreId, theatreId),
+        eq(nominations.id, nominationId),
+      ),
+    );
+  if (!nomination) return;
+  const theatre = await findTheatreById(theatreId);
+  if (!theatre) return;
+  const title = titled.safeParse(nomination.title).data?.title ?? "A movie";
+  await notifyMembers(
+    theatre,
+    { wants: "newMovies", except: [nomination.userId] },
+    {
+      body: `${title.slice(0, 200)} was added to the list.`,
+      tag: `nomination-${nominationId}`,
+    },
+  );
+}
+
+export const scheduleNomNotys = (theatreId: string, nominationId: number) =>
+  scheduleNotification(() => sendNomNotys(theatreId, nominationId));

@@ -10,13 +10,26 @@ const ALIASES: Partial<Record<ExtensionName, string[]>> = {
   movieclub: ["movie-club"],
 };
 
+/** A kind of notification an extension can send, which members can turn off. */
+export interface NotificationCategory {
+  id: string;
+  label: string;
+  description: string;
+}
+
 export const isExtension = (name: string): name is ExtensionName =>
   (EXTENSIONS as readonly string[]).includes(name);
+
+/** Every hashtag that turns the extension on. */
+export const extensionTags = (name: ExtensionName) => [
+  name,
+  ...(ALIASES[name] ?? []),
+];
 
 export const hasExtension = (
   name: ExtensionName,
   description?: string | null,
 ) => {
   const tags = extract(description ?? "");
-  return [name, ...(ALIASES[name] ?? [])].some((tag) => tags.includes(tag));
+  return extensionTags(name).some((tag) => tags.includes(tag));
 };

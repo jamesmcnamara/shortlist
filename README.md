@@ -221,8 +221,16 @@ have enabled. On another device, choose **Enable on this device** below the titl
 for a list you already follow. Turning off the bell stops alerts for that list
 on all your devices. Signing out disconnects the current browser.
 
-New nominations, including successful bulk imports, notify opted-in members
-other than the person adding the movie. Duplicate imports do not send alerts.
+The bell is the master switch for a list. Once it's on, members can pick which
+kinds of notifications they get under **Menu > Settings**, which every member
+can open (the admin sections below it stay admin-only). Each kind starts on, and
+turning the bell off and on again turns them all back on.
+
+- **New movies**: new nominations, including successful bulk imports, notify
+  opted-in members other than the person adding the movie. Duplicate imports do
+  not send alerts.
+- Extensions can add their own kinds, like the [movie club's](#movie-club).
+
 Tapping a notification opens its list. Android Chrome supports this without
 installing the PWA; iOS requires a Home Screen install. HTTPS is required, except
 for local development on localhost. The production service worker is generated
@@ -236,8 +244,15 @@ To configure delivery:
    environment. Keep the private key secret and retain the same key pair across
    deployments. The public key is embedded at build time, so redeploy after
    configuring it.
-3. Apply the new Drizzle migration with `npm run db:migrate` against the intended
-   database before deploying.
+3. Apply the new Drizzle migrations with `npm run db:migrate` against the
+   intended database before deploying (`0035_notification_categories.sql` adds
+   the per-kind choices).
+4. For scheduled notifications, like movie club reminders, set `CRON_SECRET` to
+   a random string (`openssl rand -base64 32`) in Vercel's production
+   environment. Vercel Cron calls `GET /api/cron/daily` at 01:00 UTC (6pm
+   Pacific in summer, 5pm in winter) with `Authorization: Bearer $CRON_SECRET`,
+   as configured in `vercel.json`. The route answers `503` without the secret and
+   `401` for any other caller.
 
 The existing Node.js routes send Web Push using Next.js `after()`, so delivery
 does not hold up the movie-add response. Each send has a five-second timeout and
@@ -246,6 +261,15 @@ details; expired subscriptions (404/410) are removed. There is no durable queue
 or automatic retry, and browser/OS settings can delay or prevent notifications.
 Without the VAPID configuration, movie additions work normally and the
 notification control explains that setup is still needed.
+
+Choices live in the `notifications` row for each member and list:
+`new_movies` for core kinds and `extensions`, a JSON object of opt-outs keyed by
+extension name, like `{ "movieclub": { "lead": false } }`. A missing choice
+counts as on. `GET` and `PUT /api/theatres/:theatreId/notifications` return
+`{ enabled, configured, newMovies, extensions }`, and
+`PATCH` takes `{ newMovies?, extensions?: { [name]: { [kind]: boolean } } }`.
+It only accepts kinds the list's extensions offer, answers `400` when there's
+nothing to change, and `409` until the bell is on.
 
 ### Wikipedia articles
 
@@ -671,8 +695,25 @@ on lists that have the extension's tag, and each one is optional:
 
 - `beforeNominate({ theatre, userId })` returns the reason this user can't
   nominate right now, or `null`. `POST /nominations` answers `409` with it.
+- `afterNominationChange({ theatre, userId, before, after })` runs after a member
+  adds, edits, or removes a nomination. `before` and `after` are the nomination's
+  database rows, with `null` for the missing side of an addition or deletion.
+  Failures are logged and don't fail the request.
+- `daily({ theatre, now })` runs once a day from `GET /api/cron/daily` (see
+  [Movie notifications](#movie-notifications)) for each list with the
+  extension's tag, found through `theatre_tags`. Vercel Cron can retry or run
+  late; hooks use the supplied date to decide whether anything is due.
 - `decorate(theatre, nominations)` adds the extension's data to the nominations
   a list shows, under `nomination.extensions[name]`.
+
+An extension can offer its own notification kinds by listing them, with a label
+and description, in its `view.ts` (see `extensionNotifications` in
+`app/lib/extensions/view.ts`); they show up in Settings automatically. Send them
+with `notifyMembers(theatre, { wants: { extension, category } }, notice)` from
+`lib/notifications/push.ts`, wrapped in `scheduleNotification` inside a request.
+Members' opt-outs live in `notifications.extensions`, and the same
+`extensionData` and `mergeExtensionData` helpers work there by passing that
+column.
 
 Their state lives in `theatres.extensions`, one JSON object keyed by extension
 name, like `{ "specific": { "suggestedAt": "…" } }`. Read an extension's object
@@ -746,6 +787,23 @@ earlier month are ignored, and the first vote of a
 new month starts everyone over. Votes for movies that were removed or watched are
 given back. Each nomination a list shows carries its voters in
 `nomination.extensions.movieclub.voters`, with one person entry per vote.
+
+The club adds two notification kinds, each of which members can turn off in
+Settings:
+
+- **Your movie takes the lead**: when adding or removing a vote, deleting a
+  nomination, or changing its watched status puts your open nomination in first
+  place, or ties it for first, you're told it "moved into the lead" or "is now
+  tied for the lead". You only hear when it enters the lead, and not when you
+  caused the change yourself. Nobody leads before the month's first vote.
+- **Nomination reminder**: the evening before the last day of the month (from
+  the daily job), members without an open nomination from this month are
+  reminded that tomorrow is the last day.
+
+Leaders are calculated before and after each change, and reminders use the
+current Pacific date and nominations. Neither needs saved notification state.
+Simultaneous changes or repeated cron runs can send duplicate notifications;
+there is no deduplication across requests.
 
 `POST /api/theatres/:theatreId/extensions/movieclub` is open to any member and
 takes `{ "action": "vote" | "unvote", "nominationId": number }`. It returns

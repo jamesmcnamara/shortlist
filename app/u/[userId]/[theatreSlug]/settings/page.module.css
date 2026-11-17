@@ -217,3 +217,30 @@
 .destructive:hover {
   background: var(--danger-wash);
 }
+
+.choice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 0.625rem;
+  row-gap: 0.125rem;
+  color: var(--text-soft);
+  font-size: 0.9344rem;
+}
+
+.choice input {
+  margin: 0;
+}
+
+.choice label {
+  cursor: pointer;
+}
+
+.choice .hint {
+  grid-column: 2;
+}
+
+.choice:has(input:disabled) label {
+  color: var(--muted);
+  cursor: default;
+}

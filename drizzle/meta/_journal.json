@@ -246,6 +246,13 @@
       "when": 1794856220086,
       "tag": "0034_trivia_spoilers",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794869178728,
+      "tag": "0035_notification_categories",
+      "breakpoints": true
     }
   ]
 }

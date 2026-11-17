@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import {
   decorateNominations,
+  nominationChanged,
   refuseNomination,
 } from "@/app/lib/extensions/server";
 import { getNomination, listNominations } from "@/app/lib/queries";
@@ -74,11 +75,14 @@ export const POST = withTheatreMember({
   const [inserted] = await db
     .insert(nominations)
     .values({ theatreId: theatre.id, userId, movieId, comment })
-    .returning({ id: nominations.id });
+    .returning();
 
   await addMovie({ kind: "shortlist", id: movieId });
   const nomination = await getNomination(theatre.id, inserted.id);
   scheduleNomNotys(theatre.id, inserted.id);
+  await nominationChanged(theatre, userId, {
+    after: inserted,
+  });
   return Response.json(nomination, {
     status: 201,
   });
@@ -100,25 +104,30 @@ export const PATCH = withTheatreAdmin({
   const ownershipCondition =
     comment != null ? eq(nominations.userId, userId) : undefined;
 
-  const updated = await getDb()
+  const db = getDb();
+  const condition = and(
+    eq(nominations.id, id),
+    eq(nominations.theatreId, theatre.id),
+    ownershipCondition,
+  );
+  const [before] = await db.select().from(nominations).where(condition);
+  const [updated] = await db
     .update(nominations)
     .set(values)
-    .where(
-      and(
-        eq(nominations.id, id),
-        eq(nominations.theatreId, theatre.id),
-        ownershipCondition,
-      ),
-    )
-    .returning({ id: nominations.id });
+    .where(condition)
+    .returning();
 
-  if (updated.length === 0) {
+  if (!updated) {
     return Response.json(
       { error: "That nomination no longer exists." },
       { status: 404 },
     );
   }
 
+  await nominationChanged(theatre, userId, {
+    before: before ?? null,
+    after: updated,
+  });
   return Response.json(await getNomination(theatre.id, id), { status: 200 });
 });
 
@@ -134,7 +143,7 @@ export const DELETE = withTheatreMember({
   const memberLimits =
     role === "admin" ? undefined : eq(nominations.userId, userId);
 
-  const deleted = await getDb()
+  const [deleted] = await getDb()
     .delete(nominations)
     .where(
       and(
@@ -143,11 +152,14 @@ export const DELETE = withTheatreMember({
         memberLimits,
       ),
     )
-    .returning({ id: nominations.id });
-  if (deleted.length === 0)
+    .returning();
+  if (!deleted)
     return Response.json(
       { error: "That nomination no longer exists." },
       { status: 404 },
     );
+  await nominationChanged(theatre, userId, {
+    before: deleted,
+  });
   return new Response(null, { status: 204 });
 });
