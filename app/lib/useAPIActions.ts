@@ -49,7 +49,7 @@ export function useAPICall() {
     };
   }
 
-  return { message, isSubmitting, fromAPI };
+  return { message, setMessage, isSubmitting, fromAPI };
 }
 
 type APICallMap = Record<string, APICall<any[]>>;
@@ -66,7 +66,7 @@ type ActionsFromMap<Config extends APICallMap> = {
  * `message`/`isSubmitting` state.
  */
 export function useAPIActions<Config extends APICallMap>(configMap: Config) {
-  const { message, isSubmitting, fromAPI } = useAPICall();
+  const { message, setMessage, isSubmitting, fromAPI } = useAPICall();
 
   const actions = useMemo(
     () =>
@@ -79,5 +79,5 @@ export function useAPIActions<Config extends APICallMap>(configMap: Config) {
     [configMap],
   );
 
-  return { actions, message, isSubmitting };
+  return { actions, message, setMessage, isSubmitting };
 }

@@ -1,0 +1,5 @@
+#!/bin/sh
+# Checks the staged lockfile, since that's what the commit will contain.
+if git cat-file -e :package-lock.json 2>/dev/null; then
+  git show :package-lock.json | node scripts/check-lockfile.mjs /dev/stdin
+fi

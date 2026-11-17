@@ -217,9 +217,15 @@ List members can toggle movie notifications using the small grey bell beside
 the theatre title. Notifications are off by default: an outlined bell means off,
 and a filled bell means on. Enabling them requests browser permission and
 registers the current device; the list preference applies to all devices you
-have enabled. On another device, choose **Enable on this device** below the title
-for a list you already follow. Turning off the bell stops alerts for that list
-on all your devices. Signing out disconnects the current browser.
+have enabled. On another device, the bell gets a blue background: tap it to
+enable that device for a list you already follow. After setup, tapping the bell
+turns notifications off for that list on all your devices. Signing out
+disconnects the current browser.
+
+The bell has a solid blue background while checking or saving, with its status
+in the accessible label and tooltip rather than a line beneath it. Errors
+appear in the list's usual message area below its controls; if settings fail
+to load, tap the bell to retry.
 
 The bell is the master switch for a list. Once it's on, members can pick which
 kinds of notifications they get under **Menu > Settings**, which every member
@@ -826,6 +832,12 @@ That means push notifications only work in a production build
 
 Useful checks are `npm test`, `npm run typecheck` and `npm run build`. To create a
 new Drizzle migration after changing `src/db/schema.ts`, run `npm run db:generate`.
+
+Run `git config core.hooksPath .githooks` once per clone. Its pre-commit hook
+blocks commits whose staged `package-lock.json` downloads packages from anywhere
+but `https://registry.npmjs.org/`. Installing through a private feed proxy (like
+`gh cfs`) can write the feed's URLs into the lockfile, and Vercel can't download
+them. Run `node scripts/check-lockfile.mjs` to check the working-tree lockfile.
 
 The package uses ES modules (`"type": "module"`), including the TypeScript refresh
 commands run through `tsx`. Use ESM imports in scripts; files that specifically

@@ -97,9 +97,18 @@ vi.mock("./Fantasy/FantasyDashboard", () => ({
     <section aria-label="Fantasy dashboard">{nominees.length} movies</section>
   ),
 }));
+interface NotificationBellProps {
+  theatreId: string;
+  onError: (message: string) => void;
+}
+
 vi.mock("./NotificationBell", () => ({
-  NotificationBell: ({ theatreId }: { theatreId: string }) => (
-    <button aria-label="List notifications" data-theatre-id={theatreId} />
+  NotificationBell: ({ theatreId, onError }: NotificationBellProps) => (
+    <button
+      aria-label="List notifications"
+      data-theatre-id={theatreId}
+      onClick={() => onError("Unable to save notifications.")}
+    />
   ),
 }));
 vi.mock("./MovieCard", () => ({
@@ -242,6 +251,23 @@ describe("list notification placement", () => {
     expect(
       screen.queryByRole("button", { name: "List notifications" }),
     ).toBeNull();
+  });
+
+  it("shows notification errors in the same area as other action errors", async () => {
+    const api = createApi();
+    vi.mocked(api.nominate).mockRejectedValue(new Error("Unable to nominate."));
+    show([watched], api, false, "user", null, true);
+    fireEvent.click(screen.getByRole("button", { name: "Add nomination" }));
+    const message = await screen.findByText("Unable to nominate.");
+    fireEvent.click(screen.getByRole("button", { name: "List notifications" }));
+    expect(message.textContent).toBe("Unable to save notifications.");
+    expect(message.parentElement).toBe(
+      screen.getByRole("heading", { name: "Watchlist" }).closest("section"),
+    );
+    expect(
+      message.compareDocumentPosition(screen.getByText("List controls")) &
+        Node.DOCUMENT_POSITION_PRECEDING,
+    ).toBeTruthy();
   });
 });
 

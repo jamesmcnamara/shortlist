@@ -148,7 +148,7 @@ export function Theatre({
     },
   })(nominees);
 
-  const { actions, message, isSubmitting } = useAPIActions({
+  const { actions, message, setMessage, isSubmitting } = useAPIActions({
     updateDescription: {
       api: api.updateDescription,
       action: "update the list description",
@@ -284,7 +284,11 @@ export function Theatre({
             {name}
           </h1>
           {theatreId && isMember && userId && (
-            <NotificationBell key={theatreId} theatreId={theatreId} />
+            <NotificationBell
+              key={theatreId}
+              theatreId={theatreId}
+              onError={setMessage}
+            />
           )}
         </div>
 
