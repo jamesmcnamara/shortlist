@@ -232,12 +232,13 @@ kinds of notifications they get under **Menu > Settings**, which every member
 can open (the admin sections below it stay admin-only). Each kind starts on, and
 turning the bell off and on again turns them all back on.
 
-- **New movies**: new nominations, including successful bulk imports, notify
-  opted-in members other than the person adding the movie. Duplicate imports do
-  not send alerts.
+- **New movies**: individual nominations notify opted-in members other than the
+  person adding the movie. Bulk imports currently do not send alerts.
 - Extensions can add their own kinds, like the [movie club's](#movie-club).
 
-Tapping a notification opens its list. Android Chrome supports this without
+Tapping a notification opens its list. A new-movie notification also opens that
+movie's discussion if the nomination is still on the list. Older service workers
+open only the list until they update. Android Chrome supports this without
 installing the PWA; iOS requires a Home Screen install. HTTPS is required, except
 for local development on localhost. The production service worker is generated
 during the build; the development server does not enable it.

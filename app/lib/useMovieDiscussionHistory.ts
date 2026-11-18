@@ -34,21 +34,18 @@ export function useMovieDiscussionHistory() {
     setFocusedId(null);
   }, []);
 
-  const openDiscussion = useCallback(
-    (nominationId: number) => {
-      const state = getHistoryState();
-      const next = set(HISTORY_KEY)(nominationId)(state);
+  const openDiscussion = useCallback((nominationId: number) => {
+    const state = getHistoryState();
+    const next = set(HISTORY_KEY)(nominationId)(state);
 
-      if (getDiscussionId(state) === null) {
-        window.history.pushState(next, "");
-      } else {
-        window.history.replaceState(next, "");
-      }
+    if (getDiscussionId(state) === null) {
+      window.history.pushState(next, "");
+    } else {
+      window.history.replaceState(next, "");
+    }
 
-      setFocusedId(nominationId);
-    },
-    [closeDiscussion, focusedId],
-  );
+    setFocusedId(nominationId);
+  }, []);
 
   return { focusedId, closeDiscussion, openDiscussion };
 }

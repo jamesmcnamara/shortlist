@@ -16,6 +16,7 @@ const deleteCache = vi.fn().mockResolvedValue(true);
 const showNotification = vi.fn().mockResolvedValue(undefined);
 const openWindow = vi.fn().mockResolvedValue(undefined);
 const focus = vi.fn().mockResolvedValue(undefined);
+const navigate = vi.fn().mockResolvedValue(undefined);
 const matchAll = vi.fn().mockResolvedValue([]);
 
 beforeEach(async () => {
@@ -35,6 +36,7 @@ beforeEach(async () => {
 
 describe("push notifications", () => {
   const path = "/u/@alice/movie-club";
+  const nominationPath = `${path}?nominationId=42`;
   function listener(name: string) {
     const handler = addEventListener.mock.calls.find(
       ([event]) => event === name,
@@ -51,7 +53,8 @@ describe("push notifications", () => {
           title: "Movies",
           body: "Arrival was added.",
           url: path,
-          tag: "nomination-1",
+          nominationId: 42,
+          tag: "nomination-42",
         }),
       },
       waitUntil,
@@ -60,9 +63,39 @@ describe("push notifications", () => {
     expect(showNotification).toHaveBeenCalledWith("Movies", {
       body: "Arrival was added.",
       icon: "/icons/icon-192.svg",
-      tag: "nomination-1",
-      data: { url: path },
+      tag: "nomination-42",
+      data: { url: path, nominationId: 42 },
     });
+  });
+
+  it("opens the nomination link carried by a push notification", async () => {
+    const pushWaitUntil = vi.fn();
+    listener("push")({
+      data: {
+        json: () => ({
+          title: "Movies",
+          body: "Arrival was added.",
+          url: path,
+          nominationId: 42,
+          tag: "nomination-42",
+        }),
+      },
+      waitUntil: pushWaitUntil,
+    });
+    await pushWaitUntil.mock.calls[0][0];
+
+    const clickWaitUntil = vi.fn();
+    listener("notificationclick")({
+      notification: {
+        close: vi.fn(),
+        data: showNotification.mock.calls[0][1].data,
+      },
+      waitUntil: clickWaitUntil,
+    });
+    await clickWaitUntil.mock.calls[0][0];
+    expect(openWindow).toHaveBeenCalledWith(
+      `https://shortlist.test${nominationPath}`,
+    );
   });
 
   it("shows a visible fallback for invalid push data", async () => {
@@ -92,6 +125,7 @@ describe("push notifications", () => {
     "//evil.test",
     "/rooms/44444444-4444-4444-4444-444444444444",
     "/theatres/44444444-4444-4444-4444-444444444444",
+    `${path}?nominationId=42&next=https://evil.test`,
   ])("opens only a same-origin destination for %s", async (url) => {
     const waitUntil = vi.fn();
     const close = vi.fn();
@@ -108,7 +142,7 @@ describe("push notifications", () => {
 
   it("focuses an already-open list", async () => {
     matchAll.mockResolvedValue([
-      { url: `https://shortlist.test${path}`, focus },
+      { url: `https://shortlist.test${path}`, focus, navigate },
     ]);
     const waitUntil = vi.fn();
     listener("notificationclick")({
@@ -117,11 +151,76 @@ describe("push notifications", () => {
     });
     await waitUntil.mock.calls[0][0];
     expect(focus).toHaveBeenCalledOnce();
+    expect(navigate).not.toHaveBeenCalled();
     expect(openWindow).not.toHaveBeenCalled();
+  });
+
+  it.each(["", "?sort=title", "?nominationId=7", "?sort=title#list"])(
+    "reuses the theatre tab regardless of its URL parameters: %s",
+    async (search) => {
+      matchAll.mockResolvedValue([
+        { url: `https://shortlist.test${path}${search}`, focus, navigate },
+      ]);
+      const waitUntil = vi.fn();
+      listener("notificationclick")({
+        notification: {
+          close: vi.fn(),
+          data: { url: path, nominationId: 42 },
+        },
+        waitUntil,
+      });
+      await waitUntil.mock.calls[0][0];
+      expect(navigate).toHaveBeenCalledWith(
+        `https://shortlist.test${nominationPath}`,
+      );
+      expect(focus).toHaveBeenCalledOnce();
+      expect(openWindow).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    "https://shortlist.test/u/@alice/another-club?nominationId=42",
+    "https://shortlist.test/u/@bob/movie-club?nominationId=42",
+    `https://elsewhere.test${nominationPath}`,
+  ])("does not reuse a different theatre or origin: %s", async (clientUrl) => {
+    matchAll.mockResolvedValue([{ url: clientUrl, focus, navigate }]);
+    const waitUntil = vi.fn();
+    listener("notificationclick")({
+      notification: {
+        close: vi.fn(),
+        data: { url: path, nominationId: 42 },
+      },
+      waitUntil,
+    });
+    await waitUntil.mock.calls[0][0];
+    expect(focus).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+    expect(openWindow).toHaveBeenCalledWith(
+      `https://shortlist.test${nominationPath}`,
+    );
+  });
+
+  it("rejects invalid nomination data in a stored notification", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const waitUntil = vi.fn();
+    listener("notificationclick")({
+      notification: {
+        close: vi.fn(),
+        data: { url: path, nominationId: "42&next=https://evil.test" },
+      },
+      waitUntil,
+    });
+    await waitUntil.mock.calls[0][0];
+    expect(log).toHaveBeenCalledWith("Unable to open movie notification");
+    expect(openWindow).toHaveBeenCalledWith("https://shortlist.test/");
+    log.mockRestore();
   });
 });
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe("service worker cache ownership", () => {
   it.each([

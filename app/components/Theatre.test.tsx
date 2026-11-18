@@ -27,6 +27,7 @@ vi.mock("@/app/lib/useConfetti", () => ({
 }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
+  useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 vi.mock("@/app/components/CrossPost/CrossPost", () => ({
   CrossPost: ({
@@ -157,6 +158,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   push.mockClear();
   celebrate.mockClear();
 });
@@ -228,6 +230,115 @@ function show(
     />,
   );
 }
+
+describe("nomination notification links", () => {
+  const arrival = {
+    ...watched,
+    completedAt: null,
+    movie: {
+      ...watched.movie,
+      details: { title: "Arrival" } as Nomination["movie"]["details"],
+    },
+  };
+  const heat = {
+    ...arrival,
+    id: 2,
+    movieId: 2,
+    movie: {
+      ...arrival.movie,
+      id: 2,
+      details: { title: "Heat" } as Nomination["movie"]["details"],
+    },
+  };
+  const theatre = (nominees: Nomination[]) => (
+    <Theatre
+      name="Watchlist"
+      nominees={nominees}
+      userId={undefined}
+      viewState={{ sort: "newest", filters: [] }}
+      setViewState={vi.fn()}
+      viewContext={{}}
+    />
+  );
+
+  it("opens the named nomination and preserves the other URL state", () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/u/@alice/movie-club?sort=title&nominationId=2#list",
+    );
+    show([arrival, heat]);
+
+    expect(
+      screen.getByRole("region", { name: "Discussion about Heat" }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("region", { name: "Discussion about Arrival" }),
+    ).toBeNull();
+    expect(window.location.pathname).toBe("/u/@alice/movie-club");
+    expect(window.location.search).toBe("?sort=title");
+    expect(window.location.hash).toBe("#list");
+  });
+
+  it("opens the nomination when fresh list data arrives", () => {
+    window.history.replaceState(null, "", "/?nominationId=2");
+    const { rerender } = render(theatre([arrival]));
+    expect(
+      screen.queryByRole("region", { name: "Discussion about Heat" }),
+    ).toBeNull();
+
+    rerender(theatre([arrival, heat]));
+    expect(
+      screen.getByRole("region", { name: "Discussion about Heat" }),
+    ).toBeTruthy();
+  });
+
+  it("opens a new notification link when the list stays mounted", () => {
+    const { rerender } = render(theatre([arrival, heat]));
+    act(() => window.history.pushState(null, "", "/?nominationId=1"));
+    rerender(theatre([arrival, heat]));
+    expect(
+      screen.getByRole("region", { name: "Discussion about Arrival" }),
+    ).toBeTruthy();
+
+    act(() => window.history.pushState(null, "", "/?nominationId=2"));
+    rerender(theatre([arrival, heat]));
+    expect(
+      screen.getByRole("region", { name: "Discussion about Heat" }),
+    ).toBeTruthy();
+  });
+
+  it("closes normally without reopening the notification", async () => {
+    window.history.replaceState(null, "", "/?sort=title&nominationId=1");
+    show([arrival]);
+    fireEvent.click(screen.getByRole("button", { name: "Close discussion" }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("region", { name: "Discussion about Arrival" }),
+      ).toBeNull(),
+    );
+    expect(window.location.search).toBe("?sort=title");
+  });
+
+  it.each(["not-a-number", "0", "1.5", "2147483648"])(
+    "does not create discussion history for an invalid ID: %s",
+    (id) => {
+      window.history.replaceState(null, "", `/?nominationId=${id}`);
+      const pushState = vi.spyOn(window.history, "pushState");
+      const log = vi.spyOn(console, "error").mockImplementation(() => {});
+      show([arrival]);
+
+      expect(
+        screen.queryByRole("region", { name: "Discussion about Arrival" }),
+      ).toBeNull();
+      expect(pushState).not.toHaveBeenCalled();
+      expect(log).toHaveBeenCalledWith("Invalid nomination ID in URL.");
+      pushState.mockRestore();
+      log.mockRestore();
+    },
+  );
+});
 
 describe("list notification placement", () => {
   it("shows a bell in the title row for members, including non-admins", () => {

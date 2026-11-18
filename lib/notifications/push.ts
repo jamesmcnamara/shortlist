@@ -14,7 +14,7 @@ import {
 import type { ExtensionName } from "@/app/lib/extensions";
 import { extensionData } from "@/app/lib/extensions/data";
 import { findTheatreById, type SafeTheatre } from "@/lib/auth/require-theatre";
-import type { NotificationPayload } from "./payload";
+import { notificationPayload } from "./payload";
 
 interface PushConfiguration {
   publicKey: string;
@@ -98,6 +98,7 @@ export interface Audience {
 export interface Notice {
   body: string;
   tag: string;
+  nominationId?: number;
 }
 
 // A missing extension preference counts as on.
@@ -110,7 +111,7 @@ const wanting = (wants: Audience["wants"]) =>
 export async function notifyMembers(
   theatre: Pick<SafeTheatre, "id" | "name" | "path">,
   { wants, only, except }: Audience,
-  { body, tag }: Notice,
+  { body, tag, nominationId }: Notice,
 ) {
   const config = pushConfiguration();
   if (!config || only?.length === 0) return;
@@ -139,12 +140,15 @@ export async function notifyMembers(
         except?.length ? notInArray(subscriptions.userId, except) : undefined,
       ),
     );
-  const payload = JSON.stringify({
-    title: theatre.name.slice(0, 100),
-    body,
-    url: theatre.path,
-    tag,
-  } satisfies NotificationPayload);
+  const payload = JSON.stringify(
+    notificationPayload.parse({
+      title: theatre.name.slice(0, 100),
+      body,
+      url: theatre.path,
+      tag,
+      nominationId,
+    }),
+  );
   await Promise.all(
     recipients.map(async (subscription) => {
       try {
@@ -217,6 +221,7 @@ export async function sendNomNotys(theatreId: string, nominationId: number) {
     {
       body: `${title.slice(0, 200)} was added to the list.`,
       tag: `nomination-${nominationId}`,
+      nominationId,
     },
   );
 }

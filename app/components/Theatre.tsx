@@ -24,6 +24,7 @@ import { useAPIActions } from "@/app/lib/useAPIActions";
 import { useClickOutside } from "@/app/lib/useClickOutside";
 import { useConfetti } from "@/app/lib/useConfetti";
 import { useMovieDiscussionHistory } from "@/app/lib/useMovieDiscussionHistory";
+import { dbIdParam } from "@/lib/validation";
 import {
   applyView,
   type SortOption,
@@ -36,8 +37,8 @@ import Fuse from "fuse.js";
 import { orderBy } from "lodash";
 import { AnimatePresence } from "motion/react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { all, filter, find, get, has, map, some } from "shades";
 import { isFantasyList } from "../lib/fantasy";
 import { when } from "../lib/utils";
@@ -52,6 +53,8 @@ const FantasyDashboard = dynamic(
     ),
   { ssr: false },
 );
+
+const nominationIdParam = dbIdParam("Invalid nomination ID in URL.");
 
 interface TheatreProps {
   theatreId?: string;
@@ -91,6 +94,7 @@ export function Theatre({
   const isClub = isMovieClub(description);
   const canNominate = canParticipate && (isAdmin || isMember);
   const canVote = canParticipate && isMember && isClub;
+  const nominationId = useSearchParams().get("nominationId");
   const { focusedId, closeDiscussion, openDiscussion } =
     useMovieDiscussionHistory();
   const [query, setQuery] = useState("");
@@ -109,6 +113,21 @@ export function Theatre({
   const router = useRouter();
   const celebrate = useConfetti();
   const isPicking = picked !== null;
+
+  useEffect(() => {
+    if (nominationId === null) return;
+    const parsed = nominationIdParam.safeParse(nominationId);
+    if (!parsed.success) {
+      console.error("Invalid nomination ID in URL.");
+      return;
+    }
+
+    // Leave the list URL behind the discussion so Back closes it.
+    const url = new URL(window.location.href);
+    url.searchParams.delete("nominationId");
+    window.history.replaceState(window.history.state, "", url);
+    openDiscussion(parsed.data);
+  }, [nominationId, openDiscussion]);
 
   const stopPicking = () => {
     setPicked(null);

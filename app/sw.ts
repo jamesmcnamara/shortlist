@@ -3,7 +3,10 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry } from "serwist";
 import { NetworkOnly, Serwist } from "serwist";
-import { notificationPayload, theatreUrl } from "@/lib/notifications/payload";
+import {
+  notificationDestination,
+  notificationPayload,
+} from "@/lib/notifications/payload";
 
 declare const self: ServiceWorkerGlobalScope & {
   __SW_MANIFEST: (string | PrecacheEntry)[];
@@ -54,7 +57,7 @@ self.addEventListener("push", (event) => {
           body: data.body,
           icon: "/icons/icon-192.svg",
           tag: data.tag,
-          data: { url: data.url },
+          data: { url: data.url, nominationId: data.nominationId },
         });
       } catch {
         console.error("Unable to display movie notification");
@@ -69,19 +72,31 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = new URL(
-    theatreUrl.safeParse(event.notification.data?.url).data ?? "/",
-    self.location.origin,
-  ).href;
+  const destination = notificationDestination.safeParse(
+    event.notification.data,
+  );
+  if (!destination.success) console.error("Unable to open movie notification");
+  const url = new URL(destination.data?.url ?? "/", self.location.origin);
+  if (destination.data?.nominationId !== undefined) {
+    url.searchParams.set("nominationId", String(destination.data.nominationId));
+  }
+  const href = url.href;
   event.waitUntil(
     (async () => {
       const clients = await self.clients.matchAll({
         type: "window",
         includeUncontrolled: true,
       });
-      const existing = clients.find((client) => client.url === url);
-      if (existing) await existing.focus();
-      else await self.clients.openWindow(url);
+      const existing = clients.find((client) => {
+        const current = new URL(client.url);
+        return (
+          current.origin === url.origin && current.pathname === url.pathname
+        );
+      });
+      if (existing) {
+        if (existing.url !== href) await existing.navigate(href);
+        await existing.focus();
+      } else await self.clients.openWindow(href);
     })(),
   );
 });

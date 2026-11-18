@@ -16,7 +16,8 @@ import {
 import * as subscriptionsRoute from "@/app/api/push/route";
 import * as preferencesRoute from "@/app/api/theatres/[theatreId]/notifications/route";
 import { POST as nominate } from "@/app/api/theatres/[theatreId]/nominations/route";
-import { pushSubscription, sendNomNotys } from "./push";
+import { notifyMembers, pushSubscription, sendNomNotys } from "./push";
+import { notificationPayload } from "./payload";
 
 const state = vi.hoisted(() => ({
   userId: "",
@@ -311,7 +312,7 @@ describe("notification categories", () => {
 });
 
 describe("best-effort delivery", () => {
-  it("sends after responding, excludes the actor, and deep-links to the authorized list", async () => {
+  it("sends the nomination ID with a compatible list URL after responding and excluding the actor", async () => {
     await register();
     state.userId = ALICE;
     await subscriptionsRoute.POST(
@@ -321,7 +322,7 @@ describe("best-effort delivery", () => {
       }),
     );
     await preferencesRoute.PUT(request({ enabled: true }, "PUT"), context());
-    await addMovie();
+    const nomination = await addMovie();
     expect(webpush.sendNotification).not.toHaveBeenCalled();
     expect(state.tasks).toHaveLength(1);
     await state.tasks[0]();
@@ -329,12 +330,27 @@ describe("best-effort delivery", () => {
     const [target, payload, options] = vi.mocked(webpush.sendNotification).mock
       .calls[0];
     expect(target).toEqual(subscription);
-    expect(JSON.parse(payload as string)).toMatchObject({
+    const delivered = notificationPayload.parse(JSON.parse(payload as string));
+    expect(delivered).toMatchObject({
       title: "Movie club",
       body: "Arrival was added to the list.",
       url: "/u/@alice/movie-club",
+      tag: `nomination-${nomination.id}`,
+      nominationId: nomination.id,
     });
     expect(options).toMatchObject({ timeout: 5000, TTL: 3600 });
+  });
+
+  it("rejects an invalid nomination ID instead of sending a list-only notice", async () => {
+    await register();
+    await expect(
+      notifyMembers(
+        { id: THEATRE, name: "Movie club", path: "/u/@alice/movie-club" },
+        { wants: "newMovies" },
+        { body: "Arrival was added.", tag: "nomination", nominationId: 0 },
+      ),
+    ).rejects.toThrow();
+    expect(webpush.sendNotification).not.toHaveBeenCalled();
   });
 
   it.each(["opt-out", "removed-member", "removed-device"] as const)(
