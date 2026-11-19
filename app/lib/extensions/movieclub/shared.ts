@@ -24,4 +24,27 @@ export const isMovieClub = (description?: string | null) =>
 
 /** One entry per vote; the same person can appear more than once. */
 export const votersOf = ({ extensions }: Pick<Nomination, "extensions">) =>
-  (extensions?.movieclub as { voters?: Person[] } | undefined)?.voters ?? [];
+  (extensions?.movieclub as MovieClubNominationExtension | undefined)?.voters ??
+  [];
+
+export const isClubPick = ({ extensions }: Pick<Nomination, "extensions">) =>
+  (extensions?.movieclub as MovieClubNominationExtension | undefined)
+    ?.isPick === true;
+
+export interface MovieClubTheatreExtension {
+  /** One nomination id per vote, by month then user, like `{ "2026-11": { [userId]: [3, 3, 7] } }`. */
+  votes?: Record<string, Record<string, number[]>>;
+  /** The movie id chosen for each month, like `{ "2026-11": 42 }`. */
+  picks?: Record<string, number>;
+  cycle?: string;
+}
+
+export interface MovieClubNominationExtension {
+  voters?: Person[];
+  isPick?: boolean;
+}
+
+export const emptyNominationClubExtensions: MovieClubNominationExtension = {
+  voters: [],
+  isPick: false,
+};

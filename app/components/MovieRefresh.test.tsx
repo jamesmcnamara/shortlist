@@ -13,7 +13,6 @@ import { MovieRefresh } from "./MovieRefresh";
 import { MovieDetail } from "./MovieDetail";
 import { MovieDiscussion } from "./MovieDiscussion/MovieDiscussion";
 import { nomination } from "@/app/lib/fantasy-fixtures";
-import loadingStyles from "./LoadingOverlay.module.css";
 
 const session = vi.hoisted(() => ({ signedIn: true }));
 vi.mock("@/lib/auth/client", () => ({
@@ -77,7 +76,7 @@ describe("shared movie pull-to-refresh", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 
-  it("shows release feedback, refreshes only on release and prevents duplicate requests", async () => {
+  it("refreshes only on release and prevents duplicate requests", async () => {
     let finish!: (value: { movie: Movie; failed: string[] }) => void;
     const refresh = vi.spyOn(api.movies, "refresh").mockImplementation(
       () =>
@@ -99,9 +98,6 @@ describe("shared movie pull-to-refresh", () => {
     expect(refresh).not.toHaveBeenCalled();
     fireEvent.touchEnd(content);
     expect(refresh).toHaveBeenCalledExactlyOnceWith(1);
-    expect(
-      screen.getByRole("status", { name: "Refreshing movie..." }).className,
-    ).toContain(loadingStyles.translucent);
     expect(screen.queryByText("Release to refresh")).toBeNull();
     const wrapper = content.closest("[aria-busy]")!;
     expect(wrapper.getAttribute("aria-busy")).toBe("true");
@@ -109,7 +105,9 @@ describe("shared movie pull-to-refresh", () => {
     fireEvent.keyDown(wrapper, { key: "Enter" });
     expect(refresh).toHaveBeenCalledOnce();
     finish({ movie, failed: [] });
-    await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
+    await waitFor(() =>
+      expect(wrapper.getAttribute("aria-busy")).toBe("false"),
+    );
     expect(onRefreshed).toHaveBeenCalledWith(movie);
     expect(wrapper.getAttribute("aria-busy")).toBe("false");
   });
@@ -316,7 +314,7 @@ describe("shared movie pull-to-refresh", () => {
     expect(onMarkWatched).not.toHaveBeenCalled();
   });
 
-  it("does not dismiss a discussion when its fullscreen loader is touched", async () => {
+  it("does not dismiss a discussion when the refresh indicator is touched", async () => {
     let finish!: (value: { movie: Movie; failed: string[] }) => void;
     vi.spyOn(api.movies, "refresh").mockImplementation(
       () =>
@@ -333,16 +331,17 @@ describe("shared movie pull-to-refresh", () => {
         onClose={onClose}
       />,
     );
-    pull(screen.getByRole("heading", { name: "Before refresh" }));
-    fireEvent.pointerDown(
-      screen.getByRole("status", { name: "Refreshing movie..." }),
-    );
+    const heading = screen.getByRole("heading", { name: "Before refresh" });
+    pull(heading);
+    const wrapper = heading.closest("[aria-busy]")!;
+    expect(wrapper.getAttribute("aria-busy")).toBe("true");
+    const indicator = wrapper.querySelector(".ptr__pull-down--loading");
+    expect(indicator).not.toBeNull();
+    fireEvent.pointerDown(indicator!);
     expect(onClose).not.toHaveBeenCalled();
     finish({ movie, failed: [] });
     await waitFor(() =>
-      expect(
-        screen.queryByRole("status", { name: "Refreshing movie..." }),
-      ).toBeNull(),
+      expect(wrapper.getAttribute("aria-busy")).toBe("false"),
     );
   });
 });

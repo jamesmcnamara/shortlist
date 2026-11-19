@@ -531,9 +531,12 @@ describe("admin-only routes", () => {
 
   it("keeps extension data on the server", async () => {
     const { GET } = theatreRoute;
+    const suggestedAt = "2024-06-10T00:00:00Z";
     await fixture.db
       .update(theatres)
-      .set({ extensions: { specific: { secret: "extension-only" } } })
+      .set({
+        extensions: { specific: { suggestedAt } },
+      })
       .where(eq(theatres.id, fixture.theatreA.id));
     asUser(ALICE);
 
@@ -541,7 +544,7 @@ describe("admin-only routes", () => {
       await GET(new Request("http://test"), route("club"))
     ).json();
     expect(body.theatre).not.toHaveProperty("extensions");
-    expect(JSON.stringify(body)).not.toContain("extension-only");
+    expect(JSON.stringify(body)).not.toContain(suggestedAt);
   });
 });
 

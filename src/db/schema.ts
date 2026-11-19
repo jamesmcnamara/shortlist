@@ -18,6 +18,11 @@ import type { MovieDetails as _MovieDetails } from "@lorenzopant/tmdb";
 import type { JustWatchAvailability } from "@/app/lib/justwatch-types";
 import type { BoxOfficeData, BoxOfficeSources } from "@/app/lib/box-office";
 import type { MovieTrivia } from "@/app/lib/trivia";
+import type {
+  MovieClubTheatreExtension,
+  MovieClubNominationExtension,
+} from "@/app/lib/extensions/movieclub/shared";
+import { SpecificTheatreExtension } from "@/app/lib/extensions/specific/shared";
 
 export const redirects = pgTable(
   "redirects",
@@ -57,7 +62,10 @@ export const theatres = pgTable(
     defaultSort: text("default_sort"),
     // Server-only state for opt-in behaviors, keyed by extension name.
     extensions: jsonb("extensions")
-      .$type<Record<string, unknown>>()
+      .$type<{
+        movieclub?: MovieClubTheatreExtension;
+        specific?: SpecificTheatreExtension;
+      }>()
       .notNull()
       .default({}),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -345,7 +353,9 @@ export type Nomination = RawNomination & {
   nomcoms: NomCom[];
   nominator: Person;
   seenBy: Person[];
-  extensions?: Record<string, unknown>;
+  extensions?: {
+    movieclub?: MovieClubNominationExtension;
+  };
 };
 export type NomCom = typeof nomcoms.$inferSelect & { commenter: Person };
 export type Seen = typeof seen.$inferSelect;

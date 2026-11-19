@@ -209,7 +209,7 @@ describe("movie club lead notifications", () => {
       .update(theatres)
       .set({
         extensions: {
-          movieclub: { cycle, votes: { [BOB]: [owners.id] } },
+          movieclub: { votes: { [cycle]: { [BOB]: [owners.id] } } },
         },
       })
       .where(eq(theatres.id, CLUB));
@@ -228,7 +228,7 @@ describe("movie club lead notifications", () => {
       .from(theatres)
       .where(eq(theatres.id, CLUB));
     expect(saved.extensions).toEqual({
-      movieclub: { cycle, votes: { [BOB]: [owners.id, alices.id] } },
+      movieclub: { votes: { [cycle]: { [BOB]: [owners.id, alices.id] } } },
     });
   });
 

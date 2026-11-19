@@ -253,6 +253,13 @@
       "when": 1794869178728,
       "tag": "0035_notification_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794964710929,
+      "tag": "0036_movieclub_votes_by_cycle",
+      "breakpoints": true
     }
   ]
 }

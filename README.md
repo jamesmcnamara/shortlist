@@ -787,12 +787,11 @@ counts the user's open (not yet watched) nominations created this month, so
 removing the movie or marking it watched frees the slot. Bulk import isn't
 limited.
 
-Votes live in `theatres.extensions.movieclub` as `{ cycle, votes }`. `cycle` is
-the month, like `"2026-03"`, and `votes` maps each user id to the nomination ids
-they voted for, with one entry per vote (including repeated ids). Votes from an
-earlier month are ignored, and the first vote of a
-new month starts everyone over. Votes for movies that were removed or watched are
-given back. Each nomination a list shows carries its voters in
+Votes live in `theatres.extensions.movieclub.votes`, keyed by month (like
+`"2026-03"`) and then user id, listing the nomination ids each person voted for
+with one entry per vote (including repeated ids). Only the current month's votes
+count, so a new month starts everyone over without clearing anything. Votes for
+movies that were removed or watched are given back. Each nomination a list shows carries its voters in
 `nomination.extensions.movieclub.voters`, with one person entry per vote.
 
 The club adds two notification kinds, each of which members can turn off in

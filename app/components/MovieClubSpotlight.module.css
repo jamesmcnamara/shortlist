@@ -1,0 +1,233 @@
+.heading {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0 0 0.75rem;
+  padding: 0.3rem 0.65rem 0.35rem;
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: var(--on-dark);
+  font-size: clamp(1.25rem, 3.5vw, 1.5rem);
+  font-style: italic;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.spotlight {
+  position: relative;
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  align-items: end;
+  gap: 1rem;
+}
+
+.spotlight:has(.open:focus-visible) {
+  outline: 0.1875rem solid var(--focus, var(--accent));
+  outline-offset: 0.25rem;
+}
+
+.poster {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 0.625rem;
+  background: #30354d;
+  color: #d5d2ff;
+  font-size: 1.75rem;
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgba(20, 20, 32, 0.28);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.spotlight:hover .poster,
+.spotlight:has(.open:focus-visible) .poster {
+  transform: translateY(-0.25rem);
+}
+
+.copy {
+  position: relative;
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.open {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Makes the whole spotlight the tap target. */
+.open::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.open:focus-visible {
+  outline: none;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: 0.8625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.facts span + span::before {
+  content: "·";
+  padding: 0 0.4375rem;
+}
+
+.synopsis {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8625rem;
+  font-weight: 800;
+}
+
+.cue svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.spotlight:hover .cue svg {
+  transform: translateX(0.25rem);
+}
+
+.marquee {
+  --focus: var(--text);
+  min-height: 15rem;
+  padding: 1.25rem;
+  overflow: hidden;
+  border-radius: 0.875rem;
+  background: #26262d;
+  color: var(--on-dark);
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 25%;
+}
+
+.backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(20, 20, 26, 0.94) 0%,
+    rgba(20, 20, 26, 0.72) 50%,
+    rgba(20, 20, 26, 0.2) 100%
+  );
+}
+
+.marquee .facts {
+  color: var(--accent-soft);
+}
+
+.marquee .synopsis {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.marquee .cue {
+  color: var(--on-dark);
+}
+
+@media (--narrow-phone) {
+  .spotlight {
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+  }
+
+  .title {
+    font-size: 1.5812rem;
+  }
+}
+
+@media (--tablet-up) {
+  .spotlight {
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .marquee {
+    min-height: 17rem;
+    padding: 1.5rem;
+  }
+
+  .synopsis {
+    max-width: 62ch;
+  }
+}
+
+/* Short landscape screens: keep the spotlight from eating the whole viewport. */
+@media (orientation: landscape) and (max-height: 32rem) {
+  .spotlight {
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+  }
+
+  .marquee {
+    min-height: 0;
+  }
+
+  .synopsis {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poster,
+  .cue svg {
+    transition: none;
+  }
+}

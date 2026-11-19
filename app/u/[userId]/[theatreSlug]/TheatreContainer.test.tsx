@@ -91,7 +91,7 @@ function film(id: number, title: string, voters: Person[]): Nomination {
     nominator: bob,
     nomcoms: [],
     seenBy: [],
-    extensions: { movieclub: { voters }, other: { untouched: true } },
+    extensions: { movieclub: { voters } },
   };
 }
 

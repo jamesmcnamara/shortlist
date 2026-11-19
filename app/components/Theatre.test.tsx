@@ -382,6 +382,66 @@ describe("list notification placement", () => {
   });
 });
 
+describe("movie club spotlight", () => {
+  const open = (id: number, title: string, isPick = false): Nomination => ({
+    ...watched,
+    id,
+    movieId: id,
+    completedAt: null,
+    movie: {
+      ...watched.movie,
+      id,
+      details: { title } as Nomination["movie"]["details"],
+    },
+    extensions: { movieclub: { voters: [], isPick } },
+  });
+
+  it("shows this month's pick above the controls instead of in the grid", () => {
+    show(
+      [open(2, "Heat", true), open(3, "Ran")],
+      createApi(),
+      false,
+      "user",
+      "#movieclub",
+      true,
+    );
+
+    const heading = screen.getByRole("heading", {
+      name: "This month's movie is..",
+      level: 2,
+    });
+    const spotlight = screen.getByRole("button", { name: "Heat" });
+    expect(heading.nextElementSibling?.contains(spotlight)).toBe(true);
+    expect(screen.getAllByText("Heat")).toHaveLength(1);
+    expect(screen.getByText("Ran")).toBeTruthy();
+    expect(
+      spotlight.compareDocumentPosition(screen.getByText("List controls")) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("does not show a spotlight without a pick", () => {
+    show([open(2, "Heat")], createApi(), false, "user", "#movieclub");
+
+    expect(
+      screen.queryByRole("heading", { name: "This month's movie is.." }),
+    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Heat" })).toBeNull();
+    expect(screen.getByText("Heat")).toBeTruthy();
+  });
+
+  it("tolerates cached nominations without the pick flag", () => {
+    const nomination = {
+      ...open(2, "Heat"),
+      extensions: { movieclub: { voters: [], pickedFor: "2000-01" } },
+    };
+    show([nomination], createApi(), false, "user", "#movieclub");
+
+    expect(screen.queryByRole("button", { name: "Heat" })).toBeNull();
+    expect(screen.getByText("Heat")).toBeTruthy();
+  });
+});
+
 describe("list descriptions", () => {
   it("shows the description before the list controls with an admin edit action", () => {
     show([], createApi(), true, "user", "Our #Horror movies");

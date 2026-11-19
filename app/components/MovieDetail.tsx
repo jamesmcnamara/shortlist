@@ -1,4 +1,4 @@
-import { tmdbImageUrl } from "@/app/lib/utils";
+import { formatRuntime, tmdbImageUrl } from "@/app/lib/utils";
 import type { Movie } from "@/src/db/schema";
 import { useEffect, useState } from "react";
 import { BoxOffice } from "./BoxOffice";
@@ -133,12 +133,6 @@ export function MovieDetail({
     </MovieRefresh>
   );
 }
-
-const formatRuntime = (minutes: number) => {
-  const hours = Math.floor(minutes / 60);
-  const remainder = minutes % 60;
-  return hours > 0 ? `${hours}h ${remainder}m` : `${remainder}m`;
-};
 
 const BackIcon = () => (
   <svg className={styles.backIcon} viewBox="0 0 24 24" aria-hidden="true">

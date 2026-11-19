@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { uniqBy } from "lodash";
+import uniqBy from "lodash/uniqBy.js";
 import { imdbId } from "./box-office";
 
 export interface MovieTrivia {

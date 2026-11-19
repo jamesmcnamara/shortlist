@@ -20,6 +20,12 @@ export const getInitials = (name: string) => {
   return (parts[0].slice(0, 1) + parts[1].slice(0, 1)).toUpperCase();
 };
 
+export const formatRuntime = (minutes: number) => {
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return hours > 0 ? `${hours}h ${remainder}m` : `${remainder}m`;
+};
+
 export const tmdbImageUrl = (path: string | null | undefined, size: string) =>
   path ? `https://image.tmdb.org/t/p/${size}${path}` : null;
 

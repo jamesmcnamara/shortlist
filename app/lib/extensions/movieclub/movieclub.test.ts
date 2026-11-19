@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { readFileSync } from "node:fs";
 import { map } from "shades";
 import * as extensionRoute from "@/app/api/theatres/[theatreId]/extensions/[extension]/route";
 import * as nominationsRoute from "@/app/api/theatres/[theatreId]/nominations/route";
@@ -15,7 +16,8 @@ import {
   type Nomination,
 } from "@/src/db/schema";
 import { createTestDb, type TestDb } from "@/src/db/test-db";
-import { votersOf } from "./shared";
+import { cycleOf } from "./cycle";
+import { isClubPick, votersOf } from "./shared";
 
 const auth = vi.hoisted(() => ({ userId: "" }));
 vi.mock("@/lib/auth/server", () => ({
@@ -263,6 +265,48 @@ describe("movie club voting", () => {
     expect(await votersFor(ids[0])).toEqual([]);
     const response = await vote("vote", ids[5]);
     expect(await response.json()).toEqual({ votesLeft: 4 });
+    const [{ extensions }] = await db
+      .select({ extensions: theatres.extensions })
+      .from(theatres)
+      .where(eq(theatres.id, CLUB));
+    expect(extensions.movieclub).toEqual({
+      votes: {
+        "2026-03": { [ALICE]: ids.slice(0, 5) },
+        "2026-04": { [ALICE]: [ids[5]] },
+      },
+    });
+  });
+
+  it("moves votes stored the old way into their month", async () => {
+    const [heat] = await nominateMany(1);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime("2026-03-15T12:00:00Z");
+    await db
+      .update(theatres)
+      .set({
+        extensions: sql`${JSON.stringify({
+          movieclub: {
+            cycle: "2026-03",
+            votes: { [ALICE]: [heat.id] },
+          },
+        })}::jsonb`,
+      })
+      .where(eq(theatres.id, CLUB));
+
+    await db.execute(
+      sql.raw(
+        readFileSync("drizzle/0036_movieclub_votes_by_cycle.sql", "utf8"),
+      ),
+    );
+
+    const [{ extensions }] = await db
+      .select({ extensions: theatres.extensions })
+      .from(theatres)
+      .where(eq(theatres.id, CLUB));
+    expect(extensions.movieclub).toEqual({
+      votes: { "2026-03": { [ALICE]: [heat.id] } },
+    });
+    expect(await votersFor(heat.id)).toEqual(["alice"]);
   });
 
   it("gives votes back when a nomination is watched or removed", async () => {
@@ -523,6 +567,35 @@ describe("movie club voters on nominations", () => {
 
     expect(await votersFor(open.id)).toEqual(["alice", "bob"]);
     expect(await votersFor(watched.id)).toEqual([]);
+  });
+
+  it("marks only this month's pick, even once it's been watched", async () => {
+    const [pick, lastMonths, other] = await nominateMany(3);
+    await db
+      .update(nominations)
+      .set({ completedAt: new Date() })
+      .where(eq(nominations.id, pick.id));
+    await db
+      .update(theatres)
+      .set({
+        extensions: {
+          movieclub: {
+            picks: {
+              [cycleOf(new Date())]: pick.movieId,
+              "2000-01": lastMonths.movieId,
+            },
+          },
+        },
+      })
+      .where(eq(theatres.id, CLUB));
+
+    const picks = new Map(
+      (await listed()).map((nom) => [nom.id, isClubPick(nom)]),
+    );
+
+    expect(picks.get(pick.id)).toBe(true);
+    expect(picks.get(lastMonths.id)).toBe(false);
+    expect(picks.get(other.id)).toBe(false);
   });
 
   it("adds nothing to lists that aren't movie clubs", async () => {

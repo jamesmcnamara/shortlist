@@ -8,35 +8,45 @@ import { notifyMembers, scheduleNotification } from "@/lib/notifications/push";
 import { badRequest, dbId, parseJson } from "@/lib/validation";
 import { getDb } from "@/src/db/client";
 import { authUsers } from "@/src/db/neon-auth-schema";
-import { movies, nominations, theatres, type Person } from "@/src/db/schema";
+import {
+  movies,
+  Nomination,
+  nominations,
+  theatres,
+  type Person,
+} from "@/src/db/schema";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
-import { map } from "shades";
+import { map, mod, set, updateAll, valueOr } from "shades";
 import { z } from "zod";
 import { closesTomorrow, cycleOf } from "./cycle";
-import { VOTES_PER_MONTH } from "./shared";
+import {
+  emptyNominationClubExtensions,
+  MovieClubNominationExtension,
+  MovieClubTheatreExtension,
+  VOTES_PER_MONTH,
+} from "./shared";
 
 /** `theatres.extensions.movieclub` */
-interface ClubData {
-  /** The month `votes` are for. */
-  cycle?: string;
-  /** One nomination id per vote, grouped by user. */
-  votes?: Record<string, number[]>;
-}
 
 const voteBody = z.object({
   action: z.enum(["vote", "unvote"], "Choose whether to vote or unvote."),
   nominationId: dbId("Choose a nomination to vote on."),
 });
 
-/** Everyone's votes this month. Votes from an earlier month don't count. */
-async function votesThisMonth(theatreId: string) {
+async function clubData(theatreId: string) {
   const [row] = await getDb()
     .select({ extensions: theatres.extensions })
     .from(theatres)
     .where(eq(theatres.id, theatreId));
-  const club = (row?.extensions.movieclub ?? {}) as ClubData;
-  return club.cycle === cycleOf(new Date()) ? (club.votes ?? {}) : {};
+  return row?.extensions.movieclub ?? {};
 }
+
+/** Everyone's votes this month. */
+const votesOf = (club: MovieClubTheatreExtension) =>
+  club.votes?.[cycleOf(new Date())] ?? {};
+
+const votesThisMonth = async (theatreId: string) =>
+  votesOf(await clubData(theatreId));
 
 interface OpenNomination {
   id: number;
@@ -75,24 +85,20 @@ async function saveVotes(
   nominationIds: number[],
 ) {
   const cycle = cycleOf(new Date());
-  const club = extensionData("movieclub");
-  // The first write of a new month starts everyone over.
-  const currentVotes = sql`(
-    case when ${club} ->> 'cycle' = ${cycle}::text
-    then coalesce(${club} -> 'votes', '{}'::jsonb)
-    else '{}'::jsonb end
-  )`;
+  const votes = sql`coalesce(${extensionData("movieclub")} -> 'votes', '{}'::jsonb)`;
+  const monthVotes = sql`coalesce(${votes} -> ${cycle}::text, '{}'::jsonb)`;
   await getDb()
     .update(theatres)
     .set({
       extensions: mergeExtensionData(
         "movieclub",
         sql`jsonb_build_object(
-          'cycle', ${cycle}::text,
-          'votes', jsonb_set(
-            ${currentVotes},
-            array[${userId}::text],
-            ${JSON.stringify(nominationIds)}::jsonb
+          'votes', ${votes} || jsonb_build_object(
+            ${cycle}::text,
+            ${monthVotes} || jsonb_build_object(
+              ${userId}::text,
+              ${JSON.stringify(nominationIds)}::jsonb
+            )
           )
         )`,
       ),
@@ -204,7 +210,10 @@ const hooks: ExtensionHooks = {
   daily: ({ theatre, now }) => remindToNominate(theatre, now),
 
   decorate: async (theatre, list) => {
-    const votes = await votesThisMonth(theatre.id);
+    const club = await clubData(theatre.id);
+    const votes = votesOf(club);
+    const cycle = cycleOf(new Date());
+    const pickedMovieId = club.picks?.[cycle];
     const voterIds = Object.keys(votes);
     const people = voterIds.length
       ? await getDb()
@@ -227,6 +236,7 @@ const hooks: ExtensionHooks = {
                 .map(() => person),
             )
             .sort(byName);
+
       return {
         ...nomination,
         extensions: {
@@ -234,6 +244,7 @@ const hooks: ExtensionHooks = {
           movieclub: {
             ...(nomination.extensions?.movieclub ?? {}),
             voters,
+            isPick: nomination.movieId === pickedMovieId,
           },
         },
       };

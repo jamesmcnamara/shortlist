@@ -5,6 +5,7 @@ import type { AppMenuProps } from "@/app/components/AppMenu";
 import { BulkMovieImport } from "@/app/components/BulkMovieImport";
 import { CrossPost } from "@/app/components/CrossPost/CrossPost";
 import { MovieCard } from "@/app/components/MovieCard";
+import { MovieClubSpotlight } from "@/app/components/MovieClubSpotlight";
 import { MovieClubVotes } from "@/app/components/MovieClubVotes";
 import { EditableComment } from "@/app/components/MovieDiscussion/EditableComment";
 import { MovieDiscussion } from "@/app/components/MovieDiscussion/MovieDiscussion";
@@ -14,8 +15,10 @@ import { ShortlistHeader } from "@/app/components/ShortlistHeader";
 import { ViewControls } from "@/app/components/ViewControls";
 import type { MovieImportResult } from "@/app/lib/bulk-movie-import";
 import { hasExtension } from "@/app/lib/extensions";
+import { cycleOf } from "@/app/lib/extensions/movieclub/cycle";
 import {
   isMovieClub,
+  isClubPick,
   votersOf,
   VOTES_PER_MONTH,
   type VoteAction,
@@ -94,7 +97,8 @@ export function Theatre({
   const isClub = isMovieClub(description);
   const canNominate = canParticipate && (isAdmin || isMember);
   const canVote = canParticipate && isMember && isClub;
-  const nominationId = useSearchParams().get("nominationId");
+  const searchParams = useSearchParams();
+  const nominationId = searchParams.get("nominationId");
   const { focusedId, closeDiscussion, openDiscussion } =
     useMovieDiscussionHistory();
   const [query, setQuery] = useState("");
@@ -160,6 +164,10 @@ export function Theatre({
   };
 
   const focused = when(focusedId)(find({ id: focusedId })(nominees));
+
+  const cycle = cycleOf(new Date());
+  const pick = when(isClub)(nominees.find(isClubPick));
+  const others = pick ? nominees.filter((nom) => nom !== pick) : nominees;
 
   const pickedNoms = filter({
     movie: {
@@ -234,12 +242,12 @@ export function Theatre({
         fuse
           .search(query)
           .map(({ item }) => item)
-          .filter((nom) => !nom.completedAt),
+          .filter((nom) => !nom.completedAt && nom !== pick),
         viewState,
         viewContext,
         additionalSorts,
       ),
-    [nominees, query, viewState, viewContext, additionalSorts],
+    [nominees, pick, query, viewState, viewContext, additionalSorts],
   );
 
   const visibleIds = filter(Boolean)(
@@ -324,6 +332,14 @@ export function Theatre({
           </div>
         )}
 
+        {pick && (
+          <MovieClubSpotlight
+            nomination={pick}
+            cycle={cycle}
+            onOpen={() => openDiscussion(pick.id)}
+          />
+        )}
+
         <ViewControls
           query={query}
           setQuery={setQuery}
@@ -340,9 +356,9 @@ export function Theatre({
             {message || notice}
           </div>
         )}
-        {visible.length === 0 && (
+        {visible.length === 0 && !(pick && others.length === 0) && (
           <p className={styles.message} role="status">
-            {nominees.length === 0
+            {others.length === 0
               ? `Nothing here yet.${canNominate ? " Add the first movie." : ""}`
               : "No movies match these filters."}
           </p>
