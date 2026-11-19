@@ -35,7 +35,7 @@ export function MovieClubSpotlight({
 
   return (
     <section aria-label={label}>
-      <h2 className={styles.heading}>This month's movie is..</h2>
+      <h2 className={styles.heading}>And the winner is...</h2>
       <div className={`${styles.spotlight} ${styles.marquee}`}>
         <div
           className={styles.backdrop}

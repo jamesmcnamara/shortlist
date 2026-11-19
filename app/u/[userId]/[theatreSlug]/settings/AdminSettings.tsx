@@ -6,6 +6,7 @@ import { withTargetValue } from "@/app/lib/utils";
 import { joinPath } from "@/lib/theatre-path";
 import { userPath } from "@/lib/user-path";
 import { authClient } from "@/lib/auth/client";
+import { isPlaceholderEmail } from "@/lib/auth/placeholder-email";
 import { extensionSorts } from "@/app/lib/extensions/view";
 import { sortOptions } from "@/app/lib/view";
 import type { TheatreRole } from "@/src/db/schema";
@@ -222,7 +223,9 @@ export function AdminSettings() {
             <li key={member.id} className={styles.member}>
               <div className={styles.memberIdentity}>
                 <span className={styles.memberName}>{member.name}</span>
-                <span className={styles.hint}>{member.email}</span>
+                {!isPlaceholderEmail(member.email) && (
+                  <span className={styles.hint}>{member.email}</span>
+                )}
               </div>
               <select
                 className={styles.roleSelect}

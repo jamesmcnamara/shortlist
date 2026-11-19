@@ -16,6 +16,13 @@ const mocks = vi.hoisted(() => ({
   username: "bob" as string | undefined,
   description: null as string | null,
   defaultSort: null as string | null,
+  members: [] as {
+    id: string;
+    name: string;
+    username: string;
+    email: string;
+    role: "admin" | "member";
+  }[],
 }));
 
 vi.mock("next/navigation", () => ({
@@ -36,7 +43,7 @@ vi.mock("../TheatreContext", () => ({
       defaultSort: mocks.defaultSort,
     },
     client: { delete: mocks.remove, update: mocks.update },
-    detail: { members: [] },
+    detail: { members: mocks.members },
   }),
 }));
 
@@ -47,6 +54,7 @@ beforeEach(() => {
   mocks.username = "bob";
   mocks.description = null;
   mocks.defaultSort = null;
+  mocks.members = [];
   vi.spyOn(window, "confirm").mockReturnValue(true);
 });
 afterEach(() => {
@@ -58,6 +66,28 @@ const deleteTheatre = () => {
   render(<AdminSettings />);
   fireEvent.click(screen.getByRole("button", { name: "Delete this theatre" }));
 };
+
+it("hides generated email addresses but keeps existing member emails", () => {
+  mocks.members = [
+    {
+      id: "alice",
+      name: "alice",
+      username: "alice",
+      email: "generated@accounts.shortlist.invalid",
+      role: "member",
+    },
+    {
+      id: "bob",
+      name: "Bob",
+      username: "bob",
+      email: "bob@example.com",
+      role: "admin",
+    },
+  ];
+  render(<AdminSettings />);
+  expect(screen.queryByText("generated@accounts.shortlist.invalid")).toBeNull();
+  expect(screen.getByText("bob@example.com")).toBeTruthy();
+});
 
 it("offers the list's available sorts and saves the chosen default", async () => {
   mocks.description = "#movieclub";

@@ -5,10 +5,13 @@ import { useSearchParams } from "next/navigation";
 import { getSafeRedirect } from "@/lib/auth/redirect";
 import { useAuthAction } from "@/lib/auth/use-auth-action";
 import styles from "@/app/components/FormPage.module.css";
-import { signUpWithEmail } from "./actions";
+import { signUpWithHandle } from "./actions";
+
+// Matches "alice", "@alice", and "alice-2".
+const HANDLE_INPUT_PATTERN = "@?[A-Za-z0-9][A-Za-z0-9\\-]{1,28}[A-Za-z0-9]";
 
 export function SignUpForm() {
-  const [state, formAction, isPending] = useAuthAction(signUpWithEmail);
+  const [state, formAction, isPending] = useAuthAction(signUpWithHandle);
   const searchParams = useSearchParams();
   const next = getSafeRedirect(searchParams.get("next"));
   const signInHref =
@@ -20,23 +23,6 @@ export function SignUpForm() {
     <>
       <form action={formAction} className={styles.form}>
         <input type="hidden" name="next" value={next} />
-        <div className={styles.field}>
-          <label className={styles.label} htmlFor="name">
-            Name
-          </label>
-          <span className={styles.hint}>
-            Or a character name. Or anything else you like. I'm not a cop.
-          </span>
-          <input
-            className={styles.input}
-            id="name"
-            name="name"
-            type="text"
-            autoComplete="name"
-            required
-          />
-        </div>
-
         <div className={styles.field}>
           <label className={styles.label} htmlFor="username">
             Handle
@@ -55,23 +41,8 @@ export function SignUpForm() {
             autoCapitalize="none"
             spellCheck={false}
             minLength={3}
-            maxLength={30}
-            pattern={"[A-Za-z0-9][A-Za-z0-9\\-]{1,28}[A-Za-z0-9]"}
-            required
-          />
-        </div>
-
-        <div className={styles.field}>
-          <label className={styles.label} htmlFor="email">
-            Email
-          </label>
-          <span className={styles.hint}>This one I do actually need</span>
-          <input
-            className={styles.input}
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
+            maxLength={31}
+            pattern={HANDLE_INPUT_PATTERN}
             required
           />
         </div>
@@ -80,14 +51,16 @@ export function SignUpForm() {
           <label className={styles.label} htmlFor="password">
             Password
           </label>
-          <span className={styles.hint}>
+          <span className={styles.hint} id="password-hint">
             None of that "minimum 12 characters plus a special" here. Go for a
-            classic. "password" or "1234". Who's gonna hack this shit?
+            classic. "password" or "1234". Who's gonna hack this shit? There's
+            no password reset, so keep it somewhere safe.
           </span>
           <input
             className={styles.input}
             id="password"
             name="password"
+            aria-describedby="password-hint"
             type="password"
             autoComplete="new-password"
             required

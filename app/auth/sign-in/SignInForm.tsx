@@ -4,10 +4,10 @@ import { useSearchParams } from "next/navigation";
 import { getSafeRedirect } from "@/lib/auth/redirect";
 import { useAuthAction } from "@/lib/auth/use-auth-action";
 import styles from "@/app/components/FormPage.module.css";
-import { signInWithEmail } from "./actions";
+import { signInWithHandleOrEmail } from "./actions";
 
 export function SignInForm() {
-  const [state, formAction, isPending] = useAuthAction(signInWithEmail);
+  const [state, formAction, isPending] = useAuthAction(signInWithHandleOrEmail);
   const searchParams = useSearchParams();
   const next = getSafeRedirect(searchParams.get("next"));
 
@@ -15,15 +15,17 @@ export function SignInForm() {
     <form action={formAction} className={styles.form}>
       <input type="hidden" name="next" value={next} />
       <div className={styles.field}>
-        <label className={styles.label} htmlFor="email">
-          Email
+        <label className={styles.label} htmlFor="identifier">
+          Handle or email
         </label>
         <input
           className={styles.input}
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
+          id="identifier"
+          name="identifier"
+          type="text"
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
           required
         />
       </div>

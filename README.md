@@ -22,6 +22,10 @@ at sign-up and can be changed directly in the database; existing users get handl
 their display names, with numeric suffixes for duplicates. Handles use 3-30
 lowercase letters, numbers, or hyphens, starting and ending with a letter or
 number. No email addresses are used to generate public handles.
+New accounts need only a handle and password, and use the handle as their
+initial display name. Existing accounts can still sign in with their email.
+There is no password reset. Better Auth requires an email field, so handle-only
+accounts receive a unique, non-deliverable `@accounts.shortlist.invalid` address.
 Only handle-based profile and theatre URLs are supported. Old `/u/<user-id>`,
 `/theatres/<theatre-id>`, `/theatres`, `/rooms/...`, and `/api/rooms/...` links
 no longer work. Old notification destinations return to Search instead of
