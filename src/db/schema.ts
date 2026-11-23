@@ -348,14 +348,15 @@ export type Movie = Omit<
   ratings: MovieRatings;
 };
 export type RawNomination = typeof nominations.$inferSelect;
+export type NominationExtensions = {
+  movieclub?: MovieClubNominationExtension;
+};
 export type Nomination = RawNomination & {
   movie: Movie;
   nomcoms: NomCom[];
   nominator: Person;
   seenBy: Person[];
-  extensions?: {
-    movieclub?: MovieClubNominationExtension;
-  };
+  extensions?: NominationExtensions;
 };
 export type NomCom = typeof nomcoms.$inferSelect & { commenter: Person };
 export type Seen = typeof seen.$inferSelect;
