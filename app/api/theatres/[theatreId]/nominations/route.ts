@@ -17,7 +17,6 @@ import { getDb } from "@/src/db/client";
 import { movies, nominations } from "@/src/db/schema";
 import { scheduleNomNotys } from "@/lib/notifications/push";
 import { badRequest, dbId, dbIdParam, parseJson } from "@/lib/validation";
-import { addMovie } from "@/app/lib/add-movie";
 
 export const runtime = "nodejs";
 
@@ -77,15 +76,12 @@ export const POST = withTheatreMember({
     .values({ theatreId: theatre.id, userId, movieId, comment })
     .returning();
 
-  await addMovie({ kind: "shortlist", id: movieId });
-  const nomination = await getNomination(theatre.id, inserted.id);
   scheduleNomNotys(theatre.id, inserted.id);
-  await nominationChanged(theatre, userId, {
-    after: inserted,
-  });
-  return Response.json(nomination, {
-    status: 201,
-  });
+  await nominationChanged(theatre, userId, { after: inserted });
+  const nomination = await getNomination(theatre.id, inserted.id);
+  if (!nomination) throw new Error("The saved nomination could not be loaded.");
+  const [decorated] = await decorateNominations(theatre, [nomination]);
+  return Response.json(decorated, { status: 201 });
 });
 
 export const PATCH = withTheatreAdmin({
@@ -128,7 +124,7 @@ export const PATCH = withTheatreAdmin({
     before: before ?? null,
     after: updated,
   });
-  return Response.json(await getNomination(theatre.id, id), { status: 200 });
+  return new Response(null, { status: 204 });
 });
 
 export const DELETE = withTheatreMember({

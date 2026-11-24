@@ -1,5 +1,8 @@
 "use client";
 
+import { authClient } from "@/lib/auth/client";
+import type { Movie, Nomination } from "@/src/db/schema";
+import { usePathname } from "next/navigation";
 import {
   createContext,
   useContext,
@@ -8,12 +11,11 @@ import {
   useRef,
   useState,
 } from "react";
-import { usePathname } from "next/navigation";
 import { SWRConfig, useSWRConfig } from "swr";
-import { authClient } from "@/lib/auth/client";
 import { ApiError, subscribeToMutations } from "../api";
-import { createCacheProvider } from "./cache-provider";
 import { useDevServiceWorkerReset } from "../useDevServiceWorkerReset";
+import { createCacheProvider } from "./cache-provider";
+import { some, set, matching, filter, not } from "shades";
 
 interface DataSession {
   userId?: string;
@@ -91,6 +93,36 @@ function SessionCache({
 const isTheatreQuery = (key: unknown): key is string =>
   typeof key === "string" && key.startsWith("/api/theatres");
 
+// Matches nomination list keys such as `/api/theatres/123/nominations`.
+const nominationsQueryPath = /^\/api\/theatres\/[^/?]+\/nominations$/;
+
+const isNominationsQuery = (key: unknown): key is string =>
+  typeof key === "string" && nominationsQueryPath.test(key);
+
+const isTheatreIndexQuery = (key: unknown): key is string =>
+  typeof key === "string" &&
+  (key === "/api/theatres" || key.startsWith("/api/theatres?"));
+
+const isNonNominationsTheatreQuery = (key: unknown): key is string =>
+  isTheatreQuery(key) && !isNominationsQuery(key);
+
+// Matches theatre detail paths such as `/api/theatres/123`, but not `/api/theatres/123/seen`.
+const theatreDetailPath = /^\/api\/theatres\/[^/?]+$/;
+
+const isTheatreDetailQuery = (key: unknown): key is string =>
+  typeof key === "string" && theatreDetailPath.test(key);
+
+const isQueryForTheatre =
+  (path: string) =>
+  (key: unknown): key is string =>
+    typeof key === "string" && (key === path || key.startsWith(`${path}/`));
+
+function refreshInBackground(refresh: Promise<unknown>, errorMessage: string) {
+  void refresh.catch((error: unknown) => {
+    console.error(errorMessage, error);
+  });
+}
+
 function CacheSync() {
   const { cache, mutate } = useSWRConfig();
   const pathname = usePathname();
@@ -103,22 +135,60 @@ function CacheSync() {
     void mutate((key) => isTheatreQuery(key) && !cache.get(key)?.isValidating);
   }, [pathname, cache, mutate]);
 
-  useEffect(
-    () =>
-      subscribeToMutations(async (path, method) => {
-        if (method === "DELETE" && /^\/api\/theatres\/[^/?]+$/.test(path)) {
-          await mutate(
-            (key) =>
-              typeof key === "string" &&
-              (key === path || key.startsWith(`${path}/`)),
-            undefined,
-            { revalidate: false },
-          );
-        }
-        // Seen status and membership changes can affect more than one theatre.
-        await mutate(isTheatreQuery);
-      }),
-    [mutate],
-  );
+  useEffect(() => {
+    const updateCachedMovie = async (movie: Movie) => {
+      await mutate<Nomination[]>(
+        (key) => {
+          if (!isNominationsQuery(key)) return false;
+          const data: unknown = cache.get(key)?.data;
+          return Array.isArray(data) && some({ movieId: movie.id })(data);
+        },
+        (current) =>
+          set(matching({ movieId: movie.id }), "movie")(movie)(current ?? []),
+        { revalidate: false },
+      );
+    };
+
+    const insertCachedNomination = async (
+      path: string,
+      nomination: Nomination,
+    ) => {
+      // An uncached list loads fresh, with this nomination, when it's opened.
+      if (Array.isArray(cache.get(path)?.data)) {
+        await mutate<Nomination[]>(
+          path,
+          (current) =>
+            current && [
+              nomination,
+              ...filter(not({ id: nomination.id }))(current),
+            ],
+          { revalidate: false },
+        );
+      }
+      refreshInBackground(
+        mutate(isTheatreIndexQuery),
+        "Unable to refresh theatre previews.",
+      );
+    };
+
+    const refreshAffectedTheatreData = async (path: string, method: string) => {
+      if (method === "DELETE" && isTheatreDetailQuery(path)) {
+        await mutate(isQueryForTheatre(path), undefined, { revalidate: false });
+      }
+      // Seen status and membership changes can affect more than one theatre.
+      refreshInBackground(
+        mutate(isNonNominationsTheatreQuery),
+        "Unable to refresh theatre data after a mutation.",
+      );
+      await mutate(isNominationsQuery);
+    };
+
+    return subscribeToMutations(async (path, method, update) => {
+      if (update?.kind === "movie") return updateCachedMovie(update.movie);
+      if (update?.kind === "nomination")
+        return insertCachedNomination(path, update.nomination);
+      return refreshAffectedTheatreData(path, method);
+    });
+  }, [cache, mutate]);
   return null;
 }

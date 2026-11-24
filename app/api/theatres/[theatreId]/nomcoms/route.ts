@@ -1,4 +1,4 @@
-import { getNomination, nominationExistsInTheatre } from "@/app/lib/queries";
+import { nominationExistsInTheatre } from "@/app/lib/queries";
 import {
   withTheatreUser,
   type TheatreUserContext,
@@ -40,9 +40,7 @@ export const POST = withTheatreUser({ error: "Unable to add your comment." })(
       .insert(nomcoms)
       .values({ theatreId: theatre.id, userId, nominationId, comment });
 
-    return Response.json(await getNomination(theatre.id, nominationId), {
-      status: 201,
-    });
+    return new Response(null, { status: 204 });
   },
 );
 
@@ -72,7 +70,5 @@ export const PATCH = withTheatreUser({
     );
   }
 
-  return Response.json(await getNomination(theatre.id, updated.nominationId), {
-    status: 200,
-  });
+  return new Response(null, { status: 204 });
 });

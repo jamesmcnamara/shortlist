@@ -4,7 +4,6 @@ import type {
   Feedback,
   FeedbackCategory,
   Nomination,
-  Person,
   TheatreRole,
   User,
 } from "@/src/db/schema";
@@ -31,13 +30,21 @@ export class ApiError extends Error {
   }
 }
 
-type MutationListener = (path: string, method: string) => Promise<void>;
+export type MutationUpdate =
+  | { kind: "nomination"; nomination: Nomination }
+  | { kind: "movie"; movie: Movie };
+
+type MutationListener = (
+  path: string,
+  method: string,
+  update?: MutationUpdate,
+) => Promise<void>;
 const mutationListeners = new Set<MutationListener>();
 
 export function subscribeToMutations(listener: MutationListener) {
   let active = true;
-  const subscription: MutationListener = async (path, method) => {
-    if (active) await listener(path, method);
+  const subscription: MutationListener = async (path, method, update) => {
+    if (active) await listener(path, method, update);
   };
   mutationListeners.add(subscription);
   return () => {
@@ -46,7 +53,11 @@ export function subscribeToMutations(listener: MutationListener) {
   };
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  getUpdate?: (data: T) => MutationUpdate | undefined,
+): Promise<T> {
   const method = init?.method ?? "GET";
   // Capture the current session's listeners before a request can outlive logout.
   const listeners = method === "GET" ? [] : [...mutationListeners];
@@ -76,8 +87,29 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       response.status,
     );
   }
-  await Promise.all(listeners.map((listener) => listener(path, method)));
-  return data as T;
+  const result = data as T;
+  const update = data === undefined ? undefined : getUpdate?.(result);
+  await Promise.all(
+    listeners.map((listener) => listener(path, method, update)),
+  );
+  return result;
+}
+
+const pendingMovieEnrichments = new Set<number>();
+
+function enrichMovieAfterNomination(movieId: number) {
+  if (pendingMovieEnrichments.has(movieId)) return;
+
+  pendingMovieEnrichments.add(movieId);
+  void request<Movie>(
+    `/api/movies/${movieId}/enrich`,
+    { method: "POST" },
+    (movie) => ({ kind: "movie", movie }),
+  )
+    .catch((error: unknown) => {
+      console.error("Unable to enrich movie after nomination.", error);
+    })
+    .finally(() => pendingMovieEnrichments.delete(movieId));
 }
 
 export interface TheatreSummary {
@@ -103,12 +135,6 @@ export interface TheatreSummaryWithMovies extends TheatreSummary {
 export interface TheatreMemberSummary extends User {
   role: TheatreRole;
   joinedAt: string;
-}
-
-/** What a seen toggle reports back: the theatre's viewers for that movie. */
-export interface SeenUpdate {
-  movieId: number;
-  seenBy: Person[];
 }
 
 export interface TheatreDetail {
@@ -252,18 +278,23 @@ export const api = {
           }),
         list: (signal?: AbortSignal): Promise<Nomination[]> =>
           request(`${base}/nominations`, { signal }),
-        create: (input: {
+        create: async (input: {
           movieId: number;
           comment: string;
-        }): Promise<Nomination> =>
-          request(`${base}/nominations`, {
-            method: "POST",
-            body: JSON.stringify(input),
-          }),
-        updateComment: (
-          nominationId: number,
-          comment: string,
-        ): Promise<Nomination> =>
+        }): Promise<Nomination> => {
+          const nomination = await request<Nomination>(
+            `${base}/nominations`,
+            {
+              method: "POST",
+              body: JSON.stringify(input),
+            },
+            (nomination) =>
+              nomination.movie ? { kind: "nomination", nomination } : undefined,
+          );
+          enrichMovieAfterNomination(input.movieId);
+          return nomination;
+        },
+        updateComment: (nominationId: number, comment: string): Promise<void> =>
           request(`${base}/nominations`, {
             method: "PATCH",
             body: JSON.stringify({ id: nominationId, comment }),
@@ -271,7 +302,7 @@ export const api = {
         setCompleted: (
           nominationId: number,
           completedAt: Date | null,
-        ): Promise<Nomination> =>
+        ): Promise<void> =>
           request(`${base}/nominations`, {
             method: "PATCH",
             body: JSON.stringify({ id: nominationId, completedAt }),
@@ -282,24 +313,24 @@ export const api = {
           }),
       },
       nomcoms: {
-        create: (nominationId: number, comment: string): Promise<Nomination> =>
+        create: (nominationId: number, comment: string): Promise<void> =>
           request(`${base}/nomcoms`, {
             method: "POST",
             body: JSON.stringify({ nominationId, comment }),
           }),
-        update: (id: number, comment: string): Promise<Nomination> =>
+        update: (id: number, comment: string): Promise<void> =>
           request(`${base}/nomcoms`, {
             method: "PATCH",
             body: JSON.stringify({ id, comment }),
           }),
       },
       seen: {
-        create: (movieId: number): Promise<SeenUpdate> =>
+        create: (movieId: number): Promise<void> =>
           request(`${base}/seen`, {
             method: "POST",
             body: JSON.stringify({ movieId }),
           }),
-        delete: (movieId: number): Promise<SeenUpdate> =>
+        delete: (movieId: number): Promise<void> =>
           request(`${base}/seen?movieId=${movieId}`, { method: "DELETE" }),
       },
       suggestions: {

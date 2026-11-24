@@ -16,6 +16,7 @@ import { DataProvider } from "./DataProvider";
 import { DataBoundary } from "./DataBoundary";
 import {
   useNominations,
+  useNotificationSettings,
   usePublicTheatre,
   useTheatres,
   useTheatresForMovies,
@@ -104,6 +105,148 @@ afterEach(() => {
 });
 
 describe("shared data cache", () => {
+  it("updates nomination and enrichment data without refetching lists or settings", async () => {
+    const enrichment = deferred<Response>();
+    const previews = deferred<Response>();
+    const created = {
+      id: 2,
+      movieId: 2,
+      theatreId: theatre.id,
+      comment: "New nomination",
+      nomcoms: [],
+      movie: { id: 2, details: { title: "New movie" } },
+    };
+    let previewReads = 0;
+    fetchMock.mockImplementation(async (input, init) => {
+      if (input === `${base}/nominations` && init?.method === "POST") {
+        return json(created, 201);
+      }
+      if (input === "/api/movies/2/enrich") return enrichment.promise;
+      if (input === "/api/theatres?previews=true") {
+        previewReads += 1;
+        return previewReads === 1 ? json([]) : previews.promise;
+      }
+      if (input === `${base}/nominations`) {
+        return json([
+          {
+            id: 1,
+            movieId: 1,
+            comment: "Existing note",
+            movie: { id: 1, details: { title: "Existing movie" } },
+          },
+        ]);
+      }
+      if (input === `/api/theatres/${otherTheatre.id}/nominations`) {
+        return json([{ ...created, id: 3, comment: "Other list note" }]);
+      }
+      if (input === base) return json({ theatre, tags: [], membership: null });
+      if (input === `${base}/notifications`) return json({});
+      throw new Error(`Unexpected request: ${input}`);
+    });
+    const { result } = renderHook(
+      () => ({
+        nominations: useNominations(theatre.id),
+        otherNominations: useNominations(otherTheatre.id),
+        theatres: useTheatres(),
+        detail: useTheatreDetail(theatre.id),
+        notifications: useNotificationSettings(theatre.id),
+      }),
+      { wrapper: Wrapper },
+    );
+    await waitFor(() => {
+      expect(result.current.nominations.data).toHaveLength(1);
+      expect(result.current.otherNominations.data).toHaveLength(1);
+      expect(result.current.theatres.data).toEqual([]);
+      expect(result.current.detail.data).toBeDefined();
+      expect(result.current.notifications.data).toBeDefined();
+    });
+    const initialRequests = fetchMock.mock.calls.length;
+
+    await act(async () => {
+      await api.theatre(theatre.id).nominations.create({
+        movieId: 2,
+        comment: "New nomination",
+      });
+    });
+    expect(result.current.nominations.data?.map(({ id }) => id)).toEqual([
+      2, 1,
+    ]);
+    await waitFor(() => expect(previewReads).toBe(2));
+    await act(async () => {
+      await result.current.nominations.mutate(
+        (current) =>
+          current?.map((nomination) =>
+            nomination.id === 2
+              ? { ...nomination, comment: "Note edited during enrichment" }
+              : nomination,
+          ),
+        { revalidate: false },
+      );
+      enrichment.resolve(
+        json({
+          ...created.movie,
+          details: { title: "Enriched movie", boxOffice: { budget: 25 } },
+        }),
+      );
+    });
+    await waitFor(() => {
+      expect(result.current.nominations.data?.[0].movie.details.title).toBe(
+        "Enriched movie",
+      );
+      expect(
+        result.current.otherNominations.data?.[0].movie.details.title,
+      ).toBe("Enriched movie");
+    });
+    expect(result.current.nominations.data?.[0].comment).toBe(
+      "Note edited during enrichment",
+    );
+    expect(result.current.otherNominations.data?.[0].comment).toBe(
+      "Other list note",
+    );
+    expect(
+      fetchMock.mock.calls.slice(initialRequests).map(([input]) => input),
+    ).toEqual([
+      `${base}/nominations`,
+      "/api/theatres?previews=true",
+      "/api/movies/2/enrich",
+    ]);
+    await act(async () => previews.resolve(json([])));
+  });
+
+  it("does not refetch a nominations list that has no cached data", async () => {
+    let nominationReads = 0;
+    fetchMock.mockImplementation(async (input, init) => {
+      if (input === `${base}/nominations` && init?.method === "POST") {
+        return json(
+          { id: 2, movieId: 2, movie: { id: 2, details: { title: "New" } } },
+          201,
+        );
+      }
+      if (input === `${base}/nominations`) {
+        nominationReads += 1;
+        return json({ error: "Unavailable" }, 500);
+      }
+      if (input === "/api/movies/2/enrich") {
+        return json({ id: 2, details: { title: "New" } });
+      }
+      return new Response(null, { status: 204 });
+    });
+    const { result } = renderHook(() => useNominations(theatre.id), {
+      wrapper: Wrapper,
+    });
+    await waitFor(() => expect(result.current.error).toBeDefined());
+
+    await act(async () => {
+      await api.theatre(theatre.id).nominations.create({
+        movieId: 2,
+        comment: "",
+      });
+    });
+
+    expect(nominationReads).toBe(1);
+    expect(result.current.data).toBeUndefined();
+  });
+
   it("revalidates nominations after saving a manual budget", async () => {
     let budget: number | null = null;
     fetchMock.mockImplementation(async (input, init) => {
@@ -171,6 +314,48 @@ describe("shared data cache", () => {
       signal: controller.signal,
       headers: undefined,
     });
+  });
+
+  it("waits for nominations but not other theatre revalidations", async () => {
+    const pendingTheatres = deferred<Response>();
+    let theatreReads = 0;
+    let nominationReads = 0;
+    fetchMock.mockImplementation(async (input) => {
+      if (input === "/api/theatres?previews=true") {
+        theatreReads += 1;
+        return theatreReads === 1 ? json([]) : pendingTheatres.promise;
+      }
+      if (input === `${base}/nominations`) {
+        nominationReads += 1;
+        return json([
+          { id: 1, comment: nominationReads === 1 ? "Old" : "New" },
+        ]);
+      }
+      if (input === "/api/movies/1/refresh") {
+        return json({ movie: { id: 1 }, failed: [] });
+      }
+      return json([]);
+    });
+
+    const { result } = renderHook(
+      () => ({
+        nominations: useNominations(theatre.id),
+        theatres: useTheatres(),
+      }),
+      { wrapper: Wrapper },
+    );
+    await waitFor(() => {
+      expect(result.current.nominations.data?.[0].comment).toBe("Old");
+      expect(result.current.theatres.data).toEqual([]);
+    });
+
+    await act(async () => {
+      await api.movies.refresh(1);
+    });
+
+    expect(result.current.nominations.data?.[0].comment).toBe("New");
+    await waitFor(() => expect(theatreReads).toBe(2));
+    pendingTheatres.resolve(json([]));
   });
 
   it("loads an empty personal theatre list while signed out", async () => {

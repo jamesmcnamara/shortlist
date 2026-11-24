@@ -370,10 +370,10 @@ movies without toggling the accordions. Unimported titles remain plain text.
 `npm run refresh:oscars -- --apply` adds missing movies to the shared database
 and writes each movie's numeric `shortlistId` into the blob. It does not add
 nominations to any theatre. Existing movies and their metadata are reused.
-Both nomination routes and the Oscar importer call the backend `addMovie`
-helper, which resolves the movie and runs add-time enrichment, including
-Box Office Mojo and IMDb trivia in parallel. Changes to that shared pipeline
-apply to both flows.
+The title-import nomination route and the Oscar importer call the backend
+`addMovie` helper, which resolves the movie and runs add-time enrichment,
+including Box Office Mojo and IMDb trivia in parallel. Regular nominations run
+those enrichment helpers through a separate client-triggered request.
 Optional enrichment failures are logged without discarding the imported movie,
 matching normal adds. Reruns skip movies that already have Box Office Mojo data
 and rerun the add pipeline for the rest, so they backfill failed enrichment.
@@ -463,6 +463,13 @@ check applicable terms before using or redistributing its data.
 
 ### Refreshing movie data
 
+Nomination returns before fetching box-office and trivia data. The client starts
+a separate enrichment request. Both responses update the nominations cache
+directly: creating a nomination inserts the returned record, and enrichment
+replaces only the movie data wherever that movie is cached. Neither refetches
+nomination lists, notifications, or theatre details. Theatre previews and
+movie-to-list choices refresh in the background after creation.
+
 Signed-in users can **pull down at the top** of movie details or discussions
 to refresh. The gesture is provided by `react-simple-pull-to-refresh`: pulling
 80 CSS pixels arms the refresh, which runs on release. Short pulls and gestures
@@ -498,9 +505,9 @@ requests. Restart from the menu to retry.
 ### Box Office Mojo financial data
 
 Each new nomination, including a successful bulk import, looks up the movie's
-Box Office Mojo title page by IMDb ID. The request waits for this lookup, with
-a ten-second network timeout. Duplicate imports and movie searches do not scrape.
-No additional API key is needed.
+Box Office Mojo title page by IMDb ID, with a ten-second network timeout.
+Normal nominations return before the lookup; bulk imports wait for it.
+Duplicate imports and movie searches do not scrape. No additional API key is needed.
 
 Financial data lives in the typed `movies.box_office` JSONB column, keyed by
 source: `boxofficemojo` holds the scraper's figures, `tmdb` and `wikipedia` hold

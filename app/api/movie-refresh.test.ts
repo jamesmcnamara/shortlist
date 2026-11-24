@@ -7,6 +7,7 @@ import { movies } from "@/src/db/schema";
 import { addMovie } from "@/app/lib/add-movie";
 import { findMovieById } from "@/app/lib/movie-metadata";
 import { POST } from "./movies/[movieId]/refresh/route";
+import { POST as enrichMovie } from "./movies/[movieId]/enrich/route";
 
 const mocks = vi.hoisted(() => ({ userId: "user", tmdb: vi.fn() }));
 vi.mock("@/lib/auth/server", () => ({
@@ -53,6 +54,10 @@ let movieId: number;
 const fetchMock = vi.fn<typeof fetch>();
 const refresh = (id: string | number = movieId) =>
   POST(new Request("http://test", { method: "POST" }), {
+    params: Promise.resolve({ movieId: String(id) }),
+  });
+const enrich = (id: string | number = movieId) =>
+  enrichMovie(new Request("http://test", { method: "POST" }), {
     params: Promise.resolve({ movieId: String(id) }),
   });
 
@@ -292,6 +297,26 @@ describe("unified movie refresh", () => {
     expect((await refresh(id)).status).toBe(status);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(mocks.tmdb).not.toHaveBeenCalled();
+  });
+});
+
+describe("movie enrichment", () => {
+  it("runs add-time enrichment independently of the full refresh", async () => {
+    const response = await enrich();
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      id: movieId,
+      details: {
+        trivia: { items: refreshedTrivia },
+        boxOffice: { worldwideGross: 782_948_164 },
+      },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(mocks.tmdb).not.toHaveBeenCalled();
+    expect((await findMovieById(movieId))?.details.trivia?.items).toEqual(
+      refreshedTrivia,
+    );
   });
 });
 

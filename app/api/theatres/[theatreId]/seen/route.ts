@@ -6,7 +6,6 @@ import {
 } from "@/lib/auth/require-theatre";
 import { getDb } from "@/src/db/client";
 import { nominations, seen } from "@/src/db/schema";
-import { seenByMovieIds } from "@/app/lib/queries";
 import { badRequest, dbId, dbIdParam, parseJson } from "@/lib/validation";
 
 export const runtime = "nodejs";
@@ -52,10 +51,7 @@ export const POST = withTheatreUser({ error: "Unable to mark that watched." })(
       .values({ movieId, userId })
       .onConflictDoNothing({ target: [seen.userId, seen.movieId] });
 
-    return Response.json(
-      { movieId, seenBy: (await seenByMovieIds([movieId])).get(movieId) ?? [] },
-      { status: 201 },
-    );
+    return new Response(null, { status: 204 });
   },
 );
 
@@ -79,8 +75,5 @@ export const DELETE = withTheatreUser({
     .delete(seen)
     .where(and(eq(seen.userId, userId), eq(seen.movieId, movieId)));
 
-  return Response.json({
-    movieId,
-    seenBy: (await seenByMovieIds([movieId])).get(movieId) ?? [],
-  });
+  return new Response(null, { status: 204 });
 });

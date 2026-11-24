@@ -148,6 +148,35 @@ beforeEach(async () => {
 });
 
 describe("theatre membership", () => {
+  it("creates a nomination without waiting for movie enrichment", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockRejectedValue(new Error("Unexpected external request"));
+    vi.stubGlobal("fetch", fetchMock);
+    asUser(BOB);
+
+    try {
+      const response = await nominationsRoute.POST(
+        post({ movieId: fixture.movieInB, comment: "" }),
+        route("club"),
+      );
+
+      expect(response.status).toBe(201);
+      expect(await response.json()).toMatchObject({
+        id: expect.any(Number),
+        theatreId: fixture.theatreA.id,
+        movieId: fixture.movieInB,
+        nominator: { id: BOB },
+        movie: { details: { title: "Private Movie" } },
+        nomcoms: [],
+        seenBy: [{ id: MALLORY }],
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("resolves theatres by ID even when their names match", async () => {
     const { GET } = nominationsRoute;
     asUser(BOB);
@@ -244,7 +273,8 @@ describe("cross-theatre writes", () => {
       post({ nominationId: fixture.nominationInA, comment: "Looks good." }),
       route("club"),
     );
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(204);
+    expect(await response.text()).toBe("");
     expect(
       (await fixture.db.select().from(theatreMembers)).some(
         (member) =>
@@ -294,14 +324,15 @@ describe("cross-theatre writes", () => {
       post({ id: fixture.nominationInA, comment: "  Please watch this.  " }),
       route("club"),
     );
-    expect(updated.status).toBe(200);
-    expect((await updated.json()).comment).toBe("Please watch this.");
+    expect(updated.status).toBe(204);
+    expect(await updated.text()).toBe("");
 
     const cleared = await PATCH(
       post({ id: fixture.nominationInA, comment: "   " }),
       route("club"),
     );
-    expect(cleared.status).toBe(200);
+    expect(cleared.status).toBe(204);
+    expect(await cleared.text()).toBe("");
 
     const [row] = await fixture.db
       .select()
@@ -356,10 +387,13 @@ describe("cross-theatre writes", () => {
       post({ id: comment.id, comment: "  new take  " }),
       route("club"),
     );
-    const body = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(body.nomcoms[0].comment).toBe("new take");
+    expect(response.status).toBe(204);
+    expect(await response.text()).toBe("");
+    const [updated] = await fixture.db
+      .select()
+      .from(nomcoms)
+      .where(eq(nomcoms.id, comment.id));
+    expect(updated.comment).toBe("new take");
   });
 
   it("keeps discussion comments required when editing", async () => {
@@ -435,7 +469,8 @@ describe("cross-theatre writes", () => {
       post({ movieId: fixture.movieInA }),
       route("club"),
     );
-    expect(marked.status).toBe(201);
+    expect(marked.status).toBe(204);
+    expect(await marked.text()).toBe("");
 
     const body = await (
       await GET(new Request("http://test"), route("club"))
@@ -449,6 +484,19 @@ describe("cross-theatre writes", () => {
           member.theatreId === fixture.theatreA.id && member.userId === MALLORY,
       ),
     ).toBe(false);
+
+    const unmarked = await seenRoute.DELETE(
+      new Request(`http://test/api?movieId=${fixture.movieInA}`, {
+        method: "DELETE",
+      }),
+      route("club"),
+    );
+    expect(unmarked.status).toBe(204);
+    expect(await unmarked.text()).toBe("");
+    const updatedList = await (
+      await GET(new Request("http://test"), route("club"))
+    ).json();
+    expect(updatedList[0].seenBy).toEqual([]);
   });
 
   it("refuses to mark a movie that is not on the acting theatre's list", async () => {

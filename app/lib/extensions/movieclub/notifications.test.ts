@@ -291,7 +291,7 @@ describe("movie club lead notifications", () => {
     [
       "marked watched",
       (id: number) => setWatched(id, new Date().toISOString()),
-      200,
+      204,
     ],
   ])(
     "tells the next nominator when the leader is %s",
@@ -326,11 +326,11 @@ describe("movie club lead notifications", () => {
 
     asUser(OWNER);
     expect((await setWatched(alices.id, new Date().toISOString())).status).toBe(
-      200,
+      204,
     );
     expect(await sent()).toEqual([]);
 
-    expect((await setWatched(alices.id, null)).status).toBe(200);
+    expect((await setWatched(alices.id, null)).status).toBe(204);
     expect(await sentTo()).toEqual([
       {
         to: ALICE,
@@ -338,7 +338,7 @@ describe("movie club lead notifications", () => {
       },
     ]);
 
-    expect((await setWatched(alices.id, null)).status).toBe(200);
+    expect((await setWatched(alices.id, null)).status).toBe(204);
     expect(await sent()).toEqual([]);
   });
 

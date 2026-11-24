@@ -26,6 +26,7 @@ import {
 import { buildStandings } from "@/app/lib/fantasy";
 import { nomination } from "@/app/lib/fantasy-fixtures";
 import { serializeMovie } from "@/app/lib/movie";
+import { POST as enrichMovie } from "./movies/[movieId]/enrich/route";
 import { GET as list } from "./theatres/[theatreId]/nominations/route";
 
 const auth = vi.hoisted(() => ({ userId: "" }));
@@ -132,6 +133,19 @@ const storedDetails = async () => {
   return serializeMovie(row).details;
 };
 
+const addAndEnrich = async (theatreId = THEATRE) => {
+  const response = await add(
+    request({ movieId: movie.id }),
+    context(theatreId),
+  );
+  if (response.ok) {
+    await enrichMovie(new Request("http://test/enrich", { method: "POST" }), {
+      params: Promise.resolve({ movieId: String(movie.id) }),
+    });
+  }
+  return response;
+};
+
 describe("TMDB budget fallback", () => {
   it.each(["normal", "import", "refresh"])(
     "fills a missing Mojo budget during %s enrichment",
@@ -151,7 +165,7 @@ describe("TMDB budget fallback", () => {
       }
       const response =
         mode === "normal"
-          ? await add(request({ movieId: movie.id }), context())
+          ? await addAndEnrich()
           : mode === "import"
             ? await importMovie(request({ title: "Interstellar" }), context())
             : await refresh(request({ movieId: movie.id }), context());
@@ -189,9 +203,7 @@ describe("TMDB budget fallback", () => {
             headers: { "Content-Type": "text/html" },
           }),
       );
-      expect(
-        (await add(request({ movieId: movie.id }), context())).status,
-      ).toBe(201);
+      expect((await addAndEnrich()).status).toBe(201);
       expect(await storedDetails()).toHaveProperty("boxOffice.budget", null);
       expect(await storedDetails()).not.toHaveProperty(
         "boxOffice.budgetSource",
@@ -206,9 +218,7 @@ describe("TMDB budget fallback", () => {
           headers: { "Content-Type": "text/html" },
         }),
     );
-    expect((await add(request({ movieId: movie.id }), context())).status).toBe(
-      201,
-    );
+    expect((await addAndEnrich()).status).toBe(201);
     expect(await storedDetails()).toHaveProperty("boxOffice.budget", 0);
     expect(await storedDetails()).toHaveProperty(
       "boxOffice.budgetSource",
@@ -284,7 +294,7 @@ describe("Wikipedia budget fallback", () => {
         .values({ theatreId: THEATRE, userId: USER, movieId: movie.id });
     }
     return mode === "normal"
-      ? add(request({ movieId: movie.id }), context())
+      ? addAndEnrich()
       : mode === "import"
         ? importMovie(request({ title: "Interstellar" }), context())
         : refresh(request({ movieId: movie.id }), context());
@@ -592,27 +602,19 @@ describe("manual budgets", () => {
   });
 });
 
-describe("nomination box office enrichment", () => {
-  it("saves Mojo figures before returning the nomination, leaving TMDB and streaming data alone", async () => {
+describe("nomination response", () => {
+  it("returns the created nomination without enriching its movie", async () => {
     const response = await add(request({ movieId: movie.id }), context());
     expect(response.status).toBe(201);
-    const nomination = await response.json();
-    expect(nomination.movie.details).toMatchObject({
-      budget: 1,
-      revenue: 2,
-      justWatch: { status: "matched", offers: [] },
-      boxOffice: {
-        source: "boxofficemojo",
-        currency: "USD",
-        budget: 165_000_000,
-        domesticGross: 203_227_580,
-        internationalGross: 579_720_584,
-        worldwideGross: 782_948_164,
-      },
+    expect(await response.json()).toMatchObject({
+      id: expect.any(Number),
+      movieId: movie.id,
+      movie: { id: movie.id },
+      nomcoms: [],
+      seenBy: [],
     });
-
-    expect(await storedDetails()).toEqual(nomination.movie.details);
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(await storedDetails()).not.toHaveProperty("boxOffice");
+    expect(fetch).not.toHaveBeenCalled();
   });
 });
 
@@ -784,7 +786,7 @@ describe("nomination box office enrichment failures and imports", () => {
         .mockImplementation(() => undefined);
       const response =
         mode === "normal"
-          ? await add(request({ movieId: movie.id }), context())
+          ? await addAndEnrich()
           : await importMovie(request({ title: "Interstellar" }), context());
       expect(response.status).toBe(mode === "normal" ? 201 : 200);
       expect(await db.select().from(nominations)).toHaveLength(1);
@@ -817,9 +819,7 @@ describe("nomination box office enrichment failures and imports", () => {
         .where(eq(movies.id, movie.id));
       fetch.mockResolvedValue(new Response("", { status }));
       vi.spyOn(console, "error").mockImplementation(() => undefined);
-      expect(
-        (await add(request({ movieId: movie.id }), context())).status,
-      ).toBe(201);
+      expect((await addAndEnrich()).status).toBe(201);
       const [stored] = await db
         .select()
         .from(movies)
@@ -836,9 +836,7 @@ describe("nomination box office enrichment failures and imports", () => {
         }),
     );
     const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    expect((await add(request({ movieId: movie.id }), context())).status).toBe(
-      201,
-    );
+    expect((await addAndEnrich()).status).toBe(201);
     expect(await storedDetails()).not.toHaveProperty("boxOffice");
     expect(log).toHaveBeenCalled();
   });
@@ -849,9 +847,7 @@ describe("nomination box office enrichment failures and imports", () => {
       check (box_office = '{}'::jsonb)
     `);
     const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    expect((await add(request({ movieId: movie.id }), context())).status).toBe(
-      201,
-    );
+    expect((await addAndEnrich()).status).toBe(201);
     expect(await db.select().from(nominations)).toHaveLength(1);
     expect(await storedDetails()).not.toHaveProperty("boxOffice");
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -865,15 +861,13 @@ describe("nomination box office enrichment failures and imports", () => {
       movieId: movie.id,
     });
     vi.spyOn(console, "error").mockImplementation(() => undefined);
-    expect((await add(request({ movieId: movie.id }), context())).status).toBe(
-      500,
-    );
+    expect((await addAndEnrich()).status).toBe(500);
     expect(fetch).not.toHaveBeenCalled();
     expect(await db.select().from(nominations)).toHaveLength(1);
   });
 
   it("refreshes a movie already cached through another theatre", async () => {
-    await add(request({ movieId: movie.id }), context());
+    await addAndEnrich();
     await db.insert(theatreMembers).values({
       theatreId: OTHER,
       userId: USER,
@@ -885,7 +879,7 @@ describe("nomination box office enrichment failures and imports", () => {
           headers: { "Content-Type": "text/html" },
         }),
     );
-    const response = await add(request({ movieId: movie.id }), context(OTHER));
+    const response = await addAndEnrich(OTHER);
     expect(response.status).toBe(201);
     expect(await storedDetails()).toHaveProperty(
       "boxOffice.worldwideGross",
@@ -902,9 +896,7 @@ describe("nomination box office enrichment failures and imports", () => {
         ratings: { services: [], raw: { ids: { imdb: "tt0816692" } } },
       })
       .where(eq(movies.id, movie.id));
-    expect((await add(request({ movieId: movie.id }), context())).status).toBe(
-      201,
-    );
+    expect((await addAndEnrich()).status).toBe(201);
     expect(fetch).toHaveBeenCalledWith(
       "https://www.boxofficemojo.com/title/tt0816692/",
       expect.any(Object),
@@ -919,9 +911,7 @@ describe("nomination box office enrichment failures and imports", () => {
       })
       .where(eq(movies.id, movie.id));
     const log = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    expect((await add(request({ movieId: movie.id }), context())).status).toBe(
-      201,
-    );
+    expect((await addAndEnrich()).status).toBe(201);
     expect(fetch).not.toHaveBeenCalled();
     expect(log).toHaveBeenCalled();
   });
@@ -955,9 +945,7 @@ describe("nomination box office enrichment failures and imports", () => {
         .where(eq(movies.id, movie.id));
       return page();
     });
-    expect((await add(request({ movieId: movie.id }), context())).status).toBe(
-      201,
-    );
+    expect((await addAndEnrich()).status).toBe(201);
     expect(await storedDetails()).toMatchObject({
       description: "Changed during the request",
       boxOffice: { worldwideGross: 782_948_164 },
